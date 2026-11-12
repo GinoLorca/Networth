@@ -1,0 +1,506 @@
+/*
+ * Networth — styles for the custom elements and small interface helpers in js/ui/:
+ *   ticker.js (nw-ticker, figureHtml) · split.js (nw-split) · glyphs.js · icons.js · sheet.js · toast.js
+ * and nothing else. It stands on tokens.css alone.
+ *
+ * Typographic law: roman = a fact from the bank; italic = computed, assumed or not yet final.
+ */
+
+/* ================================================================== ticker */
+
+nw-ticker {
+  display: inline-block;
+  font-family: var(--f-display);
+  font-weight: 400;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: 0;
+  white-space: nowrap;
+  color: var(--ink);
+  font-variant-numeric: lining-nums tabular-nums;
+  vertical-align: baseline;
+}
+.tk { display: inline-block; }
+.tk--approx { font-style: italic; }
+
+/* Every character sits in a fixed cell. 1ch is the advance of "0" in the face in use, so the cells
+   fit Didot (0.53em a digit, roman or italic) and stay right in the fallback faces. */
+.tk-c { display: inline-block; width: 1.02ch; text-align: center; }
+.tk--approx .tk-c { width: 1.1ch; }
+.tk .tk-p { width: .2em; }              /* comma, point */
+.tk .tk-s { width: auto; }              /* currency symbol, plus, minus */
+
+.tk-approx {
+  display: none;
+  position: relative;
+  top: -.36em;
+  margin-right: .06em;
+  font-size: .5em;
+  font-style: normal;
+  color: var(--spot);
+}
+.tk--approx .tk-approx { display: inline-block; }
+
+.tk-mini { display: none; margin-left: .14em; font-size: .3em; color: var(--spot); }
+.tk--approx .tk-mini { display: inline-block; }
+.tk--approx .tk-mini .tk-c { width: 1.16ch; }
+
+/* cover: a redaction bar of fixed width, standing on the baseline */
+.tk-bar { display: none; }
+.tk.tk--cover > :not(.tk-bar),
+[data-cover] nw-ticker .tk:not(.tk--empty) > :not(.tk-bar) { display: none; }
+.tk.tk--cover > .tk-bar,
+[data-cover] nw-ticker .tk:not(.tk--empty) > .tk-bar { display: inline-block; width: 4.4em; height: .66em; background: var(--ink); }   /* never tinted: a colour would give the sign away */
+
+.tk--empty { font-style: normal; color: var(--ink-3); }
+.tk.tk--empty > .tk-approx { display: none; }
+
+/* ------------------------------------------------------------ still figure */
+
+.fg {
+  font-family: var(--f-figure);
+  font-weight: 400;
+  font-style: normal;
+  letter-spacing: 0;
+  white-space: nowrap;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.fg--display { font-family: var(--f-display); }
+.fg--approx { font-style: italic; }
+.fg .tk-c { width: 1ch; }
+.fg .tk-p, .fg .tk-s { width: auto; }
+.fg--display .tk-c { width: 1.02ch; }
+.fg--display.fg--approx .tk-c { width: 1.1ch; }
+.fg--display .tk-p { width: .2em; }
+.fg-approx { margin-right: .12em; font-style: normal; color: var(--spot); }
+.fg-sub { margin-left: .12em; font-size: .56em; color: var(--spot); }
+.fg-bar { display: inline-block; width: 3.4em; height: .62em; background: var(--ink); }
+/* the app's cover mode (data-cover on an ancestor): an ink bar of the figure's own width, so nothing moves */
+[data-cover] .fg-v {
+  display: inline-block;
+  color: transparent;
+  background: linear-gradient(var(--ink), var(--ink)) no-repeat 0 58% / 100% .62em;
+  -webkit-user-select: none;
+  user-select: none;
+}
+[data-cover] .fg-v * { color: transparent; }
+[data-cover] .fg-sr { display: none; }
+.fg--empty { color: var(--ink-3); }
+.fg-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* =============================================================== split bar */
+
+nw-split { display: block; min-width: 0; }
+nw-split[mark="centre"] { padding-block: 6px; }
+.sb { display: block; }
+.sb-bar {
+  position: relative;
+  display: flex;
+  box-sizing: border-box;
+  height: 18px;
+  border: 1px solid var(--bar-edge);
+  background: var(--bar-black);
+}
+nw-split[slim] .sb-bar { height: 12px; }
+.sb-w {
+  display: flex;
+  flex: none;
+  justify-content: flex-end;
+  box-sizing: border-box;
+  width: 50%;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--bar-white);
+  transition: width .9s var(--ease);
+}
+.sb-h { display: block; flex: none; width: 0; height: 100%; transition: width .9s var(--ease); }
+.sb-hl { stroke: var(--bar-black); stroke-width: 1.5; }
+nw-split[mark="centre"] .sb-bar::before,
+nw-split[mark="centre"] .sb-bar::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 1px;
+  height: 5px;
+  margin-left: -.5px;
+  background: var(--ink);
+}
+nw-split[mark="centre"] .sb-bar::before { top: -7px; }
+nw-split[mark="centre"] .sb-bar::after { bottom: -7px; }
+
+@media (min-width: 1100px) {
+  .sb-bar { height: 22px; }
+  nw-split[slim] .sb-bar { height: 14px; }
+}
+
+/* ================================================================== glyphs */
+
+/* evaluation signs: an em square on the baseline, drawn in the colour of the text */
+.ev {
+  display: inline-block;
+  flex: none;
+  width: 1em;
+  height: 1em;
+  vertical-align: -.14em;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+}
+.ev-wide { width: 1.5em; }
+
+/* annotation marks: type, upright and bold in the figure face */
+.mg {
+  font-family: var(--f-figure);
+  font-weight: 700;
+  font-style: normal;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+.mg--box svg {
+  display: inline-block;
+  width: .74em;
+  height: .74em;
+  vertical-align: -.03em;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+}
+
+/* the result of a round */
+.rm {
+  position: relative;
+  display: inline-block;
+  font-family: var(--f-figure);
+  font-weight: 400;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: 0;
+  font-variant-numeric: lining-nums;
+}
+.rm--provisional { font-style: italic; }
+.rm--prematch { color: var(--ink-3); }
+.rm--awaiting { color: var(--ink-3); }
+.rm--future { color: var(--ink-3); }
+.rm-sup {
+  position: absolute;
+  left: 100%;
+  top: -.08em;
+  margin-left: .05em;
+  font-size: .42em;
+  font-weight: 700;
+  font-style: normal;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* the ink square: straight from the bank */
+.vm {
+  display: inline-block;
+  flex: none;
+  width: .6em;
+  height: .6em;
+  margin-right: .6em;
+  vertical-align: .04em;
+  background: var(--ink);
+}
+
+/* =================================================================== icons */
+
+.ic {
+  display: inline-block;
+  flex: none;
+  width: 1em;
+  height: 1em;
+  vertical-align: -.16em;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+.ic * { vector-effect: non-scaling-stroke; }
+.ic .ic-dot { fill: currentColor; stroke: none; }
+
+/* =================================================================== sheet */
+/* Every host rule is scoped to dialog.sheet and its own children (.sheet-frame, .sheet-grab,
+   .sheet-scroll, .sheet-x), so the content of a sheet may use any class names of its own. */
+
+html:has(dialog.sheet[open]) { overflow: hidden; }
+
+dialog.sheet {
+  --sheet-pad: 18px;
+  --sheet-head: 50px;   /* grab line + Close: the band content scrolls under */
+  position: fixed;
+  inset: auto 0 0 0;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  height: fit-content;
+  max-height: calc(100vh - 28px);
+  max-height: calc(100dvh - 28px);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-top: 4px double var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  overflow: hidden;
+}
+dialog.sheet[open] { display: flex; flex-direction: column; animation: sheet-up .34s var(--ease); }
+dialog.sheet[data-closing] { animation: sheet-down .2s ease-in forwards; }
+dialog.sheet::backdrop { background: var(--scrim); animation: sheet-fade .34s ease-out; }
+dialog.sheet[data-closing]::backdrop { animation: sheet-fade-out .2s ease-in forwards; }
+dialog.sheet:focus { outline: none; }
+
+dialog.sheet > .sheet-frame {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+dialog.sheet > .sheet-frame:focus { outline: none; }
+/* the head band: the grab line and the Close sit on a full-width strip of paper ending in a hairline,
+   and the content starts under it, so a row scrolls away under a clean edge, never half under the Close */
+dialog.sheet > .sheet-frame::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 1;
+  height: var(--sheet-head);
+  border-bottom: var(--rule-hair);
+  background: var(--paper);
+  pointer-events: none;
+}
+
+/* the grab line: a short rule under the top edge; it can be pulled down to leave */
+dialog.sheet .sheet-grab {
+  position: relative;
+  z-index: 3;
+  flex: none;
+  height: 16px;
+  cursor: grab;
+  touch-action: none;
+}
+dialog.sheet .sheet-grab::before {
+  content: "";
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  width: 36px;
+  height: 2px;
+  margin-left: -18px;
+  background: var(--ink);
+}
+dialog.sheet .sheet-grab::after {            /* a taller place to put a thumb */
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 132px;
+  height: 30px;
+  margin-left: -66px;
+}
+
+dialog.sheet .sheet-scroll {
+  display: block;
+  flex: 1 1 auto;
+  box-sizing: border-box;
+  min-height: 0;
+  padding: calc(var(--sheet-head) - 16px + var(--s-3)) var(--sheet-pad) 0;
+  scroll-padding-top: calc(var(--sheet-head) - 16px + var(--s-3));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+/* room under the last line when nothing is pinned */
+dialog.sheet .sheet-scroll::after {
+  content: "";
+  display: block;
+  height: max(var(--sheet-pad), calc(env(safe-area-inset-bottom) + var(--s-2)));
+}
+dialog.sheet .sheet-scroll:has(.sheet-actions)::after { display: none; }
+
+/* pinned actions. The layout of the buttons is a zero-specificity default, so a design-system rule
+   for .sheet-actions (columns, gaps) wins; the pinning itself is the host's and always applies. */
+:where(dialog.sheet) :where(.sheet-actions) {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 10px;
+}
+dialog.sheet .sheet-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  margin: var(--s-4) calc(-1 * var(--sheet-pad)) 0;
+  padding: var(--s-3) var(--sheet-pad) max(var(--sheet-pad), calc(env(safe-area-inset-bottom) + var(--s-2)));
+  border-top: var(--rule-hair);
+  background: var(--paper);
+}
+
+/* the built-in Close */
+/* It is drawn as one line of label type on the content's first line; the place to press is 44px tall. */
+dialog.sheet .sheet-x {
+  position: absolute;
+  top: 17px;
+  right: var(--sheet-pad);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: var(--tap);
+  height: 24px;
+  margin: 0 -.16em 0 0;
+  padding: 0 0 0 var(--s-3);
+  border: 0;
+  border-radius: 0;
+  background: var(--paper);       /* content scrolls under it, never through it */
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  font-family: var(--f-label);
+  font-weight: 600;
+  font-size: var(--t-label);
+  line-height: 1;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+dialog.sheet .sheet-x::after { content: ""; position: absolute; inset: -10px -8px -10px 0; }
+/* phones: the grab line covers the band above the Close, so its place to press reaches down instead (44px tall) */
+@media (max-width: 719px) { dialog.sheet .sheet-x::after { inset: -1px -8px -19px -6px; } }
+dialog.sheet .sheet-x:hover { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+dialog.sheet .sheet-x:focus-visible { outline: 2px solid var(--spot); outline-offset: 2px; }
+/* the content brought a Close of its own */
+dialog.sheet .sheet-frame:has(.sheet-scroll :is(.sheet-close, [data-sheet-close])) > .sheet-x { display: none; }
+
+@media (min-width: 720px) {
+  dialog.sheet {
+    --sheet-pad: 28px;
+    inset: 0;
+    width: min(560px, calc(100vw - 56px));
+    max-height: min(calc(100vh - 80px), 860px);
+    margin: auto;
+    border: 1px solid var(--ink);
+    border-top: 4px double var(--ink);
+  }
+  dialog.sheet[data-wide] { width: min(880px, calc(100vw - 56px)); }
+  dialog.sheet[open] { animation: sheet-rise .26s var(--ease); }
+  dialog.sheet[data-closing] { animation: sheet-sink .18s ease-in forwards; }
+  dialog.sheet .sheet-grab { display: none; }
+  dialog.sheet { --sheet-head: 54px; }
+  dialog.sheet .sheet-scroll { padding-top: calc(var(--sheet-head) + var(--s-3)); scroll-padding-top: calc(var(--sheet-head) + var(--s-3)); }
+  dialog.sheet .sheet-x { top: 21px; }
+}
+
+/* a short screen (a phone turned on its side): the sheet takes the whole height and its actions scroll with the
+   content, so a field is never hidden behind a pinned bar */
+@media (max-height: 480px) {
+  dialog.sheet { max-height: 100vh; max-height: 100dvh; }
+  dialog.sheet .sheet-actions { position: static; }
+}
+
+@keyframes sheet-up { from { transform: translateY(100%); } }
+@keyframes sheet-down { to { transform: translateY(100%); } }
+@keyframes sheet-rise { from { opacity: 0; transform: translateY(10px); } }
+@keyframes sheet-sink { to { opacity: 0; transform: translateY(10px); } }
+@keyframes sheet-fade { from { opacity: 0; } }
+@keyframes sheet-fade-out { to { opacity: 0; } }
+
+/* =================================================================== toast */
+
+.toast-region {
+  position: fixed;
+  right: 0;
+  bottom: calc(var(--toast-lift, var(--bottom-bar)) + env(safe-area-inset-bottom) + var(--s-3));
+  left: 0;
+  z-index: 60;
+  display: flex;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0 var(--gut);
+  pointer-events: none;
+}
+/* above an open sheet (toast.js moves the region into the dialog and says where there is room) */
+dialog > .toast-region { bottom: var(--toast-over, calc(env(safe-area-inset-bottom) + var(--s-3))); }
+dialog > .toast-region[data-at="top"] { top: calc(env(safe-area-inset-top) + var(--s-3)); bottom: auto; }
+.toast {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: stretch;
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 560px;
+  min-height: var(--tap);
+  background: var(--ink);
+  color: var(--paper);
+  pointer-events: auto;
+  animation: toast-in var(--dur-fast) ease-out;
+}
+.toast.is-leaving { opacity: 0; transition: opacity var(--dur-fast) ease-in; }
+.toast-msg {
+  flex: 1 1 auto;
+  align-self: center;
+  min-width: 0;
+  padding: 10px var(--s-4);
+  font-family: var(--f-text);
+  font-size: var(--t-body);
+  line-height: 1.3;
+}
+.toast-action {
+  flex: none;
+  min-width: var(--tap);
+  margin: 0;
+  padding: 0 var(--s-4);
+  border: 0;
+  border-left: 1px solid var(--ink-3);
+  border-radius: 0;
+  background: none;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  font-family: var(--f-label);
+  font-weight: 600;
+  font-size: var(--t-label);
+  line-height: 1;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--paper);
+}
+.toast-action:hover { background: var(--paper); color: var(--ink); }
+.toast-action:focus-visible { outline: 2px solid var(--spot); outline-offset: 2px; background: var(--paper); color: var(--ink); }
+
+@media (min-width: 720px) {
+  .toast { flex: 0 1 auto; min-width: 320px; }
+}
+@media (min-width: 1100px) {      /* no bottom bar on wide screens */
+  :not(dialog) > .toast-region { bottom: calc(var(--toast-lift, var(--s-3)) + env(safe-area-inset-bottom) + var(--s-3)); }
+}
+
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
+
+/* ========================================================== reduced motion */
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-w, .sb-h { transition: none; }
+  dialog.sheet[open], dialog.sheet[data-closing],
+  dialog.sheet::backdrop, dialog.sheet[data-closing]::backdrop,
+  .toast { animation: none; }
+  .toast.is-leaving { transition: none; }
+}

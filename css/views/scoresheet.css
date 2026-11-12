@@ -1,0 +1,201 @@
+/*
+ * css/views/scoresheet.css — the Scoresheet (js/views/scoresheet.js) and its two sheets
+ * (js/views/sheet-tx.js, js/views/sheet-day.js). Layout and details of this screen only;
+ * everything else is the design system's (components.css, base.css).
+ *
+ * Page:   .ss > .ss-head (month title, months, crosstable) + .ss-body > (.ss-side review, .ss-main rounds)
+ * Round:  .ss-round > .ss-rd-h > button.ss-rd (the rubric: label, result, margin, notes) + .ss-rd-moves
+ * Sheets: .tx-* (the move) and .dy-* (the round)
+ */
+
+/* an amount inside a sentence never breaks between its sign and its figure */
+.ss [data-fig], .tx-form [data-fig], .dy-form [data-fig] { white-space: nowrap; }
+
+/* -------------------------------------------------------------- month head */
+
+.ss-head .sec-head { align-items: center; }
+/* centred, not on the baseline: a link that begins with its chevron has the chevron's baseline */
+.ss-months { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 0 var(--s-4); }
+.ss-months .ic { font-size: .6875rem; }
+.ss-months a .ic:first-child { margin-right: 5px; }
+.ss-months a .ic:last-child { margin-left: 5px; }
+.ss-months-end { color: var(--ink-3); }
+.ss-title { margin-top: 10px; }
+.ss-lede { margin-top: 3px; max-width: 72ch; }
+.ss-head .xt { margin-top: var(--s-2); }
+
+/* -------------------------------------------------------------------- body */
+/* The review comes first in the markup (phones read it before the rounds); on wide screens it is the
+   right-hand margin column and the rounds take the page's left edge. */
+
+.ss-body { display: grid; grid-template-columns: minmax(0, 1fr); border-top: var(--rule); }
+.ss-side, .ss-main { min-width: 0; padding-bottom: 18px; }
+.ss-main { border-top: var(--rule); }
+
+@media (min-width: 1100px) {
+  .ss-body { grid-template-columns: minmax(0, 8fr) minmax(0, 4fr); }
+  .ss-main { grid-column: 1; grid-row: 1; padding: 0 36px 28px 0; border-top: 0; }
+  .ss-side { grid-column: 2; grid-row: 1; padding: 0 0 28px 36px; border-left: var(--rule-hair); }
+}
+@media (min-width: 1100px) and (min-height: 860px) {
+  .ss-side { position: sticky; top: 0; align-self: start; }
+}
+
+/* ------------------------------------------------------------ month review */
+
+.ss-review { margin-top: 9px; border-top: var(--rule); }
+.ss-rv { padding: 9px 0 10px; border-bottom: var(--rule-hair); }
+.ss-rv dt { margin-bottom: 3px; }
+.ss-rv dd { font-size: var(--t-body); line-height: 1.42; }
+.ss-rv dd .fig { font-size: 1.14em; line-height: 1; }
+.ss-rv dd .fig.ss-rv-score { display: block; margin: 1px 0 5px; font-size: calc(var(--t-fig-l) * 1.76); }
+.ss-rv-line { display: block; }
+.ss-rv-line.cap { margin-top: 3px; }
+/* On a phone a day link in the review is a touch target: its own line grows to 44px, so no link borrows from its neighbour. */
+@media (max-width: 719px) { .ss-rv dd a { display: inline-block; min-height: var(--tap); line-height: var(--tap); } }
+.ss-counts { display: flex; flex-wrap: wrap; gap: 3px 18px; }
+.ss-count { white-space: nowrap; }
+.ss-count .mg { display: inline-block; min-width: 1.1em; margin-right: 3px; font-size: 1.0625rem; }
+.ss-review-note { margin-top: 9px; }
+.ss-review-none { margin-top: 9px; padding-top: 9px; border-top: var(--rule); }
+
+@media (min-width: 720px) and (max-width: 1099px) {
+  .ss-review { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 28px; }
+}
+
+/* ----------------------------------------------------------------- filters */
+
+.ss-filters { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-3); margin-top: 9px; }
+/* six classes do not fit one line on a phone: two rows of three, ruled like a small table */
+.ss-seg { display: grid; grid-auto-flow: row; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ss-seg .seg-opt { padding: 0 6px; }
+.ss-seg .seg-opt:nth-child(n+4) { border-top: 1px solid var(--ink); }
+.ss-seg .seg-opt:nth-child(4) { border-left: 0; }
+.ss-search .input { font-size: var(--t-body); }
+.ss-search .input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
+.ss-summary { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px var(--s-4); margin-top: var(--s-3); }
+.ss-summary .cap { flex: 1 1 16em; }
+
+@media (min-width: 720px) {
+  .ss-filters { grid-template-columns: auto minmax(150px, 1fr); align-items: end; column-gap: var(--s-5); }
+  .ss-seg { display: inline-grid; grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: auto; }
+  .ss-seg .seg-opt { padding: 0 13px; }
+  .ss-seg .seg-opt:nth-child(n+4) { border-top: 0; }
+  .ss-seg .seg-opt:nth-child(4) { border-left: 1px solid var(--ink); }
+  .ss-chips { grid-column: 1 / -1; }
+}
+
+/* ------------------------------------------------------------------ rounds */
+
+.ss-rounds { margin-top: var(--s-2); }
+.ss-round { position: relative; padding-top: 6px; scroll-margin-top: 10px; }
+.ss-rd-h { display: block; }
+.ss-rd {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; column-gap: var(--s-3);
+  width: 100%; min-height: var(--tap); padding: 9px 0 6px; border-bottom: var(--rule); text-align: left; color: inherit;
+}
+.ss-rd-lab { grid-column: 1; white-space: normal; font-size: var(--t-label-s); letter-spacing: .11em; }
+.ss-rd-res { grid-column: 2; display: inline-flex; align-items: baseline; gap: 9px; white-space: nowrap; }
+.ss-rd-mark { font-size: 1.6875rem; line-height: 1; padding-right: .34em; }
+.ss-rd-bye { margin-left: 5px; font-family: var(--f-text); font-style: italic; font-size: .8125rem; color: var(--ink-2); }
+.ss-rd-margin { font-size: .84375rem; font-style: italic; color: var(--ink-2); }
+.ss-rd-margin .fig { font-size: 1.125rem; }
+.ss-rd-margin.is-set-back .fig { color: var(--ink-3); }
+.ss-rd-notes { grid-column: 1 / -1; display: block; margin-top: 1px; }
+.ss-rd-line { display: block; }
+.ss-rd-line .mg { font-size: 1.15em; margin-right: 2px; color: var(--ink); }
+.ss-rd-own::before { content: "\201C"; }
+.ss-rd-own::after { content: "\201D"; }
+.ss-round.is-today .ss-rd-lab b { color: var(--spot); }
+.ss-round.is-target::before { content: ""; position: absolute; left: 0; top: 6px; width: 44px; height: 3px; background-color: var(--spot); }
+.ss-rd-none { padding: 9px 0 8px; border-bottom: var(--rule-hair); }
+@media (hover: hover) {
+  .ss-rd:hover .ss-rd-lab b { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+}
+
+/* a tag after the category line needs its separator (the partial only sets one between tags) */
+.ss-rd-moves .move-note .move-tag:first-child::before { content: "\00A0\00B7\00A0"; }
+
+/* transfers and card payments: quiet rows after the day's moves */
+.ss-quiet .move { padding: 5px 0 4px; }
+.ss-quiet :is(.move-n, .move-m, .move-a) { font-size: .84375rem; color: var(--ink-2); }
+.ss-quiet .move-note { font-size: .75rem; }
+.ss-quiet .move-s { font-size: .9375rem; }
+
+/* the empty next row: tomorrow's round */
+.ss-next {
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px var(--s-4);
+  width: 100%; min-height: var(--tap); margin-top: var(--s-3); padding: 9px 0 8px;
+  border-top: 1px dashed var(--hair); border-bottom: 1px dashed var(--hair); text-align: left; color: inherit;
+}
+.ss-next .lab b { color: var(--ink-2); }
+@media (hover: hover) {
+  .ss-next:hover .lab b { color: var(--ink); }
+}
+.ss-empty { margin-top: var(--s-3); }
+
+/* from tablets up the rubric stands in the margin, the moves beside it: a ruled scoresheet */
+@media (min-width: 720px) {
+  .ss-rounds { margin-top: var(--s-4); }
+  .ss-round { display: grid; grid-template-columns: 232px minmax(0, 1fr); column-gap: 28px; align-items: start; padding: 0 0 22px; border-top: var(--rule); }
+  .ss-rd { display: block; padding: 10px 0 0; border-bottom: 0; }
+  .ss-rd-lab { display: block; font-size: var(--t-label); letter-spacing: .13em; }
+  .ss-rd-res { display: flex; flex-wrap: wrap; gap: 0 10px; margin-top: 8px; }
+  .ss-rd-mark { font-size: 2.75rem; font-family: var(--f-display); }
+  .ss-rd-mark .rm { font-family: var(--f-display); }
+  .ss-rd-margin .fig { font-size: var(--t-fig); }
+  .ss-rd-notes { margin-top: 7px; }
+  .ss-rd-line + .ss-rd-line { margin-top: 3px; }
+  .ss-round.is-target::before { top: -1px; width: 232px; }
+  .ss-rd-moves .moves > li:last-child { border-bottom: 0; }
+  .ss-rd-moves .moves + .ss-quiet { border-top: var(--rule-hair); }
+  .ss-rd-none { border-bottom: 0; }
+}
+
+/* ============================================================ the tx sheet */
+
+.tx-facts .row { min-height: 0; padding: 8px 0 7px; }
+.tx-v { min-width: 0; text-align: right; font-size: var(--t-body); line-height: 1.35; }
+.tx-declined { color: var(--ink-2); }
+.tx-declined::before { content: "("; }
+.tx-declined::after { content: ")"; }
+.tx-raw { padding: 8px 0 9px; }
+.tx-raw .lab { display: block; font-size: .6875rem; letter-spacing: .13em; color: var(--ink-3); }
+.tx-raw-text { display: block; margin-top: 3px; color: var(--ink-2); overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
+.tx-ann { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 10px; align-items: baseline; }
+.tx-ann-sym { font-size: 1.375rem; line-height: 1; }
+.tx-class { display: flex; flex-direction: column; gap: var(--s-4); }
+.tx-check .cap { margin-top: -3px; }
+.tx-glyphs .tx-glyph { min-width: 40px; padding: 0 9px; }
+@media (max-width: 719.98px) { .tx-glyphs .tx-glyph { min-width: var(--tap); } }
+.tx-glyphs .mg { font-size: 1rem; line-height: 1; text-transform: none; letter-spacing: 0; }
+.tx-note, .dy-note { min-height: 64px; }
+
+/* the return check and "it is equipment" belong to a business purchase: purpose not personal, class one-off.
+   The form's own state decides, so the block follows the chips before anything is saved. */
+.tx-biz { display: none; padding-top: 11px; border-top: var(--rule); }
+.tx-form:has(input[name="klass"][value="oneoff"]:checked):not(:has(input[name="purpose"][value="personal"]:checked)) .tx-biz { display: block; }
+.tx-biz > * + * { margin-top: var(--s-3); }
+.tx-biz .sym { font-size: 1.1em; }
+.tx-due { margin-left: 6px; font-family: var(--f-text); font-style: italic; font-size: var(--t-cap); letter-spacing: 0; text-transform: none; color: var(--ink-2); }
+.tx-equip-more { display: none; margin-top: var(--s-2); }
+.tx-equip:has(input[name="equip"]:checked) .tx-equip-more { display: block; }
+.tx-equip-more .field-help { margin-top: var(--s-2); }
+
+/* =========================================================== the day sheet */
+
+.dy-days { display: flex; align-items: center; justify-content: space-between; gap: var(--s-4); margin-top: var(--s-2); }
+.dy-days .ic { font-size: .6875rem; }
+.dy-days .ic:first-child { margin-right: 5px; }
+.dy-days .ic:last-child { margin-left: 5px; }
+.dy-standing > * + * { margin-top: var(--s-3); }
+.dy-lines { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; align-items: center; }
+.dy-mark { min-width: 1.1em; padding-right: .34em; font-size: 2.375rem; line-height: 1; }
+.dy-mark .rm { font-family: var(--f-display); }
+.dy-ann .mg { font-size: 1.15em; margin-right: 2px; color: var(--ink); }
+.dy-block { padding-top: 10px; border-top: var(--rule-hair); }
+.dy-block .cap { margin-top: 3px; }
+.dy-block-action { margin-top: var(--s-2); }
+
+/* touch targets: the class filter is a full 44px tall */
+.ss .seg-opt { min-height: var(--tap); }

@@ -1,0 +1,23 @@
+/*
+ * Styles for the shared partials in js/views/parts.js that the design system does not already cover.
+ */
+
+/* a crosstable round that links to its day on the Scoresheet: the link covers the whole cell */
+.x { position: relative; }
+.x-a { position: absolute; inset: 0; z-index: 1; }
+.x-a:focus-visible { outline: 2px solid var(--spot); outline-offset: -2px; }
+/* T7: under 720px a round link's hit area reaches 44px across, centred on its cell; nothing visible changes */
+@media (min-width: 380px) and (max-width: 719.98px) {
+  .x-a::before { content: ""; position: absolute; inset: min(0px, calc((100% - var(--tap)) / 2)); }
+}
+@media (max-width: 719.98px) {
+  /* the seven day columns take 44px each where the row has room (390px and up); the week column gives
+     the few pixels; at 320px seven 44px columns do not fit, and the columns keep their share */
+  ol.xt-grid.has-weeks { grid-template-columns: repeat(7, minmax(min(var(--tap), calc((100% - 40px) / 7)), 1fr)) minmax(0, 1.25fr); }
+}
+@media (hover: hover) { .x:has(.x-a):hover .x-res { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .18em; } }
+
+/* a round from before the match began: shown for reference, set back */
+.x.is-prematch .x-res, .x.is-prematch .x-edge, .x.is-prematch .x-rd { color: var(--ink-3); }
+/* an eight-digit week or day total breaks inside its own cell instead of pushing the page sideways */
+.x .x-edge { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }

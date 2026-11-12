@@ -1,0 +1,163 @@
+/*
+ * css/views/book.css — the Book and its two sheets (js/views/book.js, sheet-recurring.js, sheet-stream.js).
+ * Layout and details of this screen only; type, rules, rows, tables, chips and fields are the design system's.
+ * Breakpoints as in base.css: phone < 720 · tablet 720–1099 · wide >= 1100.
+ */
+
+.bk .sec-head { margin-bottom: 10px; }
+.bk .rows + .sec-head, .bk-sub { margin-top: var(--s-5); }
+
+/* a figure from the bank inside italic or running text stays upright */
+.bk-roman { font-style: normal; }
+
+/* a small ruled tag after a name or a note: TOWARD DEBT · ENTERED BY YOU */
+.bk-tag {
+  display: inline-block; margin-left: 3px; padding: 2px 5px 1px; border: 1px solid var(--hair);
+  font-family: var(--f-label); font-weight: 600; font-style: normal; font-size: .6875rem; line-height: 1.2; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-2); white-space: nowrap; vertical-align: 1px;
+}
+
+/* a passage where a section has nothing to list, and the note under a list */
+.bk-quiet { max-width: 54ch; padding: 2px 0 6px; font-size: .90625rem; }
+.bk-foot { max-width: 76ch; margin-top: 10px; }
+.bk-foot .mg { margin-right: 2px; color: var(--ink); }
+
+/* a name that opens its sheet: set as text, underlined when pointed at */
+.bk-line { position: relative; text-align: left; font-size: .96875rem; line-height: 1.35; color: var(--ink); }
+.bk-line::after { content: ""; position: absolute; inset: -12px -6px; }
+.cap .bk-line { font-size: inherit; font-style: normal; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .2em; }
+@media (hover: hover) {
+  .bk-line:hover, .bk-open:hover .bk-name { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .2em; }
+}
+
+/* ------------------------------------------------------------------ totals */
+.bk-total-lab { margin-top: 4px; color: var(--ink); }
+.bk-total-fig { margin: 4px 0 16px -.02em; line-height: 1; white-space: nowrap; }
+/* The three totals share a row while they fit and take a second row when the type is enlarged. */
+.bk-total-tally { grid-auto-flow: row; grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr)); row-gap: 10px; }
+.bk-total-tally .lab { white-space: normal; }
+.bk-total-fig .fig-xl { font-size: clamp(2.875rem, 13.2vw, 3.625rem); }
+.bk-total-note { max-width: 60ch; margin-top: 12px; }
+.bk-total .empty { padding-top: var(--s-2); }
+@media (min-width: 720px) {
+  .bk-total-fig .fig-xl { font-size: 4.5rem; }
+}
+@media (min-width: 1100px) {
+  .bk-total-fig { margin-bottom: 22px; }
+  .bk-total-fig .fig-xl { font-size: min(5.6vw, 5rem); }
+}
+
+/* ---------------------------------------------------------------- upcoming */
+.bk-upcoming th:first-child, .bk-upcoming td:first-child { padding-left: 10px; border-left: 2px solid transparent; }
+.bk-upcoming tr.is-due > td:first-child { border-left-color: var(--ink); }
+.bk-upcoming td { padding-top: 9px; padding-bottom: 8px; vertical-align: top; }
+.bk-upcoming td.num { padding-top: 10px; }
+.bk-when { width: 1%; white-space: nowrap; font-size: .96875rem; line-height: 1.35; }
+.bk-rel, .bk-sub-note { display: block; margin-top: 1px; font-style: italic; font-size: .8125rem; line-height: 1.3; color: var(--ink-2); }
+.bk-upcoming .bk-payday td { padding: 7px 0 6px 12px; border-top: var(--rule); border-bottom: var(--rule); background-color: var(--paper-2); }
+.bk-upcoming tbody tr:has(+ .bk-payday) > td { border-bottom: 0; }
+@media (min-width: 720px) {
+  .bk-when { padding-right: var(--s-5); }
+}
+
+/* ------------------------------------------------- before payday, renewals */
+.bk-due-tally { border-top: var(--rule); padding-top: 10px; }
+.bk-due-line { margin-top: 14px; padding-top: 10px; border-top: var(--rule-hair); font-size: .96875rem; line-height: 1.4; }
+.bk-due-line .tt { margin-right: 8px; }
+.bk-renewals > li { padding-bottom: 11px; }
+.bk-renewals .row { padding-bottom: 6px; }
+.bk-aside .bar { height: 5px; }
+.bk-aside .cap { margin-top: 5px; font-size: .8125rem; }
+
+/* --------------------------------------------------------------- the lines */
+.bk-list { border-top: var(--rule); }
+.bk-entry {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "open open amt" "meta meta meta" "day verdict verdict";
+  column-gap: var(--s-3); align-items: baseline; padding: 11px 0 12px; border-bottom: var(--rule-hair);
+}
+.bk-head { display: none; }
+.bk-open { grid-area: open; display: block; min-width: 0; min-height: var(--tap); text-align: left; color: var(--ink); }
+.bk-name { display: block; font-size: 1rem; line-height: 1.3; }
+.bk-name .mg { font-size: .75rem; color: var(--ink-2); }
+.bk-note { display: block; margin-top: 2px; font-style: italic; font-size: .8125rem; line-height: 1.35; color: var(--ink-2); }
+.bk-amt { grid-area: amt; font-size: 1.125rem; line-height: 1.2; text-align: right; white-space: nowrap; }
+.bk-meta { grid-area: meta; display: flex; flex-wrap: wrap; margin-top: 5px; font-size: .84375rem; line-height: 1.4; color: var(--ink-2); }
+.bk-meta > span:not(:last-child)::after { content: "\00B7"; margin: 0 .5em; color: var(--ink-3); }
+.bk-flag { font-style: italic; }
+.bk-flag::before { content: ", "; }
+.bk-day { grid-area: day; align-self: center; font-size: .84375rem; color: var(--ink-2); white-space: nowrap; }
+.bk-day .fig { font-size: 1rem; }
+.bk-verdict { grid-area: verdict; justify-self: end; margin-top: 9px; gap: 6px; flex-wrap: nowrap; }
+.bk-verdict .chip { min-height: 32px; padding: 0 11px; }
+.bk-verdict .chip::after { inset: -6px 0; }
+
+/* tablet: the name and its particulars on the left, the amount over its cost a day, the verdict at the end */
+@media (min-width: 720px) and (max-width: 1099.98px) {
+  .bk-entry {
+    grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "open amt verdict" "meta day verdict";
+    column-gap: var(--s-5);
+  }
+  .bk-meta { margin-top: 3px; }
+  .bk-day { align-self: baseline; text-align: right; }
+  .bk-verdict { align-self: center; margin-top: 0; }
+}
+
+@media (min-width: 1100px) {
+  .bk-entry {
+    grid-template-columns: minmax(0, 1fr) 118px 92px 92px 100px 84px 202px; grid-template-areas: none;
+    column-gap: var(--s-4); padding: 9px 0 9px;
+  }
+  .bk-entry > *, .bk-meta > * { grid-row: 1; }
+  .bk-head { display: grid; padding: 9px 0 7px; border-bottom: var(--rule); }
+  .bk-entry.bk-head .lab { font-size: .6875rem; line-height: 1.2; letter-spacing: .13em; color: var(--ink-2); }
+  .bk-open { grid-area: auto; grid-column: 1; }
+  .bk-meta { display: contents; }
+  .bk-meta > span { font-size: .9375rem; line-height: 1.35; color: var(--ink); }
+  .bk-meta > span:not(:last-child)::after { content: none; }
+  .bk-entry .bk-cad { grid-column: 2; }
+  .bk-entry .bk-next { grid-column: 3; }
+  .bk-entry .bk-purpose { grid-column: 4; }
+  .bk-entry .bk-amt { grid-area: auto; grid-column: 5; font-size: var(--t-fig-s); }
+  .bk-entry .bk-day { grid-area: auto; grid-column: 6; align-self: baseline; text-align: right; }
+  .bk-entry .bk-day .fig { font-size: var(--t-fig-s); line-height: 1.2; }
+  .bk-entry .bk-verdict { grid-area: auto; grid-column: 7; margin-top: 0; align-self: center; }
+  .bk-head .bk-verdict { text-align: right; }
+  .bk-flag { display: block; font-size: .78125rem; line-height: 1.25; color: var(--ink-2); }
+  .bk-flag::before { content: none; }
+  .bk-n { display: none; }
+}
+
+/* ended or dismissed lines: a collapsed list under the Book */
+.bk-ended { margin-top: var(--s-4); }
+.bk-ended > summary { display: flex; align-items: baseline; gap: var(--s-3); min-height: var(--tap); padding-top: 12px; list-style: none; }
+.bk-ended > summary::-webkit-details-marker { display: none; }
+.bk-ended > summary::before { content: "+"; width: .8em; font-family: var(--f-figure); font-size: 1.125rem; line-height: 1; }
+.bk-ended[open] > summary::before { content: "\2212"; }
+.bk-ended .rows { border-top: var(--rule-hair); }
+.bk-ended .row-label, .bk-ended .row-value { color: var(--ink-2); }
+
+/* ------------------------------------------------------------------ income */
+.bk-counted { color: var(--ink); }
+.bk-counting .title { margin: 2px 0 10px; }
+.bk-prose { font-size: .9375rem; }
+.bk-prose .btn-link { margin-top: 2px; }
+
+/* ------------------------------------------------- the entry and stream sheets */
+.bks-facts .row { min-height: 0; padding: 7px 0 6px; }
+.bks-facts .row-label { font-size: .90625rem; color: var(--ink-2); }
+.bks-facts .row-value { font-size: .96875rem; white-space: normal; }
+.bks-facts .row-value.fig { font-size: 1.0625rem; }
+.bks-switch { border-top: var(--rule-hair); border-bottom: var(--rule-hair); }
+.bks-switch .switch-text { display: block; padding: 8px 0; font-size: .96875rem; line-height: 1.3; }
+.bks-switch .switch-text em { display: block; margin-top: 2px; font-size: .8125rem; color: var(--ink-2); }
+.bks-amount { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--s-5); align-items: end; }
+.bks-amount .check { margin-bottom: 0; }
+.bks-amount:has(.is-invalid) .check { align-self: center; }
+.bks-quiet { padding-top: var(--s-3); border-top: var(--rule-hair); }
+.bks-quiet .cap { margin-top: 4px; }
+.bks-explain { padding: 10px 0 0; border-top: var(--rule); }
+.bks-explain p + p { margin-top: 6px; }
+.bks-facts .row-value small { font-size: .8em; }
+
+/* text that carries meaning is at least .6875rem (R7) */
+.bk-upcoming thead th { font-size: .6875rem; }

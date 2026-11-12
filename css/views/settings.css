@@ -1,0 +1,163 @@
+/*
+ * Settings and the first run (js/views/settings.js, js/views/connect.js).
+ * Only the layout and the details these two screens need beyond the design system; every colour,
+ * face and step comes from css/tokens.css.
+ *   .set-*   Settings        .cn-*   the first run (the connect title page)
+ */
+
+/* a notice that runs to two or three lines on a phone keeps its mark on the first line, standing on the baseline like a cap */
+.set .notice > .notice-mark, .cn .notice > .notice-mark { align-self: baseline; }
+
+/* ================================================================ Settings */
+
+/* the title band: the name of the page and one sentence on how it behaves */
+.set-top-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s-1) var(--s-6); margin-top: var(--s-2); }
+.set-title { font-style: italic; }
+.set-top-note { flex: 1 1 280px; max-width: 68ch; }
+
+/* a section: its parts sit one step apart under the section head */
+.set-sec > * + * { margin-top: var(--s-4); }
+.set-sec > .sec-head + * { margin-top: var(--s-3); }
+.set-sec > .sec-head + .field, .set-sec > .sec-head + .set-rules { margin-top: var(--s-4); }
+.set-sec .field-help, .set-help, .set-after { max-width: 56ch; }
+.set-state { font-style: italic; }
+.set-lede { max-width: 60ch; }
+.set-none { padding: var(--s-3) 0; border-top: var(--rule); border-bottom: var(--rule-hair); }
+.set-after { margin-top: var(--s-2); }
+
+/* the bank: facts, accounts, refresh */
+.set-facts .row-value { font-size: var(--t-body); }
+.set-facts .age { margin-left: .4em; }
+.set-acct { align-items: center; }
+.set-acct-tag { white-space: nowrap; text-align: right; }
+.set-refresh { gap: var(--s-2) var(--s-4); }
+.set-busy { min-height: var(--tap); }
+.set-problems > .notice:first-child { border-top: var(--rule-hair); }
+.set-link > * + * { margin-top: var(--s-3); }
+.set-link .tokenbox { min-height: 88px; }
+.set-link-status:empty { display: none; }
+.set-link-go { gap: var(--s-2) var(--s-5); }
+
+/* dangerous actions: quiet links in a ruled foot; the confirmation opens under the one that was asked */
+.set-dangers { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--s-2) var(--s-5); padding-top: var(--s-3); border-top: var(--rule-hair); }
+.set-danger { min-width: 0; }
+.set-danger:has(.set-confirm) { flex: 1 1 100%; }
+.set-confirm { margin-top: var(--s-3); padding: var(--s-3) 0 var(--s-1); border-top: var(--rule); border-bottom: var(--rule-hair); }
+.set-confirm > .cap { max-width: 60ch; }
+.set-confirm > .btn-row { margin: var(--s-3) 0 var(--s-2); }
+.set-restore:empty { display: none; }
+.set-restore > .set-confirm { margin-top: 0; }
+
+/* the day: seven chips across, switches in a ruled list */
+.set-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; max-width: 448px; margin-top: 2px; }
+.set-week .chip { min-height: 40px; padding: 0; letter-spacing: .08em; }
+/* seven 44px days do not fit a 320px screen: four and three */
+@media (max-width: 359px) { .set-week { grid-template-columns: repeat(4, minmax(var(--tap), 1fr)); row-gap: 12px; } }
+.set-hour .select { max-width: 220px; }
+.set-opt { padding-bottom: var(--s-1); border-top: var(--rule-hair); }
+.set-opt + .set-opt { margin-top: var(--s-3); }
+.set-opt .switch { width: 100%; }
+.set-opt .switch-text { font-size: var(--t-lede); line-height: 1.3; }
+.set-help { margin-top: -2px; }
+.set-help .spot, .set-lede .spot { font-style: normal; }
+.set-byes { margin-top: 2px; justify-self: start; align-self: flex-start; }
+
+/* your rules: lines written on hairlines, numbered like the principles */
+.set-rules { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-5); }
+.set-list { min-width: 0; }
+.set-lines { margin-top: var(--s-1); border-top: var(--rule); }
+.set-line { display: grid; grid-template-columns: 26px minmax(0, 1fr); align-items: baseline; border-bottom: var(--rule-hair); }
+.set-line-n { font-family: var(--f-figure); font-weight: 400; font-size: 1.1875rem; line-height: 1; color: var(--ink-2); }
+.set-line .input { border-bottom: 0; font-size: var(--t-body); text-overflow: ellipsis; }
+.set-line.is-new .set-line-n { color: var(--ink-3); }
+.set-list .field-help { margin-top: var(--s-2); }
+
+/* the record: two conveniences side by side */
+.set-copy { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-4); }
+.set-copy-item > .cap { margin-top: var(--s-2); max-width: 44ch; }
+.set-file { cursor: pointer; }
+.set-file:has(input:focus-visible),
+.cn-restore-pick:has(input:focus-visible) { outline: 2px solid var(--spot); outline-offset: 3px; }
+.set-file.is-off { cursor: default; }
+@media (hover: hover) {
+  .set-file.is-off:hover { background-color: transparent; color: var(--ink-3); }
+}
+
+/* about: two short ruled lists */
+.set-about { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-4); }
+.set-points { margin-top: var(--s-2); border-top: var(--rule); }
+.set-points > li { padding: 8px 0 7px; border-bottom: var(--rule-hair); line-height: 1.4; }
+.set-bridge { margin-top: var(--s-2); }
+
+@media (min-width: 720px) {
+  .set-rules { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr); gap: var(--s-5) var(--s-6); }
+  .set-copy { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-6); }
+  .set-about { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-5); }
+}
+@media (min-width: 1100px) {
+  .set-sec > * + * { margin-top: var(--s-5); }
+  .set-sec > .sec-head + * { margin-top: var(--s-4); }
+  .set-opt + .set-opt, .set-sec > .set-after { margin-top: var(--s-3); }
+  .set-about { grid-template-columns: minmax(0, 1fr); }
+}
+@media (min-width: 1300px) {
+  .set-about { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* =========================================================== the first run */
+
+.cn { min-height: 80vh; }
+.cn-mast .wordmark { margin: 0; }
+.cn-mast .sync { cursor: default; }
+.cn-ios, .cn-already { border-bottom: var(--rule); }
+
+.cn-page { display: grid; grid-template-columns: minmax(0, 1fr); }
+.cn-title { padding: var(--s-4) 0 var(--s-5); }
+.cn-title .connect-title { margin-top: var(--s-2); max-width: 16em; text-wrap: balance; }
+.cn-how .steps { margin-top: 0; }
+.cn-how .step-body > p { max-width: 56ch; }
+.cn-how .step-action { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); }
+.cn-field { margin-top: var(--s-4); }
+.cn-how .cn-field .tokenbox { margin-top: 1px; }
+.cn-status:empty { display: none; }
+.cn-status { margin-top: var(--s-2); }
+.cn-busy { min-height: 36px; }
+.cn-error { border-bottom: 0; padding-bottom: 0; }
+.cn-half { margin-top: var(--s-2); }
+.cn-half > .cluster { margin-top: var(--s-2); }
+.cn-go { margin-top: var(--s-4); }
+
+.cn-aside { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-5); padding: var(--s-5) 0 var(--s-4); }
+.cn-look-text { margin: var(--s-2) 0 var(--s-3); max-width: 46ch; }
+.cn-private .cap { margin-top: var(--s-2); max-width: 52ch; }
+.cn-colophon { margin-top: 0; }
+
+@media (min-width: 720px) {
+  .cn-title { padding: var(--s-6) 0; }
+  .cn-aside { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-6); }
+}
+@media (min-width: 1100px) {
+  .cn-page {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas: "title how" "aside how";
+    border-bottom: var(--rule);
+  }
+  .cn-title { grid-area: title; padding: var(--s-6) var(--s-7) var(--s-6) 0; }
+  .cn-title .connect-title { font-size: 3.375rem; line-height: 1.06; }
+  .cn-how { grid-area: how; padding: 13px 0 var(--s-6) var(--s-7); border-left: var(--rule-hair); }
+  .cn-how .steps { border-top: 0; }
+  .cn-how .step:last-child { border-bottom: 0; padding-bottom: 0; }
+  .cn-how .tokenbox { max-width: 620px; }
+  .cn-aside { grid-area: aside; align-self: end; grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0 var(--s-7) var(--s-6) 0; }
+  .cn-aside > section { padding: var(--s-4) 0; border-top: var(--rule-hair); }
+  .cn-aside > section:first-child { border-top: var(--rule); }
+  .cn-aside > section:last-child { padding-bottom: 0; }
+  .cn-colophon { border-top: 0; }
+}
+
+/* the first run on a phone: its actions are 44px touch targets (R7) */
+@media (max-width: 719px) {
+  .step-action .btn-s { min-height: var(--tap); display: inline-flex; align-items: center; }
+  .cn-restore-pick { display: inline-flex; align-items: center; min-height: var(--tap); }
+}

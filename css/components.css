@@ -1,0 +1,1323 @@
+/*
+ * Networth — components.css
+ * Every shared component of "the Bulletin". Each block below opens with the markup to write.
+ * Requires tokens.css and base.css (type helpers .lab .cap .fig .est .approx .bank-mark .sym .ev,
+ * and the layout primitives .cols .col .band .cluster .stack). See /dev/gallery.html for every state.
+ *
+ * Naming: .block  .block-part  .block-variant  .is-state   (see base.css)
+ * Breakpoints: phone < 720 · tablet 720–1099 · wide >= 1100
+ *
+ * CONTENTS
+ *   1  Masthead, navigation, bottom bar, sync status
+ *   2  Section head
+ *   3  Buttons
+ *   4  Choices: chips, segmented control, switch, checkbox, stepper
+ *   5  Forms
+ *   6  Rows and tallies
+ *   7  Hero frame, split frame
+ *   8  Moves list
+ *   9  Crosstable
+ *  10  Clock block
+ *  11  Progress: bar, ladder, milestone ticks
+ *  12  Assessment
+ *  13  Notes, principles, key to symbols
+ *  14  Tables
+ *  15  Banners and states: banner, notice, empty, skeleton
+ *  16  Cover mode (redaction)
+ *  17  Connect screen
+ *  18  Sheet content
+ *  19  Colophon
+ *  20  Utilities
+ */
+
+/* =========================================================================
+   1  MASTHEAD
+   =========================================================================
+   <header class="mast">
+     <div class="mast-top">
+       <p class="mast-ear mast-ear-l">
+         <span class="lab"><b><span class="only-wide">Wednesday, November 11, 2026</span><span class="only-narrow">Wed, Nov 11 · 2:36 PM</span></b></span>
+         <span class="cap only-wide">2:36 in the afternoon</span>
+         <span class="lab only-narrow">Round 11 of 30</span>
+       </p>
+       <div class="mast-plate">
+         <a class="wordmark" href="#/">Networth</a>
+         <span class="lab mast-sub">November 2026<i class="sep"></i><b>Round 11 of 30</b></span>
+       </div>
+       <div class="rule-double mast-rule" aria-hidden="true"></div>
+       <div class="mast-ear mast-ear-r">
+         <button class="sync" type="button" data-state="fresh">…</button>            (see Sync status)
+         <span class="cap only-wide">Italic figures marked ≈ are computed.</span>
+         <span class="mast-ear-tools only-narrow"> <button class="btn-link">Cover</button> <a class="btn-link" href="#/settings">Settings</a> </span>
+       </div>
+     </div>
+     <div class="mast-nav">                                                        (wide screens only)
+       <nav class="mast-links" aria-label="Sections">
+         <a href="#/" aria-current="page">Board</a> <a href="#/scoresheet">Scoresheet</a> …
+       </nav>
+       <div class="mast-tools"> <button class="btn-link">Cover</button> <button class="btn btn-solid btn-s"><span class="plus">+</span> Move</button> </div>
+     </div>
+   </header>
+   Phones: wordmark left, date and round right, the double rule, then the sync line.
+   Wide: the wordmark is centred between the two ears, the double rule, then the navigation row.
+
+   Aliases. The app shell was written with the mock's names; both spellings are styled alike:
+     .ear .ear-l .ear-r = .mast-ear …      .plate = .mast-plate      .plate-sub = .mast-sub
+     .mast-top > .rule-double = .mast-rule      .mast-nav > nav = .mast-links      .mast-nav > .right = .mast-tools
+     .linkbtn = .btn-link      .btn.solid = .btn.btn-solid      .tab-move = .tabbar-move
+   New markup should use the names on the left of this file's examples (.mast-*, .btn-*, .tabbar-*).
+   ------------------------------------------------------------------------- */
+.mast-top { display: grid; grid-template-columns: 1fr auto; align-items: end; column-gap: var(--s-3); padding-top: var(--s-3); }
+.mast-plate, .plate { display: flex; flex-direction: column; padding-bottom: 9px; min-width: 0; }
+.wordmark { font-family: var(--f-display); font-weight: 400; font-size: 1.875rem; line-height: 1; letter-spacing: -.01em; text-decoration: none; color: var(--ink); }
+/* phones: the place to press is 44px tall; the padding is taken back by the margin, so nothing moves */
+@media (max-width: 719px) { .wordmark { padding-block: 7px; margin-block: -7px; } }
+.mast-sub, .plate-sub { display: none; }
+.mast-ear, .ear { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.mast-ear-l, .ear-l { grid-column: 2; grid-row: 1; align-items: flex-end; text-align: right; padding-bottom: 9px; }
+.mast-rule, .mast-top > .rule-double { grid-column: 1 / -1; grid-row: 2; }
+.mast-ear-r, .ear-r { grid-column: 1 / -1; grid-row: 3; flex-direction: row; justify-content: space-between; align-items: center; gap: var(--s-3); min-height: var(--tap); border-bottom: var(--rule-hair); }
+.mast-ear-tools { display: flex; align-items: center; gap: var(--s-4); flex: none; }
+.mast-nav { display: none; }
+
+@media (min-width: 1100px) {
+  .mast-top { grid-template-columns: 1fr auto 1fr; padding-top: 20px; }
+  .mast-plate, .plate { grid-column: 2; grid-row: 1; align-items: center; padding-bottom: 13px; }
+  .wordmark { font-size: 3.5rem; }
+  .mast-sub, .plate-sub { display: block; margin-top: 7px; }
+  .mast-ear-l, .ear-l { grid-column: 1; grid-row: 1; align-items: flex-start; text-align: left; padding-bottom: 13px; }
+  .mast-ear-r, .ear-r { grid-column: 3; grid-row: 1; flex-direction: column; justify-content: flex-end; align-items: flex-end; text-align: right; gap: 3px; min-height: 0; padding-bottom: 13px; border-bottom: 0; }
+  .mast-ear-tools { display: none; }
+  .mast-nav { display: flex; align-items: center; justify-content: space-between; gap: var(--s-5); height: 50px; border-bottom: var(--rule); }
+  .mast-links, .mast-nav > nav { display: flex; margin-left: calc(var(--s-4) * -1); }
+  :is(.mast-links, .mast-nav > nav) a {
+    position: relative; display: inline-flex; align-items: center; height: 50px; padding: 0 var(--s-4);
+    font-family: var(--f-label); font-weight: 600; font-size: calc(var(--t-label) + .0625rem); letter-spacing: .18em; text-transform: uppercase;
+    text-decoration: none; color: var(--ink-2);
+  }
+  :is(.mast-links, .mast-nav > nav) a:hover, :is(.mast-links, .mast-nav > nav) a[aria-current] { color: var(--ink); }
+  :is(.mast-links, .mast-nav > nav) a[aria-current]::after { content: ""; position: absolute; left: var(--s-4); right: var(--s-4); bottom: -1px; height: 3px; background-color: var(--ink); }
+  .mast-tools, .mast-nav > .right { display: flex; align-items: center; gap: 22px; }
+}
+
+/* -------------------------------------------------------------------------
+   Bottom bar (phones and tablets; fixed; hidden on wide screens). Five destinations and "+ Move".
+   <nav class="tabbar" aria-label="Sections">
+     <a href="#/" aria-current="page">Board</a>
+     <a href="#/scoresheet">Scoresheet</a>
+     <button class="tabbar-move" type="button"><span class="plus">+</span> Move</button>
+     <a href="#/material">Material</a>
+     <a href="#/book">Book</a>
+     <a href="#/analysis">Analysis</a>
+   </nav>
+   ------------------------------------------------------------------------- */
+.tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  display: grid; grid-template-columns: 1.05fr 1.6fr 88px 1.4fr 1.15fr 1.4fr; align-items: stretch;
+  padding: 0 6px env(safe-area-inset-bottom, 0px);
+  background-color: var(--paper); border-top: var(--rule);
+}
+.tabbar::before { content: ""; position: absolute; left: 0; right: 0; top: 2px; border-top: var(--rule); }
+/* while the bar is shown, a control that takes focus scrolls into view clear of it (WCAG 2.4.11) */
+html { scroll-padding-bottom: calc(var(--bottom-bar) + env(safe-area-inset-bottom, 0px) + 12px); }
+.tabbar a, .tabbar button {
+  position: relative; display: flex; align-items: center; justify-content: center; min-height: calc(var(--bottom-bar) - 2px); min-width: 0;
+  font-family: var(--f-label); font-weight: 600; font-size: var(--t-label-s); letter-spacing: .09em; text-transform: uppercase;
+  text-decoration: none; color: var(--ink-2); white-space: nowrap; overflow-wrap: normal;
+}
+.tabbar a { font-size: min(var(--t-label-s), 3.1vw); }   /* larger text: the label keeps to its column (3.1vw is 11px or more from 360px) */
+.tabbar a[aria-current] { color: var(--ink); }
+.tabbar a[aria-current]::after { content: ""; position: absolute; left: 18%; right: 18%; bottom: 11px; height: 2px; background-color: var(--ink); }
+.tabbar :is(.tabbar-move, .tab-move) { margin: 7px 2px; min-height: var(--tap); gap: 5px; background-color: var(--ink); color: var(--paper); font-size: .75rem; letter-spacing: .14em; }
+.tabbar :is(.tabbar-move, .tab-move):active { background-color: var(--spot); }
+.tabbar :focus-visible { outline-offset: -3px; }
+.tabbar :is(.tabbar-move, .tab-move):focus-visible { outline-offset: 2px; }
+@media (max-width: 359px) {
+  .tabbar { grid-template-columns: minmax(var(--tap), 1.1fr) 1.6fr 68px 1.3fr minmax(var(--tap), .9fr) 1.3fr; padding-left: 2px; padding-right: 2px; }
+  .tabbar a { font-size: min(.6875rem, 3.5vw); letter-spacing: .04em; }
+}
+@media (min-width: 720px) {
+  .tabbar { grid-template-columns: 1fr 1fr 132px 1fr 1fr 1fr; padding-left: var(--gut); padding-right: var(--gut); }
+  .tabbar a { font-size: var(--t-label); letter-spacing: .14em; }
+}
+@media (min-width: 1100px) {
+  .tabbar { display: none; }
+  html { scroll-padding-bottom: 0; }
+}
+
+/* The typographic plus of "+ Move" and "+ Candidate move": <span class="plus">+</span> */
+.plus { font-family: var(--f-figure); font-weight: 400; font-size: 1.6em; line-height: 1; letter-spacing: 0; margin-top: -.14em; }
+
+/* -------------------------------------------------------------------------
+   Sync status — quiet, one line, in the masthead ear. A <button> when a tap refreshes, else a <p>.
+   <button class="sync" type="button" data-state="fresh">
+     <i class="sync-mark"></i><span class="sync-text"><b>Bank data</b> from 6:12 AM</span>
+   </button>
+   data-state:
+     fresh      solid square        "Bank data from 6:12 AM"
+     aging      half square         "Bank data from yesterday, 9:40 PM"
+     old        open square         "Bank data 2 days old"
+     reconnect  open square, spot   "Reconnect the bank"            (underlined: it is the action)
+     syncing    blinking square     "Reading the bank…"
+     sample     hatched square      "Sample data"
+   ------------------------------------------------------------------------- */
+.sync {
+  display: inline-flex; align-items: center; gap: 7px; min-height: var(--tap); max-width: 100%;
+  font-family: var(--f-label); font-weight: 600; font-size: var(--t-label); line-height: 1.2; letter-spacing: .13em; text-transform: uppercase;
+  color: var(--ink-2); text-align: left;
+}
+.sync b { font-weight: 600; color: var(--ink); }
+.sync-text { min-width: 0; }
+.sync-mark { flex: none; width: 7px; height: 7px; border: 1px solid var(--ink); background-color: var(--ink); }
+.sync[data-state="aging"] .sync-mark { background: linear-gradient(90deg, var(--ink) 50%, transparent 50%); }
+.sync[data-state="old"] .sync-mark,
+.sync[data-state="reconnect"] .sync-mark { background: transparent; }
+.sync[data-state="old"] .sync-text b { color: var(--ink); }
+.sync[data-state="reconnect"] { color: var(--spot); }
+.sync[data-state="reconnect"] b { color: var(--spot); }
+.sync[data-state="reconnect"] .sync-mark { border-color: var(--spot); }
+.sync[data-state="reconnect"] .sync-text { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.sync[data-state="syncing"] .sync-mark { animation: sync-blink 1.1s steps(2, jump-none) infinite; }
+.sync[data-state="sample"] .sync-mark,
+.hatch-mark { background: repeating-linear-gradient(135deg, var(--ink) 0 1px, transparent 1px 3px); }
+@keyframes sync-blink { from { opacity: 1; } to { opacity: .15; } }
+@media (min-width: 1100px) {
+  .mast-ear-r .sync { min-height: 0; }
+  button.sync { position: relative; }
+  button.sync::after { content: ""; position: absolute; inset: -12px -6px; }
+}
+/* A hatched square, for "sample" and "scenario" labels: <i class="hatch-mark"></i> */
+.hatch-mark { display: inline-block; flex: none; width: 9px; height: 9px; margin-right: 7px; border: 1px solid var(--ink); vertical-align: -.5px; }
+
+/* =========================================================================
+   2  SECTION HEAD — label left, note or action right
+   =========================================================================
+   <div class="sec-head">
+     <h2 class="lab"><b>Today</b><i class="sep"></i>Round 11</h2>
+     <span class="lab">Wed, Nov 11</span>            (or a .cap, a .btn-link, a .tt mark)
+   </div>
+   When the two do not fit on one line the right-hand item drops to a second line, still set to the right.
+   .sec-head-wrap lets a long label itself break.
+   ------------------------------------------------------------------------- */
+.sec-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px var(--s-4); padding-top: 11px; }
+/* a label keeps its one line while it fits the column; only text longer than the whole column (a bank name
+   with no spaces) breaks, and it breaks inside the column instead of widening the page */
+.sec-head > .lab { flex-shrink: 0; max-width: 100%; }
+.sec-head > :first-child { min-width: 0; }
+.sec-head > :last-child:not(:first-child) { margin-left: auto; }
+.sec-head > .cap { flex: 1 1 9em; text-align: right; }
+.sec-head :is(.btn-link, .linkbtn) { margin-block: -8px; }
+.sec-head-wrap { flex-wrap: wrap; }
+.sec-head-wrap > .lab { white-space: normal; }
+@media (min-width: 1100px) {
+  .sec-head { padding-top: 14px; }
+}
+
+/* =========================================================================
+   3  BUTTONS
+   =========================================================================
+   <button class="btn" type="button">Play it</button>                 outline (the default)
+   <button class="btn btn-solid" type="button">Decline</button>       solid: the one primary action
+   <button class="btn btn-s">…</button>                               small (36px box, 44px touch area)
+   <button class="btn btn-fill">…</button>                            full width on phones, natural on wider screens
+   <button class="btn btn-block">…</button>                           always full width
+   <button class="btn-link" type="button">Refresh</button>            link style: underlined label (also on <a>)
+   <button class="btn btn-icon" aria-label="Close"><svg class="ev">…</svg></button>   icon only, 44px square
+   States: [disabled] or [aria-disabled="true"]; :active; [aria-pressed="true"] (a toggle that is on).
+   <a class="btn" href="…"> works the same.
+
+   Button group (joined):   <div class="btn-group"> <button class="btn">…</button> <button class="btn">…</button> </div>
+   Action row (two equal buttons on phones, natural width from tablets):
+                            <div class="btn-row"> <button class="btn">Play it</button> <button class="btn btn-solid">Decline</button> </div>
+   ------------------------------------------------------------------------- */
+.btn {
+  position: relative; display: inline-flex; align-items: center; justify-content: center; gap: .5em;
+  min-height: var(--tap); padding: 0 20px; border: 1px solid var(--ink);
+  font-family: var(--f-label); font-weight: 600; font-size: calc(var(--t-label) + .0625rem); line-height: 1; letter-spacing: var(--track-label); text-transform: uppercase;
+  font-style: normal; text-decoration: none; white-space: nowrap; color: var(--ink); background-color: transparent;
+  transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.btn-solid, .btn.solid { background-color: var(--ink); color: var(--paper); }
+@media (hover: hover) {
+  .btn:hover { background-color: var(--ink); color: var(--paper); }
+  .btn-solid:hover, .btn.solid:hover { background-color: var(--spot); border-color: var(--spot); color: var(--paper); }
+}
+.btn:active { background-color: var(--paper-3); color: var(--ink); }
+.btn-solid:active, .btn.solid:active { background-color: var(--spot); border-color: var(--spot); color: var(--paper); }
+.btn[aria-pressed="true"] { background-color: var(--ink); color: var(--paper); }
+.btn[disabled], .btn[aria-disabled="true"] { border-color: var(--hair); color: var(--ink-3); background-color: transparent; }
+:is(.btn-solid, .btn.solid):is([disabled], [aria-disabled="true"]) { background-color: var(--paper-2); border-color: var(--hair); color: var(--ink-3); }
+.btn-s { min-height: 36px; padding: 0 14px; font-size: var(--t-label); }
+.btn-s::after { content: ""; position: absolute; inset: -5px 0; }
+@media (max-width: 719px) { .btn-s { min-height: var(--tap); } }   /* a phone's touch target is 44px both ways */
+.btn-block { display: flex; width: 100%; }
+.btn-icon { width: var(--tap); padding: 0; font-size: 1.125rem; letter-spacing: 0; }
+.btn-icon.btn-s { width: 36px; font-size: .9375rem; }
+.btn-icon.btn-s::after { inset: -5px; }
+@media (max-width: 719px) {
+  .btn-fill { display: flex; width: 100%; }
+}
+
+.btn-link, .linkbtn {
+  position: relative; display: inline-flex; align-items: center; min-height: 28px;
+  font-family: var(--f-label); font-weight: 600; font-size: var(--t-label); line-height: 1.2; letter-spacing: var(--track-label); text-transform: uppercase; font-style: normal;
+  color: var(--ink); white-space: nowrap;
+  text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px;
+}
+:is(.btn-link, .linkbtn)::after { content: ""; position: absolute; inset: -8px -6px; }
+@media (hover: hover) {
+  :is(.btn-link, .linkbtn):hover { text-decoration-thickness: 2px; }
+}
+:is(.btn-link, .linkbtn):is([disabled], [aria-disabled="true"]) { color: var(--ink-3); text-decoration-color: var(--hair); }
+:is(.btn-link, .linkbtn):is([aria-pressed="true"], [aria-current]) { text-decoration-thickness: 2px; }
+.btn-link.spot { color: var(--spot); }
+
+.btn-group { display: inline-flex; }
+.btn-group > .btn + .btn { margin-left: -1px; }
+.btn-group > .btn:hover, .btn-group > .btn:focus-visible, .btn-group > .btn[aria-pressed="true"] { z-index: 1; }
+
+.btn-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.btn-row > .btn { min-width: 0; padding: 0 var(--s-2); }
+.btn-row > :only-child { grid-column: 1 / -1; }
+@media (max-width: 359px) {
+  .btn-row > .btn { font-size: var(--t-label); letter-spacing: .1em; }
+}
+.btn-row + .cap { margin-top: 9px; }
+@media (min-width: 720px) {
+  .btn-row { grid-template-columns: repeat(2, auto); justify-content: start; }
+  .btn-row > .btn { padding: 0 20px; }
+  .btn-row > :only-child { grid-column: auto; }
+  .btn-row-end { justify-content: end; }
+}
+
+/* =========================================================================
+   4  CHOICES
+   =========================================================================
+   Chips — small rectangular choices. Single select uses radios, multi select uses checkboxes;
+   a <button class="chip" aria-pressed="true"> is also styled.
+   <div class="chips" role="group" aria-label="Category">
+     <label class="chip"><input type="radio" name="cat" value="cafe" checked><span>Cafe</span></label>
+     <label class="chip"><input type="radio" name="cat" value="food"><span>Groceries</span></label>
+   </div>
+   ------------------------------------------------------------------------- */
+.chips { display: flex; flex-wrap: wrap; gap: 10px 6px; }
+.chip {
+  position: relative; display: inline-flex; align-items: center; justify-content: center; min-height: 34px; padding: 0 12px;
+  border: 1px solid var(--hair);
+  font-family: var(--f-label); font-weight: 600; font-size: var(--t-label); line-height: 1; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ink-2); background-color: transparent; white-space: nowrap; cursor: pointer; user-select: none; -webkit-user-select: none;
+  transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.chip::after { content: ""; position: absolute; inset: -5px 0; }
+@media (max-width: 719px) { .chip::after { inset: -6px -3px; } .chips { row-gap: 12px; } }   /* 34px drawn, 46px to press; 3px is half the gap */
+.chip input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+@media (hover: hover) {
+  .chip:hover { border-color: var(--ink); color: var(--ink); }
+}
+.chip:has(input:checked), .chip[aria-pressed="true"] { border-color: var(--ink); background-color: var(--ink); color: var(--paper); }
+.chip:has(input:focus-visible) { outline: 2px solid var(--spot); outline-offset: 3px; }
+.chip:has(input:disabled), .chip[disabled] { color: var(--ink-3); border-color: var(--hair); border-style: dashed; cursor: default; }
+
+/* -------------------------------------------------------------------------
+   Segmented control — one of a few, always visible.
+   <div class="seg" role="radiogroup" aria-label="Day type">
+     <label class="seg-opt"><input type="radio" name="type" value="work" checked><span>Workday</span></label>
+     <label class="seg-opt"><input type="radio" name="type" value="off"><span>Day off</span></label>
+   </div>
+   .seg-fig sets the options as figures (0 · 1 · 2).  .seg-block stretches to the full width.
+   ------------------------------------------------------------------------- */
+.seg { display: inline-grid; grid-auto-flow: column; grid-auto-columns: minmax(var(--tap), 1fr); border: 1px solid var(--ink); }
+.seg-block { display: grid; }
+.seg-opt {
+  position: relative; display: flex; align-items: center; justify-content: center; min-height: var(--tap); padding: 0 14px;
+  font-family: var(--f-label); font-weight: 600; font-size: var(--t-label); line-height: 1; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ink-2); white-space: nowrap; cursor: pointer; user-select: none; -webkit-user-select: none;
+  transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.seg-opt + .seg-opt { border-left: 1px solid var(--ink); }
+.seg-opt input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+@media (hover: hover) {
+  .seg-opt:hover { color: var(--ink); background-color: var(--paper-2); }
+}
+.seg-opt:has(input:checked), .seg-opt[aria-pressed="true"], .seg-opt[aria-checked="true"] { background-color: var(--ink); color: var(--paper); }
+.seg-opt:has(input:focus-visible) { outline: 2px solid var(--spot); outline-offset: 3px; z-index: 1; }
+.seg-opt:has(input:disabled) { color: var(--ink-3); cursor: default; }
+.seg-fig .seg-opt { font-family: var(--f-figure); font-weight: 400; font-size: var(--t-fig); letter-spacing: 0; text-transform: none; padding: 0 var(--s-2); }
+
+/* -------------------------------------------------------------------------
+   Switch — a square two-state control (no pill). Off: open track, open knob. On: inked track.
+   <label class="switch">
+     <span class="switch-text">Count pending charges</span>
+     <input type="checkbox" role="switch" checked>
+     <span class="switch-track" aria-hidden="true"></span>
+   </label>
+   .switch-block puts the text left and the track at the far right (a settings row).
+   ------------------------------------------------------------------------- */
+.switch { position: relative; display: inline-flex; align-items: center; gap: var(--s-3); min-height: var(--tap); cursor: pointer; }
+.switch-block { display: flex; justify-content: space-between; }
+.switch input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.switch-track { position: relative; flex: none; width: 40px; height: 20px; border: 1px solid var(--ink); background-color: transparent; transition: background-color var(--dur-fast) var(--ease); }
+.switch-track::after {
+  content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border: 1px solid var(--ink); background-color: var(--paper);
+  transition: transform var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease);
+}
+.switch input:checked ~ .switch-track { background-color: var(--ink); }
+.switch input:checked ~ .switch-track::after { transform: translateX(20px); border-color: var(--paper); }
+.switch:has(input:focus-visible) .switch-track { outline: 2px solid var(--spot); outline-offset: 3px; }
+.switch:has(input:disabled) { cursor: default; color: var(--ink-3); }
+.switch:has(input:disabled) .switch-track, .switch:has(input:disabled) .switch-track::after { border-color: var(--hair); }
+
+/* -------------------------------------------------------------------------
+   Checkbox — a square box with a drawn cross.
+   <label class="check"><input type="checkbox"><span class="check-box" aria-hidden="true"></span><span>Planned</span></label>
+   ------------------------------------------------------------------------- */
+.check { position: relative; display: inline-flex; align-items: center; gap: 10px; min-height: var(--tap); cursor: pointer; }
+.check input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.check-box { position: relative; flex: none; width: 16px; height: 16px; border: 1px solid var(--ink); }
+.check-box::before, .check-box::after { content: ""; position: absolute; left: 50%; top: 50%; width: 18px; height: 1.5px; margin: -.75px 0 0 -9px; background-color: var(--ink); opacity: 0; }
+.check-box::before { transform: rotate(45deg); }
+.check-box::after { transform: rotate(-45deg); }
+.check input:checked ~ .check-box::before, .check input:checked ~ .check-box::after { opacity: 1; }
+.check:has(input:focus-visible) .check-box { outline: 2px solid var(--spot); outline-offset: 3px; }
+
+/* -------------------------------------------------------------------------
+   Stepper — for small whole numbers (planned stops: 0, 1, 2).
+   <div class="stepper" role="group" aria-label="Planned stops">
+     <button class="stepper-btn" type="button" aria-label="One fewer">−</button>
+     <output class="stepper-val">1</output>
+     <button class="stepper-btn" type="button" aria-label="One more">+</button>
+   </div>
+   ------------------------------------------------------------------------- */
+.stepper { display: inline-grid; grid-template-columns: var(--tap) minmax(52px, auto) var(--tap); align-items: stretch; border: 1px solid var(--ink); }
+.stepper-btn { display: flex; align-items: center; justify-content: center; min-height: calc(var(--tap) - 2px); font-family: var(--f-figure); font-size: 1.5rem; line-height: 1; color: var(--ink); }
+.stepper-btn:active { background-color: var(--paper-3); }
+@media (hover: hover) {
+  .stepper-btn:hover { background-color: var(--paper-2); }
+}
+.stepper-btn[disabled] { color: var(--hair); background-color: transparent; }
+.stepper-btn:focus-visible { outline-offset: -4px; }
+.stepper-val { display: flex; align-items: center; justify-content: center; padding: 0 var(--s-3); border-left: 1px solid var(--ink); border-right: 1px solid var(--ink); font-family: var(--f-figure); font-size: var(--t-fig-l); line-height: 1; }
+
+/* =========================================================================
+   5  FORMS
+   =========================================================================
+   <label class="field">
+     <span class="field-label lab">Name on the board</span>
+     <input class="input" type="text" name="name">
+     <span class="field-help cap">Shown in the game title.</span>
+     <span class="field-error">Enter a name.</span>             (only when invalid)
+   </label>
+   Invalid: add .is-invalid to .field and aria-invalid="true" to the control.
+   Controls:
+     <input class="input" type="text|number|date|email|…">     .input-fig sets the value in the figure face
+     <span class="select"><select>…</select></span>
+     <textarea class="textarea" rows="3"></textarea>
+   Two fields in a line (place and amount):
+     <div class="field-row"> <label class="field">…</label> <label class="field field-s">…</label> </div>
+   A set of choices with a label:
+     <fieldset class="field"> <legend class="field-label lab">Day type</legend> <div class="seg">…</div> </fieldset>
+   ------------------------------------------------------------------------- */
+.field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.field-label { display: block; }
+.field-help { margin-top: 1px; }
+.field-error { font-style: italic; font-size: var(--t-cap); line-height: 1.35; color: var(--spot); }
+.field-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 112px); gap: var(--s-3); align-items: start; }
+.field-row-even { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.form { display: flex; flex-direction: column; gap: var(--s-5); }
+
+.input, .select select, .textarea {
+  display: block; width: 100%; min-height: var(--tap); padding: 7px 0 7px;
+  border: 0; border-bottom: var(--rule); border-radius: 0; background-color: transparent; color: var(--ink);
+  font-family: var(--f-text); font-size: var(--t-lede); line-height: 1.3; font-variant-numeric: lining-nums tabular-nums;
+  -webkit-appearance: none; appearance: none;
+}
+.input::placeholder, .textarea::placeholder, .money-input::placeholder, .tokenbox::placeholder { color: var(--ink-3); font-style: italic; opacity: 1; }
+.input:focus-visible, .select select:focus-visible, .textarea:focus-visible, .money-input:focus-visible, .tokenbox:focus-visible { outline-offset: 4px; }
+.input:disabled, .select select:disabled, .textarea:disabled { color: var(--ink-3); border-bottom-color: var(--hair); }
+.input-fig, .input[type="number"] { font-family: var(--f-figure); font-size: 1.375rem; line-height: 1.2; }
+.input[type="number"] { -moz-appearance: textfield; }
+.input[type="number"]::-webkit-inner-spin-button, .input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.input[type="date"] { font-family: var(--f-figure); font-size: 1.3125rem; line-height: 1.2; min-width: 0; }
+.input[type="date"]::-webkit-date-and-time-value { text-align: left; }
+.select { position: relative; display: block; }
+.select select { padding-right: 28px; cursor: pointer; }
+.select::after { content: ""; position: absolute; right: 5px; top: 50%; width: 7px; height: 7px; margin-top: -6px; border-right: 1.5px solid var(--ink); border-bottom: 1.5px solid var(--ink); transform: rotate(45deg); pointer-events: none; }
+.textarea { min-height: 88px; padding: 9px 11px; border: var(--rule-hair); border-bottom: var(--rule); line-height: 1.45; resize: vertical; }
+.is-invalid .input, .is-invalid .select select, .is-invalid .textarea, .is-invalid .tokenbox,
+.input[aria-invalid="true"], .textarea[aria-invalid="true"], .tokenbox[aria-invalid="true"] { border-color: var(--spot); }
+.is-invalid .field-label { color: var(--spot); }
+
+/* -------------------------------------------------------------------------
+   Money input — the large amount on the candidate-move sheet.
+   <label class="money">
+     <span class="vh">Amount in dollars</span>
+     <span class="money-cur" aria-hidden="true">$</span>
+     <input class="money-input" type="text" inputmode="decimal" placeholder="0.00" autocomplete="off">
+   </label>
+   ------------------------------------------------------------------------- */
+.money { display: flex; align-items: baseline; gap: .08em; border-bottom: var(--rule); font-family: var(--f-display); font-size: 2.75rem; line-height: 1; font-variant-numeric: lining-nums; }
+.money-cur { color: var(--ink-2); }
+.money-input { flex: 1; min-width: 0; width: 100%; min-height: 60px; padding: 4px 0 6px; border: 0; background-color: transparent; color: var(--ink); font: inherit; -webkit-appearance: none; appearance: none; }
+.money:focus-within { border-bottom-color: var(--spot); }
+.money-input:focus-visible { outline: none; }
+.money:has(.money-input:focus-visible) { outline: 2px solid var(--spot); outline-offset: 4px; }
+.is-invalid .money { border-bottom-color: var(--spot); }
+
+/* -------------------------------------------------------------------------
+   Token paste box — monospace, wraps anywhere; for the bank's setup token.
+   <textarea class="tokenbox" rows="4" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="Paste the setup token here"></textarea>
+   ------------------------------------------------------------------------- */
+.tokenbox {
+  display: block; width: 100%; min-height: 112px; padding: 12px 13px; border: 1px solid var(--ink); background-color: var(--paper-2); color: var(--ink);
+  font-family: var(--f-mono); font-size: .8125rem; line-height: 1.55; letter-spacing: 0; word-break: break-all; overflow-wrap: anywhere; white-space: pre-wrap; resize: vertical;
+  -webkit-appearance: none; appearance: none;
+}
+.tokenbox::placeholder { font-family: var(--f-text); font-size: var(--t-body); }
+
+/* =========================================================================
+   6  ROWS AND TALLIES
+   =========================================================================
+   Label / value rows with hairlines.
+   <ul class="rows">
+     <li class="row">
+       <span class="row-label">Everyday checking <em class="row-note">Northfield Bank · from 6:12 AM</em></span>
+       <span class="row-value fig">$1,912.40</span>
+       <span class="row-action"><button class="btn-link">Edit</button></span>      (optional)
+     </li>
+   </ul>
+   A whole row may be a link or button: <li><a class="row" href="…">…</a></li>
+   Grouped rows:
+   <section class="rows-group">
+     <h3 class="rows-title lab"><b>Cash</b> <span class="rows-title-note">2 accounts</span></h3>
+     <ul class="rows">…</ul>
+     <p class="row row-total"><span class="row-label lab"><b>Total cash</b></span><span class="row-value fig">$2,312.40</span></p>
+   </section>
+   .rows-plain drops the top ink rule (rows directly under a section rule). Space groups apart with .stack.gap-5.
+   ------------------------------------------------------------------------- */
+.rows { border-top: var(--rule); }
+.rows-plain { border-top: 0; }
+.rows > li { border-bottom: var(--rule-hair); }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; column-gap: var(--s-3); padding: 9px 0 8px; min-height: var(--tap); width: 100%; text-align: left; text-decoration: none; color: inherit; }
+.row:has(> .row-action) { grid-template-columns: minmax(0, 1fr) auto auto; }
+.row-label { min-width: 0; font-size: .96875rem; line-height: 1.35; }
+.row-note { display: block; margin-top: 1px; font-style: italic; font-size: .8125rem; line-height: 1.3; color: var(--ink-2); }
+.row-value { font-size: var(--t-fig-s); line-height: 1.2; text-align: right; white-space: nowrap; }
+.row-value.fig { font-size: 1.125rem; }
+.row-action { display: flex; align-items: center; justify-content: flex-end; min-width: var(--tap); align-self: center; }
+a.row:hover .row-label, button.row:hover .row-label { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .2em; }
+.rows-title { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3); padding: 0 0 7px; }
+.rows-title-note { color: var(--ink-3); }
+.row-total { border-top: var(--rule); margin-top: -1px; }
+.row-total .row-value.fig { font-size: var(--t-fig); }
+
+/* -------------------------------------------------------------------------
+   Tally — label over figure, three across (two or four also work).
+   <div class="tally">
+     <div class="tally-item"><span class="lab">Earned</span><span class="fig est">$184.20</span><span class="cap">accruing since Oct 30</span></div>
+     <div class="tally-item">…</div> <div class="tally-item">…</div>
+   </div>
+   .tally-ruled  on wide screens: equal columns divided by hairlines under an ink rule (the hero's composition line)
+   .tally-s      smaller figures (20px)
+   <small> inside the figure is a qualifier: $9.85 <small>of $16.20</small>
+   ------------------------------------------------------------------------- */
+.tally { display: grid; grid-auto-flow: column; grid-auto-columns: auto; justify-content: space-between; column-gap: 10px; padding-top: var(--s-2); border-top: var(--rule-hair); }
+.tally-item { min-width: 0; }
+.tally .lab { display: block; font-size: var(--t-label-s); letter-spacing: .13em; white-space: nowrap; }
+.tally .fig { display: block; width: fit-content; margin-top: 3px; font-size: var(--t-fig-l); line-height: 1.1; white-space: nowrap; }
+.tally .cap { display: block; font-size: .75rem; line-height: 1.25; }
+.tally-s .fig { font-size: var(--t-fig); line-height: 1.15; }
+.tally-plain { border-top: 0; padding-top: 0; }
+@media (max-width: 359px) {
+  .tally .fig { font-size: 1.3125rem; }
+  .tally-s .fig { font-size: 1.125rem; }
+  .tally .lab { font-size: .6875rem; letter-spacing: .1em; }
+}
+@media (min-width: 720px) {
+  .tally .lab { font-size: var(--t-label); letter-spacing: var(--track-label); }
+  .tally .cap { font-size: .8125rem; }
+}
+@media (min-width: 1100px) {
+  .tally .fig { font-size: calc(var(--t-fig-l) * 1.2); }
+  .tally-s .fig { font-size: calc(var(--t-fig) * 1.15); }
+  .tally-ruled { grid-auto-columns: minmax(0, 1fr); justify-content: stretch; column-gap: 0; padding-top: 0; border-top: 0; }
+  .tally-ruled > .tally-item { padding: 10px 0 0 18px; border-left: var(--rule-hair); border-top: var(--rule); }
+  .tally-ruled > .tally-item:first-child { padding-left: 0; border-left: 0; }
+  .tally-ruled .fig { font-size: calc(var(--t-fig) * 1.35); }
+}
+
+/* =========================================================================
+   7  HERO FRAME AND SPLIT FRAME — the live net worth and its one line of composition
+   =========================================================================
+   <section class="hero">
+     <div class="sec-head"><h2 class="lab"><b>Net worth</b><i class="sep"></i><span class="spot">Live</span></h2><p class="cap">…</p></div>
+     <button class="hero-fig est" type="button" aria-label="…">        the ticker custom element goes here; static form:
+       <span class="approx">≈</span>$2,417.86<span class="hero-mini">12</span>
+     </button>
+     <div class="tally tally-ruled tally-s"> at the bank · pay earned since payday · bills used since last charged </div>
+   </section>
+   .hero-fig.est is the live number (italic); without .est it is "at the bank" (roman, no extra digits).
+   With the ticker element:  <button class="hero-fig" type="button" …><nw-ticker data-island approx …></nw-ticker></button>
+
+   Size. .hero is a size container and the figure is scaled to fit it: font-size = container width / --hero-ems,
+   never above --hero-max (164px). --hero-ems is the width of the whole figure in ems; the default 5.05 fits
+   "≈$2,417.86 12". Set it on .hero-fig for longer or shorter figures (style="--hero-ems:6.2"):
+     ems ≈ 0.53 per digit + 0.2 per comma or point + 0.65 for the dollar sign + 0.6 for a minus
+           + 0.85 when live (the ≈ sign and the two small digits)        e.g. ≈$123,456.78 12 → 6.2
+   ------------------------------------------------------------------------- */
+.hero { container: hero / inline-size; }
+.hero-fig {
+  display: flex; align-items: baseline; width: 100%; margin: 4px 0 2px -.03em;
+  font-family: var(--f-display); font-weight: 400; font-size: var(--t-hero); line-height: 1; white-space: nowrap; text-align: left; color: var(--ink);
+  font-variant-numeric: lining-nums;
+}
+.hero-fig .approx { font-size: .5em; position: relative; top: -.36em; margin-right: .06em; }
+.hero-mini { font-size: .3em; color: var(--spot); margin-left: .14em; }
+.hero .tally { margin-top: var(--s-2); }
+@media (min-width: 720px) {
+  .hero-fig { font-size: min(15.2vw, 9.375rem); }
+}
+@media (min-width: 1100px) {
+  .hero-fig { font-size: min(11.4vw, 10.25rem); margin: 10px 0 6px -.03em; }
+  .hero .tally { margin-top: var(--s-4); }
+}
+@supports (width: 1cqi) {
+  .hero-fig { font-size: min(calc(100cqi / var(--hero-ems, 5.05)), var(--hero-max, 10.25rem)); }
+}
+
+/* -------------------------------------------------------------------------
+   Split frame — the labels over a split bar and the note under it. The bar itself is the <nw-split> element.
+   <figure class="split">
+     <figcaption class="split-labs">
+       <span><span class="lab"><b>Assets</b></span><span class="fig">$42,310.55</span></span>
+       <span><span class="fig">$39,874.20</span><span class="lab"><b>Liabilities</b></span></span>
+     </figcaption>
+     <nw-split data-island a="4231055" b="3987420" mark="centre"></nw-split>
+     <p class="cap split-note">Net worth is the sliver of white past the centre mark.</p>          (optional)
+   </figure>
+   Labels alone work too:  <figcaption class="split-labs"><span class="lab"><b>Kept</b></span><span class="lab"><b>Spent</b></span></figcaption>
+   The left side belongs to the white part of the bar, the right side to the black part.
+   ------------------------------------------------------------------------- */
+.split { min-width: 0; }
+.split-labs { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px var(--s-3); margin-bottom: 4px; }
+.split-labs > span { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; min-width: 0; white-space: nowrap; }
+.split-labs > span:last-child { margin-left: auto; }   /* when the labels wrap, the second keeps to the right */
+.split-labs .fig { font-size: 1.1875rem; line-height: 1.15; }
+.split-note { margin-top: 6px; }
+@media (max-width: 359px) {
+  .split-labs .fig { font-size: 1rem; }
+  .split-labs > span { gap: 0 4px; }
+}
+@media (min-width: 1100px) {
+  .split-labs .fig { font-size: 1.375rem; }
+  .split-note { margin-top: var(--s-2); }
+}
+@media (min-width: 1100px) and (max-width: 1299px) {
+  .split-labs .fig { font-size: 1.125rem; }
+}
+
+/* =========================================================================
+   8  MOVES LIST
+   =========================================================================
+   <ol class="moves" aria-label="Today's moves">
+     <li class="move" data-key="t1">
+       <span class="move-n">1.</span>
+       <span class="move-m">Corner Cup — small coffee <em class="move-note">Principle 3: a small coffee if you need a seat.</em></span>
+       <span class="move-a">4.75</span>
+       <span class="move-s">!?</span>
+     </li>
+   </ol>
+   Parts: .move-n number · .move-m merchant (with .move-note, an italic line under it) · .move-a amount · .move-s symbol
+          (.move-s holds a .sym text mark or an svg.ev; leave it empty for a bare move)
+   States on .move:
+     (none)            a bare move
+     .is-declined      not played: the amount is set in parentheses (the stylesheet adds them)
+     .is-provisional   tapped in before the bank reported it: italic, with the approximately sign
+     .is-pending       the bank reports it as pending: italic amount
+     .is-blank         the empty next-move row (number only; aria-hidden)
+   Inside .move-note:
+     <span class="move-tag">Pending</span>                      a small caps tag
+     <button class="move-review" type="button">Review</button>  the quiet "review" marker
+   A row that opens a sheet: <li><button class="move" type="button">…spans…</button></li>
+   .moves-plain drops the top ink rule.
+   ------------------------------------------------------------------------- */
+.moves { border-top: var(--rule); }
+.moves-plain { border-top: 0; }
+.moves > li { border-bottom: var(--rule-hair); }
+.move { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto 30px; align-items: baseline; column-gap: 6px; min-height: var(--tap); align-content: center; padding: 8px 0 7px; width: 100%; text-align: left; color: inherit; text-decoration: none; }
+.move-n { font-family: var(--f-figure); font-size: 1.125rem; color: var(--ink-2); }
+.move-m { min-width: 0; font-size: .96875rem; line-height: 1.35; overflow-wrap: anywhere; }
+.move-note { display: block; margin-top: 1px; font-style: italic; font-size: .8125rem; line-height: 1.3; color: var(--ink-2); }
+.move-a { font-family: var(--f-figure); font-size: 1.125rem; text-align: right; white-space: nowrap; font-variant-numeric: lining-nums tabular-nums; }
+.move-s { font-family: var(--f-figure); font-weight: 700; font-size: 1.1875rem; line-height: 1; text-align: left; white-space: nowrap; }
+.move-s .ev { font-size: .9375rem; stroke-width: 1.9; }
+.move.is-declined .move-a::before { content: "("; }
+.move.is-declined .move-a::after { content: ")"; }
+.move.is-declined .move-a { color: var(--ink-2); }
+.move.is-provisional .move-a, .move.is-pending .move-a { font-style: italic; }
+.move.is-provisional .move-a::before { content: "\2248\00A0"; font-style: normal; color: var(--spot); }
+.move.is-provisional .move-m { font-style: italic; }
+.move.is-blank { min-height: 38px; }
+.move.is-blank .move-n { color: var(--ink-3); }
+.move-tag { font-family: var(--f-label); font-weight: 600; font-size: .6875rem; font-style: normal; letter-spacing: .13em; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; }
+.move-tag::before { content: "\00B7\00A0"; }
+.move-tag:first-child::before { content: none; }
+.move-review {
+  position: relative; font-family: var(--f-label); font-weight: 600; font-size: .6875rem; font-style: normal; letter-spacing: .13em; text-transform: uppercase; color: var(--ink-3); white-space: nowrap;
+  text-decoration: underline dotted; text-decoration-thickness: 1px; text-underline-offset: 3px;
+}
+.move-review::before { content: ""; display: inline-block; width: 5px; height: 5px; margin-right: 5px; border: 1px solid currentColor; transform: rotate(45deg) translateY(-1px); }
+.move-review::after { content: ""; position: absolute; inset: -14px -8px; }
+@media (hover: hover) {
+  .move-review:hover { color: var(--ink); }
+  button.move:hover .move-m, a.move:hover .move-m { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .2em; }
+}
+/* A date line between groups of moves on the Scoresheet: <li class="moves-day"><span class="lab"><b>Tue, Nov 10</b><i class="sep"></i>Round 10</span><span class="fig est">½</span></li> */
+.moves-day { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3); padding: 14px 0 6px; border-bottom: var(--rule) !important; }
+.moves-day .fig { font-size: var(--t-fig); line-height: 1; }
+
+/* =========================================================================
+   9  CROSSTABLE
+   =========================================================================
+   <section class="xt">
+     <div class="xt-head">
+       <div class="sec-head"><h2 class="lab"><b>Crosstable</b><i class="sep"></i>November 2026<i class="sep"></i>You v. Habit</h2></div>
+       <p class="xt-score">
+         <span class="xt-score-item"><span class="lab">Score</span><span class="fig fig-xl" data-cover-keep>6½/10</span></span>
+         <span class="xt-score-item"><span class="lab">With Black</span><span class="fig" data-cover-keep>4½/7</span></span>
+         <span class="xt-score-item"><span class="lab">With White</span><span class="fig" data-cover-keep>2/3</span></span>
+         <span class="xt-score-item"><span class="lab">Kept</span><span class="fig">+$47.20</span></span>
+       </p>
+     </div>
+     <ol class="xt-grid has-weeks" style="--days:30" aria-label="November, round by round">
+       <li class="x x-legend" aria-hidden="true"><span class="x-rd">Rd</span><span class="x-day">Day</span><span class="x-res">Result</span><span class="x-edge">± $</span><span class="x-cum">Score</span></li>
+       <li class="x is-pad" aria-hidden="true"></li>                       (phones: blanks before the 1st so weeks run Monday to Sunday)
+       <li class="x is-off" data-key="2026-11-01">
+         <span class="x-rd">1</span><span class="x-day">S</span>
+         <span class="x-res">½<sup>!</sup></span>                          (1, ½, 0, *, –, ·, bye; <sup> holds annotation marks)
+         <span class="x-edge">+0.80</span>
+         <span class="x-cum">½</span>
+       </li>
+       …
+       <li class="x x-week" aria-label="Week 1: 3½ of 5, kept $33.87"><span class="x-rd">Wk</span><span class="x-day">1</span><span class="x-res">3½</span><span class="x-edge">+33.87</span></li>   (phones: after each Sunday)
+     </ol>
+     <p class="cap xt-note">…</p>
+   </section>
+   The scores carry data-cover-keep so that cover mode leaves them readable; the dollar figures are covered.
+   .xt is a size container: the grid is one row of --days columns (default 30) when .xt is at least 960px wide,
+   and rows of seven below that. .has-weeks adds an eighth column for the weekly subtotal; .is-pad and .x-week
+   cells are hidden in the single row. The grid must sit inside .xt.
+   States on .x:
+     .is-off          a day off (tinted)
+     .is-today        today: spot bar and spot round number; its result is the asterisk
+     .is-provisional  result in italic ("in pencil")
+     .is-live         the round in progress: write * as the result
+     .is-awaiting     the bank has not reported it: write – as the result
+     .is-future       not yet played: write · as the result
+     .is-bye          write bye as the result
+   ------------------------------------------------------------------------- */
+.xt { container: xt / inline-size; }
+.xt-score { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 22px; margin: 6px 0 10px; }
+.xt-score-item { display: inline-flex; align-items: baseline; white-space: nowrap; }
+.xt-score .fig { margin-left: 7px; font-size: 1.5rem; line-height: 1; }
+.xt-score .fig-xl { margin-left: 8px; font-size: calc(var(--t-fig-l) * 1.76); }
+.xt-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-top: var(--rule); border-left: var(--rule-hair); }
+.xt-grid.has-weeks { grid-template-columns: repeat(7, minmax(0, 1fr)) minmax(0, 1.25fr); }
+.x { position: relative; display: flex; flex-direction: column; align-items: center; min-width: 0; min-height: 80px; padding: 5px 0 6px; text-align: center; border-right: var(--rule-hair); border-bottom: var(--rule-hair); }
+.x-rd { font-family: var(--f-label); font-weight: 600; font-size: .6875rem; line-height: 14px; letter-spacing: .08em; color: var(--ink-3); }
+.x-day { font-family: var(--f-label); font-weight: 500; font-size: .6875rem; line-height: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.x-res { position: relative; height: 30px; font-family: var(--f-figure); font-size: 1.5625rem; line-height: 30px; font-variant-numeric: lining-nums; white-space: nowrap; }
+.x-res sup { position: absolute; left: 100%; top: -3px; margin-left: 1px; font-size: .75rem; font-weight: 700; font-style: normal; line-height: 1; vertical-align: baseline; white-space: nowrap; }
+.x-edge { font-size: .6875rem; line-height: 14px; letter-spacing: -.01em; color: var(--ink-2); white-space: nowrap; }
+.x-cum { display: none; }
+.x.is-off { background-color: var(--paper-2); }
+.x.is-provisional .x-res, .x.is-provisional .x-edge, .x.is-live .x-edge, .x.is-today .x-edge { font-style: italic; }
+.x.is-future .x-res { color: var(--ink-3); }   /* 3:1 or more on the cell and the day-off tint, both themes */
+.x.is-awaiting .x-res { color: var(--ink-3); }
+.x.is-bye .x-res { font-family: var(--f-text); font-style: italic; font-size: .8125rem; color: var(--ink-2); }
+.x.is-today::before { content: ""; position: absolute; left: -1px; right: -1px; top: -1px; height: 3px; background-color: var(--spot); }
+.x.is-today .x-rd { color: var(--spot); }
+.x.is-pad { background-color: transparent; }
+.x-legend { display: none; }
+.x-week { border-left: var(--rule); margin-left: -1px; }
+.x-week .x-rd, .x-week .x-day { color: var(--ink-2); }
+.x-week .x-res { font-size: 1.1875rem; letter-spacing: -.01em; }
+.x-week .x-res small { font-size: .62em; color: var(--ink-2); }
+.x-week .x-edge { color: var(--ink); }
+.xt-note { margin-top: 9px; }
+.xt-note :is(.sym, .mg) { font-size: 1.08em; }
+
+/* The crosstable answers to the width of .xt, not of the screen, so it also works inside a column. */
+@container xt (max-width: 340px) {
+  .x-res { font-size: 1.375rem; }
+  .x-edge { font-size: .6875rem; letter-spacing: -.03em; }
+  .x-week .x-res { font-size: 1rem; }
+}
+@container xt (min-width: 560px) {
+  .x-res { font-size: 1.75rem; }
+  .x-edge { font-size: .75rem; }
+  .x-week .x-res { font-size: 1.375rem; }
+}
+/* The month in one row of 30 columns only where a cell is wide enough for "+22.80" with air on both sides
+   (about 41px or more); narrower, the week-per-row form above is kept. */
+@container xt (min-width: 1300px) {
+  .xt-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-5); padding: 14px 0 12px; }
+  .xt-head .sec-head { padding: 0; }
+  .xt-score { margin: 0; gap: 4px 28px; justify-content: flex-end; }
+  .xt-grid, .xt-grid.has-weeks { grid-template-columns: 62px repeat(var(--days, 30), minmax(0, 1fr)); }
+  .x { min-height: 0; padding: 7px 0 0; }
+  .x.is-pad, .x-week { display: none; }
+  .x-rd { font-size: .6875rem; }
+  .x-res { height: 40px; margin-top: 2px; font-size: 1.5625rem; line-height: 40px; }
+  .x-res sup { top: 4px; font-size: .6875rem; }
+  .x-edge { font-size: .6875rem; line-height: 16px; letter-spacing: -.03em; margin-bottom: 5px; }
+  .x-cum { display: block; align-self: stretch; height: 25px; margin-top: auto; border-top: var(--rule-hair); font-family: var(--f-figure); font-size: .875rem; line-height: 24px; color: var(--ink-2); }
+  .x.is-bye .x-res { font-size: .71875rem; }
+  .x-legend { display: flex; align-items: flex-start; text-align: left; }
+  .x-legend > span { font-family: var(--f-label); font-weight: 600; font-size: .6875rem; letter-spacing: .14em; text-transform: uppercase; font-style: normal; color: var(--ink-3); }
+  .x-legend .x-cum { align-self: stretch; }
+}
+@container xt (min-width: 1200px) {
+  .xt-score { gap: 4px 36px; }
+  .xt-score .fig { font-size: calc(var(--t-fig-l) * 1.2); }
+  .xt-score .fig-xl { font-size: calc(var(--t-fig-l) * 2.24); }
+  .x-res { font-size: 2rem; }
+  .x-res sup { top: 1px; font-size: .8125rem; }
+  .x-edge { font-size: .6875rem; letter-spacing: -.01em; }
+  .x-cum { font-size: .9375rem; }
+  .x.is-bye .x-res { font-size: .78125rem; }
+  .x-legend .x-res, .x-legend .x-edge { font-size: .6875rem; letter-spacing: .14em; }
+}
+/* 30 columns: the annotation sits close to its result, so a half point with "?!" stays inside its rules */
+@container xt (min-width: 1300px) {
+  .x-res sup { margin-left: -1px; letter-spacing: -.06em; }
+}
+
+/* =========================================================================
+   10  CLOCK BLOCK — cash on hand
+   =========================================================================
+   <section class="clock">
+     <div class="sec-head">
+       <h2 class="lab"><b>Cash on hand</b><i class="sep"></i>the clock</h2>
+       <span class="tt lab"><svg class="ev" aria-hidden="true"><use href="#ev-tt"/></svg>Time trouble</span>      (only in time trouble)
+     </div>
+     <div class="clock-body">
+       <div>
+         <p class="clock-cash">$1,912.40</p>                       (.is-long from $10,000.00 up: a smaller size)
+         <p class="cap"><i class="bank-mark"></i>at the bank · from 6:12 AM</p>
+       </div>
+       <div class="clock-run">
+         <span class="fig est"><span class="approx">≈</span>12 days <small>on the clock</small></span>
+         <p class="cap">at ≈ $62.75 a day, your typical outflow</p>
+       </div>
+     </div>
+     <div class="runway" role="img" aria-label="Runway: 7 days or more">  <i class="is-on"></i> × 7  </div>
+     <div class="runway-labs"><span class="lab">Flag</span><span class="lab">7 days · out of time trouble</span></div>
+     <div class="tally tally-s clock-due">  due before payday · shortfall · payday  </div>
+     <div class="clock-reserve">
+       <p class="clock-reserve-row"><span class="lab">Reserve goal</span><span class="fig">$10,000</span><span class="cap">19% there</span></p>
+       <ol class="ticks">…</ol>                                                                                     (see Progress)
+     </div>
+   </section>
+   The clock is never red: runway segments are ink. Only the .tt mark takes the spot colour.
+   ------------------------------------------------------------------------- */
+.clock-body { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px 18px; margin-top: 2px; }
+.clock-body > * { min-width: 0; }
+.clock-cash { font-family: var(--f-display); font-size: 3.125rem; line-height: 1; white-space: nowrap; font-variant-numeric: lining-nums; }
+.clock-cash.is-long { font-size: 2.5rem; }
+.clock-body .cap { font-size: .78125rem; }
+.clock-run { flex: 1 1 auto; padding-bottom: 3px; }
+.clock-run .fig { display: block; font-size: var(--t-fig-l); line-height: 1.05; white-space: nowrap; }
+.clock-run .fig small { font-size: .62em; }
+.tt { display: inline-flex; align-items: center; gap: 6px; color: var(--spot); white-space: nowrap; }
+.tt .ev { font-size: .875rem; stroke-width: 2; }
+.runway { display: grid; grid-template-columns: repeat(7, 1fr); height: 9px; margin-top: 10px; border: 1px solid var(--ink); border-right: 0; }
+.runway i { border-right: 1px solid var(--ink); }
+.runway i.is-on { background-color: var(--ink); }
+.runway-labs { display: flex; justify-content: space-between; gap: var(--s-3); margin-top: 4px; }
+.runway-labs .lab { font-size: .6875rem; letter-spacing: .12em; color: var(--ink-3); }
+.clock-due { margin-top: var(--s-3); }
+.clock-due > .tally-item:last-child:not(:first-child) { text-align: right; }
+.clock-due > .tally-item:last-child:not(:first-child) .fig { margin-left: auto; }
+.clock-reserve { margin-top: var(--s-3); padding-top: 9px; border-top: var(--rule-hair); }
+.clock-reserve-row { display: flex; align-items: baseline; gap: 9px; }
+.clock-reserve-row .fig { font-size: var(--t-fig-s); line-height: 1; }
+.clock-reserve-row .cap { font-size: .78125rem; margin-left: auto; }
+.clock-reserve .ticks, .clock-reserve .bar { margin-top: 12px; }
+.clock-note { margin-top: 9px; }
+@media (max-width: 359px) {
+  .clock-cash { font-size: 2.625rem; }
+  .clock-body { column-gap: var(--s-3); }
+  .clock-run .fig { font-size: 1.25rem; }
+}
+@media (min-width: 720px) {
+  .clock-cash { font-size: 4.75rem; }
+  .clock-cash.is-long { font-size: 3.75rem; }
+  .clock-run .fig { font-size: 2.125rem; }
+  .clock-reserve { margin-top: var(--s-4); padding-top: 10px; }
+  .clock-reserve-row .fig { font-size: 1.5rem; }
+  .clock-reserve-row .cap { font-size: var(--t-cap); }
+}
+@media (min-width: 1100px) {
+  .clock-body { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: var(--s-2); margin-top: var(--s-3); }
+  .clock-cash { font-size: min(6.4vw, 5.75rem); margin-left: -.03em; }
+  .clock-cash.is-long { font-size: min(5vw, 4.5rem); }
+  .clock-run { margin-top: var(--s-2); padding-top: var(--s-3); border-top: var(--rule-hair); }
+  .clock-run .fig { font-size: min(3.1vw, 2.75rem); }
+  .runway { height: 11px; margin-top: 14px; }
+}
+
+/* =========================================================================
+   11  PROGRESS
+   =========================================================================
+   Thin bar — white is what you have, black is what remains (the split bar's language, one-sided).
+   <div class="bar" style="--p:19%" role="img" aria-label="19% of the reserve goal"><i></i></div>
+   .bar-ink  ink fill on paper, for plain progress that is not yours-versus-theirs.
+   ------------------------------------------------------------------------- */
+.bar { display: flex; height: 7px; border: 1px solid var(--bar-edge); background-color: var(--bar-black); }
+.bar i { display: block; width: var(--p, 0%); min-width: 2px; background-color: var(--bar-white); border-right: 1px solid var(--bar-edge); transition: width var(--dur) var(--ease); }
+.bar-ink { border-color: var(--ink); background-color: transparent; }
+.bar-ink i { background-color: var(--ink); border-right: 0; }
+
+/* -------------------------------------------------------------------------
+   Ladder — rungs from the top down, with the current position.
+   <ol class="ladder">
+     <li class="rung"><span class="rung-title">GM</span><span class="fig">$1,000,000</span><span class="cap">by December 2029</span></li>
+     <li class="rung is-next"><span class="rung-title">CM</span><span class="fig">$100,000</span><span class="cap">next norm · 78.4% there</span></li>
+     <li class="rung is-you">
+       <span class="bar rung-bar" style="--p:78.4%" aria-hidden="true"><i></i></span>
+       <span class="rung-title">You</span><span class="fig est"><span class="approx">≈</span>$78,400</span><span class="cap">modelled 2026 gross</span>
+       <span class="cap rung-note">Salary $58,000 + lessons scenario $20,400. A scenario, not a bank figure.</span>
+     </li>
+   </ol>
+   ------------------------------------------------------------------------- */
+.ladder { border-top: var(--rule); }
+.rung { display: grid; grid-template-columns: 34px auto minmax(0, 1fr); align-items: baseline; column-gap: 10px; padding: 6px 0; border-bottom: var(--rule-hair); }
+.rung-title { font-family: var(--f-label); font-weight: 600; font-size: .6875rem; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+.rung .fig { font-size: var(--t-fig); line-height: 1.1; white-space: nowrap; }
+.rung .cap { text-align: right; font-size: .78125rem; }
+.rung.is-next .rung-title, .rung.is-done .rung-title { color: var(--ink); }
+.rung.is-done .fig { color: var(--ink-2); }
+.rung.is-you { border-bottom: 0; padding-top: var(--s-2); }
+.rung.is-you .rung-title { color: var(--spot); }
+.rung-bar { grid-column: 1 / -1; margin-bottom: var(--s-2); }
+.rung .rung-note { grid-column: 2 / -1; margin-top: 2px; text-align: left; }
+
+/* -------------------------------------------------------------------------
+   Milestone ticks — a ruled line with a square at each milestone.
+   <ol class="ticks" aria-label="Reserve milestones">
+     <li class="is-done">1 day</li> <li class="is-done">1 week</li> <li class="is-next">2 weeks</li>
+     <li>1 month</li> <li>3 months</li> <li>Goal</li>
+   </ol>
+   .is-done filled square · .is-next open square in the spot colour · otherwise open
+   ------------------------------------------------------------------------- */
+.ticks { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+.ticks > li {
+  position: relative; padding: 10px 4px 0 0; border-top: var(--rule);
+  font-family: var(--f-label); font-weight: 600; font-size: .6875rem; line-height: 1.2; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3);
+}
+.ticks > li::before { content: ""; position: absolute; left: 0; top: -4px; width: 7px; height: 7px; border: 1px solid var(--ink); background-color: var(--paper); }
+.ticks > li.is-done { color: var(--ink-2); }
+.ticks > li.is-done::before { background-color: var(--ink); }
+.ticks > li.is-next { color: var(--ink); }
+.ticks > li.is-next::before { border-color: var(--spot); border-width: 2px; }
+
+/* =========================================================================
+   12  ASSESSMENT
+   =========================================================================
+   <div class="verdict">
+     <svg class="ev" role="img" aria-label="Slightly better"><use href="#ev-pe"/></svg>
+     <p>Slightly better — level on material, comfortable on time.</p>
+   </div>
+   <dl class="factors">
+     <div class="factor">
+       <span class="factor-sym"><svg class="ev" aria-hidden="true"><use href="#ev-eq"/></svg></span>
+       <dt class="factor-title lab"><b>Material</b> <i>equal</i></dt>
+       <dd>Level. About <span data-fig>$2,417</span> net; up <span data-fig>$61.40</span> in thirty days.</dd>
+     </div>
+   </dl>
+   .factor-sym.spot for the time-trouble mark.
+   ------------------------------------------------------------------------- */
+.verdict { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 14px; align-items: start; margin: 10px 0 12px; }
+.verdict .ev { font-size: 2.125rem; margin-top: 2px; stroke-width: 1.5; }
+.verdict p { font-family: var(--f-display); font-style: italic; font-size: 1.5rem; line-height: 1.18; }
+.factors { border-top: var(--rule); }
+.factor { display: grid; grid-template-columns: 44px minmax(0, 1fr); column-gap: 10px; padding: 9px 0; border-bottom: var(--rule-hair); }
+.factor-sym { grid-column: 1; grid-row: 1 / 3; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding-top: 3px; font-size: 1.5rem; line-height: 1; }
+.factor-title { grid-column: 2; display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 var(--s-2); }
+.factor-title i { font-family: var(--f-text); font-style: italic; font-size: var(--t-cap); letter-spacing: 0; text-transform: none; color: var(--ink-2); }
+.factor dd { grid-column: 2; margin-top: 2px; }
+@media (min-width: 1100px) {
+  .verdict { margin: 14px 0 16px; }
+  .verdict p { font-size: 1.875rem; line-height: 1.14; }
+  .verdict .ev { font-size: 2.375rem; margin-top: 3px; }
+  .factor { padding: 12px 0; }
+}
+@media (min-width: 1100px) and (max-width: 1299px) {
+  .verdict p { font-size: 1.5rem; }
+}
+
+/* =========================================================================
+   13  NOTES, PRINCIPLES, KEY
+   =========================================================================
+   Coach's notes — numbered, italic, with figures upright; an optional action under the text.
+   <ol class="notes">
+     <li class="note">
+       <b class="note-n">1</b>
+       <span class="note-text">Rent — Alder Court <i data-fig>$1,480.00</i> is due Friday; cash covers it.</span>
+       <a class="note-action btn-link" href="#/book">Open the Book</a>
+     </li>
+   </ol>
+   ------------------------------------------------------------------------- */
+.notes { margin-top: 6px; }
+.note { display: grid; grid-template-columns: 28px minmax(0, 1fr); padding: 9px 0; border-bottom: var(--rule-hair); }
+.note:last-child { border-bottom: 0; }
+.note-n { font-family: var(--f-figure); font-weight: 400; font-style: normal; font-size: 1.3125rem; line-height: 1.05; color: var(--ink-2); }
+.note-text { font-style: italic; font-size: .96875rem; line-height: 1.42; }
+.note-text i, .note-text em { font-style: normal; }
+.note-action { grid-column: 2; justify-self: start; margin-top: 5px; }
+@media (min-width: 1100px) {
+  .note { padding: 11px 0; }
+}
+
+/* -------------------------------------------------------------------------
+   Principles — the owner's own rules. Two columns on phones, a ruled list in a wide margin column.
+   <ol class="principles">
+     <li><b>1</b><span>Bring one coffee container.</span></li>
+   </ol>
+   .principles-list forces the single ruled list at every width.
+   ------------------------------------------------------------------------- */
+.principles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px 18px; margin-top: 10px; }
+.principles > li { display: grid; grid-template-columns: 24px minmax(0, 1fr); align-items: baseline; font-size: var(--t-body); line-height: 1.35; }
+.principles > li > b { font-family: var(--f-figure); font-weight: 400; font-size: 1.1875rem; line-height: 1; color: var(--ink-2); }
+.principles-list { grid-template-columns: minmax(0, 1fr); gap: 0; margin-top: 6px; }
+.principles-list > li { grid-template-columns: 28px minmax(0, 1fr); padding: 9px 0; border-bottom: var(--rule-hair); }
+.principles-list > li:last-child { border-bottom: 0; }
+@media (min-width: 1100px) {
+  .principles { grid-template-columns: minmax(0, 1fr); gap: 0; margin-top: 6px; }
+  .principles > li { grid-template-columns: 28px minmax(0, 1fr); padding: 9px 0; border-bottom: var(--rule-hair); }
+  .principles > li:last-child { border-bottom: 0; }
+  .principles > li > b { font-size: 1.3125rem; }
+}
+
+/* -------------------------------------------------------------------------
+   Key to symbols — a run-in legend.
+   <p class="key">
+     <span class="lab">Key to symbols</span>
+     <span><svg class="ev" aria-hidden="true"><use href="#ev-eq"/></svg>equal</span>
+     <span><b class="sym">!!</b>clean sheet</span>
+   </p>
+   ------------------------------------------------------------------------- */
+.key { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px; padding-top: var(--s-3); font-size: .8125rem; color: var(--ink-2); }
+.key > span { white-space: nowrap; }
+.key > .lab { align-self: center; }
+.key .ev { color: var(--ink); margin-right: 4px; }
+.key :is(.sym, .mg) { font-size: .9375rem; margin-right: 4px; }
+
+/* =========================================================================
+   14  TABLES
+   =========================================================================
+   <table class="table">
+     <thead><tr><th>Month</th><th class="num">Charges</th><th class="num">Payments</th><th class="num">Ended</th></tr></thead>
+     <tbody><tr><td>October</td><td class="num">$1,204.18</td><td class="num">$1,543.00</td><td class="num">$3,987.01</td></tr></tbody>
+     <tfoot><tr><td>Total</td><td class="num">…</td>…</tr></tfoot>
+   </table>
+   th are labels; .num (on th and td) is a right-aligned figure column; td.est is an italic estimate.
+   tfoot (or tr.is-total) is the totals row.   .table-s is denser.
+   Sticky header: add .table-sticky. It sticks to the viewport, or to its own scroll box when the table sits in
+     <div class="table-scroll"> … </div>        (scrolls both ways; set --table-max for its height)
+   Phones: a label column and three money columns fit at 320px. For more, hide the least important column
+   with .not-phone on its th and td, or put the table in .table-scroll.
+   ------------------------------------------------------------------------- */
+.table { width: 100%; border-collapse: separate; border-spacing: 0; font-variant-numeric: lining-nums tabular-nums; }
+.table th, .table td { padding: 8px var(--s-3) 7px 0; border-bottom: var(--rule-hair); text-align: left; vertical-align: baseline; }
+.table th:last-child, .table td:last-child { padding-right: 0; }
+.table thead th {
+  padding-top: 9px; padding-bottom: 7px; border-top: var(--rule); border-bottom: var(--rule);
+  font-family: var(--f-label); font-weight: 600; font-size: var(--t-label-s); line-height: 1.2; letter-spacing: .13em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap;
+}
+.table td { font-size: var(--t-body); line-height: 1.35; }
+.table .num { text-align: right; white-space: nowrap; }
+.table td.num { font-family: var(--f-figure); font-size: var(--t-fig-s); line-height: 1.2; }
+.table td.est { font-style: italic; }
+.table tbody th { font-family: var(--f-text); font-size: var(--t-body); }
+.table tfoot td, .table tfoot th, .table tr.is-total > * { border-top: var(--rule); border-bottom: var(--rule); font-weight: 600; }
+.table tfoot td.num, .table tr.is-total > td.num { font-weight: 400; font-size: var(--t-fig); }
+.table tbody tr:last-child > * { border-bottom: 0; }
+.table:not(:has(tfoot)) tbody tr:last-child > * { border-bottom: var(--rule-hair); }
+@media (max-width: 419px) {
+  .table th, .table td { padding-right: var(--s-2); }
+  .table td.num { font-size: .96875rem; }
+  .table tfoot td.num, .table tr.is-total > td.num { font-size: var(--t-fig-s); }
+}
+@media (max-width: 359px) {
+  .table td, .table tbody th { font-size: .875rem; }
+  .table td.num { font-size: .875rem; }
+  .table tfoot td.num, .table tr.is-total > td.num { font-size: .96875rem; }
+}
+.table-s th, .table-s td { padding-top: 5px; padding-bottom: 4px; }
+.table-s td { font-size: .875rem; }
+.table-s td.num { font-size: .96875rem; }
+.table-sticky thead th { position: sticky; top: var(--sticky-top, 0px); z-index: 2; background-color: var(--paper); }
+.table-scroll { max-height: var(--table-max, 360px); overflow: auto; -webkit-overflow-scrolling: touch; border-bottom: var(--rule); }
+.table-scroll .table { min-width: max-content; }
+.table-scroll .table thead th { border-top: 0; }
+
+/* =========================================================================
+   15  BANNERS AND STATES
+   =========================================================================
+   Sample-data banner — sits at the very top of .page and bleeds into the gutters.
+   <aside class="banner" role="note">
+     <span class="lab"><i class="hatch-mark"></i><b>Sample data</b></span>
+     <span class="cap banner-text">Every figure here is fictional. Connect your bank to see your own.</span>
+     <a class="btn-link" href="#/connect">Connect the bank</a>
+   </aside>
+   ------------------------------------------------------------------------- */
+.banner {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 2px var(--s-4); min-height: var(--tap);
+  margin: 0 calc(var(--gut) * -1); padding: var(--s-2) var(--gut);
+  background-color: var(--paper-2); border-bottom: var(--rule-hair);
+}
+.banner > .lab { white-space: nowrap; }
+.banner-text { flex: 1 1 200px; min-width: 0; }
+.banner > :is(.btn-link, .linkbtn) { margin-left: auto; }
+
+/* -------------------------------------------------------------------------
+   Notice — one line for offline, a failed sync, a lapsed subscription.
+   <p class="notice" role="status"><i class="notice-mark"></i><span>Offline. Showing the bank as of 6:12 AM.</span> <button class="btn-link">Try again</button></p>
+   .is-error  the mark and the first words take the spot colour.
+   ------------------------------------------------------------------------- */
+.notice { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px var(--s-3); padding: 9px 0; border-bottom: var(--rule-hair); font-style: italic; font-size: var(--t-cap); line-height: 1.4; color: var(--ink-2); }
+.notice > span { flex: 1 1 200px; min-width: 0; }
+.notice b { font-style: normal; font-family: var(--f-label); font-weight: 600; font-size: var(--t-label); letter-spacing: .13em; text-transform: uppercase; color: var(--ink); margin-right: 6px; }
+.notice-mark { flex: none; align-self: center; width: 7px; height: 7px; border: 1px solid var(--ink); }
+.notice.is-error .notice-mark { border-color: var(--spot); background-color: var(--spot); }
+.notice.is-error b { color: var(--spot); }
+
+/* -------------------------------------------------------------------------
+   Empty state — written in the annotator's voice.
+   <div class="empty">
+     <p class="empty-title">No moves yet today.</p>
+     <p class="cap">A quiet board is a good board. Stops appear here when the bank reports them.</p>
+     <p class="empty-action"><button class="btn btn-s">+ Move</button></p>          (optional)
+   </div>
+   ------------------------------------------------------------------------- */
+.empty { padding: var(--s-5) 0; border-top: var(--rule); border-bottom: var(--rule-hair); }
+.empty-title { font-family: var(--f-display); font-style: italic; font-size: 1.3125rem; line-height: 1.2; }
+.empty .cap { margin-top: var(--s-1); max-width: 46ch; }
+.empty-action { margin-top: var(--s-3); }
+.empty-plain { border: 0; }
+
+/* -------------------------------------------------------------------------
+   Skeleton — the first sync, before any figure exists. Blocks in the paper tints, never spinners.
+   <span class="skel" style="--w:9ch"></span>              a line of text or a figure (inherits the font size)
+   <span class="skel skel-fig" style="--w:6ch"></span>     a deeper tint, for where a figure will be
+   <div class="skel-block" style="--h:120px"></div>        a block (a chart, the crosstable)
+   <div class="loading" role="status" aria-busy="true"> <p class="cap">Reading the bank for the first time…</p> … </div>
+   ------------------------------------------------------------------------- */
+.skel { display: inline-block; width: var(--w, 100%); max-width: 100%; height: .72em; background-color: var(--paper-2); vertical-align: baseline; animation: skel-breathe 1.6s var(--ease) infinite alternate; }
+.skel-fig { background-color: var(--paper-3); }
+.skel-block { display: block; width: var(--w, 100%); height: var(--h, 80px); background-color: var(--paper-2); animation: skel-breathe 1.6s var(--ease) infinite alternate; }
+.loading { display: flex; flex-direction: column; gap: var(--s-3); }
+@keyframes skel-breathe { from { opacity: 1; } to { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) {
+  .skel, .skel-block, .sync[data-state="syncing"] .sync-mark { animation: none; }
+}
+
+/* =========================================================================
+   16  COVER MODE — redaction for opening the app in public
+   =========================================================================
+   Put data-cover on any ancestor (the app sets it on .page). Every figure inside becomes a solid ink bar of
+   exactly its own width, like a redacted document; nothing moves. A "figure" is:
+     .fig · .hero-fig · .clock-cash · .move-a · .row-value · .x-edge · td.num · any element with data-fig
+   Wrap an amount inside a sentence so that it is covered too:   about <span data-fig>$2,417</span> net
+   What stays readable: words and labels, symbols, and the crosstable's results and running score (1 · ½ · 0).
+   A figure marked data-cover-keep is left alone (the score 7/10, a count of days).
+   The bar is always ink, never tinted: a colour would give the sign away.
+   Inputs: .money-input and input[data-fig] are covered while they do not have the focus.
+   (<nw-ticker> and figureHtml() figures cover themselves under data-cover; see css/ui.css.)
+   Keep the content of a covered figure inline (text and spans): the one bar runs through all of it. The ≈ sign
+   is dropped and a <small> qualifier is covered as a second, smaller bar.
+   ------------------------------------------------------------------------- */
+[data-cover] :is(.fig, .hero-fig, .clock-cash, .move-a, .row-value, .x-edge, .table td.num, [data-fig]):not([data-cover-keep], .x-legend > *) {
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  text-decoration-line: line-through !important;
+  text-decoration-style: solid !important;
+  text-decoration-color: var(--ink) !important;
+  text-decoration-thickness: .82em !important;
+  text-shadow: none !important;
+  user-select: none;
+  -webkit-user-select: none;
+}
+/* everything inside goes clear too; the bar of the figure itself runs on through it */
+[data-cover] :is(.fig, .hero-fig, .clock-cash, .move-a, .row-value, .x-edge, .table td.num, [data-fig]):not([data-cover-keep], .x-legend > *) *,
+[data-cover] :is(.fig, .hero-fig, .clock-cash, .move-a, .row-value, .x-edge, .table td.num, [data-fig]):not([data-cover-keep], .x-legend > *)::before,
+[data-cover] :is(.fig, .hero-fig, .clock-cash, .move-a, .row-value, .x-edge, .table td.num, [data-fig]):not([data-cover-keep], .x-legend > *)::after {
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  text-shadow: none !important;
+}
+[data-cover] :is(.fig, .hero-fig, .clock-cash, .move-a, .row-value, [data-fig]):not([data-cover-keep]) .ev { stroke: transparent; }
+/* the ≈ sign goes, so the bar is one clean block; a <small> qualifier becomes a second, smaller bar after a gap */
+[data-cover] :is(.fig, .hero-fig, .clock-cash, .move-a, .row-value, .table td.num, [data-fig]):not([data-cover-keep]) .approx { display: none; }
+[data-cover] :is(.fig, .row-value, [data-fig]):not([data-cover-keep]) small {
+  display: inline-block; margin-left: .3em;
+  text-decoration: line-through solid var(--ink) .82em !important;
+}
+[data-cover] :is(.hero-fig, .clock-cash, .fig-xl):not([data-cover-keep]) { text-decoration-thickness: .66em !important; }
+[data-cover] :is(.money-input, input[data-fig]):not(:focus):not(:placeholder-shown) {
+  color: transparent !important; -webkit-text-fill-color: transparent !important;
+  background: linear-gradient(var(--ink), var(--ink)) no-repeat 0 50% / min(100%, 4.2ch) .82em;
+}
+[data-cover] .money-cur { color: transparent; }
+/* the still hero figure is one bar: its small digits go with the ≈ sign */
+[data-cover] .hero-fig > .hero-mini { display: none; }
+/* bars that figureHtml() draws for itself stay ink inside a covered figure */
+[data-cover] :is(.fig, .row-value, .move-a, [data-fig]) .fg .fg-bar { color: var(--ink) !important; -webkit-text-fill-color: var(--ink) !important; }
+
+/* =========================================================================
+   17  CONNECT SCREEN
+   =========================================================================
+   <section class="connect">
+     <p class="lab"><b>Connect the bank</b><i class="sep"></i>once per device</p>
+     <h1 class="connect-title">Three moves, then it keeps itself.</h1>
+     <p class="lede">…</p>
+     <ol class="steps">
+       <li class="step">
+         <span class="step-n">1</span>
+         <div class="step-body">
+           <h2 class="step-title">Open SimpleFIN Bridge</h2>
+           <p>…</p>
+           <p class="step-action"><a class="btn btn-s" href="…">Open the Bridge</a></p>
+         </div>
+       </li>
+     </ol>
+     <div class="btn-row"> <button class="btn btn-solid">Connect</button> <button class="btn">Look around with sample data</button> </div>
+   </section>
+   .step.is-done  a finished step (number and text quieter)   .step.is-current  the step in hand (italic number)
+   ------------------------------------------------------------------------- */
+.connect-title { margin-top: var(--s-2); font-family: var(--f-display); font-style: italic; font-weight: 400; font-size: 2.125rem; line-height: 1.08; letter-spacing: -.005em; }
+.connect .lede { margin-top: var(--s-3); max-width: 56ch; }
+.steps { margin-top: var(--s-5); border-top: var(--rule); }
+.step { display: grid; grid-template-columns: 52px minmax(0, 1fr); padding: 14px 0 16px; border-bottom: var(--rule-hair); }
+.step:last-child { border-bottom: var(--rule); }
+.step-n { font-family: var(--f-display); font-size: 2.875rem; line-height: .95; color: var(--ink); font-variant-numeric: lining-nums; }
+.step-title { font-family: var(--f-label); font-weight: 600; font-size: calc(var(--t-label) + .0625rem); line-height: 1.3; letter-spacing: var(--track-label); text-transform: uppercase; color: var(--ink); }
+.step-body > * + * { margin-top: 6px; }
+.step-body > p { max-width: 58ch; }
+.step-body .tokenbox, .step-action { margin-top: var(--s-3); }
+.step.is-done .step-n { color: var(--ink-3); }
+.step.is-done .step-body { color: var(--ink-2); }
+.step.is-current .step-n { font-style: italic; }
+.steps + .btn-row { margin-top: var(--s-5); }
+@media (min-width: 720px) {
+  .connect-title { font-size: 2.875rem; }
+  .step { grid-template-columns: 72px minmax(0, 1fr); padding: 18px 0 22px; }
+  .step-n { font-size: 3.75rem; }
+}
+
+/* =========================================================================
+   18  SHEET CONTENT — what a sheet module writes
+   =========================================================================
+   The sheet itself is a custom element (js/ui/sheet.js): it draws the frame, the grab line and a Close button
+   in the top right corner, scrolls the content and pins .sheet-actions to its bottom edge. Inside it:
+   <div class="sheet-body">                                          (a <form class="sheet-body"> works the same)
+     <p class="sheet-head lab"><b>Candidate move</b><i class="sep"></i>Round 11, move 3</p>
+     <h2 class="sheet-title">Look before you play it.</h2>
+     … chips, a .money input, fields, a .conseq block, rows: each direct child sits 16px under the last …
+     <div class="sheet-actions"> <button class="btn">Play it</button> <button class="btn btn-solid">Decline</button> </div>
+   </div>
+   .sheet-body     the column: its direct children are spaced evenly (.sheet-body-loose: 24px)
+   .sheet-head     the label line; it keeps 72px clear on the right for the sheet's Close button
+   .sheet-title    the title in the display italic
+   .sheet-actions  last in .sheet-body. One, two or three buttons share the row equally (three are set a little
+                   tighter). .sheet-actions-stack puts them one under another, for long labels.
+                   A quiet line under the buttons:  <p class="cap sheet-actions-note">…</p>
+   .sheet-close    optional. A sheet that wants its own Close puts <button class="btn-link sheet-close"> at the
+                   end of .sheet-head; the sheet element then hides the built-in one.
+
+   Consequence block — what a candidate move would do, with its symbol.
+   <div class="conseq" aria-live="polite">
+     <b class="conseq-sym">?!</b>
+     <div><strong>2nd cafe stop today.</strong><span>Leaves you <span data-fig>+$5.40</span> on the round.</span></div>
+   </div>
+   ------------------------------------------------------------------------- */
+.sheet-body > * + * { margin-top: var(--s-4); }
+.sheet-body-loose > * + * { margin-top: var(--s-5); }
+.sheet-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3); min-height: 16px; }
+.sheet-head:not(:has(.sheet-close)) { display: block; padding-right: 72px; }
+.sheet-close { flex: none; }
+.sheet-body > .sheet-title, .sheet-title { margin: 6px 0 0; font-family: var(--f-display); font-style: italic; font-weight: 400; font-size: 1.6875rem; line-height: 1.1; }
+.sheet-title:focus { outline: none; }
+/* The pinning is the sheet element's (css/ui.css); the same box is given here so the content reads alike anywhere. */
+.sheet-actions {
+  position: sticky; bottom: 0; z-index: 1;
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 10px;
+  margin: var(--s-4) calc(-1 * var(--sheet-pad, 0px)) 0;
+  padding: var(--s-3) var(--sheet-pad, 0px) max(var(--sheet-pad, 0px), calc(env(safe-area-inset-bottom, 0px) + var(--s-2)));
+  border-top: var(--rule-hair); background-color: var(--paper);
+}
+.sheet-actions > .btn { min-width: 0; padding: 0 var(--s-2); }
+.sheet-actions:has(> .btn:nth-child(3)) > .btn { padding: 0 var(--s-1); font-size: var(--t-label); letter-spacing: .1em; }
+.sheet-actions-stack { grid-auto-flow: row; }
+.sheet-actions-note { grid-column: 1 / -1; text-align: center; }
+@media (min-width: 720px) {
+  .sheet-body > .sheet-title, .sheet-title { font-size: 2rem; }
+}
+.conseq { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 14px; align-items: start; padding: var(--s-3) 0 0; border-top: var(--rule); }
+.conseq-sym { font-family: var(--f-display); font-weight: 700; font-style: normal; font-size: 2.5rem; line-height: 1; min-width: 1.1em; }
+.conseq-sym .ev { font-size: 2.125rem; stroke-width: 1.6; }
+.conseq strong { display: block; font-family: var(--f-display); font-weight: 400; font-style: italic; font-size: 1.3125rem; line-height: 1.2; }
+.conseq strong + span { display: block; margin-top: 3px; color: var(--ink-2); }
+
+/* =========================================================================
+   19  COLOPHON
+   =========================================================================
+   <footer class="colophon">Networth reads your bank through a read-only link … Roman figures are the bank's; italic figures marked ≈ are computed.</footer>
+   ------------------------------------------------------------------------- */
+.colophon { margin-top: 14px; padding-top: 10px; border-top: var(--rule); font-style: italic; font-size: .78125rem; line-height: 1.45; color: var(--ink-2); }
+.colophon i, .colophon em { font-style: normal; }
+
+/* =========================================================================
+   20  UTILITIES
+   =========================================================================
+   Show and hide:  .only-wide (>= 1100)  .only-narrow (< 1100)  .only-phone (< 720)  .not-phone (>= 720)
+                   (each only hides outside its range, so it can sit on any component without changing its display)
+   Alignment:      .ta-l  .ta-c  .ta-r
+   Spacing from the tokens (0–7 → 0, 4, 8, 12, 16, 24, 32, 48):  .mt-N  .mb-N  .pt-N  .pb-N     (gaps: .gap-N in base.css)
+   ------------------------------------------------------------------------- */
+@media (max-width: 1099px) {
+  .only-wide { display: none !important; }
+}
+@media (min-width: 1100px) {
+  .only-narrow { display: none !important; }
+}
+@media (max-width: 719px) {
+  .not-phone { display: none !important; }
+}
+@media (min-width: 720px) {
+  .only-phone { display: none !important; }
+}
+.ta-l { text-align: left; }
+.ta-c { text-align: center; }
+.ta-r { text-align: right; }
+.mt-0 { margin-top: 0; } .mt-1 { margin-top: var(--s-1); } .mt-2 { margin-top: var(--s-2); } .mt-3 { margin-top: var(--s-3); }
+.mt-4 { margin-top: var(--s-4); } .mt-5 { margin-top: var(--s-5); } .mt-6 { margin-top: var(--s-6); } .mt-7 { margin-top: var(--s-7); }
+.mb-0 { margin-bottom: 0; } .mb-1 { margin-bottom: var(--s-1); } .mb-2 { margin-bottom: var(--s-2); } .mb-3 { margin-bottom: var(--s-3); }
+.mb-4 { margin-bottom: var(--s-4); } .mb-5 { margin-bottom: var(--s-5); } .mb-6 { margin-bottom: var(--s-6); } .mb-7 { margin-bottom: var(--s-7); }
+.pt-0 { padding-top: 0; } .pt-1 { padding-top: var(--s-1); } .pt-2 { padding-top: var(--s-2); } .pt-3 { padding-top: var(--s-3); }
+.pt-4 { padding-top: var(--s-4); } .pt-5 { padding-top: var(--s-5); } .pt-6 { padding-top: var(--s-6); } .pt-7 { padding-top: var(--s-7); }
+.pb-0 { padding-bottom: 0; } .pb-1 { padding-bottom: var(--s-1); } .pb-2 { padding-bottom: var(--s-2); } .pb-3 { padding-bottom: var(--s-3); }
+.pb-4 { padding-bottom: var(--s-4); } .pb-5 { padding-bottom: var(--s-5); } .pb-6 { padding-bottom: var(--s-6); } .pb-7 { padding-bottom: var(--s-7); }
+
+
+/* -------------------------------------------------------------------------
+   Later corrections (found while the screens were built)
+   ------------------------------------------------------------------------- */
+/* an amount inside a sentence never breaks between its sign and its figure */
+[data-fig] { white-space: nowrap; }
+/* the mark of a notice sits on the first line of text, also when the notice wraps */
+.notice > .notice-mark { align-self: baseline; }
+/* a link-style button keeps the text baseline whether its icon comes first or last */
+.btn-link { align-items: baseline; }
+.btn-link > .ic { align-self: center; }

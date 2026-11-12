@@ -1,0 +1,378 @@
+/*
+ * Networth — base.css
+ * The reset, body typography, links, focus, selection, the page frame, the type helpers
+ * and the layout primitives. Everything is built on css/tokens.css; no colour or font
+ * stack is written here.
+ *
+ * NAMING (holds for components.css too)
+ *   .block            a component or helper            .btn  .moves  .xt
+ *   .block-part       a part of it                     .move-n  .xt-grid  .row-value
+ *   .block-variant    a variant, added to the block    .btn-solid  .fig-l  .cols-3
+ *   .is-state         a state, added to block or part  .is-today  .is-provisional  .is-on
+ *   ARIA and native attributes are styled where they carry the meaning:
+ *   [aria-current] [aria-pressed] [aria-invalid] [disabled] :checked
+ *
+ * BREAKPOINTS (the same two as the tokens' gutters)
+ *   phone   < 720px      tablet  720–1099px      wide  >= 1100px (desktop navigation, columns)
+ *
+ * THE TYPOGRAPHIC LAW
+ *   .fig        a figure, upright: a fact from the bank ("in ink")
+ *   .fig.est    a figure, italic: computed, assumed or not yet final ("in pencil")
+ *   .approx     the approximately sign, in the spot colour, set before an estimate
+ */
+
+/* ------------------------------------------------------------------ reset */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  background-color: var(--paper);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: var(--f-text);
+  font-size: var(--t-body);
+  line-height: 1.45;
+  font-variant-numeric: lining-nums tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+  /* long unbroken text from the bank (a 60-character reference, a name with no spaces) breaks where it must,
+     on every screen, instead of pushing the page wider than the phone */
+  overflow-wrap: anywhere;
+}
+/* the page without JavaScript (index.html <noscript>): its one line, without a style attribute */
+.noscript { font: 1rem Georgia, serif; padding: 24px; }
+/* a figure is never split across lines */
+.fig, .hero-fig, .row-value, .move-a, td.num, [data-fig] { overflow-wrap: normal; }
+
+h1, h2, h3, h4, h5, h6, p, figure, blockquote, ol, ul, dl, dd, fieldset, legend { margin: 0; padding: 0; }
+h1, h2, h3, h4, h5, h6 { font-size: inherit; font-weight: inherit; line-height: inherit; }
+ol, ul { list-style: none; }
+fieldset { border: 0; min-width: 0; }
+hr { border: 0; margin: 0; height: 0; }
+table { border-collapse: collapse; border-spacing: 0; }
+th { font-weight: inherit; text-align: inherit; }
+img, svg, video { max-width: 100%; }
+small { font-size: inherit; }
+b, strong { font-weight: 600; }
+[hidden] { display: none !important; }
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  margin: 0;
+  border-radius: 0;
+}
+button {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+button[disabled], [aria-disabled="true"] { cursor: default; }
+summary { cursor: pointer; }
+
+/* ------------------------------------------------- links, focus, selection */
+
+a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: .2em;
+  -webkit-tap-highlight-color: transparent;
+}
+@media (hover: hover) {
+  a:hover { text-decoration-thickness: 2px; }
+}
+
+:focus-visible { outline: 2px solid var(--spot); outline-offset: 3px; }
+:focus:not(:focus-visible) { outline: none; }
+
+::selection { background-color: var(--ink); color: var(--paper); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001s !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ------------------------------------------------------------- page frame */
+/*
+ * <div class="page">
+ *   <header class="mast">…</header>
+ *   <main> bands and columns </main>
+ *   <footer class="colophon">…</footer>
+ * </div>
+ * <nav class="tabbar">…</nav>            (phones; outside .page)
+ *
+ * .page leaves room at the bottom for the phone bar and the home indicator.
+ * .page-narrow is a single measure for Settings, the connect screen and long text.
+ */
+.page {
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: 0 var(--gut) calc(var(--bottom-bar) + var(--s-6) + env(safe-area-inset-bottom, 0px));
+}
+.page-narrow { max-width: calc(680px + 2 * var(--gut)); }
+@media (min-width: 1100px) {
+  .page { padding-bottom: var(--s-7); }
+}
+
+/* ------------------------------------------------------------ type helpers */
+
+/* Label: small condensed caps. <b> inside is the emphasised (ink) part. */
+.lab {
+  font-family: var(--f-label);
+  font-weight: 600;
+  font-size: var(--t-label);
+  line-height: 1.2;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  font-style: normal;
+  color: var(--ink-2);
+}
+.lab b, .lab strong { font-weight: 600; color: var(--ink); }
+.lab-s { font-size: var(--t-label-s); letter-spacing: .13em; }
+/* Separator dot between the parts of a label: <i class="sep"></i> */
+.sep { font-style: normal; }
+.sep::before { content: "\00B7"; display: inline-block; margin: 0 .62em; }
+
+/* Caption: the annotator's italic. */
+.cap { font-family: var(--f-text); font-style: italic; font-size: var(--t-cap); line-height: 1.4; color: var(--ink-2); }
+.cap-s { font-size: calc(var(--t-cap) - .0625rem); line-height: 1.3; }
+.cap i, .cap em { font-style: normal; }
+
+/* Running text and titles. */
+.prose { font-size: var(--t-body); line-height: 1.5; max-width: 62ch; }
+.prose > * + * { margin-top: .7em; }
+.lede { font-size: var(--t-lede); line-height: 1.42; }
+.title { font-family: var(--f-display); font-weight: 400; font-size: var(--t-title); line-height: 1.12; letter-spacing: -.005em; }
+.title-s { font-size: calc(var(--t-title) * .84); }
+.title-l { font-size: calc(var(--t-title) * 1.28); line-height: 1.08; }
+.title i, .title em { font-size: .9em; color: var(--ink-2); margin: 0 .08em; }
+.title.est, .title-i { font-style: italic; }
+@media (min-width: 1100px) {
+  .title { font-size: calc(var(--t-title) * 1.28); }
+  .title-s { font-size: var(--t-title); }
+  .title-l { font-size: calc(var(--t-title) * 1.76); }
+}
+
+/*
+ * Figures. .fig sets the face only and inherits its size, so it can sit inside a sentence;
+ * add a size:  .fig-s 17 · .fig-m 20 · .fig-l 25 · .fig-xl 44 (display face).
+ * <small> inside a figure is a qualifier in the text face: <span class="fig fig-l est">$9.85 <small>of $16.20</small></span>
+ */
+.fig {
+  font-family: var(--f-figure);
+  font-weight: 400;
+  font-style: normal;
+  letter-spacing: 0;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--ink);
+}
+.fig-s { font-size: var(--t-fig-s); line-height: 1.15; }
+.fig-m { font-size: var(--t-fig); line-height: 1.15; }
+.fig-l { font-size: var(--t-fig-l); line-height: 1.1; }
+.fig-xl { font-family: var(--f-display); font-size: calc(var(--t-fig-l) * 1.76); line-height: 1; }
+.fig small { font-family: var(--f-text); font-size: .58em; color: var(--ink-2); letter-spacing: 0; }
+@media (min-width: 1100px) {
+  .fig-m { font-size: calc(var(--t-fig) * 1.15); }
+  .fig-l { font-size: calc(var(--t-fig-l) * 1.2); }
+  .fig-xl { font-size: calc(var(--t-fig-l) * 2.24); }
+}
+
+/* Estimate: italic. Works on a figure, a title or a phrase. */
+.est { font-style: italic; }
+/* The approximately sign: <span class="approx">≈</span> — always upright, always spot. */
+.approx { font-style: normal; color: var(--spot); margin-right: .12em; }
+
+/* The square "from the bank" mark: <i class="bank-mark"></i> before a label or caption.
+   (glyphs.js verifiedMark() draws the same square as <i class="vm">; either may be used.) */
+.bank-mark {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 7px;
+  background-color: var(--ink);
+  vertical-align: .5px;
+  flex: none;
+}
+
+/* An age note: <span class="age">9 days old</span>; .is-stale when the data is too old to trust. */
+.age { font-family: var(--f-text); font-style: italic; font-size: calc(var(--t-cap) - .0625rem); line-height: 1.3; color: var(--ink-2); text-transform: none; letter-spacing: 0; white-space: nowrap; }
+.age.is-stale { color: var(--spot); }
+
+/* Annotation marks set as type (!!, !, !?, ?!, ?, ??): <b class="sym">!?</b> */
+.sym { font-family: var(--f-figure); font-weight: 700; font-style: normal; letter-spacing: 0; color: var(--ink); }
+
+/*
+ * Evaluation symbols are inline SVG on an em square, stroked in the current colour. In the app they come
+ * from js/ui/glyphs.js (evalGlyph, timeTroubleGlyph), which writes class="ev" and "ev ev--wide".
+ * <svg class="ev" aria-hidden="true"><use href="#ev-eq"/></svg>      .ev-wide (or .ev--wide) for the three wide ones
+ * Size one with font-size on it or on its parent (1em square, 1.5em wide), never with width and height.
+ */
+.ev {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  vertical-align: -.14em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  overflow: visible;
+  flex: none;
+}
+.ev-wide, .ev--wide { width: 1.5em; }
+
+/* Tints. --gain and --loss are for result deltas only. */
+.spot { color: var(--spot); }
+.gain { color: var(--gain); }
+.loss { color: var(--loss); }
+.ink { color: var(--ink); }
+.muted { color: var(--ink-2); }
+.faint { color: var(--ink-3); }
+
+.mono { font-family: var(--f-mono); font-size: .88em; letter-spacing: 0; }
+.nowrap { white-space: nowrap; }
+
+/* Visually hidden, still read aloud. */
+.vh {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ------------------------------------------------------------------ rules */
+/* <hr class="rule">  .rule-heavy  .rule-hair  .rule-double  — or the edge utilities on any box. */
+.rule { border-top: var(--rule); }
+.rule-heavy { border-top: var(--rule-heavy); }
+.rule-hair { border-top: var(--rule-hair); }
+.rule-double { height: 5px; border-top: var(--rule-heavy); border-bottom: var(--rule); }
+@media (min-width: 1100px) {
+  .rule-double { height: 6px; border-top-width: 3px; }
+}
+.bt { border-top: var(--rule); }
+.bt-hair { border-top: var(--rule-hair); }
+.bt-heavy { border-top: var(--rule-heavy); }
+.bb { border-bottom: var(--rule); }
+.bb-hair { border-bottom: var(--rule-hair); }
+
+/* ------------------------------------------------------- layout primitives */
+/*
+ * Bands and columns. A screen is a stack of full-width bands separated by ink rules.
+ * A band is either one section (.band) or a row of columns (.cols) separated by hairlines.
+ * Columns stack on phones, each under an ink rule.
+ *
+ *   <main>
+ *     <div class="cols">
+ *       <section class="col col-8">…</section>
+ *       <section class="col col-4">…</section>
+ *     </div>
+ *     <section class="band">…</section>
+ *     <div class="cols cols-3"> <section class="col">…</section> ×3 </div>
+ *   </main>
+ *
+ * .cols            twelve tracks on wide screens; give each .col a width .col-3 … .col-12
+ * .cols-2/3/4      equal columns, no width classes needed
+ * .cols-md         go side by side from 720px instead of 1100px
+ * A .col may hold stacked .band sections (the right-hand margin column of the Board).
+ */
+.cols { display: grid; grid-template-columns: minmax(0, 1fr); }
+.col { min-width: 0; padding-bottom: 18px; }
+.band { min-width: 0; padding-bottom: 18px; }
+.col + .col,
+:is(.cols, .band) + :is(.cols, .band) { border-top: var(--rule); }
+.col > .band:last-child { padding-bottom: 0; }
+
+@media (min-width: 720px) {
+  .cols-md { grid-template-columns: repeat(12, minmax(0, 1fr)); --col-pad: 24px; }
+  .cols-md.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cols-md.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .cols-md.cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .cols-md > .col { padding: 0 var(--col-pad) 24px; }
+  .cols-md > .col + .col { border-top: 0; border-left: var(--rule-hair); }
+  .cols-md > .col:first-child { padding-left: 0; }
+  .cols-md > .col:last-child { padding-right: 0; }
+  .cols-md > .col-3 { grid-column: span 3; }
+  .cols-md > .col-4 { grid-column: span 4; }
+  .cols-md > .col-5 { grid-column: span 5; }
+  .cols-md > .col-6 { grid-column: span 6; }
+  .cols-md > .col-7 { grid-column: span 7; }
+  .cols-md > .col-8 { grid-column: span 8; }
+  .cols-md > .col-9 { grid-column: span 9; }
+  .cols-md > .col-12 { grid-column: span 12; }
+}
+@media (min-width: 1100px) {
+  .cols { grid-template-columns: repeat(12, minmax(0, 1fr)); --col-pad: 32px; }
+  .cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .cols > .col { padding: 0 var(--col-pad) 28px; }
+  .cols > .col + .col { border-top: 0; border-left: var(--rule-hair); }
+  .cols > .col:first-child { padding-left: 0; }
+  .cols > .col:last-child { padding-right: 0; }
+  .col-3 { grid-column: span 3; }
+  .col-4 { grid-column: span 4; }
+  .col-5 { grid-column: span 5; }
+  .col-6 { grid-column: span 6; }
+  .col-7 { grid-column: span 7; }
+  .col-8 { grid-column: span 8; }
+  .col-9 { grid-column: span 9; }
+  .col-12 { grid-column: span 12; }
+  .band { padding-bottom: 28px; }
+}
+@media (min-width: 1300px) {
+  .cols { --col-pad: 36px; }
+}
+
+/*
+ * Cluster: things in a line that wrap.   <p class="cluster">…</p>
+ *   .cluster-between  first left, last right      .cluster-end  all to the right
+ *   .cluster-center   centred on the cross axis (default is the text baseline)
+ * Stack: things in a column with even gaps.   <div class="stack gap-3">…</div>
+ * Grid: always side by side, even on phones.   <div class="grid-2">…</div>   .grid-3
+ * Set the gap with .gap-1 … .gap-7 (the tokens' steps).
+ */
+.cluster { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s-2) var(--s-4); }
+.cluster-between { justify-content: space-between; }
+.cluster-end { justify-content: flex-end; }
+.cluster-center { align-items: center; }
+.cluster-nowrap { flex-wrap: nowrap; }
+.stack { display: flex; flex-direction: column; gap: var(--s-3); }
+.stack > * { min-width: 0; }
+.grid-2, .grid-3 { display: grid; gap: var(--s-3); }
+.grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.grow { flex: 1 1 0; min-width: 0; }
+
+.gap-0 { gap: 0; }
+.gap-1 { gap: var(--s-1); }
+.gap-2 { gap: var(--s-2); }
+.gap-3 { gap: var(--s-3); }
+.gap-4 { gap: var(--s-4); }
+.gap-5 { gap: var(--s-5); }
+.gap-6 { gap: var(--s-6); }
+.gap-7 { gap: var(--s-7); }

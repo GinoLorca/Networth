@@ -1,0 +1,94 @@
+/*
+ * Networth design tokens — "the Bulletin".
+ * A tournament bulletin / finely typeset chess book: paper and ink, didone figures,
+ * hairline rules, small condensed labels, italic annotations, ONE spot colour.
+ *
+ * Two themes: paper (light, default) and night (dark). The dark values are declared twice —
+ * once for devices in dark mode that have not forced light, once for an explicit choice.
+ *
+ * Typographic law of the app:
+ *   roman figure   = a fact from the bank ("in ink")
+ *   italic figure  = computed, assumed or not yet final ("in pencil"), usually with the ≈ sign
+ */
+:root {
+  /* paper and ink */
+  --paper: #F3EDE1;        /* the page */
+  --paper-2: #EAE2D1;      /* a tint: days off in the crosstable, quiet fills */
+  --paper-3: #DFD5BF;      /* a deeper tint: pressed states, hatch background */
+  --ink: #1B1814;          /* text, rules, the black of the split bar */
+  --ink-2: #4A433A;        /* secondary text, captions */
+  --ink-3: #6A6256;        /* tertiary text, axis labels (still 4.5:1 on paper) */
+  --hair: #C3B8A3;         /* hairline rules */
+  --spot: #B3311D;         /* the one spot colour: the ≈ sign, today, time trouble, the live digits */
+  --gain: #2C5B41;         /* a result that went up — used ONLY on result deltas */
+  --loss: #B3311D;         /* a result that went down — used ONLY on result deltas */
+  --bar-white: #FFFDF7;    /* the white of the split bar */
+  --bar-black: #1B1814;
+  --bar-edge: #1B1814;
+  --scrim: rgba(27, 24, 20, .42);
+
+  /* type families (Apple system fonts first; graceful elsewhere) */
+  --f-display: "Didot", "Bodoni 72", "Big Caslon", "Baskerville", Georgia, "Times New Roman", serif;       /* wordmark, hero figure, big titles */
+  --f-figure: "Bodoni 72", "Didot", "Big Caslon", "Baskerville", Georgia, "Times New Roman", serif;        /* all other figures */
+  --f-text: "Iowan Old Style", "Palatino", "Palatino Linotype", "Book Antiqua", Georgia, serif;           /* running text, annotations */
+  --f-label: "Avenir Next Condensed", "DIN Condensed", "Helvetica Neue", "Arial Narrow", Arial, sans-serif; /* small caps labels, buttons */
+  --f-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;                                           /* rarely: codes, tokens */
+
+  /* type scale */
+  --t-label: .71875rem;       /* condensed caps label */
+  --t-label-s: .6875rem;      /* the floor for text that carries meaning (11px) */
+  --t-cap: .84375rem;         /* italic caption */
+  --t-body: .9375rem;
+  --t-lede: 1.0625rem;
+  --t-fig-s: 1.0625rem;         /* small figure */
+  --t-fig: 1.25rem;           /* figure in a meta row */
+  --t-fig-l: 1.5625rem;         /* tally figure */
+  --t-title: 1.5625rem;         /* section title in display face */
+  --t-hero: 17.4vw;        /* the net-worth figure on a phone; views set a fixed size on wide screens */
+  --track-label: .16em;
+
+  /* space */
+  --gut: 16px;             /* page side gutter (phone) */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 24px; --s-6: 32px; --s-7: 48px;
+  --tap: 44px;             /* minimum touch target */
+  --page-max: 1440px;
+  --bottom-bar: 58px;
+
+  /* rules */
+  --rule: 1px solid var(--ink);
+  --rule-hair: 1px solid var(--hair);
+  --rule-heavy: 2px solid var(--ink);
+
+  /* motion — restrained: the tick, the roll, bars that glide; nothing bounces */
+  --ease: cubic-bezier(.2, .7, .2, 1);
+  --dur: .6s;
+  --dur-fast: .18s;
+
+  color-scheme: light;
+}
+
+@media (min-width: 720px) {
+  :root { --gut: 28px; }
+}
+@media (min-width: 1100px) {
+  :root { --gut: 53px; }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #15130F; --paper-2: #1F1C16; --paper-3: #2A261E;
+    --ink: #ECE4D3; --ink-2: #C4BBA8; --ink-3: #9C9381;
+    --hair: #4B453A; --spot: #E8694D; --gain: #9CC7A9; --loss: #E8694D;
+    --bar-white: #ECE4D3; --bar-black: #070605; --bar-edge: #9C9381;
+    --scrim: rgba(0, 0, 0, .6);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #15130F; --paper-2: #1F1C16; --paper-3: #2A261E;
+  --ink: #ECE4D3; --ink-2: #C4BBA8; --ink-3: #9C9381;
+  --hair: #4B453A; --spot: #E8694D; --gain: #9CC7A9; --loss: #E8694D;
+  --bar-white: #ECE4D3; --bar-black: #070605; --bar-edge: #9C9381;
+  --scrim: rgba(0, 0, 0, .6);
+  color-scheme: dark;
+}

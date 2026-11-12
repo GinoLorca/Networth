@@ -1,0 +1,175 @@
+/*
+ * css/views/board.css — the Board (js/views/board.js). Layout and details of this screen only;
+ * the bands and columns, the hero, the clock, the moves, the crosstable, the assessment, the notes,
+ * the ladder and the key are the design system's (base.css, components.css).
+ *
+ * Page:    .board (wide: .cols rows, as the gallery's plate) · .board.board-narrow (one column, under 900px)
+ *          .board-top marks the two bands that share the first screenful of a phone with today's standing
+ * Hero:    .board-compo (the one line of composition) · .board-meta (yesterday, this month, last look)
+ *          .board-split (+ .is-long) and .board-under (.board-under-note, .board-liquid) · .board-yesterday
+ * Clock:   .board-due (what is due, up to three rows) · .board-nodue · .board-reserve · .board-runnote
+ * Round:   .board-vs · .board-premise · .board-standing · .board-kept · .board-more · .board-quiet
+ *          .board-actions · .board-line · .board-result (+ -mark) · .board-ann · .board-lede · .board-sofar
+ * Figures: .board-figs > .board-fig (+ .is-empty)
+ * Strips:  .board-clip · .board-pace · .board-ladder (.rung.is-later) · .board-key-box
+ */
+
+/* -------------------------------------------------------------- net worth */
+
+/* the hero is a button: the whole figure takes the tap */
+button.hero-fig { cursor: pointer; }
+button.hero-fig:focus-visible { outline-offset: 2px; }
+
+/* the one line of composition under the figure */
+.board-compo { max-width: 86ch; }
+.board-compo .fig { font-size: 1.1em; }
+.board-held { display: block; margin-top: 2px; }
+
+.board-split { margin-top: var(--s-3); }
+/* figures too long to share a line with their labels on a phone: each label sits over its figure */
+@media (max-width: 419px) {
+  .board-split.is-long .split-labs > span { flex-direction: column; align-items: flex-start; gap: 1px; }
+  .board-split.is-long .split-labs > span:last-child { flex-direction: column-reverse; align-items: flex-end; }
+}
+@media (max-width: 359px) {
+  .board-split .split-labs > span { flex-direction: column; align-items: flex-start; gap: 1px; }
+  .board-split .split-labs > span:last-child { flex-direction: column-reverse; align-items: flex-end; }
+}
+
+/* under the bar: what share is slow to sell, and the liquid figure */
+.board-under { margin-top: 6px; }
+.board-under-note .btn-link { margin-left: 6px; vertical-align: baseline; }
+.board-liquid { display: flex; align-items: baseline; gap: var(--s-2); margin-top: var(--s-2); padding-top: 7px; border-top: var(--rule-hair); white-space: nowrap; }
+.board-liquid .fig { font-size: 1.1875rem; line-height: 1.15; }
+.board-liquid .cap { margin-left: auto; }
+.board-yesterday { margin-top: var(--s-2); padding-top: 7px; border-top: var(--rule-hair); }
+
+@media (min-width: 720px) {
+  .board-under { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-2) var(--s-5); }
+  .board-under-note { flex: 1 1 auto; min-width: 0; max-width: 64ch; }
+  .board-liquid { flex: none; margin: 0 0 0 auto; padding: 0; border: 0; }
+  .board-liquid .cap { margin-left: 0; }
+}
+@media (min-width: 1100px) {
+  .board-compo { font-size: .90625rem; }
+  .hero .board-meta { margin-top: 20px; }
+  .board-split { margin-top: var(--s-5); }
+  .board-under { margin-top: 10px; }
+  .board-liquid .fig { font-size: 1.375rem; }
+}
+@media (min-width: 1100px) and (max-width: 1299px) {
+  .board-liquid .fig { font-size: 1.125rem; }
+}
+
+/* ------------------------------------------------------------ cash on hand */
+
+/* what is due before payday: name, day, amount — one line each, hairlines between */
+.board-due { margin-top: var(--s-2); border-top: var(--rule-hair); }
+.board-due > li { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(4.6em, auto); align-items: baseline; column-gap: 10px; padding: 5px 0 4px; border-bottom: var(--rule-hair); }
+.board-due > li:last-child { border-bottom: 0; padding-bottom: 0; }
+.board-due-name { min-width: 0; overflow-wrap: anywhere; font-size: .90625rem; line-height: 1.35; }   /* a long name takes a second line: it is never cut */
+.board-due .lab { white-space: nowrap; color: var(--ink-3); }
+.board-due .fig { font-size: 1rem; line-height: 1.2; text-align: right; white-space: nowrap; }
+.board-due > .board-due-more { display: block; }
+.board-nodue { padding-top: 9px; border-top: var(--rule-hair); }
+
+/* the reserve as a band of its own (phones) */
+.board-reserve { margin-top: var(--s-2); }
+.board-reserve .ticks { margin-top: 14px; }
+
+/* ----------------------------------------------------------------- the round */
+
+.board-vs { margin-top: 5px; }
+.board-premise { margin-top: 2px; }
+.board-standing { margin-top: var(--s-3); }
+/* T8: an eight-digit day wraps the Habit, Spent, Standing tally, as the day sheet's does */
+.board-standing { display: flex; flex-wrap: wrap; justify-content: space-between; column-gap: 10px; row-gap: 8px; }
+.board-standing .fig { max-width: 100%; overflow-wrap: anywhere; }
+.board-kept { margin-top: var(--s-3); }
+.board .moves { margin-top: var(--s-4); }
+.board-more { margin-top: var(--s-2); }
+/* a one-line link takes a 44px touch without moving the lines around it */
+.board-more a, .board-due-more a { position: relative; }
+.board-more a::after, .board-due-more a::after { content: ""; position: absolute; inset: -13px -6px; }
+.board-quiet { margin-top: var(--s-2); max-width: 62ch; }
+.board-actions { margin-top: var(--s-4); }
+.board-line { margin-top: 9px; }
+.board-line .btn-link, .board-quiet .btn-link { margin-left: 6px; vertical-align: baseline; }
+
+/* the last result: the mark of the round set large, its margin and how final it is beside it */
+.board-result { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: var(--s-4); margin-top: var(--s-2); }
+.board-result-mark { grid-row: 1 / 3; min-width: .6em; padding-right: .34em; font-family: var(--f-display); font-size: 3.625rem; line-height: 1; text-align: center; }
+.board-result > .fig { align-self: end; white-space: nowrap; }
+.board-result > .cap { align-self: start; margin-top: 1px; }
+.board-ann { margin-top: var(--s-2); }
+.board-ann .sym { margin-right: .4em; font-size: 1.12em; }
+.board-ann + .moves, .board-result + .moves { margin-top: var(--s-3); }
+
+/* before the match */
+.board-lede { margin-top: var(--s-2); max-width: 44ch; font-size: var(--t-lede); line-height: 1.4; }
+.board-sofar { margin-top: var(--s-4); }
+.board-sofar .moves { margin-top: 6px; }
+
+@media (min-width: 1100px) {
+  .board-vs { margin-top: var(--s-2); }
+  .board-standing { margin-top: var(--s-4); }
+  .board-result-mark { font-size: 4.25rem; }
+}
+
+/* ---------------------------------------------- the first screenful (phones) */
+/* Net worth, cash with what is due, and today's standing have to fit above the bottom bar at 390 by 844. */
+.board-top { padding-bottom: 12px; }
+.board-runnote { display: block; }
+@media (max-width: 719px) {
+  .board-narrow .hero .tally { margin-top: 6px; }
+  /* cash and runway side by side: "on the clock" drops under the days, the outflow wraps in its own column */
+  .board-narrow .clock-cash:not(.is-long) { font-size: min(3.125rem, 12.8vw); }
+  .board-narrow .clock-run { flex: 1 1 84px; min-width: min-content; padding-bottom: 0; }
+  .board-narrow .clock-run .fig small { display: block; margin-top: 1px; }
+  .board-narrow .clock-due { margin-top: 10px; }
+  .board-narrow .board-vs { margin-top: 3px; }
+  .board-narrow .board-standing { margin-top: 9px; }
+}
+
+/* ----------------------------------------------------------------- figures */
+
+.board-figs { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-5); margin-top: var(--s-3); }
+.board-fig { min-width: 0; }
+.board-fig figcaption { margin-top: var(--s-2); }
+.board-fig figcaption .lab { margin-right: 5px; }
+/* a figure with nothing to draw yet keeps its place in the pair, but not a whole screen of a phone */
+@media (max-width: 719px) {
+  .board-fig.is-empty nw-chart { --chart-ratio: 3; --chart-min-h: 112px; }
+}
+@media (min-width: 720px) {
+  .board-figs { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--s-6); }
+}
+@media (min-width: 1100px) {
+  .board-figs { margin-top: var(--s-4); gap: 0 var(--col-pad, 32px); --chart-ratio: 1.25; }
+}
+
+/* ------------------------------------------------ card cycle, income ladder */
+
+/* a card's own name from the bank: one line, cut with an ellipsis */
+.board-clip { max-width: 58%; overflow: hidden; text-overflow: ellipsis; }
+.board-pace .fig { white-space: nowrap; }
+.board-ladder { margin-top: var(--s-2); }
+/* the norms beyond the next one: smaller and set back */
+.board-ladder .rung.is-later { padding: 4px 0; }
+.board-ladder .rung.is-later .fig { font-size: 1rem; color: var(--ink-2); }
+.board-key-box .mg { margin-right: 4px; color: var(--ink); }
+
+.board-lapsed { margin-top: 2px; }
+/* a Book charge whose day has passed with no charge seen: still due, said so in the spot colour */
+.board-overdue { color: var(--spot); }
+
+/* ------------------------------------------ eight-digit cash (from $1,000,000.00) */
+/* fourteen characters and more: sized to the column so the figure never runs past it */
+.clock-cash.is-huge { font-size: min(2.25rem, 8.6vw); }
+@media (min-width: 720px) { .clock-cash.is-huge { font-size: 2.75rem; } }
+@media (min-width: 1100px) { .clock-cash.is-huge { font-size: min(3.6vw, 3.5rem); } }
+
+/* touch targets on phones: a move row is at least 44px tall (padding, not larger type) */
+@media (max-width: 719px) {
+  .board .move { min-height: var(--tap); }
+}

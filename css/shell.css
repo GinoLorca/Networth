@@ -1,0 +1,17 @@
+/*
+ * The app shell: only what the page frame needs beyond the design system
+ * (the masthead, navigation and bottom bar are components in components.css).
+ */
+
+#view { outline: none; min-height: 60vh; }
+
+/* the sample-game banner: a ruled strip above the masthead */
+.shell-banner {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s-4);
+  padding: var(--s-2) 0; border-bottom: var(--rule-hair);
+}
+.shell-banner .lab { white-space: normal; }
+
+/* a view that failed to draw, and placeholders while a screen is being built */
+.shell-error, .shell-stub { padding: var(--s-6) 0; border-top: var(--rule); }
+.shell-error .cap { margin: var(--s-2) 0 var(--s-4); }

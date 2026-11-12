@@ -1,0 +1,82 @@
+/*
+ * css/views/sheets.css — the three sheets of the round: the candidate move (.mv), the morning
+ * plan (.pl) and the sweep (.sw). Layout and details only; every component is the design system's
+ * (.sheet-body, .chips, .money, .field, .conseq, .seg, .rows, .sheet-actions).
+ */
+
+/* ------------------------------------------------------- candidate move */
+
+/* the usual stops: one tap fills the move. Names can be long, so a chip may shrink and clip its name. */
+.mv-usual .chip { max-width: 100%; min-height: 38px; overflow: hidden; text-overflow: ellipsis; }
+/* its overflow clips the shared hit area, so on a phone the chip itself is a full touch target */
+@media (max-width: 719px) { .mv-usual .chip { min-height: var(--tap); } }
+.mv-usual .chip [data-fig] { font-family: var(--f-figure); font-weight: 400; font-size: .9375rem; letter-spacing: 0; margin-left: .15em; }
+
+/* the amount sits a little closer to the chips above it than the rest of the column */
+.mv .field > .money { margin-top: calc(-1 * var(--s-1)); }
+.mv .field-error { margin-top: 2px; }
+
+/* the category chips belong to the place field above them */
+.sheet-body > .mv-cats { margin-top: var(--s-3); }
+
+/* the read-out. Without a symbol the text takes the whole measure. */
+.mv-conseq > div:only-child { grid-column: 1 / -1; }
+.mv-conseq strong { text-wrap: balance; }
+.mv-line { margin-top: 3px; color: var(--ink-2); line-height: 1.4; }
+.mv-line .lab { margin-right: .5em; color: var(--ink); }
+.mv-kept { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px var(--s-3); margin-top: var(--s-2); }
+.mv-kept-figs { display: inline-flex; align-items: baseline; white-space: nowrap; }
+.mv-arrow { margin: 0 .5em; font-family: var(--f-figure); font-size: var(--t-fig-s); color: var(--ink-2); }
+.mv-kept + .mv-line { margin-top: 5px; }
+.mv-scenario { margin-top: var(--s-2); }
+.mv-scenario + .mv-line { margin-top: 6px; }
+.mv-large .mv-line + .mv-line { margin-top: 5px; }
+
+/* nothing typed yet: where the round stands, then the owner's own rules, quietly */
+.mv-standing { padding-top: var(--s-3); border-top: var(--rule); }
+.mv-rules { margin-top: var(--s-4); padding-top: var(--s-3); border-top: var(--rule-hair); }
+.mv-rules .principles { margin-top: var(--s-2); color: var(--ink-2); }
+.mv-rules .principles > li { font-size: var(--t-cap); font-style: italic; }
+.mv-rules .principles > li > b { font-size: 1.0625rem; font-style: normal; }
+@media (min-width: 1100px) {
+  /* in a sheet the rules stay a quiet two-column note, not the ruled list of the Board's margin */
+  .mv-rules .principles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px 24px; }
+  .mv-rules .principles > li { grid-template-columns: 24px minmax(0, 1fr); padding: 0; border-bottom: 0; }
+}
+
+/* a sealed move: the countdown beside its one line of explanation */
+.mv-count { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: var(--s-4); padding: var(--s-1) 0 var(--s-2); }
+.mv-count .fig { min-width: 2.3em; font-variant-numeric: lining-nums tabular-nums; }
+.sheet-body > .mv-count + .rows { margin-top: 0; }
+.mv-aside, .sw-aside { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px var(--s-3); }
+
+/* after a decline: the "Instead:" chips are comfortable thumb targets */
+.mv-instead .chips { margin-top: var(--s-1); }
+.mv-instead .chip { min-height: 40px; padding: 0 14px; }
+
+/* --------------------------------------------------------- morning plan */
+
+.pl .field > .seg { margin-top: var(--s-1); }
+.pl-saved { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px var(--s-3); }
+
+/* ---------------------------------------------------------------- sweep */
+
+.sw-ask { font-size: var(--t-lede); line-height: 1.4; }
+.sw-ask .fig { font-size: 1.12em; }
+.sw-ledger .fig { font-size: 1.08em; }
+.sw .rows-group { margin-top: var(--s-5); }
+
+/* the round's three figures: one row while they fit, and a long figure (eight digits) wraps to its own line instead of running into the next */
+.dy-standing .tally { display: flex; flex-wrap: wrap; justify-content: space-between; column-gap: 10px; row-gap: 8px; }
+.dy-standing .tally .fig { max-width: 100%; overflow-wrap: anywhere; }
+
+/* touch targets: segmented choices in a sheet are a full 44px tall */
+.sheet-body .seg-opt { min-height: var(--tap); }
+
+/* T7: under 720px the text buttons inside a sheet (the day sheet's previous and next day, "Opening
+   preparation", "This is not a recurring bill") reach a 44px hit area through a positioned ::before;
+   the text and the line it sits on are unchanged */
+@media (max-width: 719.98px) {
+  .sheet-body .btn-link { position: relative; }
+  .sheet-body .btn-link::before { content: ""; position: absolute; inset: min(0px, calc((100% - var(--tap)) / 2)); }
+}

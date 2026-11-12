@@ -1,0 +1,212 @@
+/*
+ * css/views/material.css — Material (js/views/material.js) and the account sheet (js/views/sheet-account.js).
+ * Layout and details of these two only; everything else is the design system's (.cols .rows .table .field …).
+ * Prefixes: .mat-  the screen      .acct-  the sheet
+ */
+
+/* ------------------------------------------------------------------- head */
+
+/* the two net-worth figures, side by side; they stack only when they cannot both fit */
+/* each figure is fitted to its own column: --n is its length in characters (set by material.js), and a
+   character of the display face is at most 0.56em wide, so the type steps down before a digit can clip */
+.mat-worth { --mat-fig-max: clamp(28px, 8.6vw, 38px); display: flex; flex-wrap: wrap; gap: var(--s-4) var(--s-5); padding-top: var(--s-3); }
+.mat-worth-item { flex: 1 1 148px; min-width: 0; display: flex; flex-direction: column; container-type: inline-size; }
+.mat-worth-item .lab { white-space: nowrap; }
+.mat-worth-fig { font-family: var(--f-display); font-size: var(--mat-fig-max); font-size: min(var(--mat-fig-max), calc(100cqw / (var(--n, 10) * 0.56))); line-height: 1.08; margin-top: 5px; white-space: nowrap; }
+.mat-worth-item .cap { margin-top: 5px; max-width: 36ch; }
+
+.mat-split { padding-top: var(--s-3); }
+
+@media (min-width: 720px) {
+  .mat-worth { --mat-fig-max: 46px; gap: var(--s-5) var(--s-6); }
+}
+@media (min-width: 1100px) {
+  .mat-worth { --mat-fig-max: clamp(46px, 4.3vw, 62px); flex-wrap: nowrap; gap: 0; padding-top: var(--s-4); }
+  .mat-worth-item { flex: 1 1 0; }
+  .mat-worth-item + .mat-worth-item { padding-left: var(--s-5); border-left: var(--rule-hair); }
+  .mat-worth-fig { margin-top: var(--s-2); }
+  .mat-worth-item .cap { margin-top: var(--s-2); }
+  .mat-split { padding-top: var(--s-5); }
+}
+
+/* -------------------------------------------------------------- statement */
+
+.mat-groups { display: flex; flex-direction: column; gap: var(--s-5); padding-top: var(--s-4); }
+.mat-group .rows-title { padding-bottom: 6px; }
+.mat-group .rows-title-note, .mat-grand .rows-title-note { font-weight: 600; text-transform: none; letter-spacing: .04em; font-family: var(--f-text); font-style: italic; font-size: .78125rem; color: var(--ink-2); }
+.mat-group .rows-title { justify-content: flex-start; gap: var(--s-2); }
+
+/* a row is a button: the whole line opens the sheet */
+.mat button.row, .mat summary.row { cursor: pointer; }
+.mat button.row:focus-visible, .mat summary.row:focus-visible { outline-offset: -2px; }
+.mat .row-label .est { font-style: italic; }
+
+/* a group with nothing in it: one sentence under the ink rule */
+.mat-none { padding: 9px 0 10px; border-top: var(--rule); border-bottom: var(--rule-hair); max-width: none; }
+.mat-reckon .mat-none { border-top: 0; }
+
+/* the subtotal of a group sits tight under its rows */
+.mat-sub { min-height: 38px; padding-top: 7px; padding-bottom: 5px; }
+.mat-sub .row-value.fig { font-size: 1.125rem; }
+
+/* the total of a side: a heavy rule and a larger figure, like the foot of a column in a statement */
+.mat-grand { margin-top: var(--s-5); border-top: var(--rule-heavy); align-items: baseline; padding-top: 10px; padding-bottom: 0; }
+/* the disclosure always takes its own line under the label, so the two sides end on the same rule and baseline */
+.mat-grand .row-label { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.mat-grand .row-value.fig { font-size: var(--t-fig-l); }
+@media (min-width: 1100px) {
+  .mat-grand .row-value.fig { font-size: calc(var(--t-fig-l) * 1.2); }
+  /* the two sides end on the same line however many rows each holds */
+  .mat-statement > .mat-side { display: flex; flex-direction: column; }
+  .mat-statement > .mat-side > .mat-groups { flex: 1 1 auto; }
+}
+
+/* "bills used, not yet charged": a row that opens to its parts */
+.mat-more { border-top: var(--rule); border-bottom: var(--rule-hair); }
+.mat-more > summary { list-style: none; position: relative; padding-left: 20px; }
+.mat-more > summary::-webkit-details-marker { display: none; }
+.mat-more > summary::before {
+  content: ""; position: absolute; left: 2px; top: 17px; width: 6px; height: 6px;
+  border-right: 1.5px solid var(--ink); border-bottom: 1.5px solid var(--ink); transform: rotate(-45deg);
+  transition: transform var(--dur-fast) var(--ease);
+}
+.mat-more[open] > summary::before { transform: rotate(45deg); top: 15px; }
+.mat-more-rows { margin-left: 20px; border-top: var(--rule-hair); }
+.mat-more-rows > li:last-child { border-bottom: 0; }
+.mat-more-rows .row { min-height: 40px; padding: 7px 0 6px; }
+.mat-more-rows .row-label { font-size: .90625rem; }
+.mat-more-rows .row-value.fig { font-size: 1rem; }
+
+/* -------------------------------------------------------------- reckoning */
+
+.mat-sum { padding-top: var(--s-2); }
+.mat-sum .row { min-height: 38px; padding: 7px 0 6px; }
+.mat-sum > li:last-child { border-bottom: 0; }
+.mat-reckon .row-total .row-label { display: flex; align-items: baseline; }
+.mat-reckon .row-total + .mat-sum { padding-top: 0; }
+
+.mat-quick { padding-top: var(--s-3); }
+.mat-quick-fig { font-family: var(--f-display); font-size: 2.125rem; line-height: 1.1; white-space: nowrap; }
+.mat-quick + .cap { margin-top: 5px; }
+.mat-reckon .sec-head + .cap { margin-top: var(--s-3); }
+.mat-add { margin-top: var(--s-5); padding-top: var(--s-3); border-top: var(--rule-hair); }
+.mat-add .cap { margin-bottom: var(--s-3); }
+.mat-left { margin-top: var(--s-4); }
+@media (min-width: 1100px) {
+  .mat-quick-fig { font-size: 2.625rem; }
+}
+
+/* a name inside a sentence that opens a sheet */
+.mat-inline { font: inherit; font-style: normal; color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .2em; }
+@media (hover: hover) { .mat-inline:hover { text-decoration-thickness: 2px; } }
+
+/* ------------------------------------------------------------- card cycle */
+
+.mat-fig { padding-top: var(--s-3); min-width: 0; }
+.mat-figcap { margin-top: var(--s-2); }
+.mat-figcap .lab { margin-right: 6px; }
+
+.mat-now { margin-top: var(--s-5); padding-top: var(--s-3); border-top: var(--rule-hair); display: flex; flex-direction: column; gap: var(--s-2); }
+.mat-pace { font-family: var(--f-display); font-size: 1.3125rem; line-height: 1.22; }
+.mat-pace .fig { font-family: inherit; white-space: nowrap; }
+.mat-interest { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px var(--s-2); margin-top: var(--s-2); }
+.mat-interest .fig { font-size: var(--t-fig); line-height: 1.15; }
+.mat-now .btn-link { margin-top: var(--s-2); }
+
+.mat-cycle-wrap { margin-top: var(--s-3); max-width: 100%; overflow-x: auto; }
+.mat-cycle { margin-top: 0; }
+.mat-cycle thead th { border-top: 0; }
+.mat-cycle tbody th { white-space: nowrap; }
+.mat-sofar { font-style: italic; font-size: .8125rem; color: var(--ink-2); }
+.mat-amp { font-family: var(--f-text); font-style: italic; letter-spacing: 0; text-transform: none; font-weight: 400; }
+.mat-cycle-note { margin-top: var(--s-2); }
+.mat-largest { margin-top: var(--s-5); }
+.mat-largest .rows-title { justify-content: flex-start; gap: var(--s-2); padding-bottom: 6px; }
+.mat-largest .mat-none { margin-top: 0; }
+@media (max-width: 419px) {
+  .mat-cycle thead th { letter-spacing: .08em; }
+  .mat-cycle th, .mat-cycle td { padding-right: 6px; }
+  .mat-cycle td.num { font-size: .875rem; }
+  .mat-cycle tfoot td.num { font-size: .90625rem; }
+  .mat-sofar { display: block; font-size: .75rem; line-height: 1.1; }
+}
+@media (min-width: 1100px) {
+  .mat-pace { font-size: 1.5625rem; }
+}
+
+/* ------------------------------------------------------------- the record */
+
+.mat-record nw-chart { --chart-ratio: 1.5; }
+@media (min-width: 720px) {
+  .mat-record nw-chart { --chart-ratio: 2.4; }
+}
+@media (min-width: 1100px) {
+  .mat-record nw-chart { --chart-ratio: 3.4; --chart-max-h: 380px; }
+}
+
+/* ============================================================ account sheet */
+
+/* the figure as it stands, under the title */
+.acct-now { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px var(--s-3); padding-bottom: var(--s-3); border-bottom: var(--rule); }
+.acct-now .fig { font-family: var(--f-display); font-size: 2.125rem; line-height: 1.1; white-space: nowrap; }
+.acct-now .cap { flex: 1 1 180px; }
+
+/* the choice of what to add: six ruled lines */
+.acct-kinds .row { cursor: pointer; align-items: center; }
+.acct-kinds .row-label { font-family: var(--f-display); font-size: 1.25rem; line-height: 1.2; }
+.acct-kinds .row-note { font-family: var(--f-text); font-size: .8125rem; margin-top: 3px; }
+.acct-kinds .row-action { color: var(--ink-2); font-size: .9375rem; min-width: 24px; }
+.acct-kinds button.row:focus-visible { outline-offset: -2px; }
+@media (hover: hover) { .acct-kinds button.row:hover .row-action { color: var(--ink); } }
+
+/* a group of fields under a small ruled label */
+.acct-set { display: flex; flex-direction: column; gap: var(--s-4); padding-top: var(--s-3); border-top: var(--rule-hair); }
+.acct-set > .lab { margin-bottom: -4px; }
+.acct-set-first { border-top: 0; padding-top: 0; }
+
+/* a switch with the one line that says what it changes */
+/* the track sits on the first line of the label, so a label that wraps keeps its distance from the note */
+.acct-opt .switch { width: 100%; align-items: flex-start; padding: 12px 0; }
+.acct-opt .switch-text { font-size: .96875rem; line-height: 20px; }
+.acct-opt .cap { margin-top: -6px; padding-right: 56px; }
+.acct-opts { display: flex; flex-direction: column; gap: var(--s-2); }
+
+.acct-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-4) var(--s-4); align-items: start; }
+.acct-seg { align-self: flex-start; }
+@media (max-width: 419px) {
+  .acct-seg { display: grid; align-self: stretch; }
+  .acct-seg .seg-opt { padding: 0 var(--s-2); letter-spacing: .1em; }
+}
+
+/* the dollar sign before an ordinary amount field */
+.acct-cash { display: flex; align-items: baseline; gap: 4px; border-bottom: var(--rule); }
+.acct-cash > span { font-family: var(--f-figure); font-size: 1.375rem; color: var(--ink-2); }
+.acct-cash > .input { border-bottom: 0; }
+.acct-cash:has(.input:focus-visible) { outline: 2px solid var(--spot); outline-offset: 4px; }
+.acct-cash > .input:focus-visible { outline: none; }
+.is-invalid .acct-cash { border-bottom-color: var(--spot); }
+.acct-unit { display: flex; align-items: baseline; gap: 6px; border-bottom: var(--rule); }
+.acct-unit > .input { border-bottom: 0; }
+.acct-unit > span { font-family: var(--f-figure); font-size: 1.25rem; color: var(--ink-2); }
+.acct-unit:has(.input:focus-visible) { outline: 2px solid var(--spot); outline-offset: 4px; }
+.acct-unit > .input:focus-visible { outline: none; }
+.is-invalid .acct-unit { border-bottom-color: var(--spot); }
+
+/* the record of figures entered for a manual account */
+.acct-history { margin-top: var(--s-2); }
+.acct-history thead th { border-top: 0; }
+.acct-history td.acct-history-note { font-style: italic; font-size: .8125rem; color: var(--ink-2); }
+
+.acct-remove { color: var(--ink-2); }
+
+/* covered: an empty amount field has nothing to hide, so it carries no bar */
+.sheet-body[data-cover] .money-input:placeholder-shown:not(:focus),
+.sheet-body[data-cover] .acct-cash > .input:placeholder-shown:not(:focus) { background-image: none; }
+
+/* the card cycle sits side by side only where its seven columns fit: below 1300px the table runs full width (R7, T8, no sideways scroll) */
+@media (min-width: 1100px) and (max-width: 1299px) {
+  .mat-cards > .col-5, .mat-cards > .col-7 { grid-column: 1 / -1; padding-left: 0; padding-right: 0; }
+  .mat-cards > .col + .col { border-left: 0; border-top: var(--rule); padding-top: var(--s-3); }
+}
+.mat-cycle thead th { font-size: .6875rem; }
+.mat-cycle tfoot th .not-phone { white-space: nowrap; }
