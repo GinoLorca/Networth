@@ -23,6 +23,7 @@ import { store } from '../store.js';
 import { fmt, fmtPct, ratio } from '../model/money.js';
 import { addDays, diffDays, fmtDate, fmtMonth, fmtTime, isYmd, monthOf, ymd } from '../model/dates.js';
 import { firstTransactionDay } from '../model/cards.js';
+import { accountLabel, categoryLabel } from '../model/schema.js';
 import { evalGlyph, timeTroubleGlyph, moveGlyph, resultMark } from '../ui/glyphs.js';
 import { money, inlineMoney, keptLine, statusLine, roundTitle, colourOf, crosstable, movesList, notableMoves, worstGlyph, spentUnposted } from './parts.js';
 
@@ -716,6 +717,62 @@ function figuresBlock(ctx, v) {
     </div>`;
 }
 
+/* ------------------------------------------------- recent transactions */
+
+const RECENT_WIDE = 12;
+const RECENT_NARROW = 8;
+
+/** "Today" · "Yesterday" · "Tue, Nov 10". */
+function recentDay(ctx, day) {
+  if (day === ctx.today) return 'Today';
+  if (day === addDays(ctx.today, -1)) return 'Yesterday';
+  return fmtDate(day, 'dowshort');
+}
+
+/**
+ * Every account's latest transactions, newest first: the plain answer to "did anything go through?".
+ * A row opens the move's own sheet. Amounts are the bank's; a pending or tapped-in one is not final,
+ * so it is set as an estimate.
+ */
+function recentBlock(ctx, v) {
+  const r = ctx.d.latest(ctx.wide ? RECENT_WIDE : RECENT_NARROW, v.seen ? v.seen.at : null);
+  const sample = ctx.state.meta.origin === 'demo';
+  const read = Number.isFinite(ctx.state.sync.lastOk) ? ctx.state.sync.lastOk : null;
+  const head = html`<div class="sec-head">
+    <h2 class="lab" id="b-recent"><b>Recent transactions</b><i class="sep"></i>every account</h2>
+    <a class="btn-link" href="#/scoresheet">All, by day</a>
+  </div>`;
+  const source = sample ? 'Sample transactions.'
+    : read === null ? 'The bank has not been read yet.'
+      : 'The bank was read ' + whenText(ctx, read, true) + '. Its feed updates about once a day, so a purchase can take until the next day to appear.';
+  if (!r.rows.length) {
+    return html`${head}<p class="cap board-quiet">0 transactions are on the record. ${source}</p>`;
+  }
+  const t = r.today;
+  const todayLine = t.count
+    ? html`Today: ${plural(t.count, 'transaction', 'transactions')}${t.out ? html`, ${inlineMoney(t.out, { est: t.unsettled })} out` : ''}${t.in ? html`, ${inlineMoney(t.in, { est: t.unsettled })} in` : ''}.`
+    : 'Today: 0 transactions on the record.';
+  return html`${head}
+    <p class="board-recent-today">${todayLine}${r.fresh ? html` <span class="recent-new">${r.fresh} new</span> since the last look.` : ''}</p>
+    <ol class="board-recent" aria-label="Recent transactions, newest first">
+      ${r.rows.map(({ tx, account, isNew, provisional }) => {
+        const unsettled = !!tx.pending || provisional;
+        const incoming = tx.flow === 'in';
+        const tags = [];
+        if (tx.pending) tags.push('Pending');
+        if (provisional) tags.push('Tapped in');
+        const where = account ? accountLabel(account) : '';
+        return html`<li data-key="${tx.id}"><button class="recent-row" type="button" data-action="app.sheet" data-sheet="tx" data-id="${tx.id}">
+          <span class="recent-name">${tx.merchant || categoryLabel(tx.category)}${isNew ? html` <span class="recent-new">New</span>` : ''}${where || tags.length
+            ? html`<em class="recent-note">${[where, ...tags].filter(Boolean).join(' · ')}</em>` : ''}</span>
+          <span class="lab">${recentDay(ctx, tx.day)}</span>
+          ${money(tx.amount, { est: unsettled, signed: incoming, tint: incoming })}
+        </button></li>`;
+      })}
+    </ol>
+    <p class="cap board-line">${r.total > r.rows.length ? html`The latest ${r.rows.length} of ${r.total.toLocaleString('en-US')}. ` : ''}${source}</p>`;
+}
+
 /* --------------------------------------------------------- H. card cycle */
 
 /** Returns '' when there is no card account at all. */
@@ -843,6 +900,7 @@ function wideBoard(ctx, v) {
         <section class="band" aria-labelledby="b-princ">${principlesBlock(ctx)}</section>
       </div>
     </div>
+    <section class="band" aria-labelledby="b-recent">${recentBlock(ctx, v)}</section>
     <div class="band">${crosstableBlock(ctx, v)}</div>
     <div class="cols">
       <section class="col col-8" aria-labelledby="b-figs">${figuresBlock(ctx, v)}</section>
@@ -863,6 +921,7 @@ function narrowBoard(ctx, v) {
     <section class="band hero board-top" aria-labelledby="b-nw">${heroMain(ctx, v)}</section>
     <section class="band clock board-top" aria-labelledby="b-clock">${clockMain(ctx, v)}</section>
     <section class="band" aria-labelledby="b-today">${v.matchOn ? todayBlock(ctx, v) : prematchBlock(ctx, v)}</section>
+    <section class="band" aria-labelledby="b-recent">${recentBlock(ctx, v)}</section>
     ${last ? html`<section class="band" aria-labelledby="b-last">${last}</section>` : ''}
     <section class="band" aria-labelledby="b-material">
       <div class="sec-head"><h2 class="lab" id="b-material"><b>Net worth</b><i class="sep"></i>what it is made of</h2></div>

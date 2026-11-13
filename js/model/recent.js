@@ -1,0 +1,85 @@
+/**
+ * Recent transactions: the plain list of what happened lately on every account, newest first.
+ * The Board prints it so that one glance answers "did anything go through today?" without opening a
+ * month. It reads the record only; nothing here is computed money, every amount is the bank's own
+ * (or a move the owner tapped in, marked as such).
+ *
+ * What is listed
+ *  - every live row dated today or earlier: purchases, bills, deposits, refunds, fees, interest,
+ *    card payments and transfers; pending rows too, and moves the owner tapped in that the bank has
+ *    not confirmed yet;
+ *  - not a declined purchase (nothing happened), not a tapped-in move the bank has since confirmed
+ *    (the bank's own row stands for it), not a row of an account the owner left out;
+ *  - a payment or transfer between two of the owner's accounts is one event, listed once, as the
+ *    money leaving; its other leg is skipped when both legs are on the record.
+ */
+
+import { isLive } from './schema.js';
+import { isYmd } from './dates.js';
+
+const DEFAULT_LIMIT = 12;
+
+/**
+ * @param {object} state  the document
+ * @param {string} today  game day, 'YYYY-MM-DD'
+ * @param {{ limit?: number, seenAt?: number|null }} [opts]
+ *   limit   rows to return (default 12)
+ *   seenAt  when the owner last looked (ms); a row first stored after it is `isNew`. null: nothing is new.
+ * @returns {{
+ *   rows: { tx: object, account: object|null, isNew: boolean, provisional: boolean }[],
+ *   today: { count: number, out: number, in: number, unsettled: boolean },
+ *   fresh: number, total: number }}
+ *   rows   newest first: by day, then by time when the bank gives one, then by when the row arrived
+ *   today  what is dated today: how many, cents out and in (transfers between own accounts are in neither);
+ *          `unsettled` when one of them is pending or tapped in, so the sums are not final
+ *   fresh  how many listed-or-not rows are new since `seenAt`
+ *   total  how many rows there are to list in all
+ */
+export function recentTransactions(state, today, opts = {}) {
+  const limit = Number.isInteger(opts.limit) && opts.limit > 0 ? opts.limit : DEFAULT_LIMIT;
+  const seenAt = Number.isFinite(opts.seenAt) ? opts.seenAt : null;
+  const empty = { rows: [], today: { count: 0, out: 0, in: 0, unsettled: false }, fresh: 0, total: 0 };
+  if (!state || typeof state !== 'object' || !isYmd(today)) return empty;
+
+  const accounts = new Map();
+  for (const account of Array.isArray(state.accounts) ? state.accounts : []) {
+    if (account && typeof account === 'object' && account.id != null) accounts.set(account.id, account);
+  }
+  const listed = (tx) => {
+    if (!tx || typeof tx !== 'object' || !isLive(tx) || !isYmd(tx.day) || tx.day > today) return false;
+    const account = tx.accountId != null ? accounts.get(tx.accountId) : null;
+    return !(account && account.hidden);
+  };
+  const txs = (Array.isArray(state.txs) ? state.txs : []).filter(listed);
+  const present = new Set(txs.map((tx) => tx.id));
+
+  const rows = [];
+  const todayTally = { count: 0, out: 0, in: 0, unsettled: false };
+  let fresh = 0;
+  for (const tx of txs) {
+    const paired = tx.pairId != null && present.has(tx.pairId);
+    if (paired && tx.flow === 'in') continue;   // the same event as its outgoing leg
+    const provisional = tx.source === 'manual';
+    const isNew = seenAt !== null && Number.isFinite(tx.loggedAt) && tx.loggedAt > seenAt;
+    if (isNew) fresh += 1;
+    if (tx.day === today) {
+      todayTally.count += 1;
+      const amount = Number.isFinite(tx.amount) ? Math.round(tx.amount) : 0;
+      if (!paired) {
+        if (tx.flow === 'in') todayTally.in += amount;
+        else todayTally.out += amount;
+      }
+      if (tx.pending || provisional) todayTally.unsettled = true;
+    }
+    rows.push({ tx, account: tx.accountId != null ? accounts.get(tx.accountId) || null : null, isNew, provisional });
+  }
+
+  const moment = (tx) => (Number.isFinite(tx.at) ? tx.at : 0);
+  const arrived = (tx) => (Number.isFinite(tx.loggedAt) ? tx.loggedAt : 0);
+  rows.sort((a, b) => (a.tx.day < b.tx.day ? 1 : a.tx.day > b.tx.day ? -1 : 0)
+    || moment(b.tx) - moment(a.tx)
+    || arrived(b.tx) - arrived(a.tx)
+    || (String(a.tx.id) < String(b.tx.id) ? -1 : String(a.tx.id) > String(b.tx.id) ? 1 : 0));
+
+  return { rows: rows.slice(0, limit), today: todayTally, fresh, total: rows.length };
+}

@@ -173,3 +173,29 @@ button.hero-fig:focus-visible { outline-offset: 2px; }
 @media (max-width: 719px) {
   .board .move { min-height: var(--tap); }
 }
+
+/* ---------------------------------------------------- recent transactions */
+
+/* every account, newest first: the name with its account under it, the day, the amount. The grid is
+   the due list's, so what is coming and what has happened read alike. Each row is a button that
+   opens the move's sheet. Two columns from 900px. */
+.board-recent-today { margin-top: var(--s-2); font-size: var(--t-body); line-height: 1.4; }
+.board-recent { margin-top: var(--s-2); border-top: var(--rule-hair); }
+.board-recent > li { border-bottom: var(--rule-hair); break-inside: avoid; }
+.recent-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(4.6em, auto); align-items: baseline; column-gap: 10px;
+  width: 100%; min-height: var(--tap); align-content: center; padding: 6px 0 5px; text-align: left;
+}
+.recent-name { min-width: 0; overflow-wrap: anywhere; font-size: .90625rem; line-height: 1.35; }
+.recent-note { display: block; font-family: var(--f-text); font-style: italic; font-size: .78125rem; line-height: 1.3; color: var(--ink-2); }
+.recent-row .lab { white-space: nowrap; color: var(--ink-3); }
+.recent-row .fig { font-size: 1rem; line-height: 1.2; text-align: right; white-space: nowrap; }
+.recent-new {
+  font-family: var(--f-label); font-style: normal; font-weight: 600; font-size: var(--t-label-s); letter-spacing: .13em;
+  text-transform: uppercase; color: var(--spot); white-space: nowrap;
+}
+.recent-row:focus-visible { outline-offset: -2px; }
+@media (hover: hover) { .recent-row:hover .recent-name { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .2em; } .recent-row:hover .recent-note, .recent-row:hover .recent-new { text-decoration: none; } }
+@media (min-width: 900px) {
+  .board-recent { columns: 2; column-gap: var(--s-7); }
+}

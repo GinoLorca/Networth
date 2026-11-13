@@ -8,7 +8,7 @@
 <meta name="description" content="Networth: a private net-worth board. It reads your bank feed itself; your data stays on your device.">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-EI3HkRfUf2Tl8ay2RCiKdWuvMiy2viHqs2h9lQtP2KY='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-unS+/F/lSl/bijMB3jRRDoQ+Oz6Z2t+hXGwziWGVHR4=' 'sha256-Ur8ku0rdjIOUhY20rCJMxGBsTYq1x7I3mk4AJEN43oI=' 'sha256-HjK81dldzBx/xIeL8bxqZbhlUcJR67+FK79I0+8bNP4=' 'sha256-fW8Rb031pEL3z6SKg0UIoHj0lq9v89/SdbWzftltFMc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-5DVePRcbup93xTlRxnG1uTZIyVpCM/nPg0Za5G0vPBw=' 'sha256-VzoPHmMbD+TfmkRekvrhksYUuT8rj+c4jA1P/9P6/qI=' 'sha256-/xAinrTNYppFAIdG41S3TqyTgXliWkmyzNG9HOP4uBU=' 'sha256-01lSdEAMChpzTzJQLpOoEDL4dUduCyR/7BPuEyO5V4o=' 'sha256-B3Hrzs4vbn2XI5EePJAqAUZIxGf4JkYOb2PSWp2jJm0=' 'sha256-Z6D6KTuB/jjs3qcL8ULrE5HCIeZokO1KE1f3JKMRgag=' 'sha256-BjO5ScR2hajS/xDP0c80FuQ6bCsrOTlf9EntsQtTpP0='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src https://beta-bridge.simplefin.org https://bridge.simplefin.org; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-+KyufWh895DDiXWLNliUhqFFwUop3VPB7MGqNEDYgvo='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-unS+/F/lSl/bijMB3jRRDoQ+Oz6Z2t+hXGwziWGVHR4=' 'sha256-Ur8ku0rdjIOUhY20rCJMxGBsTYq1x7I3mk4AJEN43oI=' 'sha256-HjK81dldzBx/xIeL8bxqZbhlUcJR67+FK79I0+8bNP4=' 'sha256-fW8Rb031pEL3z6SKg0UIoHj0lq9v89/SdbWzftltFMc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-SAppuCBVUiNxCfQBBmSuY3WyO3Xl62jbi5ibBOsOw/Y=' 'sha256-VzoPHmMbD+TfmkRekvrhksYUuT8rj+c4jA1P/9P6/qI=' 'sha256-/xAinrTNYppFAIdG41S3TqyTgXliWkmyzNG9HOP4uBU=' 'sha256-01lSdEAMChpzTzJQLpOoEDL4dUduCyR/7BPuEyO5V4o=' 'sha256-B3Hrzs4vbn2XI5EePJAqAUZIxGf4JkYOb2PSWp2jJm0=' 'sha256-Z6D6KTuB/jjs3qcL8ULrE5HCIeZokO1KE1f3JKMRgag=' 'sha256-BjO5ScR2hajS/xDP0c80FuQ6bCsrOTlf9EntsQtTpP0='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src https://beta-bridge.simplefin.org https://bridge.simplefin.org; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#F3EDE1" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#15130F" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1771,6 +1771,26 @@ button.hero-fig:focus-visible { outline-offset: 2px; }
 @media (min-width: 1100px) { .clock-cash.is-huge { font-size: min(3.6vw, 3.5rem); } }
 @media (max-width: 719px) {
   .board .move { min-height: var(--tap); }
+}
+.board-recent-today { margin-top: var(--s-2); font-size: var(--t-body); line-height: 1.4; }
+.board-recent { margin-top: var(--s-2); border-top: var(--rule-hair); }
+.board-recent > li { border-bottom: var(--rule-hair); break-inside: avoid; }
+.recent-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(4.6em, auto); align-items: baseline; column-gap: 10px;
+  width: 100%; min-height: var(--tap); align-content: center; padding: 6px 0 5px; text-align: left;
+}
+.recent-name { min-width: 0; overflow-wrap: anywhere; font-size: .90625rem; line-height: 1.35; }
+.recent-note { display: block; font-family: var(--f-text); font-style: italic; font-size: .78125rem; line-height: 1.3; color: var(--ink-2); }
+.recent-row .lab { white-space: nowrap; color: var(--ink-3); }
+.recent-row .fig { font-size: 1rem; line-height: 1.2; text-align: right; white-space: nowrap; }
+.recent-new {
+  font-family: var(--f-label); font-style: normal; font-weight: 600; font-size: var(--t-label-s); letter-spacing: .13em;
+  text-transform: uppercase; color: var(--spot); white-space: nowrap;
+}
+.recent-row:focus-visible { outline-offset: -2px; }
+@media (hover: hover) { .recent-row:hover .recent-name { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .2em; } .recent-row:hover .recent-note, .recent-row:hover .recent-new { text-decoration: none; } }
+@media (min-width: 900px) {
+  .board-recent { columns: 2; column-gap: var(--s-7); }
 }
 
 </style>
@@ -9054,6 +9074,63 @@ function inferAccountType(account) {
 return { normalizeDescription, merchantOf, classify, reclassify, learnRule, confirmMove, topMerchants, inferAccountType };
 })();
 
+// ---- js/model/recent.js
+__mods["js/model/recent.js"] = (function () {
+const { isLive } = __mods["js/model/schema.js"];
+const { isYmd } = __mods["js/model/dates.js"];
+const DEFAULT_LIMIT = 12;
+
+function recentTransactions(state, today, opts = {}) {
+  const limit = Number.isInteger(opts.limit) && opts.limit > 0 ? opts.limit : DEFAULT_LIMIT;
+  const seenAt = Number.isFinite(opts.seenAt) ? opts.seenAt : null;
+  const empty = { rows: [], today: { count: 0, out: 0, in: 0, unsettled: false }, fresh: 0, total: 0 };
+  if (!state || typeof state !== 'object' || !isYmd(today)) return empty;
+
+  const accounts = new Map();
+  for (const account of Array.isArray(state.accounts) ? state.accounts : []) {
+    if (account && typeof account === 'object' && account.id != null) accounts.set(account.id, account);
+  }
+  const listed = (tx) => {
+    if (!tx || typeof tx !== 'object' || !isLive(tx) || !isYmd(tx.day) || tx.day > today) return false;
+    const account = tx.accountId != null ? accounts.get(tx.accountId) : null;
+    return !(account && account.hidden);
+  };
+  const txs = (Array.isArray(state.txs) ? state.txs : []).filter(listed);
+  const present = new Set(txs.map((tx) => tx.id));
+
+  const rows = [];
+  const todayTally = { count: 0, out: 0, in: 0, unsettled: false };
+  let fresh = 0;
+  for (const tx of txs) {
+    const paired = tx.pairId != null && present.has(tx.pairId);
+    if (paired && tx.flow === 'in') continue;   // the same event as its outgoing leg
+    const provisional = tx.source === 'manual';
+    const isNew = seenAt !== null && Number.isFinite(tx.loggedAt) && tx.loggedAt > seenAt;
+    if (isNew) fresh += 1;
+    if (tx.day === today) {
+      todayTally.count += 1;
+      const amount = Number.isFinite(tx.amount) ? Math.round(tx.amount) : 0;
+      if (!paired) {
+        if (tx.flow === 'in') todayTally.in += amount;
+        else todayTally.out += amount;
+      }
+      if (tx.pending || provisional) todayTally.unsettled = true;
+    }
+    rows.push({ tx, account: tx.accountId != null ? accounts.get(tx.accountId) || null : null, isNew, provisional });
+  }
+
+  const moment = (tx) => (Number.isFinite(tx.at) ? tx.at : 0);
+  const arrived = (tx) => (Number.isFinite(tx.loggedAt) ? tx.loggedAt : 0);
+  rows.sort((a, b) => (a.tx.day < b.tx.day ? 1 : a.tx.day > b.tx.day ? -1 : 0)
+    || moment(b.tx) - moment(a.tx)
+    || arrived(b.tx) - arrived(a.tx)
+    || (String(a.tx.id) < String(b.tx.id) ? -1 : String(a.tx.id) > String(b.tx.id) ? 1 : 0));
+
+  return { rows: rows.slice(0, limit), today: todayTally, fresh, total: rows.length };
+}
+return { recentTransactions };
+})();
+
 // ---- js/model/detect.js
 __mods["js/model/detect.js"] = (function () {
 const { ACCOUNT_TYPES, CADENCES, CATEGORIES, PURPOSES, klassOf, makeRecurring, makeStream } = __mods["js/model/schema.js"];
@@ -9804,6 +9881,7 @@ const { cardsNow, allCardsMonths, cardMonths, historyDays } = __mods["js/model/c
 const { bookTotals, upcoming, renewals } = __mods["js/model/book.js"];
 const { pace, paceMinDays, projectNetWorth, reserveGoal, incomeLadder, cardPayoff } = __mods["js/model/forecast.js"];
 const { topMerchants } = __mods["js/model/classify.js"];
+const { recentTransactions } = __mods["js/model/recent.js"];
 const { MATCH_FROM_DAY } = __mods["js/model/detect.js"];
 const LOOKBACK_FOR_LAST_ROUND = 10;
 
@@ -9897,6 +9975,8 @@ function makeDerived(state, now) {
       return state.accounts.filter((a) => !a.hidden && ACCOUNT_TYPES[a.type] && ACCOUNT_TYPES[a.type].group === group);
     },
     valueOf(account) { return once('value:' + account.id, () => led().accountValueOn(account.id, today)); },
+
+    latest(limit = 12, seenAt = null) { return once('latest:' + limit + ':' + seenAt, () => recentTransactions(state, today, { limit, seenAt })); },
 
     get sweepTxIds() {
       return once('sweepTxIds', () => new Set(state.sweeps.map((s) => s.txId).filter(Boolean)));
@@ -14189,6 +14269,7 @@ const { store } = __mods["js/store.js"];
 const { fmt, fmtPct, ratio } = __mods["js/model/money.js"];
 const { addDays, diffDays, fmtDate, fmtMonth, fmtTime, isYmd, monthOf, ymd } = __mods["js/model/dates.js"];
 const { firstTransactionDay } = __mods["js/model/cards.js"];
+const { accountLabel, categoryLabel } = __mods["js/model/schema.js"];
 const { evalGlyph, timeTroubleGlyph, moveGlyph, resultMark } = __mods["js/ui/glyphs.js"];
 const { money, inlineMoney, keptLine, statusLine, roundTitle, colourOf, crosstable, movesList, notableMoves, worstGlyph, spentUnposted } = __mods["js/views/parts.js"];
 const TEN_MINUTES_MS = 10 * 60 * 1000;
@@ -14832,6 +14913,56 @@ function figuresBlock(ctx, v) {
     </div>`;
 }
 
+/* ------------------------------------------------- recent transactions */
+
+const RECENT_WIDE = 12;
+const RECENT_NARROW = 8;
+
+function recentDay(ctx, day) {
+  if (day === ctx.today) return 'Today';
+  if (day === addDays(ctx.today, -1)) return 'Yesterday';
+  return fmtDate(day, 'dowshort');
+}
+
+function recentBlock(ctx, v) {
+  const r = ctx.d.latest(ctx.wide ? RECENT_WIDE : RECENT_NARROW, v.seen ? v.seen.at : null);
+  const sample = ctx.state.meta.origin === 'demo';
+  const read = Number.isFinite(ctx.state.sync.lastOk) ? ctx.state.sync.lastOk : null;
+  const head = html`<div class="sec-head">
+    <h2 class="lab" id="b-recent"><b>Recent transactions</b><i class="sep"></i>every account</h2>
+    <a class="btn-link" href="#/scoresheet">All, by day</a>
+  </div>`;
+  const source = sample ? 'Sample transactions.'
+    : read === null ? 'The bank has not been read yet.'
+      : 'The bank was read ' + whenText(ctx, read, true) + '. Its feed updates about once a day, so a purchase can take until the next day to appear.';
+  if (!r.rows.length) {
+    return html`${head}<p class="cap board-quiet">0 transactions are on the record. ${source}</p>`;
+  }
+  const t = r.today;
+  const todayLine = t.count
+    ? html`Today: ${plural(t.count, 'transaction', 'transactions')}${t.out ? html`, ${inlineMoney(t.out, { est: t.unsettled })} out` : ''}${t.in ? html`, ${inlineMoney(t.in, { est: t.unsettled })} in` : ''}.`
+    : 'Today: 0 transactions on the record.';
+  return html`${head}
+    <p class="board-recent-today">${todayLine}${r.fresh ? html` <span class="recent-new">${r.fresh} new</span> since the last look.` : ''}</p>
+    <ol class="board-recent" aria-label="Recent transactions, newest first">
+      ${r.rows.map(({ tx, account, isNew, provisional }) => {
+        const unsettled = !!tx.pending || provisional;
+        const incoming = tx.flow === 'in';
+        const tags = [];
+        if (tx.pending) tags.push('Pending');
+        if (provisional) tags.push('Tapped in');
+        const where = account ? accountLabel(account) : '';
+        return html`<li data-key="${tx.id}"><button class="recent-row" type="button" data-action="app.sheet" data-sheet="tx" data-id="${tx.id}">
+          <span class="recent-name">${tx.merchant || categoryLabel(tx.category)}${isNew ? html` <span class="recent-new">New</span>` : ''}${where || tags.length
+            ? html`<em class="recent-note">${[where, ...tags].filter(Boolean).join(' · ')}</em>` : ''}</span>
+          <span class="lab">${recentDay(ctx, tx.day)}</span>
+          ${money(tx.amount, { est: unsettled, signed: incoming, tint: incoming })}
+        </button></li>`;
+      })}
+    </ol>
+    <p class="cap board-line">${r.total > r.rows.length ? html`The latest ${r.rows.length} of ${r.total.toLocaleString('en-US')}. ` : ''}${source}</p>`;
+}
+
 /* --------------------------------------------------------- H. card cycle */
 
 function cardBlock(ctx, v) {
@@ -14958,6 +15089,7 @@ function wideBoard(ctx, v) {
         <section class="band" aria-labelledby="b-princ">${principlesBlock(ctx)}</section>
       </div>
     </div>
+    <section class="band" aria-labelledby="b-recent">${recentBlock(ctx, v)}</section>
     <div class="band">${crosstableBlock(ctx, v)}</div>
     <div class="cols">
       <section class="col col-8" aria-labelledby="b-figs">${figuresBlock(ctx, v)}</section>
@@ -14978,6 +15110,7 @@ function narrowBoard(ctx, v) {
     <section class="band hero board-top" aria-labelledby="b-nw">${heroMain(ctx, v)}</section>
     <section class="band clock board-top" aria-labelledby="b-clock">${clockMain(ctx, v)}</section>
     <section class="band" aria-labelledby="b-today">${v.matchOn ? todayBlock(ctx, v) : prematchBlock(ctx, v)}</section>
+    <section class="band" aria-labelledby="b-recent">${recentBlock(ctx, v)}</section>
     ${last ? html`<section class="band" aria-labelledby="b-last">${last}</section>` : ''}
     <section class="band" aria-labelledby="b-material">
       <div class="sec-head"><h2 class="lab" id="b-material"><b>Net worth</b><i class="sep"></i>what it is made of</h2></div>

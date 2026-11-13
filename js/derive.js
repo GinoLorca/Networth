@@ -35,6 +35,7 @@ import { cardsNow, allCardsMonths, cardMonths, historyDays } from './model/cards
 import { bookTotals, upcoming, renewals } from './model/book.js';
 import { pace, paceMinDays, projectNetWorth, reserveGoal, incomeLadder, cardPayoff } from './model/forecast.js';
 import { topMerchants } from './model/classify.js';
+import { recentTransactions } from './model/recent.js';
 import { MATCH_FROM_DAY } from './model/detect.js';
 
 const LOOKBACK_FOR_LAST_ROUND = 10;
@@ -138,6 +139,9 @@ export function makeDerived(state, now) {
       return state.accounts.filter((a) => !a.hidden && ACCOUNT_TYPES[a.type] && ACCOUNT_TYPES[a.type].group === group);
     },
     valueOf(account) { return once('value:' + account.id, () => led().accountValueOn(account.id, today)); },
+
+    /** The latest transactions on every account, newest first; `seenAt` (ms) marks what arrived since the last look. */
+    latest(limit = 12, seenAt = null) { return once('latest:' + limit + ':' + seenAt, () => recentTransactions(state, today, { limit, seenAt })); },
 
     get sweepTxIds() {
       return once('sweepTxIds', () => new Set(state.sweeps.map((s) => s.txId).filter(Boolean)));
