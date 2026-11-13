@@ -89,7 +89,7 @@ export const PURPOSES = ['personal', 'work', 'coaching', 'studio'];
 
 /**
  * Spending categories. `klass` is the default class; `stop: true` marks the categories
- * counted as "stops" when looking for stacked cafe/deli visits.
+ * counted as "stops" when looking for repeat cafe/deli visits in one day.
  */
 export const CATEGORIES = {
   cafe: { label: 'Coffee & cafes', klass: 'game', stop: true },
@@ -238,7 +238,8 @@ export const STREAM_KINDS = {
 /**
  * @typedef {Object} DayRecord  Stored only for days the owner touched. All fields optional.
  * @property {'work'|'off'|null} [type]   override of the weekday default (Black = workday, White = day off)
- * @property {{ container: boolean|null, breakfast: boolean|null, stops: number|null, at: number }|null} [plan]  morning preparation
+ * @property {{ ready: { label: string, yes: boolean }[], stops: number|null, at: number }|null} [plan]  morning preparation:
+ *           what was ready (each of the owner's own lines of settings.preps that was answered, with its wording that morning) and the planned stops
  * @property {boolean} [bye]              half-point bye, declared ahead
  * @property {string} [note]
  */
@@ -403,10 +404,12 @@ export function defaultState(now) {
       byesPerMonth: 2,
       /** monthly category targets, cents: { cafe: 20000 } */
       targets: {},
-      /** the owner's own rules, shown on the candidate-move sheet */
-      principles: ['Bring your own coffee.', 'Eat before you leave when you can.', 'One small coffee if you need a seat.', 'Never stack stops.'],
-      /** choices offered after declining a purchase */
-      insteads: ['Refilled my own', 'Ate what I brought', 'Sat somewhere free', 'Waited it out'],
+      /** the owner's own rules, shown on the Board and the candidate-move sheet: none until the owner writes them in Settings */
+      principles: [],
+      /** things the owner wants ready before leaving: each is a yes or no on the morning plan; none until the owner writes them in Settings */
+      preps: [],
+      /** choices offered after declining a purchase (the owner's to reword in Settings) */
+      insteads: ['Went without', 'Used what I had', 'Made it at home', 'Left it for later'],
       /** hide figures (bars and symbols only) — for opening the app in public */
       cover: false,
       /** labels for the purpose tags */
@@ -448,10 +451,11 @@ export function defaultState(now) {
     /** kept money actually moved to the card or savings: { weekOf, amount, day, txId, via: 'auto'|'tap' } */
     sweeps: [],
     goals: {
-      /** cash reserve target, cents */
-      reserve: { target: 1000000 },
-      /** annual gross income ladder, cents, and the deadline */
-      income: { ladder: [10000000, 20000000, 50000000, 100000000], by: '2029-12-31' },
+      /** cash reserve target, cents: a starting figure, the owner's to set in Analysis */
+      reserve: { target: 500000 },
+      /** annual gross income ladder (the norms), cents, and the day the last one is due: starting figures,
+       *  the owner's to set in Analysis; the day starts at the end of the fourth year after this one */
+      income: { ladder: [5000000, 7500000, 10000000, 15000000], by: (new Date(Number.isFinite(now) ? now : 0).getFullYear() + 4) + '-12-31' },
     },
     /** inputs of the Analysis scenarios (never results) */
     scenario: {

@@ -444,8 +444,7 @@ function byesUsed(ctx) {
 
 function planSummary(ctx, plan) {
   const bits = [];
-  if (plan.container != null) bits.push(plan.container ? 'container filled' : 'no container');
-  if (plan.breakfast != null) bits.push(plan.breakfast ? 'breakfast sorted' : 'breakfast not sorted');
+  for (const item of plan.ready || []) bits.push(item.label + (item.yes ? ': yes' : ': no'));
   if (plan.stops != null) bits.push(plan.stops === 0 ? '0 planned stops' : plural(plan.stops, 'planned stop', 'planned stops'));
   const record = ctx.state.days[ctx.today];
   const at = record && record.plan && Number.isFinite(record.plan.at) ? record.plan.at : null;

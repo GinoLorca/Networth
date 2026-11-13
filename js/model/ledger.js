@@ -140,7 +140,7 @@ const MAX_LOAN_AGE_DAYS = 18263;
  * @property {number} stops          game-class spends in stop categories that day
  * @property {object[]} moves        every transaction of the day (Tx objects, including declines and non-game moves),
  *                                   ordered by `at` when known, else by loggedAt
- * @property {{ container: boolean|null, breakfast: boolean|null, stops: number|null }|null} plan
+ * @property {{ ready: { label: string, yes: boolean }[], stops: number|null }|null} plan
  */
 
 /**
@@ -1340,7 +1340,11 @@ function planOf(record) {
   const plan = record && isObject(record.plan) ? record.plan : null;
   if (!plan) return null;
   const answer = (value) => (typeof value === 'boolean' ? value : null);
-  return { container: answer(plan.container), breakfast: answer(plan.breakfast), stops: Number.isFinite(plan.stops) ? plan.stops : null };
+  // what was ready that morning: the owner's own lines, kept with the wording they had when they were answered
+  const ready = listOf(plan.ready).filter(isObject)
+    .map((item) => ({ label: typeof item.label === 'string' ? item.label.trim().slice(0, 60) : '', yes: answer(item.yes) }))
+    .filter((item) => item.label && item.yes !== null).slice(0, 4);
+  return { ready, stops: Number.isFinite(plan.stops) ? plan.stops : null };
 }
 
 /** True for a round that has a result and belongs to the match. */

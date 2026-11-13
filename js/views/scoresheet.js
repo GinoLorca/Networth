@@ -70,7 +70,7 @@ function notesFor(annotations, covered) {
 
 /**
  * The annotations of a round as the sheet prints them. Before the match began nothing was played against
- * Habit, so the marks of the daily game (stacked stops, declined purchases, the round's own) are left out;
+ * Habit, so the marks of the daily game (repeat stops, declined purchases, the round's own) are left out;
  * what does not depend on the match still prints: a penalty, an only move, a business purchase, the owner's own mark.
  */
 function marksOf(ctx, round) {
@@ -335,8 +335,8 @@ function reviewBlock(ctx, view, month, matchStart, onRecord) {
       ? html`With a morning plan: <span class="fig" data-cover-keep>${scoreOf(rv.prepared.score, rv.prepared.rounds)}</span>.
           Without one: <span class="fig" data-cover-keep>${rv.unprepared.rounds ? scoreOf(rv.unprepared.score, rv.unprepared.rounds) : '—'}</span>.`
       : html`No round of ${name} had a morning plan; unprepared rounds scored <span class="fig" data-cover-keep>${scoreOf(rv.unprepared.score, rv.unprepared.rounds)}</span>.`));
-    // 9. stacked stops
-    items.push(reviewItem('stacked', 'Stacked stops', rv.stackedDays
+    // 9. repeat stops
+    items.push(reviewItem('stacked', 'Repeat stops', rv.stackedDays
       ? html`${rv.stackedDays === 1 ? '1 day' : rv.stackedDays + ' days'} with a second or later unplanned stop; those stops cost <span data-fig>${fmt(rv.stackedCost)}</span>.`
       : 'No day of ' + name + ' had a second unplanned stop.'));
   }

@@ -18,7 +18,7 @@ import { html, cx, attrs } from '../ui/dom.js';
 import { store } from '../store.js';
 import { context, toast } from '../runtime.js';
 import { fmt, fmtSigned, fmtPlain, fmtPct, toCents } from '../model/money.js';
-import { addDays, addMonthsYm, diffDays, endOfMonth, fmtDate, fmtMonth, fmtTime, gameDay, monthOf } from '../model/dates.js';
+import { addDays, addMonthsYm, diffDays, endOfMonth, fmtDate, fmtMonth, fmtTime, gameDay, isYmd, monthOf } from '../model/dates.js';
 import { CATEGORIES, KLASSES, STREAM_KINDS, accountLabel, categoryLabel } from '../model/schema.js';
 import { retention } from '../model/ledger.js';
 import { purchaseImpact } from '../model/forecast.js';
@@ -34,6 +34,10 @@ const QUICK_PURCHASES = [25000, 65000, 150000];
 const KLASS_ORDER = ['game', 'want', 'need', 'oneoff', 'book'];
 const KLASS_NOTES = { game: 'the daily game', want: 'judged by the month', need: '', oneoff: '', book: 'recurring bills' };
 const RUNG_TITLES = ['GM', 'IM', 'FM', 'CM'];
+/** The Norms block always keeps room for this many amounts. */
+const NORM_SLOTS = 4;
+/** A norm is a year's income: under $1,000.00 it is a slip of the keys ("4,75"), not a goal. */
+const MIN_NORM = 100000;
 /** Limits on what a field accepts; anything outside is put back as it was. */
 const MAX_MONEY = 100000000000;
 const MAX_HORIZON = 600;
@@ -535,6 +539,34 @@ function scenarioSection(ctx) {
 
 /* ------------------------------------------------------------------ ladder */
 
+/**
+ * The norms, set in place: one yearly figure before tax for each rung, lowest first, and the day the
+ * last one is due. They are the owner's own goals; a new document starts with placeholder figures.
+ */
+function normsBlock(ctx, l) {
+  const count = l.ladder.length;
+  const title = (i) => RUNG_TITLES[count - 1 - i] || 'N' + (i + 1);
+  // a ladder with fewer than NORM_SLOTS amounts keeps empty lines, so a norm can always be added
+  const spare = Math.max(0, NORM_SLOTS - count);
+  return html`<h3 class="lab an-sub">Norms<i class="sep"></i>yours to set</h3>
+    <div class="an-sets an-norms">
+      ${l.ladder.map((rung, i) => html`<label class="an-set" data-key="${'norm' + i}">
+        <span class="lab">${title(i)}<i class="sep"></i>a year, before tax</span>
+        ${field({ field: 'norm', value: fieldText(rung.target), label: title(i) + ' norm: annual gross, in dollars', prefix: '$', width: 6, extra: { 'data-i': i } })}
+      </label>`)}
+      ${Array.from({ length: spare }, (_, k) => html`<label class="an-set" data-key="${'norm-new' + k}">
+        <span class="lab">Another norm<i class="sep"></i>a year, before tax</span>
+        ${field({ field: 'norm', value: '', label: 'Another norm: annual gross, in dollars', prefix: '$', width: 6, placeholder: '—', extra: { 'data-i': count + k } })}
+      </label>`)}
+      <label class="an-set">
+        <span class="lab">${count ? title(count - 1) : 'Final norm'}<i class="sep"></i>due by</span>
+        <input class="input an-date" type="date" value="${isYmd(l.final.by) ? l.final.by : ''}" min="${addDays(ctx.today, 1)}"
+          aria-label="The day the final norm is due" data-change="analysis.set" data-field="normBy">
+      </label>
+    </div>
+    <p class="cap an-note">Each norm is a year’s income before tax, and the last one carries a day. They change nothing in net worth.</p>`;
+}
+
 function ladderSection(ctx) {
   const l = ctx.d.ladder;
   const scenario = ctx.state.scenario;
@@ -597,7 +629,9 @@ function ladderSection(ctx) {
           ? html`Annualized from ${daysWord(l.days)} of deposits, so a single payday moves it a long way. `
           : ''}${top > 0 && l.final.requiredGrowth != null && l.grossApprox < top && pct(l.final.requiredGrowth, 0)
           ? html`The final norm, ${amt(top, { decimals: 0 })} by ${fmtDate(l.final.by, 'full')}, would need growth of about ${pct(l.final.requiredGrowth, 0)} a year from here.`
-          : top > 0 && l.grossApprox >= top ? 'The final norm is reached.' : top > 0 && l.final.requiredGrowth != null ? '' : html`Growth toward the final norm is read once income has been received.`}</span>`}
+          : top > 0 && l.grossApprox >= top ? 'The final norm is reached.' : top > 0 && l.final.requiredGrowth != null ? ''
+            : top > 0 && !isYmd(l.final.by) ? 'The final norm has no due day: one is set under Norms, below.'
+              : html`Growth toward the final norm is read once income has been received.`}</span>`}
       </li>
     </ol>
     <div class="an-sets">
@@ -609,6 +643,7 @@ function ladderSection(ctx) {
     <p class="cap an-note">${salary > 0
       ? html`Used for the approximate gross only: salary of ${amt(salary)} ÷ ${(sharePct / 100).toFixed(2)}; other income counts as received.`
       : 'Used once a salary is detected; until then the gross is the income as received.'}</p>
+    ${normsBlock(ctx, l)}
     <h3 class="lab an-sub">By stream<i class="sep"></i>${l.partial ? (l.days > 0 ? 'last ' + daysWord(l.days) : 'no record yet') : 'last 12 months'}</h3>
     ${l.byStream.length ? html`<ul class="rows rows-plain an-streams">
       ${l.byStream.map((row) => html`<li class="row" data-key="${row.id || 'other'}">
@@ -862,6 +897,8 @@ function restore(el, reason) {
 const RANGE = {
   reserve: 'Not saved: the goal is an amount from $1 to $1,000,000,000.',
   takeHome: 'Not saved: the share is a whole number from 1 to 100.',
+  norm: 'Not saved: a norm is an amount from $1,000 to $1,000,000,000, and no 2 norms are the same.',
+  normBy: 'Not saved: the day is a date after today.',
   money: 'Not saved: the amount is a number from $0 to $1,000,000,000.',
   target: 'Not saved: a target is an amount from $0.01 to $1,000,000,000.',
 };
@@ -870,6 +907,14 @@ const RANGE = {
 function readMoney(el, { min = 0 } = {}) {
   const cents = toCents(el.value);
   return cents == null || cents < min || cents > MAX_MONEY ? null : cents;
+}
+
+/** The income goal of a document, made whole first: a record that lost it (or holds junk there) can still be given one. */
+function incomeGoal(state) {
+  if (!state.goals || typeof state.goals !== 'object' || Array.isArray(state.goals)) state.goals = {};
+  const income = state.goals.income;
+  if (!income || typeof income !== 'object' || Array.isArray(income)) state.goals.income = {};
+  return state.goals.income;
 }
 
 function setScenario(el, field) {
@@ -885,6 +930,35 @@ function setScenario(el, field) {
     const share = Math.round(pct) / 100;
     store.update((s) => { s.scenario.takeHomeRatio = share; });
     el.value = String(Math.round(pct));
+    return;
+  }
+  if (field === 'norm') {
+    // The ladder is kept lowest first, each amount once: a norm typed above its neighbour changes places with it.
+    const i = Math.round(Number(el.dataset.i));
+    const targets = context().d.ladder.ladder.map((rung) => rung.target);
+    const slots = Math.max(targets.length, NORM_SLOTS);
+    const amount = readMoney(el, { min: MIN_NORM });
+    if (amount == null || !(i >= 0 && i < slots) || targets.some((target, k) => k !== i && target === amount)) { restore(el, RANGE.norm); return; }
+    if (i < targets.length) targets[i] = amount;
+    else targets.push(amount);   // an empty line: the ladder gains a norm
+    targets.sort((a, b) => a - b);
+    store.update((s) => { incomeGoal(s).ladder = targets; });
+    // Once the page has redrawn, every line shows the norm it now stands for (a typed value outlives
+    // a redraw, and a line may have changed places or turned from an empty line into a norm).
+    const refresh = () => {
+      for (const input of document.querySelectorAll('.an-norms input[data-field="norm"]')) {
+        const k = Math.round(Number(input.dataset.i));
+        input.value = k >= 0 && k < targets.length ? fieldText(targets[k]) : '';
+      }
+    };
+    requestAnimationFrame(() => requestAnimationFrame(refresh));
+    setTimeout(refresh, 120);
+    return;
+  }
+  if (field === 'normBy') {
+    const day = String(el.value);
+    if (!isYmd(day) || day <= context().today) { restore(el, RANGE.normBy); return; }
+    store.update((s) => { incomeGoal(s).by = day; });
     return;
   }
   const cents = readMoney(el, { min: field === 'reserve' ? 100 : 0 });

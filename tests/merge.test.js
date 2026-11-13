@@ -1224,10 +1224,10 @@ test('addProvisional: odd input is repaired or refused, never thrown on', () => 
 test('addDecline: recorded, and without any monetary effect', () => {
   const state = linkedState();
   const balances = state.accounts.map((a) => a.balance);
-  const decline = addDecline(state, { amount: 650, merchant: 'Blue Door Cafe', category: 'cafe', day: TODAY, instead: 'Refilled my own' }, NOW);
+  const decline = addDecline(state, { amount: 650, merchant: 'Blue Door Cafe', category: 'cafe', day: TODAY, instead: 'Went without' }, NOW);
   assert.deepEqual({ ...decline }, {
     ...decline, source: 'manual', kind: 'decline', flow: 'out', amount: 650, merchant: 'Blue Door Cafe', mkey: 'blue door cafe', category: 'cafe', klass: 'game',
-    day: TODAY, instead: 'Refilled my own', accountId: null, matchId: null, loggedAt: NOW,
+    day: TODAY, instead: 'Went without', accountId: null, matchId: null, loggedAt: NOW,
   });
   assert.equal(txEffect(decline), 0);
   assert.equal(isLive(decline), false);

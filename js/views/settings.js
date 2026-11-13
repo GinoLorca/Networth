@@ -54,6 +54,7 @@ const TOGGLES = ['smoothing', 'countPending', 'cover'];
 const LISTS = {
   principles: { one: 'Principle', max: 8, length: 90, add: 'Add a principle' },
   insteads: { one: 'Choice', max: 6, length: 40, add: 'Add a choice' },
+  preps: { one: 'Preparation', max: 3, length: 40, add: 'Add something to have ready' },
 };
 const PURPOSE_LENGTH = 24;
 const MAX_BACKUP_BYTES = 64 * 1024 * 1024;
@@ -386,6 +387,7 @@ function rulesSection(ctx) {
     </div>
     <div class="set-rules">
       ${lineList(ctx, 'principles', 'Opening principles', 'Shown on the candidate-move sheet before a purchase. Up to 8; clear a line to remove it.')}
+      ${lineList(ctx, 'preps', 'Morning plan', 'What you want ready before leaving. Each line becomes a yes or no on the morning plan. Up to 3; clear a line to remove it.')}
       ${lineList(ctx, 'insteads', 'Instead', 'One tap after a declined purchase records what was done instead. Up to 6; clear a line to remove it.')}
       <fieldset class="set-list">
         <legend class="field-label lab">Purpose tags</legend>
@@ -570,7 +572,7 @@ function setTheme({ el }) {
 }
 
 function setLine({ el, data }) {
-  const key = data.list === 'insteads' ? 'insteads' : 'principles';
+  const key = Object.hasOwn(LISTS, data.list) ? data.list : 'principles';
   const spec = LISTS[key];
   const i = Number(data.i);
   const text = String(el.value || '').replace(/\s+/g, ' ').trim().slice(0, spec.length);

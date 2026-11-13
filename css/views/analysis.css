@@ -14,6 +14,7 @@
 .an-sub, .hb-sub { margin-top: var(--s-5); padding-bottom: 7px; border-bottom: var(--rule); }
 .an-sub-bare { border-bottom: 0; padding-bottom: 0; }
 .an-sub + .rows, .hb-sub + .rows, .hb-sub + .table { border-top: 0; }
+.an-sub + .an-sets { margin-top: 0; border-top: 0; }
 .an-note { margin-top: var(--s-2); max-width: 62ch; }
 .an-over { margin-top: var(--s-3); }
 .an-big { margin-top: 6px; }
@@ -56,6 +57,8 @@ label.an-set { cursor: text; }
 .an-set > .lab { padding-top: 6px; }
 .an-set-stack { align-items: center; row-gap: var(--s-2); }
 .an-set-stack > .lab { padding-top: 0; }
+/* the date of the final norm: a date field set like the figures beside it */
+.an-set .an-date { width: auto; min-width: 9.5rem; min-height: 34px; padding: 3px 0 2px; font-family: var(--f-figure); font-size: var(--t-fig-s); text-align: right; }
 
 /* a field inside a row label: "SCENARIO at $150 a month" */
 .an-inline { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 2px 7px; cursor: text; }
@@ -218,3 +221,6 @@ label.an-set { cursor: text; }
 @media (max-width: 719px) {
   .an-in input, .an-inline .an-in input, .an-table .an-td-target .an-in input { min-height: var(--tap); min-width: var(--tap); }
 }
+
+/* at the largest type on the narrowest screen the table scrolls inside its section, never the page */
+.an-went { overflow-x: auto; }

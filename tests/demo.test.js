@@ -582,7 +582,7 @@ test('buildDemoState: a result never hangs on where a line falls', () => {
   });
 });
 
-test('buildDemoState: one day stacked three stops', () => {
+test('buildDemoState: one day holds three stops', () => {
   onEveryDay(({ ledger, state }) => {
     const stacked = matchRounds(ledger).filter((round) => round.stops >= 3);
     assert.equal(stacked.length, 1);
@@ -624,7 +624,7 @@ test('buildDemoState: morning plans — kept, kept to the letter, and once not',
       const record = state.days[round.day].plan;
       assert.equal(gameDay(record.at, ROLLOVER), round.day, 'made that morning');
       assert.equal(new Date(record.at).getHours(), 7);
-      assert.equal(record.container, true);
+      assert.equal(record.ready[0].yes, true);
       assert.ok(record.stops === 0 || record.stops === 1);
     }
     const [lastMonday, , lastWednesday] = weekRounds(ledger, 1);

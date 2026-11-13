@@ -11,7 +11,7 @@
  *  - Days before the match are the invented owner's usual life, drawn from a seeded generator keyed
  *    by the calendar day. The three weeks of the match are scripted by week and weekday, with
  *    amounts set against the habit those earlier days add up to, so the story (wins, draws, losses,
- *    clean sheets, a stacked day, a bye, one kept week moved to the card and another still open)
+ *    clean sheets, a day of repeat stops, a bye, one kept week moved to the card and another still open)
  *    holds whatever day the sample is opened on.
  *  - A purchase carries the time it was made and posts the next day; bills, pay and transfers carry
  *    a date alone. What was bought today is still pending and has no time of day yet.
@@ -579,7 +579,7 @@ function visit(draft, day, rng, slot, cents) {
   stop(draft, slot.account, day, clock, cents === undefined ? priceAt(rng, seller) : cents, seller);
 }
 
-/** A day as the owner used to play it: the stops come and go, and sometimes stack. */
+/** A day as the owner used to play it: the stops come and go, and sometimes repeat within a day. */
 function playUsualDay(draft, day) {
   const rng = randomOf(draft.seed, SALT.game, dayNumber(day));
   for (const [name, chance] of isWorkday(day) ? USUAL.work : USUAL.off) {
@@ -823,7 +823,7 @@ function daysOf(opts) {
  * The invented owner: a salaried worker paid every two weeks (about $1,900 net) with occasional client
  * deposits; a checking account, a savings account near empty, one credit card carrying roughly $4,000;
  * monthly rent for a workspace, a handful of subscriptions, a phone bill, an annual renewal;
- * weekday cafe and deli stops that sometimes stack (two or three in a day), groceries, transit, a few
+ * weekday cafe and deli stops that sometimes repeat (two or three in a day), groceries, transit, a few
  * marketplace orders, card payments from checking, monthly card interest, one late fee, a couple of
  * pending rows on the last day. Descriptions look like real statement descriptors (store numbers,
  * city/state tails, processor prefixes) so the classifier is exercised.
@@ -864,6 +864,11 @@ export function demoManualAccounts(nowMs) {
   ];
 }
 
+/** The sample player's own rules (settings.principles): invented. */
+const SAMPLE_PRINCIPLES = ['Look at the card balance every Friday.', 'Cancel one subscription before adding another.', 'Groceries on Sunday, with a list.', 'Wait a night before anything over $100.'];
+/** What the sample player wants ready before leaving (settings.preps): invented. */
+const SAMPLE_PREPS = ['Gym bag packed', 'Shopping list written'];
+
 /**
  * A complete sample document: defaultState + demo manual accounts + mergeFeed(demoFeed) +
  * detect.refresh, with meta.origin 'demo'. The match is started 21 days before `nowMs` (so the
@@ -884,6 +889,9 @@ export function buildDemoState(nowMs, opts) {
   const state = defaultState(asOf);
   // The feed draws its days at this hour; the document must read them at the same one.
   state.settings.rolloverHour = ROLLOVER_HOUR;
+  // the sample player's own rules: invented, like every figure of the sample game
+  state.settings.principles = SAMPLE_PRINCIPLES.slice();
+  state.settings.preps = SAMPLE_PREPS.slice();
   state.meta.origin = 'demo';
   state.accounts.push(...demoManualAccounts(asOf));
   mergeFeed(state, buildFeed(today, DEMO_HISTORY_DAYS, seed), asOf);
@@ -915,7 +923,7 @@ function addOwnerNotes(state, today, asOf) {
   for (const { day, scene: played } of matchDays(today)) {
     if (played.plan !== null) {
       const at = gameDayStartMs(day, ROLLOVER_HOUR) + PLAN_MADE_AFTER_MS;
-      state.days[day] = { plan: { container: true, breakfast: played.plan === 0, stops: played.plan, at } };
+      state.days[day] = { plan: { ready: [{ label: SAMPLE_PREPS[0], yes: true }, { label: SAMPLE_PREPS[1], yes: played.plan === 0 }], stops: played.plan, at } };
     }
     if (played.bye) state.days[day] = { bye: true, note: BYE_NOTE };
   }

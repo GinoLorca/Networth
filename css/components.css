@@ -621,8 +621,8 @@ a.row:hover .row-label, button.row:hover .row-label { text-decoration: underline
    <ol class="moves" aria-label="Today's moves">
      <li class="move" data-key="t1">
        <span class="move-n">1.</span>
-       <span class="move-m">Corner Cup — small coffee <em class="move-note">Principle 3: a small coffee if you need a seat.</em></span>
-       <span class="move-a">4.75</span>
+       <span class="move-m">Northside Hardware — paint <em class="move-note">Principle 4: wait a night before anything over $100.</em></span>
+       <span class="move-a">112.40</span>
        <span class="move-s">!?</span>
      </li>
    </ol>
@@ -814,7 +814,7 @@ a.row:hover .row-label, button.row:hover .row-label { text-decoration: underline
      <div class="runway-labs"><span class="lab">Flag</span><span class="lab">7 days · out of time trouble</span></div>
      <div class="tally tally-s clock-due">  due before payday · shortfall · payday  </div>
      <div class="clock-reserve">
-       <p class="clock-reserve-row"><span class="lab">Reserve goal</span><span class="fig">$10,000</span><span class="cap">19% there</span></p>
+       <p class="clock-reserve-row"><span class="lab">Reserve goal</span><span class="fig">$5,000</span><span class="cap">38% there</span></p>
        <ol class="ticks">…</ol>                                                                                     (see Progress)
      </div>
    </section>
@@ -881,11 +881,11 @@ a.row:hover .row-label, button.row:hover .row-label { text-decoration: underline
 /* -------------------------------------------------------------------------
    Ladder — rungs from the top down, with the current position.
    <ol class="ladder">
-     <li class="rung"><span class="rung-title">GM</span><span class="fig">$1,000,000</span><span class="cap">by December 2029</span></li>
-     <li class="rung is-next"><span class="rung-title">CM</span><span class="fig">$100,000</span><span class="cap">next norm · 78.4% there</span></li>
+     <li class="rung"><span class="rung-title">GM</span><span class="fig">$150,000</span><span class="cap">by December 2030</span></li>
+     <li class="rung is-next"><span class="rung-title">CM</span><span class="fig">$50,000</span><span class="cap">next norm · 78.4% there</span></li>
      <li class="rung is-you">
        <span class="bar rung-bar" style="--p:78.4%" aria-hidden="true"><i></i></span>
-       <span class="rung-title">You</span><span class="fig est"><span class="approx">≈</span>$78,400</span><span class="cap">modelled 2026 gross</span>
+       <span class="rung-title">You</span><span class="fig est"><span class="approx">≈</span>$39,200</span><span class="cap">modelled 2026 gross</span>
        <span class="cap rung-note">Salary $58,000 + lessons scenario $20,400. A scenario, not a bank figure.</span>
      </li>
    </ol>
@@ -982,7 +982,7 @@ a.row:hover .row-label, button.row:hover .row-label { text-decoration: underline
 /* -------------------------------------------------------------------------
    Principles — the owner's own rules. Two columns on phones, a ruled list in a wide margin column.
    <ol class="principles">
-     <li><b>1</b><span>Bring one coffee container.</span></li>
+     <li><b>1</b><span>Look at the card balance every Friday.</span></li>
    </ol>
    .principles-list forces the single ruled list at every width.
    ------------------------------------------------------------------------- */

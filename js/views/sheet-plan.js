@@ -1,8 +1,9 @@
 /**
- * The morning-plan sheet — "Opening preparation." Three taps: container filled (yes / no),
- * breakfast sorted (yes / no), planned stops today (0 / 1 / 2). It saves
- * state.days[today].plan = { container, breakfast, stops, at }. A planned stop is a book move.
- * Optional in every part: an unanswered line is saved as null, and nothing asks twice.
+ * The morning-plan sheet — "Opening preparation." A yes / no for each thing the owner wants ready
+ * before leaving (their own lines, settings.preps, written in Settings; none by default) and the
+ * planned stops today (0 / 1 / 2). It saves state.days[today].plan = { ready: [{ label, yes }], stops, at }:
+ * each answer is kept with the wording its line had that morning. A planned stop is a book move.
+ * Optional in every part: an unanswered line is not saved, and nothing asks twice.
  *
  * The three choices are an ordinary form (morphing keeps what was tapped); nothing is kept in
  * store.ui, so every opening starts from the plan as saved.
@@ -24,6 +25,19 @@ export const label = 'Opening preparation';
 
 const SHEET = 'plan';
 const STOP_CHOICES = [0, 1, 2];
+const MAX_PREPS = 3;
+
+/** The owner's own lines for the morning: what they want ready before leaving. */
+function prepsOf(state) {
+  const lines = Array.isArray(state.settings.preps) ? state.settings.preps : [];
+  return lines.filter((text) => typeof text === 'string' && text.trim()).map((text) => text.trim()).slice(0, MAX_PREPS);
+}
+
+/** The saved answer to one line, by its wording: true, false or null (unanswered). */
+function readyOf(plan, text) {
+  const hit = plan && Array.isArray(plan.ready) ? plan.ready.find((item) => item && item.label === text) : null;
+  return hit && typeof hit.yes === 'boolean' ? hit.yes : null;
+}
 
 function fig(cents) {
   return html`<span data-fig>${fmt(cents)}</span>`;
@@ -60,12 +74,12 @@ export function render(ctx, params) {
   const plan = savedPlan(ctx.state, ctx.today);
   const cover = !!ctx.state.settings.cover;
   const stops = plan && Number.isFinite(plan.stops) ? plan.stops : null;
+  const preps = prepsOf(ctx.state);
   return html`<form class="sheet-body pl" data-submit="plan.save"${attrs({ 'data-cover': cover })}>
     <p class="sheet-head lab"><b>Morning plan</b><i class="sep"></i>${fmtDate(ctx.today, 'dowshort')}</p>
     <h2 class="sheet-title">Opening preparation.</h2>
     <p class="cap">${contextLine(ctx, round)}</p>
-    ${yesNo('container', 'Container filled', plan ? plan.container : null)}
-    ${yesNo('breakfast', 'Breakfast sorted', plan ? plan.breakfast : null)}
+    ${preps.map((text, i) => yesNo('ready' + i, text, readyOf(plan, text)))}
     <fieldset class="field">
       <legend class="field-label lab">Planned stops today</legend>
       <div class="seg seg-fig seg-block" role="radiogroup" aria-label="Planned stops today">
@@ -73,6 +87,7 @@ export function render(ctx, params) {
       </div>
       <span class="field-help cap">A planned stop is a book move: it prints bare, without ?! or ?. An unanswered line stays blank.</span>
     </fieldset>
+    ${preps.length ? '' : html`<p class="cap">Up to ${MAX_PREPS} things to have ready before leaving can be written in <a href="#/settings">Settings</a>; each becomes a yes or no here.</p>`}
     ${plan ? html`<p class="pl-saved"><span class="cap">Set at ${fmtTime(plan.at)} on ${fmtDate(ctx.today, 'short')}.</span><button class="btn-link" type="button" data-action="plan.clear">Clear the plan</button></p>` : ''}
     <div class="sheet-actions">
       <button class="btn btn-solid" type="submit">${plan ? 'Update the plan' : 'Set the plan'}</button>
@@ -135,9 +150,11 @@ export const actions = {
     const day = ctx.today;
     const picked = values || {};
     const stops = STOP_CHOICES.includes(Number(picked.stops)) && picked.stops !== '' && picked.stops != null ? Number(picked.stops) : null;
-    const plan = { container: yn(picked.container), breakfast: yn(picked.breakfast), stops, at: nowMs() };
-    if (plan.container === null && plan.breakfast === null && plan.stops === null) {
-      toast('Nothing chosen yet: tap any of the 3 lines to set a plan.');
+    const preps = prepsOf(ctx.state);
+    const ready = preps.map((text, i) => ({ label: text, yes: yn(picked['ready' + i]) })).filter((item) => item.yes !== null);
+    const plan = { ready, stops, at: nowMs() };
+    if (!ready.length && plan.stops === null) {
+      toast(preps.length ? 'Nothing chosen yet: tap any of the ' + (preps.length + 1) + ' lines to set a plan.' : 'Nothing chosen yet: tap 0, 1 or 2 planned stops to set a plan.');
       return;
     }
     const before = savedPlan(ctx.state, day);
