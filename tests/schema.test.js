@@ -74,3 +74,66 @@ test('category labels use American spelling: the catch-all and an unknown key re
   assert.equal(categoryLabel('other'), 'Uncategorized');
   assert.equal(categoryLabel('no-such-category'), 'Uncategorized');
 });
+
+
+/* ---- a record that passed through the placeholder build gets the built-in rules and goals back ---- */
+
+/** A record as the placeholder build made it at `madeAt`: its own defaults, and the list only it wrote. */
+function placeholderRecord(madeAt) {
+  const doc = defaultState(madeAt);
+  doc.settings.principles = [];
+  doc.settings.insteads = ['Went without', 'Used what I had', 'Made it at home', 'Left it for later'];
+  doc.settings.preps = [];
+  doc.goals.reserve.target = 500000;
+  doc.goals.income = { ladder: [5000000, 7500000, 10000000, 15000000], by: (new Date(madeAt).getFullYear() + 4) + '-12-31' };
+  return doc;
+}
+
+test('migrate: a record made by the placeholder build gets the built-in rules and goals back, once', () => {
+  const builtIn = defaultState(NOW);
+  const doc = migrate(placeholderRecord(NOW));
+  assert.deepEqual(doc.settings.principles, builtIn.settings.principles);
+  assert.equal(doc.settings.principles.length > 0, true);
+  assert.deepEqual(doc.settings.insteads, builtIn.settings.insteads);
+  assert.equal(doc.goals.reserve.target, builtIn.goals.reserve.target);
+  assert.deepEqual(doc.goals.income, builtIn.goals.income);
+  assert.equal('preps' in doc.settings, false, 'the marker is gone, so nothing is restored a second time');
+  assert.equal(checkDoc(doc), null);
+  // a second pass changes nothing, even after the owner clears the list on purpose
+  doc.settings.principles = [];
+  doc.goals.reserve.target = 500000;
+  migrate(doc);
+  assert.deepEqual(doc.settings.principles, []);
+  assert.equal(doc.goals.reserve.target, 500000);
+});
+
+test('migrate: what the owner changed under the placeholder build is left as it is', () => {
+  const doc = placeholderRecord(NOW);
+  doc.settings.principles = ['Mine.'];
+  doc.settings.insteads = ['Walked'];
+  doc.settings.preps = ['Bag packed'];
+  doc.goals.reserve.target = 750000;
+  doc.goals.income = { ladder: [6000000, 9000000], by: '2031-06-30' };
+  migrate(doc);
+  assert.deepEqual(doc.settings.principles, ['Mine.']);
+  assert.deepEqual(doc.settings.insteads, ['Walked']);
+  assert.equal(doc.goals.reserve.target, 750000);
+  assert.deepEqual(doc.goals.income, { ladder: [6000000, 9000000], by: '2031-06-30' });
+  assert.equal('preps' in doc.settings, false);
+});
+
+test('migrate: a record the placeholder build never touched is not altered, and odd shapes do not throw', () => {
+  const never = defaultState(NOW);
+  never.settings.principles = [];           // cleared by the owner: there is no marker, so it stays cleared
+  never.goals.reserve.target = 500000;      // a goal that happens to equal the placeholder
+  migrate(never);
+  assert.deepEqual(never.settings.principles, []);
+  assert.equal(never.goals.reserve.target, 500000);
+
+  for (const odd of [{ preps: 'x' }, { preps: [], principles: 'none', insteads: null }, { preps: [], principles: [] }]) {
+    const doc = defaultState(NOW);
+    doc.settings = { ...doc.settings, ...odd };
+    doc.goals = odd.principles === 'none' ? { reserve: null, income: 'soon' } : doc.goals;
+    assert.doesNotThrow(() => migrate(doc));
+  }
+});

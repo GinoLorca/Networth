@@ -173,7 +173,7 @@ export function assess(state, nowMs, opts) {
  *  - card pace this month; last month's card verdict in the first week of a month
  *  - interest and fees charged last month
  *  - a category target: "Cafes: $38.60 in June against a $150 target. May finished at $212.80."
- *  - repeat stops this month
+ *  - stacked stops this month
  *  - a reserve milestone reached
  *  - the scale of the game: "A perfect month in the daily game is worth $410. Cards took $2,300 in new charges last month."
  *  - moves waiting for a purpose (review queue)
@@ -802,7 +802,7 @@ function stackedNote(view) {
   const { stackedDays, stackedCost } = reviewRounds(view.ledger.monthTable(view.month).rounds);
   if (!stackedDays) return null;
   return note('stacked:' + view.month, 30, [
-    'A 2nd or later stop on ' + countOf(stackedDays, 'day') + ' in ' + fmtMonth(view.month, 'name') + ': those stops came to ' + fmt(stackedCost) + '.',
+    'Stops stacked on ' + countOf(stackedDays, 'day') + ' in ' + fmtMonth(view.month, 'name') + ': the 2nd and later stops came to ' + fmt(stackedCost) + '.',
   ], go('Scoresheet', '#/scoresheet'));
 }
 

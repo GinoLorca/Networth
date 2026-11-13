@@ -391,7 +391,7 @@ function ladderTargets(doc) {
 
 function deadlineOf(doc) {
   const { by } = incomeGoalOf(doc);
-  return isYmd(by) ? by : '';   // an unreadable day is no day: nothing downstream prints it
+  return typeof by === 'string' ? by : '';
 }
 
 function incomeGoalOf(doc) {

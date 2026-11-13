@@ -155,8 +155,8 @@ function roundConsequence(ctx, round, move) {
     const review = reviewRounds(ctx.d.thisMonth.rounds, { sweepTxIds: ctx.d.sweepTxIds });
     const month = fmtMonth(monthOf(ctx.today), 'name');
     pattern = review.stackedDays
-      ? html`<p class="mv-line">Days with a repeat stop in ${month}: <span data-cover-keep>${review.stackedDays}</span>, costing ${fig(review.stackedCost)}.</p>`
-      : html`<p class="mv-line">Days with a repeat stop in ${month} so far: 0.</p>`;
+      ? html`<p class="mv-line">Days with stacked stops in ${month}: <span data-cover-keep>${review.stackedDays}</span>, costing ${fig(review.stackedCost)}.</p>`
+      : html`<p class="mv-line">Days with stacked stops in ${month} so far: 0.</p>`;
   }
   return html`<div class="conseq mv-conseq" aria-live="polite">
     ${stacked ? html`<b class="conseq-sym">${preview.glyph}</b>` : ''}

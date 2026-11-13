@@ -228,7 +228,8 @@ function byeBlock(ctx, day, round) {
 
 function planWords(plan) {
   const bits = [];
-  for (const item of plan.ready || []) bits.push(item.label + (item.yes ? ': yes' : ': no'));
+  if (plan.container != null) bits.push(plan.container ? 'container filled' : 'no container');
+  if (plan.breakfast != null) bits.push(plan.breakfast ? 'breakfast sorted' : 'no breakfast');
   if (plan.stops != null) bits.push(plan.stops === 0 ? 'no planned stop' : plan.stops === 1 ? '1 planned stop' : plan.stops + ' planned stops');
   return bits.join(' · ');
 }
@@ -242,7 +243,7 @@ function planBlock(ctx, day, round, record) {
     <p class="lab"><b>Morning plan</b></p>
     <p class="cap">${round.plan
       ? html`${words ? words.charAt(0).toUpperCase() + words.slice(1) : 'Set'}${at ? ', set at ' + fmtTime(at) : ''}. A planned stop is a book move and prints bare.`
-      : html`No plan is set for ${fmtDate(day, 'short')}. It takes a few taps: what is ready, and the planned stops.`}</p>
+      : html`No plan is set for ${fmtDate(day, 'short')}. Three taps: container, breakfast, planned stops.`}</p>
     ${isToday ? html`<p class="dy-block-action"><button class="btn-link" type="button" data-action="app.sheet" data-sheet="plan">${round.plan ? 'Change the plan' : 'Opening preparation'}</button></p>` : ''}
   </div>`;
 }

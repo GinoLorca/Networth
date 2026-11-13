@@ -496,36 +496,36 @@ test('payoffSchedule agrees with payoff, and with an independent month-by-month 
 
 test('requiredGrowth: the compound annual rate over whole years', () => {
   // 1 Jan 2026 -> 1 Jan 2030 is 1461 days = exactly 4 years of 365.25 days
-  close(requiredGrowth(4000000, 8000000, '2026-01-01', '2030-01-01'), 0.189207115002721, 1e-12);  // 2^(1/4) − 1
-  close(requiredGrowth(4000000, 64000000, '2026-01-01', '2030-01-01'), 1, 1e-12);                  // doubling every year
-  close(requiredGrowth(4000000, 2000000, '2026-01-01', '2030-01-01'), -0.159103584746285, 1e-12);   // 0.5^(1/4) − 1
-  close(requiredGrowth(4000000, 4000000, '2026-01-01', '2030-01-01'), 0, 1e-12);
+  close(requiredGrowth(10000000, 20000000, '2026-01-01', '2030-01-01'), 0.189207115002721, 1e-12);  // 2^(1/4) − 1
+  close(requiredGrowth(10000000, 160000000, '2026-01-01', '2030-01-01'), 1, 1e-12);                  // doubling every year
+  close(requiredGrowth(10000000, 5000000, '2026-01-01', '2030-01-01'), -0.159103584746285, 1e-12);   // 0.5^(1/4) − 1
+  close(requiredGrowth(10000000, 10000000, '2026-01-01', '2030-01-01'), 0, 1e-12);
   // 1 Jan 2026 -> 1 Jan 2034 is 2922 days = exactly 8 years
   close(requiredGrowth(500, 1500, '2026-01-01', '2034-01-01'), 0.147202690439877, 1e-12);            // 3^(1/8) − 1
 });
 
 test('requiredGrowth: fractional years', () => {
-  // 11 Nov 2026 -> 30 Jun 2030 is 1327 days = 3.63313 years; $60,000 -> $240,000
-  const expected = Math.exp(Math.log(24000000 / 6000000) * 365.25 / 1327) - 1;
-  close(requiredGrowth(6000000, 24000000, '2026-11-11', '2030-06-30'), expected, 1e-12);
-  close(requiredGrowth(6000000, 24000000, '2026-11-11', '2030-06-30'), 0.4646, 5e-4);
+  // 11 Nov 2026 -> 31 Dec 2029 is 1146 days = 3.13758 years; $75,000 -> $1,000,000
+  const expected = Math.exp(Math.log(100000000 / 7500000) * 365.25 / 1146) - 1;
+  close(requiredGrowth(7500000, 100000000, '2026-11-11', '2029-12-31'), expected, 1e-12);
+  close(requiredGrowth(7500000, 100000000, '2026-11-11', '2029-12-31'), 1.2832, 5e-4);
   // half a year (rounded to 183 days): 10% in six months is about 21% a year
   close(requiredGrowth(100000, 110000, '2026-01-01', '2026-07-03'), Math.pow(1.1, 365.25 / 183) - 1, 1e-12);
   close(requiredGrowth(100000, 110000, '2026-01-01', '2026-07-03'), 0.2095, 5e-4);
 });
 
 test('requiredGrowth: null when there is nothing to grow from or no time to grow in', () => {
-  assert.equal(requiredGrowth(0, 24000000, '2026-11-11', '2030-06-30'), null);
-  assert.equal(requiredGrowth(-500, 24000000, '2026-11-11', '2030-06-30'), null);
-  assert.equal(requiredGrowth(NaN, 24000000, '2026-11-11', '2030-06-30'), null);
-  assert.equal(requiredGrowth(null, 24000000, '2026-11-11', '2030-06-30'), null);
-  assert.equal(requiredGrowth(6000000, 24000000, '2026-11-11', '2026-11-11'), null);
-  assert.equal(requiredGrowth(6000000, 24000000, '2030-06-30', '2026-11-11'), null);
-  assert.equal(requiredGrowth(6000000, 24000000, null, '2030-06-30'), null);
-  assert.equal(requiredGrowth(6000000, 24000000, '2026-11-11', 'someday'), null);
-  assert.equal(requiredGrowth(6000000, NaN, '2026-11-11', '2030-06-30'), null);
-  assert.equal(requiredGrowth(6000000, -1, '2026-11-11', '2030-06-30'), null);
-  assert.equal(requiredGrowth(6000000, undefined, '2026-11-11', '2030-06-30'), null);
+  assert.equal(requiredGrowth(0, 100000000, '2026-11-11', '2029-12-31'), null);
+  assert.equal(requiredGrowth(-500, 100000000, '2026-11-11', '2029-12-31'), null);
+  assert.equal(requiredGrowth(NaN, 100000000, '2026-11-11', '2029-12-31'), null);
+  assert.equal(requiredGrowth(null, 100000000, '2026-11-11', '2029-12-31'), null);
+  assert.equal(requiredGrowth(7500000, 100000000, '2026-11-11', '2026-11-11'), null);
+  assert.equal(requiredGrowth(7500000, 100000000, '2029-12-31', '2026-11-11'), null);
+  assert.equal(requiredGrowth(7500000, 100000000, null, '2029-12-31'), null);
+  assert.equal(requiredGrowth(7500000, 100000000, '2026-11-11', 'someday'), null);
+  assert.equal(requiredGrowth(7500000, NaN, '2026-11-11', '2029-12-31'), null);
+  assert.equal(requiredGrowth(7500000, -1, '2026-11-11', '2029-12-31'), null);
+  assert.equal(requiredGrowth(7500000, undefined, '2026-11-11', '2029-12-31'), null);
   // a tenfold rise by tomorrow is not a rate anyone can print
   assert.equal(requiredGrowth(100, 1000, '2026-11-11', '2026-11-12'), null);
 });

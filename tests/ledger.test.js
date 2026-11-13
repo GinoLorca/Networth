@@ -202,7 +202,7 @@ test('declines and superseded manual moves have no monetary effect', () => {
   const state = emptyState();
   state.accounts.push(bankAccount('acc_chk', 'checking', 100000));
   state.txs.push(
-    tx('2026-06-13', 650, { source: 'manual', kind: 'decline', accountId: null, category: 'cafe', instead: 'Went without' }),
+    tx('2026-06-13', 650, { source: 'manual', kind: 'decline', accountId: null, category: 'cafe', instead: 'Refilled my own' }),
     provisional('2026-06-13', 480, { matchId: 'tx_bank' }),
   );
   const [row] = closes(state, '2026-06-13', '2026-06-13', NOON);
@@ -1044,12 +1044,12 @@ test('rounds: stops, the plan and the moves in the order played', () => {
   const refund = tx('2026-06-10', 100, { kind: 'refund', flow: 'in', category: 'cafe', at: at(2026, 6, 10, 20) });
   const late = spend('2026-06-10', 250, 'convenience', { at: at(2026, 6, 11, 1) }); // 1 a.m. belongs to the evening before
   state.txs.push(lunch, coffee, groceries, declined, refund, late);
-  state.days['2026-06-10'] = { plan: { ready: [{ label: 'Bag packed', yes: true }, { label: 'List written', yes: null }], stops: 1, at: at(2026, 6, 10, 7) } };
+  state.days['2026-06-10'] = { plan: { container: true, breakfast: null, stops: 1, at: at(2026, 6, 10, 7) } };
   const played = round(state, '2026-06-10', NOON);
   assert.deepEqual(played.moves.map((move) => move.id), [coffee, lunch, declined, groceries, refund, late].map((move) => move.id));
   assert.equal(played.stops, 3);
   assert.equal(played.conv, 300 + 900 + 250 - 100);
-  assert.deepEqual(played.plan, { ready: [{ label: 'Bag packed', yes: true }], stops: 1 });
+  assert.deepEqual(played.plan, { container: true, breakfast: null, stops: 1 });
   assert.equal(round(state, '2026-06-09', NOON).plan, null);
   assert.deepEqual(round(state, '2026-06-09', NOON).moves, []);
 });
@@ -1198,9 +1198,7 @@ function household({ checking = 80000, savings = 20000 } = {}) {
 }
 
 test('clock: cash, next payday, what is due before it, burn, runway and milestones', () => {
-  const state = household();
-  state.goals.reserve.target = 800000;
-  const result = clock(state, NOON);
+  const result = clock(household(), NOON);
   assert.equal(result.cash, 100000);
   assert.equal(result.asOf, at(2026, 6, 15, 22));
   assert.equal(result.nextPayday, '2026-06-26');
@@ -1217,14 +1215,14 @@ test('clock: cash, next payday, what is due before it, burn, runway and mileston
   assert.equal(result.runwayDays, 40);
   assert.equal(result.trouble, false);
   assert.equal(result.reserve, 20000);
-  assert.equal(result.reserveTarget, 800000);
+  assert.equal(result.reserveTarget, 1000000);
   assert.deepEqual(result.milestones, [
     { label: '1 day', amount: 2500, reached: true },
     { label: '1 week', amount: 17500, reached: true },
     { label: '2 weeks', amount: 35000, reached: false },
     { label: '1 month', amount: 75000, reached: false },
     { label: '3 months', amount: 225000, reached: false },
-    { label: 'Goal', amount: 800000, reached: false },
+    { label: 'Goal', amount: 1000000, reached: false },
   ]);
 });
 
@@ -1633,7 +1631,7 @@ test('malformed rows and missing fields are skipped: nothing throws and nothing 
   state.sweeps.push(null, { weekOf: 5 }, { weekOf: '2026-06-01', amount: NaN });
   state.days['2026-06-13'] = 'a note';
   state.days['2026-06-12'] = { plan: 'none', bye: 'yes', type: 'holiday' };
-  state.days['2026-06-11'] = { plan: { ready: [{ label: 'Bag packed', yes: 'yes' }, null, 7, { label: '', yes: true }], stops: NaN } };
+  state.days['2026-06-11'] = { plan: { container: 'yes', stops: NaN } };
 
   const everything = (doc, now) => {
     const ledger = makeLedger(doc, now);
@@ -1655,7 +1653,7 @@ test('malformed rows and missing fields are skipped: nothing throws and nothing 
   assert.equal(rows['2026-06-12'].result, 6700);
   assert.equal(rows['2026-06-13'].earned, 10000);
   assert.equal(accountValueOn(state, 'acc_badloan', '2026-06-13', NOON), -1000);
-  assert.deepEqual(round(state, '2026-06-11', NOON).plan, { ready: [], stops: null });
+  assert.deepEqual(round(state, '2026-06-11', NOON).plan, { container: null, breakfast: null, stops: null });
   assert.equal(round(state, '2026-06-12', NOON).plan, null);
 
   // settings that make no sense fall back rather than poison the arithmetic

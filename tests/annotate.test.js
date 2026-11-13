@@ -155,17 +155,17 @@ test('rule 4: stops are numbered in the order played, whatever else happened in 
 
 test('rule 4: the first plan.stops stops are book moves', () => {
   const stops = [stop(450), stop(650), stop(700)];
-  const onePlanned = annotateRound(roundOf(stops, { plan: { ready: [{ label: 'Bag packed', yes: true }], stops: 1 } }));
+  const onePlanned = annotateRound(roundOf(stops, { plan: { container: true, breakfast: true, stops: 1 } }));
   assert.deepEqual(glyphs(onePlanned, stops), [null, '?!', '?']);
-  const twoPlanned = annotateRound(roundOf(stops, { plan: { ready: [], stops: 2 } }));
+  const twoPlanned = annotateRound(roundOf(stops, { plan: { container: null, breakfast: null, stops: 2 } }));
   assert.deepEqual(glyphs(twoPlanned, stops), [null, null, '?']);
-  const threePlanned = annotateRound(roundOf(stops, { plan: { ready: [], stops: 3 } }));
+  const threePlanned = annotateRound(roundOf(stops, { plan: { container: null, breakfast: null, stops: 3 } }));
   assert.deepEqual(glyphs(threePlanned, stops), [null, null, null]);
 });
 
 test('rule 4: a plan of no stops still leaves the 1st stop bare', () => {
   const stops = [stop(450), stop(650)];
-  const annotated = annotateRound(roundOf(stops, { plan: { ready: [{ label: 'Bag packed', yes: true }], stops: 0 } }));
+  const annotated = annotateRound(roundOf(stops, { plan: { container: true, breakfast: true, stops: 0 } }));
   assert.deepEqual(glyphs(annotated, stops), [null, '?!']);
 });
 
@@ -348,24 +348,24 @@ test('a clean sheet is not !! on a day off, nor before the bank has reported the
 });
 
 test('a round played to the morning plan is !', () => {
-  const plan = { ready: [{ label: 'Bag packed', yes: true }], stops: 1 };
+  const plan = { container: true, breakfast: true, stops: 1 };
   const annotated = annotateRound(roundOf([stop(450)], { plan }));
   assert.deepEqual(annotated.round, { glyph: '!', why: 'Played to the morning plan: 1 stop planned, 1 made', manual: false });
-  const dayOff = annotateRound(roundOf([], { type: 'off', plan: { ready: [], stops: 2 } }));
+  const dayOff = annotateRound(roundOf([], { type: 'off', plan: { container: null, breakfast: null, stops: 2 } }));
   assert.deepEqual(dayOff.round, { glyph: '!', why: 'Played to the morning plan: 2 stops planned, 0 made', manual: false });
 });
 
 test('a round is not ! when it went past the plan, was not a win, or the plan names no stops', () => {
-  const plan = { ready: [{ label: 'Bag packed', yes: true }], stops: 1 };
+  const plan = { container: true, breakfast: true, stops: 1 };
   assert.equal(annotateRound(roundOf([stop(300), stop(300)], { plan })).round, null);
   assert.equal(annotateRound(roundOf([stop(1200)], { plan })).round, null);
-  assert.equal(annotateRound(roundOf([stop(450)], { plan: { ready: [{ label: 'Bag packed', yes: true }], stops: null } })).round, null);
+  assert.equal(annotateRound(roundOf([stop(450)], { plan: { container: true, breakfast: true, stops: null } })).round, null);
   assert.equal(annotateRound(roundOf([stop(450)])).round, null);
   assert.equal(annotateRound(roundOf([stop(450)], { plan, status: 'live' })).round, null);
 });
 
 test('a clean-sheet workday with a plan is !!, not !', () => {
-  const annotated = annotateRound(roundOf([], { plan: { ready: [{ label: 'Bag packed', yes: true }], stops: 0 } }));
+  const annotated = annotateRound(roundOf([], { plan: { container: true, breakfast: true, stops: 0 } }));
   assert.equal(annotated.round.glyph, '!!');
 });
 
@@ -400,7 +400,7 @@ test('every reason is a short plain phrase with a number and none of the words t
     assertVoice(annotation.why);
     assert.ok(annotation.why.length <= 60, annotation.why);
   }
-  for (const round of [roundOf([]), roundOf([stop(450)], { plan: { ready: [], stops: 1 } })]) {
+  for (const round of [roundOf([]), roundOf([stop(450)], { plan: { container: null, breakfast: null, stops: 1 } })]) {
     assertVoice(annotateRound(round).round.why);
   }
 });
@@ -432,10 +432,10 @@ test('it annotates a Round built by the ledger', () => {
 function reviewFixture() {
   const day = (d) => '2026-06-' + String(d).padStart(2, '0');
   const clean = roundOf(filler(2), { day: day(1) });
-  const oneStop = roundOf([stop(450)], { day: day(2), plan: { ready: [{ label: 'Bag packed', yes: true }], stops: 1 } });
+  const oneStop = roundOf([stop(450)], { day: day(2), plan: { container: true, breakfast: true, stops: 1 } });
   const stackedMoves = [stop(450), stop(650), stop(1100), ...filler(1)];
   const stacked = roundOf(stackedMoves, { day: day(3) });
-  const plannedTwo = roundOf([stop(500), stop(600), stop(250, { purpose: 'work' }), stop(900)], { day: day(4), plan: { ready: [], stops: 2 } });
+  const plannedTwo = roundOf([stop(500), stop(600), stop(250, { purpose: 'work' }), stop(900)], { day: day(4), plan: { container: null, breakfast: null, stops: 2 } });
   const dayOff = roundOf([stop(2400, { merchant: 'Harbor Diner', category: 'eating_out' })], { day: day(6), type: 'off' });
   const today = roundOf([stop(300), stop(350)], { day: day(10), status: 'live' });
   const before = roundOf([stop(9900), stop(9900)], { day: '2026-05-30', status: 'prematch' });
@@ -450,7 +450,7 @@ test('reviewRounds counts every glyph over the rounds of the match', () => {
   assert.deepEqual(review.counts, { '!!': 1, '!': 1, '!?': 0, '?!': 2, '?': 2, '??': 0, [BOX]: 0 });
 });
 
-test('reviewRounds counts the days with a repeat stop and what those stops cost', () => {
+test('reviewRounds counts stacked days and what the stacked stops cost', () => {
   const review = reviewRounds(Object.values(reviewFixture()));
   // 3 June: $6.50 + $11.00. 4 June: the 4th stop, $9.00 (the 3rd was for work). Today: $3.50.
   assert.equal(review.stackedDays, 3);
@@ -564,7 +564,7 @@ test('previewMove: the 1st stop is bare, the 2nd is ?!, the 3rd and later are ?'
 });
 
 test('previewMove: a stop inside the plan, or marked planned, carries no symbol', () => {
-  const round = roundOf([stop(300)], { status: 'live', plan: { ready: [{ label: 'Bag packed', yes: true }], stops: 2 } });
+  const round = roundOf([stop(300)], { status: 'live', plan: { container: true, breakfast: true, stops: 2 } });
   const inPlan = previewMove(round, { amount: 300, category: 'cafe' });
   assert.equal(inPlan.stopNumber, 2);
   assert.equal(inPlan.glyph, null);

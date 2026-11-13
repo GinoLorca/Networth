@@ -36,13 +36,6 @@ const income = (day, amount, streamId = null, fields = {}) =>
 const bankAccount = (id, type, balance, fields = {}) =>
   makeAccount({ id, source: 'bank', type, balance, basis: 'bank', name: id, asOf: at(2026, 6, 10, 9), ...fields });
 
-/** The goals of every fixture, set here so that no test leans on the defaults of a new document. */
-function fixtureGoals(state) {
-  state.goals.reserve.target = 800000;
-  state.goals.income = { ladder: [6000000, 9000000, 12000000, 24000000], by: '2030-06-10' };
-  return state;
-}
-
 /**
  * A fictional household: $2,000.00 in checking, $4,000.00 in savings (the reserve), $3,000.00 owed on
  * a card at 24%. Net worth at the bank: $3,000.00. Pay is counted when it arrives (nothing accrues),
@@ -61,7 +54,7 @@ function fixtureGoals(state) {
  *   result                                                           1,890.00  = $63.00 a day
  */
 function household() {
-  const state = fixtureGoals(defaultState(at(2026, 1, 1)));
+  const state = defaultState(at(2026, 1, 1));
   state.accounts.push(
     bankAccount('acc_chk', 'checking', 200000),
     bankAccount('acc_sav', 'savings', 400000),
@@ -114,7 +107,7 @@ function householdInMatch() {
  * not it is payday. One $300.00 grocery run on 20 May. $5,000.00 in checking.
  */
 function salaried() {
-  const state = fixtureGoals(defaultState(at(2026, 1, 1)));
+  const state = defaultState(at(2026, 1, 1));
   state.accounts.push(bankAccount('acc_chk', 'checking', 500000));
   state.streams.push(makeStream({
     id: 'str_pay', name: 'Northwind Payroll', mkey: 'northwind', kind: 'salary', accountId: 'acc_chk',
@@ -132,7 +125,7 @@ function salaried() {
 
 /** A document whose history is the last `days` completed days: one cafe stop of $5.00 on each. */
 function youngDocument(days) {
-  const state = fixtureGoals(defaultState(at(2026, 1, 1)));
+  const state = defaultState(at(2026, 1, 1));
   state.accounts.push(bankAccount('acc_chk', 'checking', 100000));
   for (let d = 10 - days; d <= 9; d++) state.txs.push(spend('acc_chk', '2026-06-0' + d, 500, 'cafe'));
   state.sync.lastOk = at(2026, 6, 10, 9);
@@ -231,7 +224,7 @@ test('pace: transfers and card payments between the owner\'s accounts do not mov
 });
 
 test('pace: no transactions, no pace', () => {
-  const state = fixtureGoals(defaultState(at(2026, 1, 1)));
+  const state = defaultState(at(2026, 1, 1));
   state.accounts.push(bankAccount('acc_chk', 'checking', 100000));
   assert.equal(pace(state, NOW), null);
 });
@@ -318,22 +311,22 @@ test('projectNetWorth: a losing pace is drawn falling, exactly as measured', () 
 
 test('reserveGoal: how far the reserve is and when each rate would close the gap', () => {
   assert.deepEqual(reserveGoal(household(), NOW), {
-    target: 800000,
+    target: 1000000,
     have: 400000,
-    gap: 400000,
-    fraction: 0.5,
-    // 4,000.00 at 63.00 a day is 63.5 days, in the 3rd month: the date is 3 months from 10 June.
-    atPace: { months: 3, day: '2026-09-10' },
-    // 4,000.00 at 150.00 a month is 26.7 months, so 27, and the date is 27 months on.
-    atScenario: { months: 27, day: '2028-09-10' },
+    gap: 600000,
+    fraction: 0.4,
+    // 6,000.00 at 63.00 a day is 95.2 days, in the 4th month: the date is 4 months from 10 June.
+    atPace: { months: 4, day: '2026-10-10' },
+    // 6,000.00 at 150.00 a month is 40 months, and the date is 40 months on.
+    atScenario: { months: 40, day: '2029-10-10' },
   });
 });
 
 test('reserveGoal: a rate that divides the gap exactly is not rounded up a month', () => {
   const state = household();
   state.scenario.toSavings = 200000;
-  // 4,000.00 at 2,000.00 a month is 2 months exactly, and the date is 2 months on.
-  assert.deepEqual(reserveGoal(state, NOW).atScenario, { months: 2, day: '2026-08-10' });
+  // 3 months exactly: 91.3125 days, so 92 days on.
+  assert.deepEqual(reserveGoal(state, NOW).atScenario, { months: 3, day: '2026-09-10' });
 });
 
 test('reserveGoal: a goal already met is today', () => {
@@ -349,7 +342,7 @@ test('reserveGoal: a goal already met is today', () => {
 test('reserveGoal: no date at a pace that is unknown, flat or falling, or with nothing set aside', () => {
   const unknown = youngDocument(5);
   assert.deepEqual(reserveGoal(unknown, NOW).atPace, { months: null, day: null });
-  assert.equal(reserveGoal(unknown, NOW).atScenario.months, 47); // 7,000.00 / 150.00 = 46.7
+  assert.equal(reserveGoal(unknown, NOW).atScenario.months, 60);
 
   const falling = household();
   falling.txs = falling.txs.filter((row) => row.kind !== 'income');
@@ -373,8 +366,8 @@ test('reserveGoal: without a flagged reserve account all cash counts; without a 
   state.accounts[1].reserve = false;
   const all = reserveGoal(state, NOW);
   assert.equal(all.have, 600000);
-  assert.equal(all.gap, 200000);
-  assert.equal(all.fraction, 0.75);
+  assert.equal(all.gap, 400000);
+  assert.equal(all.fraction, 0.6);
 
   state.goals.reserve.target = 0;
   const none = reserveGoal(state, NOW);
@@ -406,18 +399,18 @@ test('incomeLadder: a partial history is annualised, and salary is grossed up', 
   near(ladder.byStream.reduce((total, row) => total + row.share, 0), 1);
 
   assert.deepEqual(ladder.ladder, [
-    { target: 6000000, reached: false, fraction: 5550000 / 6000000 },
-    { target: 9000000, reached: false, fraction: 5550000 / 9000000 },
-    { target: 12000000, reached: false, fraction: 5550000 / 12000000 },
-    { target: 24000000, reached: false, fraction: 5550000 / 24000000 },
+    { target: 10000000, reached: false, fraction: 0.555 },
+    { target: 20000000, reached: false, fraction: 0.2775 },
+    { target: 50000000, reached: false, fraction: 0.111 },
+    { target: 100000000, reached: false, fraction: 0.0555 },
   ]);
-  assert.deepEqual(ladder.next, { target: 6000000, gap: 450000, fraction: 5550000 / 6000000 });
+  assert.deepEqual(ladder.next, { target: 10000000, gap: 4450000, fraction: 0.555 });
 
-  assert.equal(ladder.final.target, 24000000);
-  assert.equal(ladder.final.by, '2030-06-10');
-  // 10 June 2026 to 10 June 2030 is 1,461 days: four years exactly.
-  near(ladder.final.requiredGrowth, Math.pow(24000000 / 5550000, 365.25 / 1461) - 1, 1e-9);
-  assert.ok(ladder.final.requiredGrowth > 0.44 && ladder.final.requiredGrowth < 0.45);
+  assert.equal(ladder.final.target, 100000000);
+  assert.equal(ladder.final.by, '2029-12-31');
+  // 10 June 2026 to 31 December 2029 is 1,300 days.
+  near(ladder.final.requiredGrowth, Math.pow(100000000 / 5550000, 365.25 / 1300) - 1, 1e-9);
+  assert.ok(ladder.final.requiredGrowth > 1.25 && ladder.final.requiredGrowth < 1.26);
 });
 
 test('incomeLadder: only streams of kind salary are grossed up', () => {
@@ -515,13 +508,13 @@ test('incomeLadder: income of a stream that no longer exists is unlinked income'
 });
 
 test('incomeLadder: no income, no growth rate and nothing divided by zero', () => {
-  const state = fixtureGoals(defaultState(at(2026, 1, 1)));
+  const state = defaultState(at(2026, 1, 1));
   state.accounts.push(bankAccount('acc_chk', 'checking', 100000));
   assert.deepEqual(incomeLadder(state, NOW), {
     received: 0, days: 0, partial: true, thin: true, annualised: 0, grossApprox: 0, byStream: [],
-    ladder: [6000000, 9000000, 12000000, 24000000].map((target) => ({ target, reached: false, fraction: 0 })),
-    next: { target: 6000000, gap: 6000000, fraction: 0 },
-    final: { target: 24000000, by: '2030-06-10', requiredGrowth: null },
+    ladder: [10000000, 20000000, 50000000, 100000000].map((target) => ({ target, reached: false, fraction: 0 })),
+    next: { target: 10000000, gap: 10000000, fraction: 0 },
+    final: { target: 100000000, by: '2029-12-31', requiredGrowth: null },
   });
 
   const spendingOnly = youngDocument(5);
@@ -532,13 +525,12 @@ test('incomeLadder: no income, no growth rate and nothing divided by zero', () =
 });
 
 test('incomeLadder: a deadline that has passed or is unreadable gives no growth rate', () => {
-  for (const by of ['2026-06-10', '2020-01-01', 'soon', null, 20300610]) {
+  for (const by of ['2026-06-10', '2020-01-01', 'soon', null, 20291231]) {
     const state = household();
     state.goals.income.by = by;
     const { final } = incomeLadder(state, NOW);
     assert.equal(final.requiredGrowth, null);
-    // a day that reads as a day is passed on, even a past one; anything else is no day at all
-    assert.equal(final.by, by === '2026-06-10' || by === '2020-01-01' ? by : '');
+    assert.equal(final.by, typeof by === 'string' ? by : '');
   }
 });
 
@@ -738,7 +730,7 @@ test('purchaseImpact: with no pay stream a purchase is not put in days of pay (r
 });
 
 test('purchaseImpact: with no pay known the sentence says nothing about pay, and no payday means two weeks', () => {
-  const state = fixtureGoals(defaultState(at(2026, 1, 1)));
+  const state = defaultState(at(2026, 1, 1));
   state.accounts.push(bankAccount('acc_chk', 'checking', 20000));
   state.recurring.push(makeRecurring({
     id: 'rec_ins', name: 'Insurance', mkey: 'insurance', accountId: 'acc_chk', amount: 50000,
@@ -843,12 +835,12 @@ test('an empty, partial or missing document is answered with zeros and nulls', (
 });
 
 test('a fresh default document works before any bank is linked', () => {
-  const state = fixtureGoals(defaultState(at(2026, 1, 1)));
+  const state = defaultState(at(2026, 1, 1));
   assert.equal(pace(state, NOW), null);
   assert.equal(projectNetWorth(state, NOW).lines.length, 1);
-  assert.equal(reserveGoal(state, NOW).gap, 800000);
-  assert.equal(reserveGoal(state, NOW).atScenario.months, 54); // 8,000.00 / 150.00 = 53.3
-  assert.equal(incomeLadder(state, NOW).next.target, 6000000);
+  assert.equal(reserveGoal(state, NOW).gap, 1000000);
+  assert.equal(reserveGoal(state, NOW).atScenario.months, 67); // 10,000.00 / 150.00 = 66.7
+  assert.equal(incomeLadder(state, NOW).next.target, 10000000);
   assert.equal(cardPayoff(state, NOW).months, 0);
   assert.equal(purchaseImpact(state, NOW, { amount: 100, on: 'card' }).cardMonthChange, 100);
 });

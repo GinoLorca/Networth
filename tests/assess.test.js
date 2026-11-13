@@ -902,7 +902,7 @@ test('notes: no target note without a target, or with nothing spent against one'
   assert.equal(noteOf(state, 'target'), null);
 });
 
-test('notes: repeat stops this month', () => {
+test('notes: stacked stops this month', () => {
   const state = startMatch(quiet());
   state.txs.push(
     spend('acc_chk', '2026-06-08', 450, 'cafe', { at: at(2026, 6, 8, 8) }),
@@ -912,12 +912,12 @@ test('notes: repeat stops this month', () => {
   const note = noteOf(state, 'stacked');
   assert.equal(note.key, 'stacked:2026-06');
   assert.equal(note.priority, 30);
-  assert.equal(note.text, 'A 2nd or later stop on 1 day in June: those stops came to $6.50.');
+  assert.equal(note.text, 'Stops stacked on 1 day in June: the 2nd and later stops came to $6.50.');
   state.txs.push(spend('acc_chk', '2026-06-09', 900, 'delivery', { at: at(2026, 6, 9, 19) }), spend('acc_chk', '2026-06-09', 300, 'convenience', { at: at(2026, 6, 9, 21) }));
-  assert.equal(noteOf(state, 'stacked').text, 'A 2nd or later stop on 2 days in June: those stops came to $18.50.');
+  assert.equal(noteOf(state, 'stacked').text, 'Stops stacked on 2 days in June: the 2nd and later stops came to $18.50.');
 });
 
-test('notes: no repeat-stop note for single stops, or before the match', () => {
+test('notes: no stacked note for single stops, or before the match', () => {
   const single = startMatch(quiet());
   single.txs.push(spend('acc_chk', '2026-06-08', 450, 'cafe'), spend('acc_chk', '2026-06-09', 650, 'cafe'));
   assert.equal(noteOf(single, 'stacked'), null);
@@ -1209,7 +1209,7 @@ function mayGame() {
     moved('acc_chk', '2026-05-19', -4000, { id: 'tx_sweep' }),
   );
   state.sweeps.push({ weekOf: '2026-05-11', amount: 4000, day: '2026-05-19', txId: 'tx_sweep', via: 'tap' });
-  state.days['2026-05-13'] = { plan: { ready: [{ label: 'Bag packed', yes: true }], stops: 0, at: at(2026, 5, 13, 7) } };
+  state.days['2026-05-13'] = { plan: { container: true, breakfast: true, stops: 0, at: at(2026, 5, 13, 7) } };
   return state;
 }
 

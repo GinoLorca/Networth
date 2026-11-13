@@ -37,7 +37,7 @@ const RESULT_WORDS = { 1: 'a win', 0.5: 'a draw', 0: 'a loss' };
  *    paired leg on the sheet.
  *  - Over the limit of one move in four, the smallest amount of a symbol goes first, then the later move.
  *  - "Played to the morning plan" needs a plan that states its stops.
- *  - A repeat stop (reviewRounds) is exactly a stop rule 4 marks: unplanned, and the 2nd or later
+ *  - A stacked stop (reviewRounds) is exactly a stop rule 4 marks: unplanned, and the 2nd or later
  *    stop of the day.
  */
 
@@ -187,7 +187,7 @@ function declineMarks(moves) {
   return marks;
 }
 
-/** Rules 4 and 8: the repeat stops of the day, by move. */
+/** Rules 4 and 8: the stacked stops of the day, by move. */
 function stopMarks(round, moves) {
   const marks = new Map();
   for (const stop of readStops(round, moves)) {
