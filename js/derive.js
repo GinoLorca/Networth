@@ -33,6 +33,7 @@ import { annotateRound } from './model/annotate.js';
 import { assess, coachNotes, monthReview } from './model/assess.js';
 import { cardsNow, allCardsMonths, cardMonths, historyDays } from './model/cards.js';
 import { bookTotals, upcoming, renewals } from './model/book.js';
+import { byHandMonth } from './model/byhand.js';
 import { pace, paceMinDays, projectNetWorth, reserveGoal, incomeLadder, cardPayoff } from './model/forecast.js';
 import { topMerchants } from './model/classify.js';
 import { recentTransactions } from './model/recent.js';
@@ -113,6 +114,8 @@ export function makeDerived(state, now) {
     cardMonthsFor(id, n = 6) { return once('cardMonthsFor:' + id + ':' + n, () => cardMonths(state, id, n, now, shared())); },
 
     get bookTotals() { return once('bookTotals', () => bookTotals(state)); },
+    /** The checklist of the payments the owner sends: this month's, and what is still unpaid from earlier months. */
+    get byHand() { return once('byHand', () => byHandMonth(state, today, now)); },
     upcoming(days = 30) { return once('upcoming:' + days, () => upcoming(state, today, days)); },
     renewals(days = 120) { return once('renewals:' + days, () => renewals(state, today, days)); },
 

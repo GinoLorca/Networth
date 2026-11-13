@@ -2,8 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   occurrences, nextOccurrence, lastOccurrence, annualCost, dailyCost, upcoming, bookTotals, renewals,
+  byHandStanding, byHandStandingOf, byHandUnpaid, entryLapsed, BY_HAND_ARREARS,
 } from '../js/model/book.js';
-import { defaultState, makeRecurring, makeStream } from '../js/model/schema.js';
+import { defaultState, makeRecurring, makeStream, makeTx } from '../js/model/schema.js';
 import { addDays, daysInMonth, diffDays, eachDay, monthOf, parts } from '../js/model/dates.js';
 
 const item = (cadence, anchor) => ({ cadence, anchor });
@@ -494,4 +495,157 @@ test('a line added by hand has no occurrence before its anchor, or before the da
   const state = defaultState(0);
   state.recurring.push(makeRecurring({ id: 'rec_gym', name: 'Harbor Gym', cadence: 'monthly', anchor: '2026-07-20', amount: 4500, source: 'manual', since: '2026-06-10' }));
   assert.deepEqual(upcoming(state, '2026-06-10', 75).map((row) => row.day), ['2026-07-20', '2026-08-20']);
+});
+
+/* ------------------------------------------- a payment the owner sends: which occurrence a row settles */
+
+/** "Flat share", $250.00 on the 5th, on the list since August 2026: Aug 5, Sep 5, Oct 5, Nov 5, Dec 5. */
+function flatShare(fields = {}) {
+  return makeRecurring({
+    id: 'rec_flat', name: 'Flat share', amount: 25000, cadence: 'monthly', source: 'manual', mkey: '', accountId: null,
+    byHand: true, dueDay: 5, since: '2026-08-01', anchor: '2026-08-05', category: 'other', essential: true, ...fields,
+  });
+}
+
+const rowsOn = (...days) => days.map((day, i) => ({ id: 'tx_' + (i + 1), day }));
+
+/** The standing as [occurrence, what settles it]: the day of its row, 'tick', or null. */
+function standing(entry, rows, untilDay = '2026-11-10') {
+  return byHandStanding(entry, rows, untilDay).map((item) => [item.day.slice(5), item.row ? item.row.day.slice(5) : item.tick && item.tick.paid ? 'tick' : null]);
+}
+
+test('the standing: one item per occurrence from the first through the day asked about', () => {
+  assert.deepEqual(standing(flatShare(), []), [['08-05', null], ['09-05', null], ['10-05', null], ['11-05', null]]);
+  assert.deepEqual(standing(flatShare(), [], '2026-11-04').length, 3);
+  assert.deepEqual(standing(flatShare(), [], '2026-08-04'), []);
+  assert.deepEqual(byHandStanding(flatShare(), [], '2026-08-05'), [{ day: '2026-08-05', row: null, tick: null }]);
+});
+
+test('the standing, case by case: on time, early, late, a month skipped, arrears, a tick, history', () => {
+  const cases = [
+    ['on time', ['2026-09-05'], {}, [['08-05', null], ['09-05', '09-05'], ['10-05', null], ['11-05', null]]],
+    ['10 days early', ['2026-10-26'], {}, [['08-05', null], ['09-05', null], ['10-05', null], ['11-05', '10-26']]],
+    ['15 days late (as near the next one: the earlier takes it)', ['2026-09-20'], {}, [['08-05', null], ['09-05', '09-20'], ['10-05', null], ['11-05', null]]],
+    ['16 days late in a 30-day month is 14 days early for the next', ['2026-09-21'], {}, [['08-05', null], ['09-05', null], ['10-05', '09-21'], ['11-05', null]]],
+    ['16 days late in a 31-day month is 15 days early for the next', ['2026-08-21'], {}, [['08-05', null], ['09-05', '08-21'], ['10-05', null], ['11-05', null]]],
+    ['a skipped month stays unpaid when the next is paid', ['2026-08-05', '2026-10-04'], {}, [['08-05', '08-05'], ['09-05', null], ['10-05', '10-04'], ['11-05', null]]],
+    ['a second row in a month settles the arrears', ['2026-08-05', '2026-10-04', '2026-10-07'], {}, [['08-05', '08-05'], ['09-05', '10-07'], ['10-05', '10-04'], ['11-05', null]]],
+    ['a second row settles the OLDEST arrears', ['2026-10-04', '2026-10-07'], {}, [['08-05', '10-07'], ['09-05', null], ['10-05', '10-04'], ['11-05', null]]],
+    ['a tick is not taken for arrears', ['2026-08-05', '2026-10-04', '2026-10-07'], { '2026-09-05': { paid: true, at: 5 } },
+      [['08-05', '08-05'], ['09-05', 'tick'], ['10-05', '10-04'], ['11-05', null]]],
+    ['an untick is: the month is owed again', ['2026-08-05', '2026-10-04', '2026-10-07'], { '2026-09-05': { paid: false, at: 6 } },
+      [['08-05', '08-05'], ['09-05', '10-07'], ['10-05', '10-04'], ['11-05', null]]],
+    ['a row on a ticked occurrence settles it at the bank', ['2026-09-06'], { '2026-09-05': { paid: true, at: 5 } }, [['08-05', null], ['09-05', '09-06'], ['10-05', null], ['11-05', null]]],
+    ['a third row with nothing owed before it settles nothing', ['2026-08-04', '2026-08-06', '2026-08-07'], {}, [['08-05', '08-04'], ['09-05', null], ['10-05', null], ['11-05', null]]],
+    ['arrears are only ever EARLIER occurrences', ['2026-08-04', '2026-08-06'], {}, [['08-05', '08-04'], ['09-05', null], ['10-05', null], ['11-05', null]]],
+    ['rows before `since` are history', ['2026-06-05', '2026-07-05', '2026-07-19'], {}, [['08-05', null], ['09-05', null], ['10-05', null], ['11-05', null]]],
+    ['a row before `since` as near the schedule day before the first as the first (15 days after, 16 before) is history', ['2026-07-20'], {}, [['08-05', null], ['09-05', null], ['10-05', null], ['11-05', null]]],
+    ['a row before `since` sent early for the first occurrence settles it (E8 R4)', ['2026-06-05', '2026-07-05', '2026-07-30'], {}, [['08-05', '07-30'], ['09-05', null], ['10-05', null], ['11-05', null]]],
+    ['15 days before the first occurrence and before `since`: the first is paid', ['2026-07-21'], {}, [['08-05', '07-21'], ['09-05', null], ['10-05', null], ['11-05', null]]],
+    ['sent early for next month, it is not taken for this month', ['2026-11-22'], {}, [['08-05', null], ['09-05', null], ['10-05', null], ['11-05', null]]],
+  ];
+  for (const [what, days, marks, expected] of cases) assert.deepEqual(standing(flatShare({ marks }), rowsOn(...days)), expected, what);
+  // and asked about December, the early row is December's
+  assert.deepEqual(standing(flatShare(), rowsOn('2026-11-22'), '2026-12-05').pop(), ['12-05', '11-22']);
+});
+
+test('the standing: a row more than 16 days from every occurrence settles nothing', () => {
+  const late = flatShare({ since: '2026-08-10', anchor: '2026-09-05' }); // added after August's day: September is its first
+  assert.deepEqual(standing(late, rowsOn('2026-08-12')), [['09-05', null], ['10-05', null], ['11-05', null]]); // 24 days early
+  assert.deepEqual(standing(late, rowsOn('2026-08-20')), [['09-05', '08-20'], ['10-05', null], ['11-05', null]]); // 16 days early
+  assert.deepEqual(standing(late, rowsOn('2026-08-19')), [['09-05', null], ['10-05', null], ['11-05', null]]); // 17
+});
+
+test('the standing does not depend on the day asked about, nor on the order or the ids of the rows', () => {
+  // two rows sent in late October: the first is November's, the second settles August's arrears
+  const rows = rowsOn('2026-10-26', '2026-10-27');
+  const whole = standing(flatShare(), rows, '2026-12-31');
+  for (const until of ['2026-10-27', '2026-11-04', '2026-11-05', '2026-11-30']) {
+    const part = standing(flatShare(), rows, until);
+    assert.deepEqual(part, whole.slice(0, part.length), until);
+  }
+  assert.deepEqual(whole.slice(0, 4), [['08-05', '10-27'], ['09-05', null], ['10-05', null], ['11-05', '10-26']]);
+  const shuffled = [{ id: 'zz', day: '2026-10-27' }, { id: 'aa', day: '2026-10-26' }];
+  assert.deepEqual(standing(flatShare(), shuffled, '2026-12-31'), whole);
+});
+
+test('the standing: the last day of the month, in a 30-day month and in February', () => {
+  const parking = flatShare({ id: 'rec_parking', name: 'Parking', amount: 8500, dueDay: 31, since: '2026-11-01', anchor: '2026-11-30' });
+  assert.deepEqual(byHandStanding(parking, rowsOn('2027-02-27'), '2027-03-31').map((item) => item.day), ['2026-11-30', '2026-12-31', '2027-01-31', '2027-02-28', '2027-03-31']);
+  assert.deepEqual(standing(parking, rowsOn('2027-02-27'), '2027-03-31')[3], ['02-28', '02-27']);
+});
+
+test('the standing: odd input gives an empty answer or ignores what it cannot read', () => {
+  assert.deepEqual(byHandStanding(null, [], '2026-11-10'), []);
+  assert.deepEqual(byHandStanding(flatShare(), [], 'someday'), []);
+  assert.deepEqual(byHandStanding(flatShare({ anchor: '' }), rowsOn('2026-09-05'), '2026-11-10'), []);
+  assert.deepEqual(standing(flatShare({ marks: null }), null), standing(flatShare(), []));
+  assert.deepEqual(standing(flatShare({ marks: { '2026-09-05': 7, nonsense: { paid: true } } }), [null, 7, { id: 'tx_x' }, { id: 'tx_y', day: 'never' }]), standing(flatShare(), []));
+});
+
+function bookWith(entry, days) {
+  const state = defaultState(Date.UTC(2026, 10, 10));
+  state.recurring.push(entry);
+  days.forEach((day, i) => state.txs.push(makeTx({ id: 'tx_' + (i + 1), accountId: 'acc_checking', day, amount: entry.amount, flow: 'out', recurringId: entry.id, ...(typeof day === 'string' ? {} : day) })));
+  return state;
+}
+
+test('read from the document: the bank rows linked to the entry settle; a pending one only while pending rows count', () => {
+  const entry = flatShare();
+  const state = bookWith(entry, ['2026-09-05']);
+  state.txs.push(
+    makeTx({ id: 'tx_pending', day: '2026-10-05', amount: 25000, flow: 'out', recurringId: entry.id, pending: true }),
+    makeTx({ id: 'tx_typed', day: '2026-10-05', amount: 25000, flow: 'out', recurringId: entry.id, source: 'manual' }),
+    makeTx({ id: 'tx_declined', day: '2026-10-05', amount: 25000, flow: 'out', recurringId: entry.id, kind: 'decline' }),
+    makeTx({ id: 'tx_superseded', day: '2026-10-05', amount: 25000, flow: 'out', recurringId: entry.id, matchId: 'tx_1' }),
+    makeTx({ id: 'tx_other', day: '2026-10-05', amount: 25000, flow: 'out', recurringId: 'rec_other' }),
+  );
+  // pending rows count (the setting is on unless switched off): the ledger has taken the money, so October is settled
+  assert.deepEqual(byHandStandingOf(state, entry, '2026-11-10').map((item) => item.row && item.row.id), [null, 'tx_1', 'tx_pending', null]);
+  assert.deepEqual(byHandStandingOf(state, entry, '2026-11-10')[2].row, { id: 'tx_pending', day: '2026-10-05', pending: true });
+  assert.deepEqual(byHandUnpaid(state, entry, '2026-11-10').map((item) => item.day), ['2026-08-05', '2026-11-05']);
+  // asked for without them, or with the setting off: a pending row settles nothing
+  assert.deepEqual(byHandStandingOf(state, entry, '2026-11-10', false).map((item) => item.row && item.row.id), [null, 'tx_1', null, null]);
+  state.settings = { ...state.settings, countPending: false };
+  assert.deepEqual(byHandStandingOf(state, entry, '2026-11-10').map((item) => item.row && item.row.id), [null, 'tx_1', null, null]);
+  assert.deepEqual(byHandStandingOf(state, entry, '2026-11-10', true).map((item) => item.row && item.row.id), [null, 'tx_1', 'tx_pending', null]);
+  assert.deepEqual(byHandUnpaid(state, entry, '2026-11-10').map((item) => item.day), ['2026-08-05', '2026-10-05', '2026-11-05']);
+  assert.deepEqual(byHandUnpaid(state, entry, '2026-11-05').map((item) => item.day), ['2026-08-05', '2026-10-05']); // its day is today: not yet passed
+});
+
+test('arrears: of the earlier months the twelve newest, and every one of this month', () => {
+  const entry = flatShare({ since: '2025-01-01', anchor: '2025-01-05' });
+  const state = bookWith(entry, []);
+  const unpaid = byHandUnpaid(state, entry, '2026-11-10').map((item) => item.day);
+  assert.equal(BY_HAND_ARREARS, 12);
+  assert.deepEqual([unpaid.length, unpaid[0], unpaid[11], unpaid[12]], [13, '2025-11-05', '2026-10-05', '2026-11-05']);
+});
+
+test('upcoming leaves out an occurrence of a payment the owner sends that a row or a tick settles', () => {
+  const entry = flatShare({ since: '2026-11-01', anchor: '2026-11-05', dueDay: 15 });
+  entry.anchor = '2026-11-15';
+  const days = (state) => upcoming(state, '2026-11-10', 60).map((row) => row.day);
+  assert.deepEqual(days(bookWith(entry, [])), ['2026-11-15', '2026-12-15']);
+  assert.deepEqual(days(bookWith(entry, ['2026-11-09'])), ['2026-12-15']); // paid six days early
+  assert.deepEqual(days(bookWith(entry, ['2026-11-09', '2026-11-10'])), ['2026-12-15']); // a second row has no arrears to settle, and is not December's
+  assert.deepEqual(days(bookWith({ ...entry, marks: { '2026-11-15': { paid: true, at: 1 } } }, [])), ['2026-12-15']);
+  assert.deepEqual(days(bookWith({ ...entry, marks: { '2026-11-15': { paid: false, at: 2 } } }, [])), ['2026-11-15', '2026-12-15']);
+  assert.deepEqual(days(bookWith({ ...entry, marks: { '2026-12-15': { paid: true, at: 1 } } }, [])), ['2026-11-15']);
+  // an ordinary line is left out by its latest charge, as it always was
+  const plain = makeRecurring({ id: 'rec_plain', name: 'Plain', amount: 1000, cadence: 'monthly', anchor: '2026-11-15' });
+  assert.deepEqual(days(bookWith(plain, [])), ['2026-11-15', '2026-12-15']);
+});
+
+test('the Book totals count a payment the owner sends like any other line, paid or not; it never lapses while it is on', () => {
+  const entry = flatShare();
+  const unpaid = bookTotals(bookWith(entry, []));
+  assert.deepEqual([unpaid.count, unpaid.perMonth, unpaid.perYear], [1, 25000, 300000]);
+  assert.deepEqual(bookTotals(bookWith(entry, ['2026-09-05', '2026-10-05', '2026-11-05'])), unpaid);
+  assert.equal(annualCost(entry), 300000);
+  assert.ok(Math.abs(dailyCost(entry) - 25000 / 30.4375) < 1e-9);
+  assert.equal(entryLapsed(entry, null, '2028-01-01'), false);
+  assert.equal(entryLapsed(entry, '2026-08-05', '2028-01-01'), false);
+  assert.equal(entryLapsed({ ...entry, active: false }, '2026-08-05', '2028-01-01'), true);
+  assert.equal(entryLapsed({ ...entry, byHand: false }, '2026-08-05', '2028-01-01'), true);
+  assert.equal(bookTotals(bookWith({ ...entry, active: false }, [])).count, 0);
 });

@@ -14,15 +14,25 @@
  * with the liquid figure and yesterday's breakdown, and the reserve — are set as bands of their own
  * after the round.
  *
- * render(ctx) is pure. The only action of this screen is `board.hero`; everything else opens a
+ * The payments the owner sends themselves ("Payments to make", ctx.d.byHand) are a checklist of their own:
+ * under the reserve in the clock's column on a wide screen, a band between cash on hand and today's
+ * round on a phone. Nothing of it is drawn while the Book holds no such payment.
+ *
+ * render(ctx) is pure. The actions of this screen are `board.hero` and the checklist's own
+ * (`board.pay-tick`, `board.pay-skip`, `board.pay-amount`, `board.pay-add`); everything else opens a
  * sheet or another screen through the app-level actions (app.sheet, app.move) or a plain link.
  */
 
 import { html, cx, attrs } from '../ui/dom.js';
 import { store } from '../store.js';
+import { openSheet } from '../router.js';
+import { context, toast } from '../runtime.js';
 import { fmt, fmtPct, ratio, toneBand } from '../model/money.js';
 import { addDays, diffDays, fmtDate, fmtMonth, fmtTime, isYmd, monthOf, ymd } from '../model/dates.js';
 import { firstTransactionDay } from '../model/cards.js';
+import { nextOccurrence, runsByHand } from '../model/book.js';
+import { editByHand, skipRow, tickByHand } from '../model/byhand.js';
+import { refresh } from '../model/detect.js';
 import { evalGlyph, timeTroubleGlyph, moveGlyph, resultMark } from '../ui/glyphs.js';
 import { money, inlineMoney, keptLine, statusLine, roundTitle, colourOf, crosstable, movesList, notableMoves, worstGlyph, spentUnposted, recentList, toneStyle } from './parts.js';
 
@@ -164,7 +174,21 @@ function model(ctx) {
     lapsed: (Array.isArray(pos.lapsedPay) ? pos.lapsedPay : []).filter((item) => item && typeof item === 'object'),
     streams: Array.isArray(ctx.state.streams) ? ctx.state.streams : [],
     payOnArrival: payOnArrival(ctx),
+    pay: payModel(ctx),
   };
+}
+
+/**
+ * The checklist of payments the owner sends (derive: byHand), or null when the Book holds none that runs:
+ * then nothing of it is drawn anywhere on the Board.
+ */
+function payModel(ctx) {
+  const bh = ctx.d.byHand;
+  if (!bh || !Array.isArray(bh.rows)) return null;
+  const entries = (Array.isArray(ctx.state.recurring) ? ctx.state.recurring : []).filter((rec) => rec && runsByHand(rec));
+  if (!entries.length) return null;
+  const cents = (n) => (Number.isFinite(n) && n > 0 ? Math.round(n) : 0);
+  return { ym: bh.ym, rows: bh.rows, paid: bh.paid || 0, count: bh.count || 0, unpaid: cents(bh.unpaid), transit: cents(bh.transit), entries };
 }
 
 /* ------------------------------------------------------------ A. net worth */
@@ -262,14 +286,14 @@ function heroMeta(ctx, v) {
   const items = [];
   items.push(html`<div class="tally-item">
     <span class="lab">Yesterday</span>
-    ${y ? money(y.result, { est: y.partial || pos.smoothing, signed: true, tint: true }) : html`<span class="fig">—</span>`}
+    ${y ? money(y.result, { est: y.partial || pos.smoothing, signed: true, tint: true, rim: true }) : html`<span class="fig">—</span>`}
     <span class="cap">${y
       ? (ctx.wide ? yesterdayParts(y, pos.smoothing) : html`${fmtDate(y.day, 'dowshort')}${y.partial ? ', in pencil' : ''}`)
       : html`no record of ${fmtDate(addDays(ctx.today, -1), 'short')}`}</span>
   </div>`);
   items.push(html`<div class="tally-item">
     <span class="lab">This month</span>
-    ${money(ret.kept, { est: !!pos.smoothing || pos.provisional > 0, signed: true, tint: true })}
+    ${money(ret.kept, { est: !!pos.smoothing || pos.provisional > 0, signed: true, tint: true, rim: true })}
     <span class="cap">${ret.rate == null
       ? 'nothing counted as earned yet this month'
       : ret.kept >= 0
@@ -315,7 +339,20 @@ function heroMore(ctx, v) {
         <button class="btn-link" type="button" data-action="app.sheet" data-sheet="account">Add</button></p>`}
       <p class="board-liquid"><span class="lab"><b>Liquid</b></span>${money(pos.liquid, { est: liquidEst })}<span class="cap">cash minus cards</span></p>
     </div>
+    ${liquidAfter(v)}
     ${y ? html`<p class="cap board-yesterday">Yesterday, ${fmtDate(y.day, 'short')}: ${yesterdayParts(y, pos.smoothing)}.</p>` : ''}`;
+}
+
+/**
+ * Under the liquid figure: what is left of it once the payments still to send have gone, and those ticked
+ * in the last days that the bank's balance still holds. An estimate, and printed only while there is one.
+ */
+function liquidAfter(v) {
+  const pay = v.pay;
+  if (!pay || !(pay.unpaid + pay.transit > 0)) return '';
+  const left = v.pos.liquid - pay.unpaid - pay.transit;
+  const sent = pay.transit > 0 ? html`${pay.unpaid > 0 ? ' and ' : ''}${inlineMoney(pay.transit, { est: true })} sent, not yet at the bank` : '';
+  return html`<p class="cap board-liquid-after">After ${pay.unpaid > 0 ? html`${inlineMoney(pay.unpaid, { est: true })} still to send` : ''}${sent}: <span class="nowrap">${inlineMoney(left, { est: true })}</span></p>`;
 }
 
 /* ----------------------------------------------------- B. cash on hand */
@@ -399,7 +436,7 @@ function clockDue(ctx, c) {
     </div>
     ${shown.length ? html`<ul class="board-due" aria-label="What is due">
       ${shown.map((item) => html`<li data-key="${item.id + item.day}">
-        <span class="board-due-name">${item.name}</span>
+        <span class="board-due-name">${item.name}${item.byHand ? html` <span class="board-tag">You send it</span>` : ''}</span>
         <span class="${cx('lab', 'lab-s', item.overdue && 'board-overdue')}">${item.overdue ? 'overdue since ' + fmtDate(item.day, 'short') : fmtDate(item.day, 'dowshort')}</span>
         ${money(item.amount, { est: true })}
       </li>`)}
@@ -419,6 +456,81 @@ function reserveBlock(ctx) {
     <ol class="ticks" aria-label="Reserve milestones, in days of typical outflow">
       ${c.milestones.map((m, i) => html`<li${attrs({ class: m.reached ? 'is-done' : i === next ? 'is-next' : null })}>${m.label}${m.reached ? html`<span class="vh">, reached</span>` : i === next ? html`<span class="vh">, next</span>` : ''}</li>`)}
     </ol>`;
+}
+
+/* ------------------------------------------------- payments to make */
+
+const PAID = { bank: true, pending: true, hand: true };
+
+function dueWords(n) {
+  return n <= 0 ? 'due today' : n === 1 ? 'due tomorrow' : 'due in ' + n + ' days';
+}
+
+/** The line under a payment's name: where it stands, in words with a date. */
+function payNote(row, earlier) {
+  const short = (day) => (isYmd(day) ? fmtDate(day, 'short') : 'a day not on record');
+  const lead = earlier ? fmtMonth(monthOf(row.day), 'name') + '’s payment' + DOT : '';
+  if (row.status === 'bank') return html`<i class="bank-mark"></i>At the bank ${short(row.paidDay)}${row.merchant ? html`${DOT}${row.merchant}` : ''}`;
+  if (row.status === 'pending') return html`Pending at the bank since ${short(row.paidDay)}${row.merchant ? html`${DOT}${row.merchant}` : ''}`;
+  if (row.status === 'hand') {
+    return row.pendingDay
+      ? html`Ticked ${short(row.paidDay)}; pending at the bank since ${short(row.pendingDay)}.`
+      : html`Ticked ${short(row.paidDay)}; the bank has not shown it.`;
+  }
+  if (row.pendingDay) return html`${lead}pending at the bank since ${short(row.pendingDay)}`;
+  if (row.status === 'overdue') return html`${lead}<span class="board-overdue">overdue since ${short(row.day)}</span>`;
+  return html`${lead}${dueWords(Number.isFinite(row.daysTo) ? row.daysTo : 0)}`;
+}
+
+/** One payment of the checklist: the box, the name with its day and standing, the amount, and what may be said about it. */
+function payRow(ctx, v, row) {
+  const rec = row.entry || {};
+  const name = rec.name || 'Unnamed payment';
+  const when = fmtDate(row.day, 'dowshort');
+  const atBank = row.status === 'bank' || row.status === 'pending';
+  const ticked = !!PAID[row.status];
+  const earlier = monthOf(row.day) < v.pay.ym;
+  const say = name + ', ' + when;
+  const box = atBank
+    ? html`<span class="pay-box" role="img" aria-label="${say + (row.status === 'bank' ? ': paid at the bank' : ': pending at the bank')}"><span class="check-box is-on is-bank" aria-hidden="true"></span></span>`
+    : html`<button class="pay-box" type="button" data-action="board.pay-tick" data-id="${rec.id}" data-day="${row.day}" aria-pressed="${ticked ? 'true' : 'false'}" aria-label="${say + (ticked ? ': ticked as paid' : ': not paid yet')}"><span class="${cx('check-box', ticked && 'is-on')}" aria-hidden="true"></span></button>`;
+  const text = html`<span class="pay-name">${name}</span> <span class="lab lab-s pay-when">${when}</span>
+      <em class="pay-note">${payNote(row, earlier)}</em>`;
+  const main = atBank && row.txId
+    ? html`<button class="pay-main" type="button" data-action="app.sheet" data-sheet="tx" data-id="${row.txId}">${text}</button>`
+    : html`<button class="pay-main" type="button" data-action="app.sheet" data-sheet="recurring" data-id="${rec.id}">${text}</button>`;
+  const other = !ticked && Number.isFinite(row.otherAmount) && row.otherAmount > 0;
+  return html`<li class="${cx('pay-row', ticked && 'is-paid')}" data-key="${rec.id + ':' + row.day}">
+    ${box}
+    ${main}
+    ${money(row.amount, { est: row.status !== 'bank' })}
+    ${atBank && row.txId ? html`<p class="cap pay-more"><button class="btn-link" type="button" data-action="board.pay-skip" data-id="${rec.id}" data-tx="${row.txId}">Not this payment</button></p>` : ''}
+    ${other ? html`<p class="cap pay-more"><span>${v.cover
+        ? html`The bank shows another amount to this payee on ${fmtDate(row.otherDay, 'short')}.`
+        : html`The bank shows ${inlineMoney(row.otherAmount)} to this payee on ${fmtDate(row.otherDay, 'short')}.`}</span>
+      <button class="btn-link" type="button" data-action="board.pay-amount" data-id="${rec.id}" data-day="${row.day}">${v.cover ? 'Change the amount' : 'Change the amount to ' + fmt(row.otherAmount)}</button></p>` : ''}
+  </li>`;
+}
+
+/** "Payments to make": the month's checklist of what the owner sends. Returns '' when there is none to make. */
+function payBlock(ctx, v) {
+  const pay = v.pay;
+  if (!pay) return '';
+  const month = fmtMonth(pay.ym, 'name');
+  let none = '';
+  if (!pay.rows.length) {
+    // every payment's schedule starts in a later month: say which comes first, and when
+    const next = pay.entries.map((rec) => ({ rec, day: nextOccurrence(rec, addDays(ctx.today, -1)) })).filter((x) => isYmd(x.day)).sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : 0))[0];
+    none = html`<p class="cap board-quiet">0 payments are left to make in ${month}.${next ? html` The next is ${next.rec.name || 'an unnamed payment'}, ${inlineMoney(next.rec.amount, { est: true })} on ${fmtDate(next.day, 'dowshort')}.` : ''}</p>`;
+  }
+  return html`
+    <div class="sec-head">
+      <h2 class="lab" id="b-pay"><b>Payments to make</b><i class="sep"></i>${month}</h2>
+      <span class="lab">${pay.paid} of ${pay.count} paid</span>
+    </div>
+    ${none}
+    ${pay.rows.length ? html`<ul class="board-pay" aria-label="${'Payments to make, ' + month}">${pay.rows.map((row) => payRow(ctx, v, row))}</ul>` : ''}
+    <p class="cap board-line pay-foot">${pay.unpaid > 0 ? html`<span>${inlineMoney(pay.unpaid, { est: true })} still to send.</span> ` : ''}<button class="btn-link" type="button" data-action="board.pay-add">Add a payment</button></p>`;
 }
 
 /* ---------------------------------------------------------- C. the round */
@@ -866,7 +978,7 @@ function wideBoard(ctx, v) {
     <h1 class="vh">The Board, ${fmtDate(ctx.today, 'long')}</h1>
     <div class="cols">
       <section class="col col-8 hero" aria-labelledby="b-nw">${heroMain(ctx, v)}${heroMore(ctx, v)}</section>
-      <section class="col col-4 clock" aria-labelledby="b-clock">${clockMain(ctx, v)}<div class="clock-reserve">${reserveBlock(ctx)}</div></section>
+      <section class="col col-4 clock" aria-labelledby="b-clock">${clockMain(ctx, v)}<div class="clock-reserve">${reserveBlock(ctx)}</div>${v.pay ? html`<section class="board-pay-col" aria-labelledby="b-pay">${payBlock(ctx, v)}</section>` : ''}</section>
     </div>
     <div class="cols">
       <div class="col col-5">
@@ -899,6 +1011,7 @@ function narrowBoard(ctx, v) {
     <h1 class="vh">The Board, ${fmtDate(ctx.today, 'long')}</h1>
     <section class="band hero board-top" aria-labelledby="b-nw">${heroMain(ctx, v)}</section>
     <section class="band clock board-top" aria-labelledby="b-clock">${clockMain(ctx, v)}</section>
+    ${v.pay ? html`<section class="band board-pay-band" aria-labelledby="b-pay">${payBlock(ctx, v)}</section>` : ''}
     <section class="band" aria-labelledby="b-today">${v.matchOn ? todayBlock(ctx, v) : prematchBlock(ctx, v)}</section>
     <section class="band" aria-labelledby="b-recent">${recentBlock(ctx, v)}</section>
     ${last ? html`<section class="band" aria-labelledby="b-last">${last}</section>` : ''}
@@ -926,9 +1039,85 @@ export function render(ctx) {
   return ctx.wide ? wideBoard(ctx, v) : narrowBoard(ctx, v);
 }
 
+/** A toast with Undo that only undoes the change it announces. */
+function offerUndo(message, label, undone) {
+  toast(message, {
+    action: 'Undo',
+    onAction: () => {
+      if (store.undoLabel === label && store.undo()) toast(undone);
+    },
+  });
+}
+
+/** The checklist's row of this payment and day, as the engine has it now. */
+function payRowOf(ctx, id, day) {
+  const bh = ctx.d.byHand;
+  const rows = bh && Array.isArray(bh.rows) ? bh.rows : [];
+  return rows.find((row) => row.entry && row.entry.id === id && (!day || row.day === day)) || null;
+}
+
 export const actions = {
   /** The hero is a button: one tap switches between the live figure and the bank's own. */
   'board.hero': () => {
     store.setUi({ heroMode: store.ui.heroMode === 'bank' ? 'live' : 'bank' });
+  },
+
+  /** The box of a payment: a tap ticks it as paid, a second tap takes the tick back. The bank's own tick is not a button. */
+  'board.pay-tick': ({ data }) => {
+    const ctx = context();
+    const row = payRowOf(ctx, data.id, data.day);
+    if (!row || row.status === 'bank' || row.status === 'pending') return;
+    const paid = row.status !== 'hand';
+    const name = row.entry.name || 'The payment';
+    const when = fmtDate(row.day, 'dowshort');
+    const undoLabel = paid ? 'Payment ticked' : 'Payment unticked';
+    let done = false;
+    store.update((s) => { done = tickByHand(s, data.id, data.day, paid, ctx.now); }, { undo: undoLabel });
+    if (!done) return;
+    const amount = ctx.state.settings.cover ? '' : ', ' + fmt(row.amount);
+    offerUndo(paid ? 'Ticked: ' + name + amount + ', ' + when + '.' : 'Unticked: ' + name + ', ' + when + '.',
+      undoLabel, paid ? name + ', ' + when + ', is unticked again.' : name + ', ' + when + ', is ticked again.');
+  },
+
+  /** "Not this payment": the bank's row is taken off the payment, and never offered to it again. */
+  'board.pay-skip': ({ data }) => {
+    const ctx = context();
+    const row = payRowOf(ctx, data.id, null);
+    const tx = ctx.state.txs.find((one) => one && one.id === data.tx);
+    if (!row || !tx) return;
+    const name = row.entry.name || 'the payment';
+    const undoLabel = 'Row taken off the payment';
+    let done = false;
+    store.update((s) => {
+      done = skipRow(s, data.id, data.tx, ctx.now);
+      if (done) refresh(s, ctx.now);
+    }, { undo: undoLabel });
+    if (!done) return;
+    offerUndo('The bank’s row of ' + fmtDate(tx.day, 'short') + ' no longer pays ' + name + '.', undoLabel, 'The row of ' + fmtDate(tx.day, 'short') + ' pays ' + name + ' again.');
+  },
+
+  /** The bank shows another amount to this payee: the payment takes that amount from here on. */
+  'board.pay-amount': ({ data }) => {
+    const ctx = context();
+    const row = payRowOf(ctx, data.id, data.day);
+    if (!row || !(row.otherAmount > 0)) return;
+    const name = row.entry.name || 'The payment';
+    const amount = row.otherAmount;
+    const undoLabel = 'Amount of the payment changed';
+    let done = false;
+    store.update((s) => {
+      done = editByHand(s, data.id, { amount }, ctx.today, ctx.now);
+      if (done) refresh(s, ctx.now);
+    }, { undo: undoLabel });
+    if (!done) return;
+    const after = payRowOf(context(), data.id, null);
+    offerUndo(name + (ctx.state.settings.cover ? ' takes the bank’s amount' : ' is now ' + fmt(amount)) + (after ? ', from ' + fmtMonth(monthOf(after.day), 'name') + '.' : '.'),
+      undoLabel, name + ' is at its earlier amount again.');
+  },
+
+  /** Open the entry sheet empty, for a payment the owner sends. */
+  'board.pay-add': () => {
+    if (store.ui.payForm) store.setUi({ payForm: null });
+    openSheet('recurring', { pay: 'new' });
   },
 };

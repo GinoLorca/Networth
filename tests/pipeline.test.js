@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 
 import { DEMO_HISTORY_DAYS, DEMO_MATCH_DAYS, buildDemoState, demoFeed } from '../js/model/demo.js';
 import { ACCOUNT_TYPES, checkDoc, txEffect } from '../js/model/schema.js';
-import { addDays, addMonthsYm, daysInMonth, diffDays, dow, endOfMonth, gameDayStartMs, monthOf, parts } from '../js/model/dates.js';
+import { addDays, addMonths, addMonthsYm, daysInMonth, diffDays, dow, endOfMonth, gameDayStartMs, monthOf, parts } from '../js/model/dates.js';
 import { mergeFeed } from '../js/model/merge.js';
 import { computeHabit, refresh } from '../js/model/detect.js';
 import { makeLedger } from '../js/model/ledger.js';
@@ -18,6 +18,7 @@ import { annotateRound, previewMove, reviewRounds } from '../js/model/annotate.j
 import { SYMBOLS, SYMBOL_LABELS, assess, coachNotes, monthReview } from '../js/model/assess.js';
 import { cardPayoff, incomeLadder, pace, projectNetWorth, purchaseImpact, reserveGoal } from '../js/model/forecast.js';
 import { topMerchants } from '../js/model/classify.js';
+import { addByHand, byHandMonth, editByHand, payeeKey, tickByHand } from '../js/model/byhand.js';
 
 /* ------------------------------------------------------------------ fixtures */
 
@@ -1016,3 +1017,304 @@ damaged('a feed that went quiet keeps every sum: 37 hours and 10 days after the 
     assertClean(ledger.clock(), 'clock');
   }
 });
+
+/* ------------------------------------------- a payment the owner sends, from the feed to the checklist */
+
+/** The sample feed with an invented Zelle of $250.00 sent from checking 66, 35 and 5 days before today. */
+function feedWithZelle(nowMs, today) {
+  const feed = demoFeed(nowMs);
+  const checking = feed.accounts.find((account) => account.name === 'Everyday Checking');
+  const days = [addDays(today, -66), addDays(today, -35), addDays(today, -5)];
+  days.forEach((day, i) => checking.txs.push({
+    extId: 'chk-zelle-' + i, amount: -25000, description: 'Zelle payment to R Lindqvist', payee: '', memo: '', mcc: null,
+    posted: Math.floor(gameDayStartMs(day, ROLLOVER) / 1000) + 9 * 3600, at: null, pending: false,
+  }));
+  return { feed, days };
+}
+
+damaged('a monthly Zelle in the feed: made a payment the owner sends, it is one line, paid at the bank, and no day after its first charge moves', ({ state, nowMs, today, firstDay }) => {
+  const { feed, days } = feedWithZelle(nowMs, today);
+  mergeFeed(state, feed, nowMs);
+  refresh(state, nowMs);
+  const rows = state.txs.filter((tx) => tx.mkey === 'zelle to r lindqvist').sort((a, b) => (a.day < b.day ? -1 : 1));
+  assert.deepEqual(rows.map((tx) => [tx.day, tx.kind, tx.ruleId, tx.amount]), days.map((day) => [day, 'spend', 'builtin:zelle', 25000]));
+  const detected = state.recurring.find((entry) => entry.mkey === 'zelle to r lindqvist');
+  assert.deepEqual([detected.source, detected.amount, detected.active], ['detected', 25000, true]);
+  for (const row of rows) assert.equal(row.recurringId, detected.id);
+  const totals = bookTotals(state);
+  const figures = makeLedger(state, nowMs).closes(addDays(days[0], 1), today);
+  const levels = makeLedger(state, nowMs).closes(days[0], days[0])[0];
+
+  const entry = addByHand(state, { name: 'Flat share', amount: 25000, dueDay: parts(days[2]).d }, today, nowMs);
+  refresh(state, nowMs);
+  assert.equal(checkDoc(state), null);
+  assert.equal(state.recurring.includes(detected), false);
+  assert.equal(entry.payee, payeeKey('zelle to r lindqvist'));
+  for (const row of rows) assert.deepEqual([row.recurringId, row.klass, row.review], [entry.id, 'book', false]);
+  assert.deepEqual([bookTotals(state).count, bookTotals(state).perMonth, bookTotals(state).perYear], [totals.count, totals.perMonth, totals.perYear]);
+  const ledger = makeLedger(state, nowMs);
+  assert.deepEqual(ledger.closes(addDays(days[0], 1), today), figures);
+  const first = ledger.closes(days[0], days[0])[0];
+  assert.deepEqual([first.bank, first.smooth], [levels.bank, levels.smooth]);
+  assertReconciles(ledger, firstDay, today, 'with a payment the owner sends');
+
+  // the checklist: this month's payment is paid at the bank, nothing is still to send, nothing is overdue
+  const month = byHandMonth(state, today, nowMs);
+  assert.deepEqual(month.rows.map((row) => [row.entry.id, row.day, row.status, row.paidDay, row.txId, row.amount]), [[entry.id, days[2], 'bank', days[2], rows[2].id, 25000]]);
+  assert.deepEqual([month.ym, month.paid, month.count, month.unpaid, month.transit], [monthOf(today), 1, 1, 0, 0]);
+  assert.equal(ledger.clock().due.some((item) => item.id === entry.id && (item.overdue || item.day <= today)), false);
+  assertClean(month.rows.map((row) => ({ ...row, entry: row.entry.id })), 'byHandMonth.rows');
+
+  // a second one, not yet sent: still to send, taken into account, and ticked it is on its way
+  const parking = addByHand(state, { name: 'Parking', amount: 8500, dueDay: 31 }, today, nowMs);
+  refresh(state, nowMs);
+  const cash = makeLedger(state, nowMs).position().cash;
+  let list = byHandMonth(state, today, nowMs);
+  assert.deepEqual([list.count, list.paid, list.unpaid, list.transit], [2, 1, 8500, 0]);
+  assert.deepEqual(list.rows.map((row) => row.status), ['bank', 'due']);
+  assert.equal(upcoming(state, today, 31).some((row) => row.id === parking.id && row.day === endOfMonth(monthOf(today))), true);
+  assert.equal(tickByHand(state, parking.id, endOfMonth(monthOf(today)), true, nowMs), true);
+  list = byHandMonth(state, today, nowMs);
+  assert.deepEqual([list.paid, list.unpaid, list.transit, list.rows[1].status], [2, 0, 8500, 'hand']);
+  assert.equal(upcoming(state, today, 31).some((row) => row.id === parking.id && row.day === endOfMonth(monthOf(today))), false);
+  assert.equal(makeLedger(state, nowMs).position().cash, cash, 'a tick moves no money');
+
+  // the next sync brings the same rows again: the same links, the same lines
+  const frozen = JSON.stringify([state.recurring, state.txs.map((tx) => [tx.id, tx.recurringId, tx.klass])]);
+  mergeFeed(state, feedWithZelle(nowMs, today).feed, nowMs + 60000);
+  refresh(state, nowMs + 60000);
+  assert.equal(JSON.stringify([state.recurring, state.txs.map((tx) => [tx.id, tx.recurringId, tx.klass])]), frozen);
+  assert.equal(checkDoc(state), null);
+});
+
+damaged('this month\'s Zelle is still pending when the owner makes it a payment they send: counted once, and no figure of today moves', ({ state, nowMs, today }) => {
+  state.settings.countPending = true;
+  const { feed, days } = feedWithZelle(nowMs, today);
+  feed.accounts.find((account) => account.name === 'Everyday Checking').txs.find((tx) => tx.extId === 'chk-zelle-2').pending = true;
+  mergeFeed(state, feed, nowMs);
+  refresh(state, nowMs);
+  const waiting = state.txs.find((tx) => tx.mkey === 'zelle to r lindqvist' && tx.pending);
+  assert.ok(waiting, 'the feed holds the pending row');
+  const read = () => {
+    const ledger = makeLedger(state, nowMs);
+    const clock = ledger.clock();
+    return { cash: clock.cash, dueTotal: clock.dueTotal, shortfall: clock.shortfall, live: ledger.position().live, closes: ledger.closes(addDays(days[0], 1), today) };
+  };
+  const before = read();
+
+  const entry = addByHand(state, { name: 'Flat share', amount: 25000, dueDay: parts(days[2]).d }, today, nowMs);
+  refresh(state, nowMs);
+  assert.equal(checkDoc(state), null);
+  assert.equal(waiting.recurringId, entry.id, 'a pending row is linked like a posted one');
+  // the ledger has taken the money off cash, so the payment does not also stand as still to send
+  assert.deepEqual(read(), before);
+  assert.equal(makeLedger(state, nowMs).clock().due.some((item) => item.id === entry.id && item.day <= today), false);
+  const month = byHandMonth(state, today, nowMs);
+  const row = month.rows.find((one) => one.day === days[2]);
+  assert.deepEqual([row.status, row.paidDay, row.txId, row.pendingDay, month.unpaid], ['pending', waiting.day, waiting.id, null, 0]);
+
+  // pending rows not counted: the money is still in cash, and the payment is still to send; the row is only reported
+  state.settings.countPending = false;
+  refresh(state, nowMs);
+  const off = byHandMonth(state, today, nowMs);
+  const owed = off.rows.find((one) => one.day === days[2]);
+  assert.deepEqual([owed.status, owed.pendingDay, owed.pendingTxId, off.unpaid], ['overdue', waiting.day, waiting.id, 25000]);
+  const clock = makeLedger(state, nowMs).clock();
+  assert.ok(clock.cash >= before.cash + 25000, 'the pending payment is back in cash (with any other pending row of the feed)');
+  assert.equal(clock.due.some((item) => item.id === entry.id && item.day === days[2] && item.overdue), true);
+
+  // a tick on it moves no figure of the ledger, and settles it
+  const untouched = { live: makeLedger(state, nowMs).position().live, closes: makeLedger(state, nowMs).closes(addDays(days[0], 1), today) };
+  assert.equal(tickByHand(state, entry.id, days[2], true, nowMs), true);
+  const ticked = makeLedger(state, nowMs);
+  assert.deepEqual({ live: ticked.position().live, closes: ticked.closes(addDays(days[0], 1), today) }, untouched);
+  assert.equal(ticked.clock().due.some((item) => item.id === entry.id && item.day === days[2]), false);
+});
+
+/* ------------- E9 F1: a detected line of the payee of a payment the owner sends is that payment, or keeps its line */
+
+/** The sample feed with invented rows sent from checking 66: [day, cents, description]. */
+function feedWithRows(nowMs, rows) {
+  const feed = demoFeed(nowMs);
+  const checking = feed.accounts.find((account) => account.name === 'Everyday Checking');
+  rows.forEach(([day, cents, description], i) => checking.txs.push({
+    extId: 'chk-f1-' + i, amount: -cents, description, payee: '', memo: '', mcc: null,
+    posted: Math.floor(gameDayStartMs(day, ROLLOVER) / 1000) + 9 * 3600, at: null, pending: false,
+  }));
+  return feed;
+}
+
+/** What five more refreshes must leave alone. */
+function frozenOf(state) {
+  return JSON.stringify([state.recurring, state.txs.map((tx) => [tx.id, tx.recurringId, tx.klass])]);
+}
+
+function assertSteady(state, nowMs) {
+  const frozen = frozenOf(state);
+  for (let i = 1; i <= 5; i++) {
+    refresh(state, nowMs + i * 60000);
+    assert.equal(frozenOf(state), frozen, 'refresh ' + i + ' changes nothing');
+  }
+}
+
+/** The Book's perMonth of the sample alone, given the same sync again. */
+function bookBase(state, nowMs) {
+  const plain = structuredClone(state);
+  mergeFeed(plain, demoFeed(nowMs), nowMs);
+  refresh(plain, nowMs);
+  return bookTotals(plain);
+}
+
+damaged('F1: a payee detected before the owner lists the payment at an older amount: the line goes, the other amount is offered, and changed it is paid once', ({ state, nowMs, today }) => {
+  const paidDay = addDays(today, -2);
+  const d = parts(paidDay).d;
+  const rows = [[addMonths(paidDay, -2, d), 4000], [addMonths(paidDay, -1, d), 4000], [paidDay, 4500]];
+  mergeFeed(state, feedWithRows(nowMs, rows.map(([day, cents]) => [day, cents, 'Zelle To M Sato'])), nowMs);
+  refresh(state, nowMs);
+  const mkey = state.txs.find((tx) => tx.day === paidDay && tx.amount === 4500).mkey;
+  const lines = () => state.recurring.filter((entry) => entry.source === 'detected' && entry.mkey === mkey);
+  assert.equal(lines().length, 1, 'the bank rows made a line first');
+  const count = bookTotals(state).count;
+
+  const entry = addByHand(state, { name: 'Gym split', amount: 4000, dueDay: d }, today, nowMs);
+  refresh(state, nowMs);
+  assert.equal(checkDoc(state), null);
+  assert.deepEqual(lines(), [], 'the detected line is this payment and goes');
+  let row = byHandMonth(state, today, nowMs).rows.find((one) => one.entry.id === entry.id && one.day === paidDay);
+  assert.deepEqual([row.status, row.otherDay, row.otherAmount], ['overdue', paidDay, 4500]);
+  assert.equal(bookTotals(state).count, count, 'one line for one payment');
+  assertSteady(state, nowMs);
+
+  // "Change the amount to $45.00"
+  assert.ok(editByHand(state, entry.id, { amount: 4500 }, today, nowMs));
+  refresh(state, nowMs);
+  assert.equal(checkDoc(state), null);
+  row = byHandMonth(state, today, nowMs).rows.find((one) => one.entry.id === entry.id && one.day === paidDay);
+  assert.deepEqual([row.status, row.paidDay, row.amount], ['bank', paidDay, 4500]);
+  assert.deepEqual(lines(), []);
+  assert.equal(bookTotals(state).count, count);
+  assert.equal(makeLedger(state, nowMs).clock().due.some((item) => item.id === entry.id && item.overdue), false);
+  assertSteady(state, nowMs);
+});
+
+for (const paid of [true, false]) {
+  damaged('F1: rent raised and listed at the new amount, with a second regular payment on another day to the same payee (this month ' + (paid ? 'paid' : 'not yet paid') + '): one rent line, the second line kept and due as before, the same Book on both devices', ({ state, nowMs, today }) => {
+    const L = 'Zelle payment to R Lindqvist';
+    const rows = [];
+    for (let n = 4; n >= 1; n--) rows.push([addMonths(today, -n, 5), 25000, L], [addMonths(today, -n, 22), 6000, L]);
+    if (paid) rows.push([addMonths(today, 0, 5), 30000, L]);
+    const base = bookBase(state, nowMs).perMonth;
+    mergeFeed(state, feedWithRows(nowMs, rows), nowMs);
+    refresh(state, nowMs);
+    const mkey = 'zelle to r lindqvist';
+    const sixty = state.recurring.find((entry) => entry.source === 'detected' && entry.mkey === mkey && entry.amount === 6000);
+    assert.ok(sixty, 'the $60 line is detected');
+    const sixtyDue = upcoming(state, today, 31).filter((one) => one.id === sixty.id).map((one) => [one.day, one.amount]);
+    const ofPayee = (doc) => doc.recurring.filter((entry) => entry.active && (entry.mkey === mkey || entry.payee === payeeKey(mkey))).map((entry) => entry.amount).sort((a, b) => a - b);
+
+    const deviceB = structuredClone(state);
+    // device A: added at the old amount, then changed in the same sitting
+    const entry = addByHand(state, { name: 'Flat share', amount: 25000, dueDay: 5 }, today, nowMs);
+    refresh(state, nowMs);
+    assert.ok(editByHand(state, entry.id, { amount: 30000 }, today, nowMs + 1000));
+    refresh(state, nowMs + 1000);
+    // device B: receives the entry as it now is
+    deviceB.recurring.push(structuredClone(entry));
+    refresh(deviceB, nowMs + 1000);
+    for (const doc of [state, deviceB]) {
+      assert.equal(checkDoc(doc), null);
+      assert.deepEqual(ofPayee(doc), [6000, 30000], 'the rent once, the second payment once');
+      assert.equal(bookTotals(doc).perMonth, base + 36000);
+      const kept = doc.recurring.find((one) => one.id === sixty.id);
+      assert.deepEqual([kept && kept.active, kept && kept.amount], [true, 6000], 'the $60 line keeps its own line');
+      assert.deepEqual(upcoming(doc, today, 31).filter((one) => one.id === sixty.id).map((one) => [one.day, one.amount]), sixtyDue, 'and stays due as before');
+      const month = byHandMonth(doc, today, nowMs).rows.find((one) => one.entry.id === entry.id);
+      assert.equal(month.status, paid ? 'bank' : 'overdue');
+      assertSteady(doc, nowMs + 1000);
+    }
+  });
+}
+
+damaged('F1: a second payment of another amount on the same day as the rent keeps its line once the rent is at the bank', ({ state, nowMs, today }) => {
+  const L = 'Zelle payment to R Lindqvist';
+  const rows = [];
+  for (let n = 4; n >= 0; n--) rows.push([addMonths(today, -n, 5), 25000, L], [addMonths(today, -n, 5), 6000, L]);
+  const base = bookBase(state, nowMs).perMonth;
+  mergeFeed(state, feedWithRows(nowMs, rows), nowMs);
+  refresh(state, nowMs);
+  const mkey = 'zelle to r lindqvist';
+  const sixty = state.recurring.find((entry) => entry.source === 'detected' && entry.mkey === mkey && entry.amount === 6000);
+  assert.ok(sixty, 'the $60 line is detected');
+  const entry = addByHand(state, { name: 'Flat share', amount: 25000, dueDay: 5 }, today, nowMs);
+  refresh(state, nowMs);
+  assert.equal(checkDoc(state), null);
+  assert.equal(state.recurring.find((one) => one.id === sixty.id)?.active, true, 'the $60 line stays');
+  assert.equal(state.recurring.some((one) => one.source === 'detected' && one.mkey === mkey && one.amount === 25000), false);
+  assert.equal(bookTotals(state).perMonth, base + 31000);
+  assert.equal(byHandMonth(state, today, nowMs).rows.find((one) => one.entry.id === entry.id).status, 'bank');
+  assertSteady(state, nowMs);
+});
+
+damaged('F1: a rise the owner ticks each month instead of entering stays one line', ({ state, nowMs, today }) => {
+  const L = 'Zelle payment to R Lindqvist';
+  const rows = [];
+  for (let n = 4; n >= 1; n--) rows.push([addMonths(today, -n, 5), 25000, L]);
+  rows.push([addMonths(today, 0, 5), 30000, L]);
+  mergeFeed(state, feedWithRows(nowMs, rows), nowMs);
+  refresh(state, nowMs);
+  const mkey = 'zelle to r lindqvist';
+  const count = bookTotals(state).count;
+  const entry = addByHand(state, { name: 'Flat share', amount: 25000, dueDay: 5 }, today, nowMs);
+  refresh(state, nowMs);
+  assert.ok(tickByHand(state, entry.id, addMonths(today, 0, 5), true, nowMs));
+  refresh(state, nowMs);
+  assert.equal(checkDoc(state), null);
+  assert.equal(state.recurring.some((one) => one.source === 'detected' && one.mkey === mkey), false, 'no line of the bank rows');
+  assert.equal(bookTotals(state).count, count);
+  assertSteady(state, nowMs);
+  // a month later the bank shows $300 again and the owner ticks again
+  const next = nowMs + 31 * 86400000;
+  const nextToday = makeLedger(state, next).today;
+  mergeFeed(state, feedWithRows(next, rows.concat([[addMonths(nextToday, 0, 5), 30000, L]])), next);
+  refresh(state, next);
+  assert.ok(tickByHand(state, entry.id, addMonths(nextToday, 0, 5), true, next));
+  refresh(state, next);
+  assert.equal(state.recurring.some((one) => one.source === 'detected' && one.mkey === mkey && one.active), false, 'still one line');
+  assertSteady(state, next);
+});
+
+for (const second of [10, 5]) {
+  test('F1: a second regular payment to the payee (on the ' + second + 'th) arrives while the rent is unpaid: its own line takes the row, it is not due, and the rent is offered no other amount', () => {
+    const L = 'Zelle payment to R Lindqvist';
+    const mkey = 'zelle to r lindqvist';
+    const rows = [];
+    for (const m of ['06', '07', '08', '09', '10']) rows.push([`2026-${m}-05`, 25000, L], [`2026-${m}-${String(second).padStart(2, '0')}`, 6000, L]);
+    const nowA = at(2026, 10, 25, 12, 0);
+    const state = buildDemoState(nowA);
+    mergeFeed(state, feedWithRows(nowA, rows), nowA);
+    refresh(state, nowA);
+    const entry = addByHand(state, { name: 'Flat share', amount: 25000, dueDay: 5 }, makeLedger(state, nowA).today, nowA);
+    refresh(state, nowA);
+    assert.equal(entry.payee, payeeKey(mkey));
+    const sixty = state.recurring.find((one) => one.source === 'detected' && one.mkey === mkey && one.amount === 6000);
+    assert.ok(sixty, 'the $60 line stays beside the rent');
+    const ofPayee = () => state.recurring.filter((one) => one.active && (one.mkey === mkey || one.payee === payeeKey(mkey))).map((one) => one.amount).sort((a, b) => a - b);
+    assert.deepEqual(ofPayee(), [6000, 25000]);
+
+    // Nov 12: the bank shows the $60 of the month; November's rent is not yet paid
+    const nowB = at(2026, 11, 12, 12, 0);
+    const sixtyDay = `2026-11-${String(second).padStart(2, '0')}`;
+    mergeFeed(state, feedWithRows(nowB, rows.concat([[sixtyDay, 6000, L]])), nowB);
+    refresh(state, nowB);
+    assert.equal(checkDoc(state), null);
+    const today = makeLedger(state, nowB).today;
+    const row = state.txs.find((tx) => tx.mkey === mkey && tx.day === sixtyDay && tx.amount === 6000);
+    assert.equal(row.recurringId, sixty.id, 'the $60 line takes its row');
+    assert.equal(state.recurring.find((one) => one.id === sixty.id)?.active, true);
+    assert.equal(makeLedger(state, nowB).clock().due.some((item) => item.id === sixty.id && item.day <= today), false, 'the $60 is paid, not due');
+    const rent = byHandMonth(state, today, nowB).rows.find((one) => one.entry.id === entry.id && one.day === '2026-11-05');
+    assert.deepEqual([rent.status, rent.otherAmount ?? null], ['overdue', null]);
+    assert.deepEqual(ofPayee(), [6000, 25000], 'the rent once, the second payment once');
+    assertSteady(state, nowB);
+  });
+}

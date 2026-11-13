@@ -181,7 +181,7 @@ export async function loadSnapshot(day) {
   } catch { return null; }
 }
 
-/** Erase the saved document (snapshots are kept unless all is true). */
+/** Erase the saved document (the snapshots and the key of the shared list are kept unless all is true). */
 export async function wipeStorage({ all = false } = {}) {
   try { localStorage.removeItem(lsKey()); } catch { /* ignore */ }
   if (all) { try { localStorage.removeItem('networth.theme'); } catch { /* ignore */ } } // the saved theme is the owner's too
@@ -191,6 +191,7 @@ export async function wipeStorage({ all = false } = {}) {
       if (all) await withStore(SNAPSHOTS, 'readwrite', (s) => s.clear());
     } catch { /* ignore */ }
   }
+  if (all) await wipeShareKey(); // "everything" forgets the key of the shared list too
 }
 
 /* ------------------------------------------------------------------ secrets
@@ -229,4 +230,63 @@ export async function wipeSecret() {
     try { await withStore(KV, 'readwrite', (s) => s.delete(SECRET_KEY)); } catch { /* ignore */ }
   }
   try { localStorage.removeItem(lsSecretKey()); } catch { /* ignore */ }
+}
+
+/*
+ * The key of the shared list (a GitHub token) has a slot of its own, apart from the bank's: on this
+ * device, outside the document, so it is in no backup, no daily snapshot and no mirror copy.
+ */
+
+const SHARE_KEY = 'share-key';
+function lsShareKey() { return 'networth.sharekey.v1' + (namespace ? '.' + namespace : ''); }
+
+/** Store the key of the shared list on this device. Resolves true when it was stored. */
+export async function saveShareKey(value) {
+  if (mode === 'indexeddb') {
+    try { await withStore(KV, 'readwrite', (s) => s.put(value, SHARE_KEY)); return true; } catch { /* fall through */ }
+  }
+  try { localStorage.setItem(lsShareKey(), JSON.stringify(value)); return true; } catch { return false; }
+}
+
+/*
+ * The slot holds the key as it was pasted, or { key, refused: true } once GitHub refused it: the
+ * refusal stays with the key, across loads, and pasting a key (saveShareKey) writes over it.
+ */
+async function loadShareSlot() {
+  if (mode === 'indexeddb') {
+    try {
+      const v = await withStore(KV, 'readonly', (s) => s.get(SHARE_KEY));
+      if (v != null) return v;
+    } catch { /* fall through */ }
+  }
+  try {
+    const text = localStorage.getItem(lsShareKey());
+    return text ? JSON.parse(text) : null;
+  } catch { return null; }
+}
+
+/** Read the key of the shared list, or null when this device has none. */
+export async function loadShareKey() {
+  const v = await loadShareSlot();
+  return v !== null && typeof v === 'object' ? (v.key ?? null) : v;
+}
+
+/** True when GitHub refused the key this device holds (and no key has been pasted since). */
+export async function loadShareRefused() {
+  const v = await loadShareSlot();
+  return v !== null && typeof v === 'object' && v.refused === true;
+}
+
+/** Remember that GitHub refused `key`, if it is still the key this device holds. Resolves true when kept. */
+export async function refuseShareKey(key) {
+  if ((await loadShareKey()) !== key) return false;
+  return saveShareKey({ key, refused: true });
+}
+
+/** Forget the key of the shared list on this device. */
+export async function wipeShareKey() {
+  if (mode === 'indexeddb') {
+    try { await withStore(KV, 'readwrite', (s) => s.delete(SHARE_KEY)); } catch { /* ignore */ }
+  }
+  try { localStorage.removeItem(lsShareKey()); } catch { /* ignore */ }
 }

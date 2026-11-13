@@ -8,7 +8,7 @@
 <meta name="description" content="Networth: a private net-worth board. It reads your bank feed itself; your data stays on your device.">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-BQOQ7kgan2nVi1gqdqrolCjY7FGtAu0VdCQILMTJyVA='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-rrcgv2y0KMkdT76+jAxvRcNQTlj6UpNB9oKKC0whQNA=' 'sha256-Ur8ku0rdjIOUhY20rCJMxGBsTYq1x7I3mk4AJEN43oI=' 'sha256-ezyjTIhgn7KhhShQwvKf0YepNZ3nZZ4mOpTXvYVbRFE=' 'sha256-fW8Rb031pEL3z6SKg0UIoHj0lq9v89/SdbWzftltFMc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-YamU5l8Hmg54XdqgCQ6qK7wILWx6eGxCuFcdPndUm9Y=' 'sha256-VzoPHmMbD+TfmkRekvrhksYUuT8rj+c4jA1P/9P6/qI=' 'sha256-/xAinrTNYppFAIdG41S3TqyTgXliWkmyzNG9HOP4uBU=' 'sha256-01lSdEAMChpzTzJQLpOoEDL4dUduCyR/7BPuEyO5V4o=' 'sha256-B3Hrzs4vbn2XI5EePJAqAUZIxGf4JkYOb2PSWp2jJm0=' 'sha256-Z6D6KTuB/jjs3qcL8ULrE5HCIeZokO1KE1f3JKMRgag=' 'sha256-BjO5ScR2hajS/xDP0c80FuQ6bCsrOTlf9EntsQtTpP0='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src https://beta-bridge.simplefin.org https://bridge.simplefin.org; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-wHmBG/VXNvDTED8uqjyIM9U5Xdh1apSI+Hm4qjmvVXk='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-rrcgv2y0KMkdT76+jAxvRcNQTlj6UpNB9oKKC0whQNA=' 'sha256-Ur8ku0rdjIOUhY20rCJMxGBsTYq1x7I3mk4AJEN43oI=' 'sha256-W+qaPyJRSphS6huO5ZreMoAuHqBiJmEhyBz+PTAexi8=' 'sha256-fW8Rb031pEL3z6SKg0UIoHj0lq9v89/SdbWzftltFMc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-jIy2OdEjB9B16sWGikup16E01UhrwE3PFzd2VnlKV3k=' 'sha256-VzoPHmMbD+TfmkRekvrhksYUuT8rj+c4jA1P/9P6/qI=' 'sha256-/xAinrTNYppFAIdG41S3TqyTgXliWkmyzNG9HOP4uBU=' 'sha256-Yq5LqpSuZYrQBiwZV3GIUKl7VztQyUyyTLeHF8RzYfM=' 'sha256-3slL6XKCxBUrVwsIn+pfLSFvsWrg1SlNV1OOfV1jrRE=' 'sha256-RpDRzqnCXXASY8657qkagA06HPHFwPv1Msfot5qHAJk=' 'sha256-niQW6BHsFCuf+mNMjOPiKJl0QACazn3cmhTykWBmDew='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src https://beta-bridge.simplefin.org https://bridge.simplefin.org https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#F3EDE1" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#15130F" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
@@ -695,8 +695,55 @@ a.row:hover .row-label, button.row:hover .row-label { text-decoration: underline
   .mat-worth-fig[data-tone] .approx { -webkit-text-fill-color: var(--spot); }
   [data-cover] .mat-worth-fig[data-tone] { background-image: none; }
 }
+@property --rim { syntax: '<length>'; inherits: true; initial-value: -1000px; }
+@keyframes rim {
+  0% { --rim: var(--rim-from); animation-timing-function: cubic-bezier(.4, 0, .3, 1); }
+  19%, 100% { --rim: -.8em; }                                       
+}
+@media screen and (prefers-reduced-motion: no-preference) {
+  @supports ((background-clip: text) or (-webkit-background-clip: text)) {
+    :where(.hero-fig[data-tone], .mat-worth-fig[data-tone], .fig.rim:is(.gain, .loss)):not([data-cover] *) {
+      --rim-c: color-mix(in oklch, var(--tone-hi), white var(--rim-lift, 62%));
+      --rim-from: calc(var(--n, 10) * .56em + .5em);
+      animation: rim 7.4s .6s infinite backwards;
+    }
+    .hero-fig[data-tone]:not([data-cover] *) { --rim-from: calc(var(--hero-ems, 5.05) * 1em - .4em); animation-delay: 1.4s; }
+    .hero-fig[data-tone]:not([data-cover] *) nw-ticker :is(.tk-main, .tk-mini) > span,
+    .mat-worth-fig[data-tone]:not([data-cover] *), .fig.rim:is(.gain, .loss):not([data-cover] *) {
+      --rim-light: radial-gradient(var(--rim-rx, .34em) var(--rim-ry, .38em) at calc(100% - var(--rim-pad, .18em) - var(--rim, -1000px) + var(--rim-x, 0px)) 17%,
+        var(--rim-c) var(--rim-core, 22%), color-mix(in oklch, var(--rim-c) 50%, transparent) 50%, transparent);
+      background-image: var(--rim-light), linear-gradient(172deg, var(--tone-hi) 22%, var(--tone-lo) 80%);
+    }
+    :root[data-theme="dark"] { --rim-lift: 92%; --rim-core: 34%; }
+    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --rim-lift: 92%; --rim-core: 34%; } }
+    .tk-main > * { --rim-x: calc((var(--i, 0) - var(--np, 0)) * var(--rim-dw, 1.02ch) + var(--np, 0) * .2em); }
+    .tk--approx .tk-main > * { --rim-dw: 1.1ch; }
+    .tk-main > :nth-last-child(2) { --i: 1 } .tk-main > :nth-last-child(3) { --i: 2 } .tk-main > :nth-last-child(4) { --i: 3 }
+    .tk-main > :nth-last-child(5) { --i: 4 } .tk-main > :nth-last-child(6) { --i: 5 } .tk-main > :nth-last-child(7) { --i: 6 }
+    .tk-main > :nth-last-child(8) { --i: 7 } .tk-main > :nth-last-child(9) { --i: 8 } .tk-main > :nth-last-child(10) { --i: 9 }
+    .tk-main > :nth-last-child(11) { --i: 10 } .tk-main > :nth-last-child(12) { --i: 11 } .tk-main > :nth-last-child(13) { --i: 12 }
+    .tk-main > :nth-last-child(14) { --i: 13 } .tk-main > :nth-last-child(15) { --i: 14 } .tk-main > :nth-last-child(16) { --i: 15 }
+    .tk-main > :nth-last-child(n+4) { --np: 1 } .tk-main > :nth-last-child(n+8) { --np: 2 } .tk-main > :nth-last-child(n+12) { --np: 3 } .tk-main > :nth-last-child(n+16) { --np: 4 }
+    .tk-mini > * { --rim-rx: 1.1em; --rim-x: calc(-.14em - 1.16ch); }
+    .tk-mini > :last-child { --rim-x: calc(-.14em - 2.32ch); }
+    :where(.mat-worth-fig, .fig.rim) { --rim-rx: .6em; --rim-ry: .6em; --rim-core: 35%; }
+    :where(.fig.rim) { --rim-rx: .85em; --rim-ry: .7em; }
+    .mat-worth-fig[data-tone]:not([data-cover] *) { --rim-pad: .12em; }
+    .fig.rim:is(.gain, .loss):not([data-cover] *) {
+      --rim-pad: .14em; --rim-from: 5em; --rim-c: color-mix(in oklch, currentColor, white var(--rim-lift, 50%));
+      background-image: var(--rim-light); background-color: currentColor;
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+      padding-inline: .14em; margin-inline: -.14em;
+    }
+    .fig.rim .approx { -webkit-text-fill-color: var(--spot); }
+    .tally-item:nth-child(1) > .fig.rim { animation-delay: 3.2s; }
+    .tally-item:nth-child(2) > .fig.rim { animation-delay: 3.5s; }
+  }
+}
 @media (forced-colors: active) {
-  .hero-fig[data-tone] nw-ticker :is(.tk-main, .tk-mini) > span, .mat-worth-fig[data-tone] { background-image: none; -webkit-text-fill-color: currentColor; color: CanvasText; }
+  .hero-fig[data-tone] nw-ticker :is(.tk-main, .tk-mini) > span, .mat-worth-fig[data-tone] { background-image: none !important; -webkit-text-fill-color: currentColor; color: CanvasText; }
+  :is(.hero-fig, .mat-worth-fig, .fig.rim) { animation: none !important; }
+  .fig.rim:is(.gain, .loss) { background: none !important; -webkit-text-fill-color: currentColor !important; }
 }
 @media (min-width: 720px) {
   .hero-fig { font-size: min(15.2vw, 9.375rem); }
@@ -1718,7 +1765,10 @@ button.hero-fig:focus-visible { outline-offset: 2px; }
 .board-liquid .fig { font-size: 1.1875rem; line-height: 1.15; }
 .board-liquid .cap { margin-left: auto; }
 .board-yesterday { margin-top: var(--s-2); padding-top: 7px; border-top: var(--rule-hair); }
+.board-liquid-after { margin-top: 3px; text-wrap: balance; }
+.board-liquid-after [data-fig] { font-family: var(--f-figure); font-size: .90625rem; white-space: nowrap; }
 @media (min-width: 720px) {
+  .board-liquid-after { text-align: right; }
   .board-under { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-2) var(--s-5); }
   .board-under-note { flex: 1 1 auto; min-width: 0; max-width: 64ch; }
   .board-liquid { flex: none; margin: 0 0 0 auto; padding: 0; border: 0; }
@@ -1742,6 +1792,40 @@ button.hero-fig:focus-visible { outline-offset: 2px; }
 .board-due .fig { font-size: 1rem; line-height: 1.2; text-align: right; white-space: nowrap; }
 .board-due > .board-due-more { display: block; }
 .board-nodue { padding-top: 9px; border-top: var(--rule-hair); }
+.board-tag {
+  display: inline-block; margin-left: 2px; padding: 2px 5px 1px; border: 1px solid var(--hair);
+  font-family: var(--f-label); font-weight: 600; font-style: normal; font-size: .6875rem; line-height: 1.2; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-2); white-space: nowrap; vertical-align: 1px;
+}
+.board-pay-col { margin-top: var(--s-4); padding-top: 0; border-top: var(--rule-hair); }
+.board-pay { margin-top: 6px; border-top: var(--rule-hair); }
+.pay-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) minmax(4.6em, auto); column-gap: 0; align-items: start; border-bottom: var(--rule-hair); }
+.pay-row > .fig { grid-column: 3; grid-row: 1; padding: 11px 0 0 10px; font-size: 1rem; line-height: 1.35; text-align: right; white-space: nowrap; }
+.pay-box { grid-column: 1; grid-row: 1; display: flex; align-items: flex-start; width: var(--tap); min-height: var(--tap); margin-left: -16px; padding: 13px 0 0 16px; }
+button.pay-box { cursor: pointer; }
+.pay-box .check-box { background-color: transparent; }
+.pay-box .check-box.is-on::before, .pay-box .check-box.is-on::after { opacity: 1; }
+.pay-box .check-box.is-bank { background-color: var(--ink); }
+.pay-box .check-box.is-bank::before, .pay-box .check-box.is-bank::after { width: 12px; margin-left: -6px; background-color: var(--paper); }
+button.pay-box:focus-visible { outline: 0; }
+button.pay-box:focus-visible .check-box { outline: 2px solid var(--spot); outline-offset: 3px; }
+@media (hover: hover) { button.pay-box:hover .check-box { box-shadow: 0 0 0 1px var(--ink); } }
+.pay-main { grid-column: 2; grid-row: 1; display: block; min-width: 0; min-height: var(--tap); padding: 10px 0 8px; text-align: left; color: var(--ink); }
+.pay-name { overflow-wrap: anywhere; font-size: .90625rem; line-height: 1.35; margin-right: 4px; }
+.pay-when { color: var(--ink-3); white-space: nowrap; }
+.pay-note { display: block; margin-top: 1px; font-family: var(--f-text); font-style: italic; font-size: .78125rem; line-height: 1.35; color: var(--ink-2); overflow-wrap: anywhere; }
+.pay-note .bank-mark { margin-right: 6px; vertical-align: 1px; }
+.pay-row.is-paid .pay-name { color: var(--ink-2); }
+.pay-main:focus-visible { outline-offset: -2px; }
+@media (hover: hover) { .pay-main:hover .pay-name { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .2em; } }
+.pay-more { grid-column: 2 / -1; margin: -4px 0 -4px; padding-bottom: 0; font-size: .78125rem; line-height: 1.35; }
+.pay-more .btn-link { margin: 0; vertical-align: baseline; font-size: var(--t-label-s); white-space: normal; text-align: left; }
+.pay-more > span { display: block; margin-bottom: 1px; }
+.pay-more [data-fig] { font-family: var(--f-figure); font-style: normal; font-size: .84375rem; white-space: nowrap; }
+.pay-foot { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px var(--s-3); }
+.pay-foot [data-fig] { font-family: var(--f-figure); font-size: .90625rem; white-space: nowrap; }
+.board-line.pay-foot .btn-link { margin-left: auto; }
+.board-pay-band { padding-bottom: 12px; }
 .board-reserve { margin-top: var(--s-2); }
 .board-reserve .ticks { margin-top: 14px; }
 .board-vs { margin-top: 5px; }
@@ -1799,6 +1883,10 @@ button.hero-fig:focus-visible { outline-offset: 2px; }
 }
 .board-clip { max-width: 58%; overflow: hidden; text-overflow: ellipsis; }
 .board-pace .fig { white-space: nowrap; }
+.board-pace { container-type: inline-size; }
+@container (max-width: 15.5rem) {
+  .board-pace .fig { white-space: normal; }
+}
 .board-ladder { margin-top: var(--s-2); }
 .board-ladder .rung.is-later { padding: 4px 0; }
 .board-ladder .rung.is-later .fig { font-size: 1rem; color: var(--ink-2); }
@@ -2152,6 +2240,9 @@ button.hero-fig:focus-visible { outline-offset: 2px; }
   font-family: var(--f-label); font-weight: 600; font-style: normal; font-size: .6875rem; line-height: 1.2; letter-spacing: .1em; text-transform: uppercase;
   color: var(--ink-2); white-space: nowrap; vertical-align: 1px;
 }
+.bk-overdue { color: var(--spot); }
+.bk-send { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px var(--s-4); padding: 4px 0 8px; }
+.bk-send .btn-link { margin-left: auto; }
 .bk-quiet { max-width: 54ch; padding: 2px 0 6px; font-size: .90625rem; }
 .bk-foot { max-width: 76ch; margin-top: 10px; }
 .bk-foot .mg { margin-right: 2px; color: var(--ink); }
@@ -2185,6 +2276,10 @@ button.hero-fig:focus-visible { outline-offset: 2px; }
 .bk-upcoming tbody tr:has(+ .bk-payday) > td { border-bottom: 0; }
 @media (min-width: 720px) {
   .bk-when { padding-right: var(--s-5); }
+}
+.band:has(> .bk-upcoming) { container-type: inline-size; }
+@container (max-width: 15.5rem) {
+  .bk-rel { white-space: normal; }
 }
 .bk-due-tally { border-top: var(--rule); padding-top: 10px; }
 .bk-due-line { margin-top: 14px; padding-top: 10px; border-top: var(--rule-hair); font-size: .96875rem; line-height: 1.4; }
@@ -2401,6 +2496,12 @@ label.an-set { cursor: text; }
   .an-table .an-td-target .an-in input { min-height: 40px; }
   .an-table th.num, .an-table td.num { width: auto; }
 }
+@container (max-width: 15.5rem) {
+  .an-table tbody th { hyphens: auto; -webkit-hyphens: auto; }
+  .an-table th, .an-table td { padding-right: 4px; }
+  .an-table td.num, .an-table .an-group td.num, .an-table tfoot td.num { font-size: .85rem; }
+  .an-table thead th { white-space: normal; }
+}
 .an-money { margin-top: var(--s-3); font-size: 2.25rem; }
 .an-money .money-input { min-height: 52px; }
 .an-buy-on { margin-top: var(--s-4); }
@@ -2465,6 +2566,14 @@ label.an-set { cursor: text; }
 .set-link .tokenbox { min-height: 88px; }
 .set-link-status:empty { display: none; }
 .set-link-go { gap: var(--s-2) var(--s-5); }
+.set-share-steps { margin: 0; padding-left: 1.5em; list-style: decimal; max-width: 56ch; }
+.set-share-steps > li { padding-left: .25em; }
+.set-share-steps > li + li { margin-top: var(--s-2); }
+.set-share-steps .btn-link { display: inline; }
+.set-share-key { width: 100%; max-width: 448px; }
+.set-share-where { overflow-wrap: anywhere; text-align: right; }
+.set-sec > .set-lede + .set-help { margin-top: var(--s-3); }
+@media (max-width: 719px) { .set-share-steps .btn-link { display: inline-flex; align-items: center; min-height: var(--tap); } }
 .set-dangers { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--s-2) var(--s-5); padding-top: var(--s-3); border-top: var(--rule-hair); }
 .set-danger { min-width: 0; }
 .set-danger:has(.set-confirm) { flex: 1 1 100%; }
@@ -2618,6 +2727,9 @@ label.an-set { cursor: text; }
   .sheet-body .btn-link { position: relative; }
   .sheet-body .btn-link::before { content: ""; position: absolute; inset: min(0px, calc((100% - var(--tap)) / 2)); }
 }
+.tx-pays { flex-wrap: wrap; gap: 2px var(--s-3); }
+.tx-pays .row-label { flex: 1 1 12em; min-width: 0; overflow-wrap: anywhere; }
+.tx-pays .btn-link { margin-left: auto; flex: none; }
 
 </style>
 <script>
@@ -3025,6 +3137,7 @@ async function wipeStorage({ all = false } = {}) {
       if (all) await withStore(SNAPSHOTS, 'readwrite', (s) => s.clear());
     } catch { /* ignore */ }
   }
+  if (all) await wipeShareKey(); // "everything" forgets the key of the shared list too
 }
 
 /* ------------------------------------------------------------------ secrets
@@ -3061,7 +3174,61 @@ async function wipeSecret() {
   }
   try { localStorage.removeItem(lsSecretKey()); } catch { /* ignore */ }
 }
-return { initStorage, storageMode, loadDoc, saveDoc, mirrorDoc, mirrorProblem, snapshotDaily, listSnapshots, loadSnapshot, wipeStorage, saveSecret, loadSecret, wipeSecret };
+
+/*
+ * The key of the shared list (a GitHub token) has a slot of its own, apart from the bank's: on this
+ * device, outside the document, so it is in no backup, no daily snapshot and no mirror copy.
+ */
+
+const SHARE_KEY = 'share-key';
+function lsShareKey() { return 'networth.sharekey.v1' + (namespace ? '.' + namespace : ''); }
+
+async function saveShareKey(value) {
+  if (mode === 'indexeddb') {
+    try { await withStore(KV, 'readwrite', (s) => s.put(value, SHARE_KEY)); return true; } catch { /* fall through */ }
+  }
+  try { localStorage.setItem(lsShareKey(), JSON.stringify(value)); return true; } catch { return false; }
+}
+
+/*
+ * The slot holds the key as it was pasted, or { key, refused: true } once GitHub refused it: the
+ * refusal stays with the key, across loads, and pasting a key (saveShareKey) writes over it.
+ */
+async function loadShareSlot() {
+  if (mode === 'indexeddb') {
+    try {
+      const v = await withStore(KV, 'readonly', (s) => s.get(SHARE_KEY));
+      if (v != null) return v;
+    } catch { /* fall through */ }
+  }
+  try {
+    const text = localStorage.getItem(lsShareKey());
+    return text ? JSON.parse(text) : null;
+  } catch { return null; }
+}
+
+async function loadShareKey() {
+  const v = await loadShareSlot();
+  return v !== null && typeof v === 'object' ? (v.key ?? null) : v;
+}
+
+async function loadShareRefused() {
+  const v = await loadShareSlot();
+  return v !== null && typeof v === 'object' && v.refused === true;
+}
+
+async function refuseShareKey(key) {
+  if ((await loadShareKey()) !== key) return false;
+  return saveShareKey({ key, refused: true });
+}
+
+async function wipeShareKey() {
+  if (mode === 'indexeddb') {
+    try { await withStore(KV, 'readwrite', (s) => s.delete(SHARE_KEY)); } catch { /* ignore */ }
+  }
+  try { localStorage.removeItem(lsShareKey()); } catch { /* ignore */ }
+}
+return { initStorage, storageMode, loadDoc, saveDoc, mirrorDoc, mirrorProblem, snapshotDaily, listSnapshots, loadSnapshot, wipeStorage, saveSecret, loadSecret, wipeSecret, saveShareKey, loadShareKey, loadShareRefused, refuseShareKey, wipeShareKey };
 })();
 
 // ---- js/model/dates.js
@@ -3484,6 +3651,8 @@ function makeRecurring(fields = {}) {
     cadence: 'monthly', anchor: '', category: 'subscriptions', purpose: 'personal',
     essential: false, verdict: null, active: true, source: 'detected', confidence: 0,
     locks: [], toAccountId: null, since: null, note: '',
+    // a payment the owner sends themselves (model/byhand.js): on the checklist until the bank shows it or it is ticked
+    byHand: false, dueDay: null, payee: null, payeeAt: 0, marks: {}, skips: {}, editedAt: 0,
     ...fields,
   };
 }
@@ -3542,6 +3711,7 @@ function defaultState(now) {
       requests: [],
     },
     sweeps: [],
+    share: { tombs: {} },
     goals: {
       reserve: { target: 1000000 },
       income: { ladder: [10000000, 20000000, 50000000, 100000000], by: '2029-12-31' },
@@ -3604,6 +3774,16 @@ function checkDoc(doc) {
   }
   for (const r of doc.recurring) {
     if (!Object.hasOwn(CADENCES, r.cadence) || !isCents(r.amount)) return 'This copy contains an unreadable Book entry.';
+    if (r.dueDay != null && !(Number.isInteger(r.dueDay) && r.dueDay >= 1 && r.dueDay <= 31)) return 'This copy contains an unreadable Book entry.';
+    if (r.payee != null && typeof r.payee !== 'string') return 'This copy contains an unreadable Book entry.';
+    // a payment the owner sends is monthly, has its day and an anchor that is a day: without them it would be due and on no checklist
+    if (r.byHand === true && (r.dueDay == null || r.cadence !== 'monthly' || !isDay(r.anchor))) return 'This copy contains an unreadable Book entry.';
+    for (const key of ['marks', 'skips']) {
+      if (r[key] != null && !Object.values(r[key]).every(isPlain)) return 'This copy contains an unreadable Book entry.';
+    }
+  }
+  if (doc.share != null && doc.share.tombs != null && !Object.values(doc.share.tombs).every((x) => Number.isFinite(x))) {
+    return 'This copy has an unreadable part (share.tombs).';
   }
   for (const s of doc.streams) {
     if ((s.cadence != null && !Object.hasOwn(CADENCES, s.cadence)) || !isCents(s.amount)) return 'This copy contains an unreadable pay stream.';
@@ -3689,7 +3869,7 @@ function sameKinds(value, template, path) {
   return null;
 }
 
-const CHECK_FREE_FORM = new Set(['days', 'targets', 'notesSeen', 'dismissed', 'purposes']);
+const CHECK_FREE_FORM = new Set(['days', 'targets', 'notesSeen', 'dismissed', 'purposes', 'tombs', 'marks', 'skips']);
 
 function migrate(doc) {
   const base = defaultState(doc.meta && doc.meta.createdAt ? doc.meta.createdAt : 0);
@@ -3700,13 +3880,17 @@ function migrate(doc) {
   doc.meta.v = SCHEMA_VERSION;
   doc.accounts = doc.accounts.map((a) => ({ ...makeAccount({ type: a.type }), ...a }));
   doc.txs = doc.txs.map((t) => ({ ...makeTx({ category: t.category }), ...t }));
-  doc.recurring = doc.recurring.map((r) => ({ ...makeRecurring(), ...r }));
+  doc.recurring = doc.recurring.map((r) => {
+    const entry = { ...makeRecurring(), ...r };
+    for (const key of ['marks', 'skips']) if (!isPlain(entry[key])) entry[key] = {};
+    return entry;
+  });
   doc.streams = doc.streams.map((s) => ({ ...makeStream(), ...s }));
   doc.habits.sort((a, b) => (a.from < b.from ? -1 : a.from > b.from ? 1 : 0));
   return doc;
 }
 
-const FREE_FORM = new Set(['days', 'targets', 'notesSeen', 'dismissed', 'purposes']);
+const FREE_FORM = new Set(['days', 'targets', 'notesSeen', 'dismissed', 'purposes', 'tombs']);
 
 const PLACEHOLDER_BUILD = {
   insteads: ['Went without', 'Used what I had', 'Made it at home', 'Left it for later'],
@@ -3847,6 +4031,7 @@ let saveTimer = null;
 let saving = null;
 let editedAt = null;
 const undoStack = [];
+let restoreHook = null;
 
 const status = {
   mode: 'memory',
@@ -3956,6 +4141,15 @@ const store = {
       undoStack.push({ label: opts.undo, json: JSON.stringify(doc) });
       if (undoStack.length > UNDO_DEPTH) undoStack.shift();
     }
+    if (typeof opts.past === 'function') {
+      for (const entry of undoStack) {
+        try {
+          const copy = JSON.parse(entry.json);
+          opts.past(copy);
+          entry.json = JSON.stringify(copy);
+        } catch { /* that pre-image stays as it was */ }
+      }
+    }
     mutator(doc);
     rev++;
     doc.meta.rev = (doc.meta.rev || 0) + 1;
@@ -3975,13 +4169,21 @@ const store = {
     const entry = undoStack.pop();
     if (!entry) return null;
     const revNow = (doc.meta.rev || 0) + 1;
+    const before = doc;
     doc = JSON.parse(entry.json);
     doc.meta.rev = revNow;
+    if (restoreHook) {
+      try { restoreHook(before, doc); } catch (err) { console.error('[store] restore hook failed', err); }
+    }
     rev++;
     editedAt = Date.now();
     schedulePersist();
     notify();
     return entry.label;
+  },
+
+  onRestore(fn) {
+    restoreHook = typeof fn === 'function' ? fn : null;
   },
 
   subscribe(fn) {
@@ -4292,7 +4494,7 @@ function occurrences(item, afterDay, untilDay) {
   if (afterDay >= untilDay) return [];
   const step = STEPS[item.cadence];
   if (step.days) return everyDays(item.anchor, step.days, afterDay, untilDay);
-  if (step.months) return everyMonths(item.anchor, step.months, afterDay, untilDay);
+  if (step.months) return everyMonths(item.anchor, step.months, afterDay, untilDay, dayOfMonthOf(item));
   return twiceMonthly(item.anchor, afterDay, untilDay);
 }
 
@@ -4324,8 +4526,12 @@ function upcoming(state, fromDay, days) {
   const rows = [];
   const charged = lastChargeDays(state);
   for (const rec of activeEntries(state)) {
-    for (const day of occurrencesFrom(rec, fromDay, days)) {
-      if (charged.get(rec.id) >= day) continue; // it has already posted (a charge dated today)
+    if (rec.byHand === true && !runsByHand(rec)) continue; // a payment the owner sends without a day to send it on: on no list
+    const listed = occurrencesFrom(rec, fromDay, days);
+    // a payment the owner sends is settled by its own rule: by the row or the tick of that occurrence
+    const paid = rec.byHand === true && listed.length ? paidDays(byHandStandingOf(state, rec, listed[listed.length - 1])) : null;
+    for (const day of listed) {
+      if (paid ? paid.has(day) : charged.get(rec.id) >= day) continue; // it has already posted (a charge dated today)
       rows.push({
         id: rec.id, name: rec.name, day, amount: rec.amount, accountId: rec.accountId ?? null,
         category: categoryOf(rec), purpose: purposeOf(rec), variable: !!rec.variable, essential: !!rec.essential,
@@ -4368,6 +4574,109 @@ function renewals(state, fromDay, days) {
   return rows.sort(byDay);
 }
 
+const BY_HAND_REACH_DAYS = 16;
+const BY_HAND_AHEAD_DAYS = 31;
+const BY_HAND_ARREARS = 12;
+
+function byHandStanding(entry, rows, untilDay) {
+  if (!hasSchedule(entry) || !isYmd(untilDay)) return [];
+  const schedule = occurrences(entry, FIRST_DAY, addDays(untilDay, BY_HAND_AHEAD_DAYS));
+  const marks = entry.marks !== null && typeof entry.marks === 'object' ? entry.marks : {};
+  // every day of the schedule that was read takes part, so that a row sent early for an occurrence past
+  // `untilDay` is counted for that one whatever day is asked about; only the days through `untilDay` are returned
+  const standing = schedule.map((day) => ({ day, row: null, tick: tickOf(marks, day) }));
+  const since = isYmd(entry.since) ? entry.since : null;
+  // a row before `since` counts only when it was sent early for the first occurrence: within reach of it, and nearer it than the schedule day before
+  const first = schedule.length ? schedule[0] : null;
+  const before = first === null ? null : addMonths(startOfMonth(monthOf(first)), -1, dayOfMonthOf(entry));
+  const forFirst = (day) => first !== null && day < first && diffDays(day, first) <= BY_HAND_REACH_DAYS && diffDays(day, first) < diffDays(before, day);
+  const sent = (Array.isArray(rows) ? rows : [])
+    .filter((row) => row !== null && typeof row === 'object' && isYmd(row.day) && (since === null || row.day >= since || forFirst(row.day)))
+    .map((row) => ({ id: row.id, day: row.day, pending: row.pending === true, at: Number.isFinite(row.at) ? row.at : 0 }))
+    .sort(inBankOrder);
+  for (const sentRow of sent) {
+    const row = { id: sentRow.id, day: sentRow.day, pending: sentRow.pending };
+    const i = nearestIndex(schedule, row.day);
+    if (i < 0 || Math.abs(diffDays(schedule[i], row.day)) > BY_HAND_REACH_DAYS) continue;
+    if (standing[i].row === null) {
+      standing[i].row = row;
+      continue;
+    }
+    const owed = standing.slice(0, i).find((item) => !isPaid(item));
+    if (owed) owed.row = row;
+  }
+  return standing.filter((item) => item.day <= untilDay);
+}
+
+function byHandStandingOf(state, entry, untilDay, withPending) {
+  const rows = [];
+  const txs = state && Array.isArray(state.txs) ? state.txs : [];
+  const counted = withPending === undefined ? countsPending(state) : withPending === true;
+  if (entry && typeof entry.id === 'string') {
+    for (const tx of txs) {
+      if (!tx || tx.recurringId !== entry.id || tx.kind === 'decline' || tx.matchId || tx.source === 'manual') continue;
+      if (tx.pending && !counted) continue;
+      rows.push(tx);
+    }
+  }
+  return byHandStanding(entry, rows, untilDay);
+}
+
+function runsByHand(entry) {
+  return entry !== null && typeof entry === 'object' && entry.byHand === true && !!entry.active && entry.cadence === 'monthly' &&
+    Number.isInteger(entry.dueDay) && entry.dueDay >= 1 && entry.dueDay <= LAST_DAY && isYmd(entry.anchor) &&
+    Number.isFinite(entry.amount) && entry.amount > 0;
+}
+
+function countsPending(state) {
+  const settings = state !== null && typeof state === 'object' && state.settings !== null && typeof state.settings === 'object' ? state.settings : {};
+  return settings.countPending === undefined ? true : !!settings.countPending;
+}
+
+function inBankOrder(a, b) {
+  if (a.day !== b.day) return a.day < b.day ? -1 : 1;
+  if (a.pending !== b.pending) return a.pending ? 1 : -1;
+  if (a.at !== b.at) return a.at < b.at ? -1 : 1;
+  return String(a.id) < String(b.id) ? -1 : String(a.id) > String(b.id) ? 1 : 0;
+}
+
+function byHandUnpaid(state, entry, beforeDay) {
+  if (!isYmd(beforeDay)) return [];
+  const monthStart = startOfMonth(monthOf(beforeDay));
+  const unpaid = byHandStandingOf(state, entry, addDays(beforeDay, -1)).filter((item) => !isPaid(item));
+  const earlier = unpaid.filter((item) => item.day < monthStart);
+  return earlier.slice(Math.max(0, earlier.length - BY_HAND_ARREARS)).concat(unpaid.filter((item) => item.day >= monthStart));
+}
+
+const FIRST_DAY = '1970-01-01';
+
+function tickOf(marks, day) {
+  const mark = Object.hasOwn(marks, day) ? marks[day] : null;
+  if (mark === null || typeof mark !== 'object') return null;
+  return { paid: mark.paid === true, at: Number.isFinite(mark.at) ? mark.at : 0 };
+}
+
+function isPaid(item) {
+  return item.row !== null || (item.tick !== null && item.tick.paid === true);
+}
+
+function paidDays(standing) {
+  return new Set(standing.filter(isPaid).map((item) => item.day));
+}
+
+function nearestIndex(days, day) {
+  let best = -1;
+  let bestGap = Infinity;
+  for (let i = 0; i < days.length; i++) {
+    const gap = Math.abs(diffDays(days[i], day));
+    if (gap < bestGap) {
+      best = i;
+      bestGap = gap;
+    }
+  }
+  return best;
+}
+
 function lastChargeDays(state) {
   const latest = new Map();
   const txs = state && Array.isArray(state.txs) ? state.txs : [];
@@ -4387,6 +4696,11 @@ function firstDayOf(item) {
   return since !== null && since > item.anchor ? since : item.anchor;
 }
 
+function dayOfMonthOf(item) {
+  if (item.byHand === true && Number.isInteger(item.dueDay) && item.dueDay >= 1 && item.dueDay <= LAST_DAY) return item.dueDay;
+  return parts(item.anchor).d;
+}
+
 function hasSchedule(item) {
   return !!item && Object.hasOwn(STEPS, item.cadence) && isYmd(item.anchor);
 }
@@ -4402,9 +4716,8 @@ function everyDays(anchor, step, afterDay, untilDay) {
   return out;
 }
 
-function everyMonths(anchor, step, afterDay, untilDay) {
+function everyMonths(anchor, step, afterDay, untilDay, anchorDay) {
   const out = [];
-  const anchorDay = parts(anchor).d;
   // The occurrence in or just before afterDay's month; everything earlier is certainly not after it.
   for (let k = Math.floor(monthsApart(anchor, afterDay) / step); ; k++) {
     const day = addMonths(anchor, k * step, anchorDay);
@@ -4480,6 +4793,7 @@ function byDay(a, b) {
 const BILL_LAPSE_PERIODS = 1.5;
 
 function entryLapsed(entry, lastDay, today) {
+  if (runsByHand(entry)) return false; // a payment the owner sends stays owed until it is paid or switched off
   const cadence = entry && typeof entry.cadence === 'string' && Object.hasOwn(CADENCES, entry.cadence) ? CADENCES[entry.cadence] : null;
   const from = isYmd(lastDay) ? lastDay : entry && isYmd(entry.anchor) ? entry.anchor : null;
   if (!cadence || !Number.isFinite(cadence.days) || from === null || !isYmd(today)) return false;
@@ -4490,7 +4804,7 @@ function earlyDays(entry) {
   const cadence = entry && typeof entry.cadence === 'string' && Object.hasOwn(CADENCES, entry.cadence) ? CADENCES[entry.cadence] : null;
   return cadence && Number.isFinite(cadence.days) ? Math.min(5, Math.floor(cadence.days / 4)) : 0;
 }
-return { occurrences, nextOccurrence, lastOccurrence, annualCost, dailyCost, upcoming, bookTotals, renewals, BILL_LAPSE_PERIODS, entryLapsed, earlyDays };
+return { occurrences, nextOccurrence, lastOccurrence, annualCost, dailyCost, upcoming, bookTotals, renewals, BY_HAND_ARREARS, byHandStanding, byHandStandingOf, runsByHand, byHandUnpaid, BILL_LAPSE_PERIODS, entryLapsed, earlyDays };
 })();
 
 // ---- js/model/loans.js
@@ -4669,7 +4983,7 @@ __mods["js/model/ledger.js"] = (function () {
 const { ACCOUNT_TYPES, CADENCES, CATEGORIES, accountLabel, klassOf } = __mods["js/model/schema.js"];
 const { addDays, addMonths, addMonthsYm, daysInMonth, diffDays, dow, gameDay, gameDayFraction, gameDayStartMs, isYmd, monthOf, parts, startOfMonth, weekStart } = __mods["js/model/dates.js"];
 const { roundCents } = __mods["js/model/money.js"];
-const { BILL_LAPSE_PERIODS, earlyDays, lastOccurrence, nextOccurrence, occurrences, upcoming } = __mods["js/model/book.js"];
+const { BILL_LAPSE_PERIODS, byHandStandingOf, byHandUnpaid, earlyDays, lastOccurrence, nextOccurrence, occurrences, runsByHand, upcoming } = __mods["js/model/book.js"];
 const { dailyInterest, loanValueOn } = __mods["js/model/loans.js"];
 const EPOCH = '1970-01-01';
 const HOUR_MS = 3600000;
@@ -4987,9 +5301,11 @@ function buildIndex(core) {
     capital: new Map(),       // manual account id -> [{ n, value }] capitalised purchases
     loanPayments: new Map(),  // amortised loan id -> [{ day, amount }] payments seen in the feed
     loanOfEntry: loansByEntry(core),
+    tickResets: new Map(),    // by-hand entry id -> day numbers on which a tick, never met by a bank row, starts its accrual again
     countPending: isOn(core.settings.countPending),
   };
   for (const tx of listOf(core.doc.txs)) indexRow(core, index, tx);
+  indexTicks(core, index);
   index.order = [...index.buckets.keys()].sort(ascending);
   index.effectRunning = runningTotals(index, 'effect');
   index.provisionalRunning = runningTotals(index, 'provisional');
@@ -5054,6 +5370,31 @@ function indexRow(core, index, tx) {
   } else if (holder && holder.bank) {
     indexBankRow(core, index, tx, n, holder);
   }
+}
+
+const TICK_TRANSIT_DAYS = 4;
+
+function indexTicks(core, index) {
+  for (const entry of listOf(core.doc.recurring)) {
+    if (!isByHand(entry) || !isObject(entry.marks)) continue;
+    const days = Object.keys(entry.marks).filter((day) => isYmd(day));
+    let standing = null;
+    for (const day of days) {
+      const mark = entry.marks[day];
+      if (!isObject(mark) || mark.paid !== true || !Number.isFinite(mark.at)) continue;
+      const from = addDays(gameDay(mark.at, core.rollover), TICK_TRANSIT_DAYS);
+      const n = core.cal.num(from);
+      if (n === null || n > core.todayN) continue;
+      if (standing === null) standing = byHandStandingOf(core.doc, entry, days.reduce((a, b) => (a > b ? a : b), core.today));
+      const item = standing.find((one) => one.day === day);
+      if (!item || (item.row !== null && item.row.day < from)) continue;
+      pushTo(index.tickResets, entry.id, n);
+    }
+  }
+}
+
+function isByHand(entry) {
+  return runsByHand(entry) && typeof entry.id === 'string';
 }
 
 function indexProvisional(core, index, tx, n) {
@@ -5341,17 +5682,25 @@ function billItem(core, index, entry) {
   const loan = index.loanOfEntry.get(entry.id) || null;
   const daily = dailyOf(entry);
   const cadenceDays = CADENCES[entry.cadence].days;
+  const resets = makeResets(core, entry, charges, addedByOwner(entry));
+  const ticks = uniqueSorted(index.tickResets.get(entry.id) || []);
   return {
     id: entry.id,
     name: nameOf(entry),
     capDays: BILL_CAP_PERIODS * cadenceDays,
-    lapseDays: BILL_LAPSE_PERIODS * cadenceDays,
-    lastReset: makeResets(core, entry, charges, byHand(entry)),
+    // a payment the owner sends stays owed until it is paid or switched off: its accrual holds at the cap
+    lapseDays: isByHand(entry) ? Infinity : BILL_LAPSE_PERIODS * cadenceDays,
+    // a tick no bank row met starts the accrual again from its own day on, and changes nothing before it
+    lastReset: !ticks.length ? resets : (n) => {
+      const reset = resets(n);
+      const i = lastAtOrBelow(ticks, n);
+      return i < 0 || (reset !== null && reset >= ticks[i]) ? reset : ticks[i];
+    },
     dailyOn: loan ? (n) => dailyInterest(-valueAt(seriesOf(core, loan), n), loan.account.apr) : () => daily,
   };
 }
 
-function byHand(entry) {
+function addedByOwner(entry) {
   return entry.source === 'manual' || isYmd(entry.since);
 }
 
@@ -5365,11 +5714,12 @@ function makeResets(core, item, linkedDays, fromAnchorOnly = false) {
   let projected = [];
   let coveredFrom = core.todayN; // `projected` holds the schedule after this day
   let start; // where the one period ahead of the first linked transaction begins
+  const ownRule = fromAnchorOnly && isByHand(item);
 
   return (n) => {
     if (n >= firstLinked) return linked[lastAtOrBelow(linked, n)];
     if (sinceN !== null && n < sinceN) return null;
-    if (linked.length) {
+    if (linked.length && !ownRule) {
       if (start === undefined) {
         // the scheduled day just ahead of the first linked transaction; one period ahead when the schedule has none
         const ahead = occurrences(item, core.cal.day(firstLinked - longestGap - 1), core.cal.day(firstLinked - 1));
@@ -5859,19 +6209,41 @@ function dueWithin(core, days) {
   const entries = new Map(listOf(core.doc.recurring).filter(isObject).map((entry) => [entry.id, entry]));
   // What is overdue is always listed, whatever the window.
   for (const row of days >= 1 ? upcoming(core.doc, core.today, days) : []) {
-    if (!drawsOnCash(core, row.accountId) || isCharged(core, row, entries.get(row.id))) continue;
-    due.push({ id: row.id, name: nameOf(row), day: row.day, amount: Math.round(row.amount) });
     const entry = entries.get(row.id);
+    if (isByHand(entry)) {
+      // the Book has already left out the occurrences a row or a tick settles
+      due.push({ id: row.id, name: nameOf(row), day: row.day, amount: Math.round(row.amount), byHand: true });
+      continue;
+    }
+    if (!drawsOnCash(core, row.accountId) || isCharged(core, row, entry)) continue;
+    due.push({ id: row.id, name: nameOf(row), day: row.day, amount: Math.round(row.amount) });
     if (entry && entry.toAccountId != null) debtsInBook.add(entry.toAccountId);
   }
   for (const entry of entries.values()) {
+    if (isByHand(entry)) {
+      // every unpaid occurrence whose day has passed stays due: it never lapses while the entry is on
+      if (!hasCadence(entry) || !positive(entry.amount)) continue;
+      for (const item of byHandUnpaid(core.doc, entry, core.today)) {
+        due.push({ id: entry.id, name: nameOf(entry), day: item.day, amount: Math.round(entry.amount), overdue: true, byHand: true });
+      }
+      continue;
+    }
+    if (entry.byHand === true) continue; // a payment the owner sends that does not run (book.runsByHand) is on no list
     const late = overdueOf(core, entry);
     if (!late) continue;
     due.push(late);
     if (entry.toAccountId != null) debtsInBook.add(entry.toAccountId);
   }
   for (const item of days >= 1 ? cardMinimums(core, days) : []) if (!debtsInBook.has(item.id)) due.push(item);
-  return due.sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : 0));
+  return due.sort(inDueOrder);
+}
+
+function inDueOrder(a, b) {
+  if (a.day !== b.day) return a.day < b.day ? -1 : 1;
+  if (!a.byHand !== !b.byHand) return a.byHand ? 1 : -1;
+  if (!a.byHand) return 0;
+  if (a.name !== b.name) return a.name < b.name ? -1 : 1;
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 }
 
 function overdueOf(core, entry) {
@@ -5886,7 +6258,7 @@ function overdueOf(core, entry) {
   if (settled.some((posted) => posted >= n - early)) return null;
   // An entry never settled is late only when the owner added it by hand, and only for an occurrence
   // after its anchor (a past anchor is the last charge the owner knows of) and after the day it was added.
-  if (!settled.length && !byHand(entry)) return null;
+  if (!settled.length && !addedByOwner(entry)) return null;
   const reset = makeResets(core, entry, settled, true)(core.todayN);
   if (reset === null || core.todayN - reset > BILL_LAPSE_PERIODS * cadenceDays) return null;
   if (!settled.length && n <= reset) return null;
@@ -7658,6 +8030,684 @@ function once(build) {
 return { SYMBOLS, SYMBOL_LABELS, assess, coachNotes, monthReview };
 })();
 
+// ---- js/model/byhand.js
+__mods["js/model/byhand.js"] = (function () {
+const { ACCOUNT_TYPES, makeRecurring } = __mods["js/model/schema.js"];
+const { addDays, addMonths, addMonthsYm, diffDays, endOfMonth, gameDay, isYmd, monthOf, startOfMonth } = __mods["js/model/dates.js"];
+const { sum } = __mods["js/model/money.js"];
+const { BY_HAND_ARREARS, byHandStanding, byHandStandingOf, occurrences, runsByHand } = __mods["js/model/book.js"];
+const NAME_MAX = 60;
+const AMOUNT_MAX = 1e10;
+const LAST_DAY = 31;
+const SKIP_REACH_DAYS = 3;
+const PAST_DAYS = 100;
+const LEARN_REACH_DAYS = 16;
+const NEAR_MEAN_DAYS = 5;
+const OTHER_REACH_DAYS = 16;
+const AHEAD_DAYS = 31;
+const TRANSIT_MS = 4 * 86400000;
+const FIRST_DAY = '1970-01-01';
+const LOCKS = ['name', 'amount', 'cadence', 'anchor'];
+const SENT_BY_HAND = new Set(['builtin:zelle', 'builtin:wallet-payment']);
+const NOT_BY_HAND = new Set(['builtin:own-transfer', 'builtin:institution-transfer']);
+
+/* ------------------------------------------------------------------ the payee */
+
+function payeeKey(mkey) {
+  if (typeof mkey !== 'string' || mkey === '') return '';
+  let h1 = 0xdeadbeef;
+  let h2 = 0x41c6ce57;
+  for (let i = 0; i < mkey.length; i++) {
+    const ch = mkey.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  const hash = 4294967296 * (1048575 & h2) + (h1 >>> 0);
+  return 'p' + hash.toString(16).padStart(13, '0');
+}
+
+/* ------------------------------------------------------------- the entry */
+
+function makeByHand(fields) {
+  const f = isObject(fields) ? fields : {};
+  const entry = makeRecurring({
+    name: f.name, amount: f.amount, mkey: '', accountId: null, variable: false,
+    cadence: 'monthly', anchor: anchorFor(f.dueDay, f.since), category: 'other', purpose: 'personal',
+    essential: true, active: f.active !== false, source: 'manual', confidence: 1,
+    locks: LOCKS.slice(), since: f.since,
+    byHand: true, dueDay: f.dueDay,
+    payee: typeof f.payee === 'string' && f.payee ? f.payee : null,
+    payeeAt: Number.isFinite(f.payeeAt) ? f.payeeAt : 0,
+    marks: isObject(f.marks) ? copyOf(f.marks) : {},
+    skips: isObject(f.skips) ? copyOf(f.skips) : {},
+    editedAt: Number.isFinite(f.editedAt) ? f.editedAt : 0,
+  });
+  if (typeof f.id === 'string' && f.id) entry.id = f.id;
+  return entry;
+}
+
+function addByHand(state, fields, today, nowMs) {
+  if (!isObject(state) || !isObject(fields) || !isYmd(today)) return null;
+  const name = nameOf(fields.name);
+  if (name === null || !isAmount(fields.amount) || !isDueDay(fields.dueDay)) return null;
+  const entry = makeByHand({
+    name, amount: fields.amount, dueDay: fields.dueDay, since: startOfMonth(monthOf(today)), editedAt: stamp(nowMs),
+  });
+  if (!Array.isArray(state.recurring)) state.recurring = [];
+  state.recurring.push(entry);
+  return entry;
+}
+
+function editByHand(state, id, changes, today, nowMs) {
+  const entry = entryOf(state, id);
+  if (!entry || !isObject(changes) || !isYmd(today)) return false;
+  const next = { name: entry.name, amount: entry.amount, dueDay: entry.dueDay, active: !!entry.active };
+  if (changes.name !== undefined) {
+    next.name = nameOf(changes.name);
+    if (next.name === null) return false;
+  }
+  if (changes.amount !== undefined) {
+    if (!isAmount(changes.amount)) return false;
+    next.amount = changes.amount;
+  }
+  if (changes.dueDay !== undefined) {
+    if (!isDueDay(changes.dueDay)) return false;
+    next.dueDay = changes.dueDay;
+  }
+  if (changes.active !== undefined) {
+    if (typeof changes.active !== 'boolean') return false;
+    next.active = changes.active;
+  }
+  const terms = next.amount !== entry.amount || next.dueDay !== entry.dueDay;
+  const switchedOn = next.active && !entry.active;
+  if (!terms && !switchedOn && next.name === entry.name && next.active === !!entry.active) return false;
+
+  const thisMonth = startOfMonth(monthOf(today));
+  let since = entry.since;
+  if (terms) since = paidThisMonth(state, entry, today) ? startOfMonth(addMonthsYm(monthOf(today), 1)) : thisMonth;
+  if (switchedOn) since = thisMonth;
+  entry.name = next.name;
+  entry.amount = next.amount;
+  entry.dueDay = next.dueDay;
+  entry.active = next.active;
+  if (terms || switchedOn) {
+    entry.since = since;
+    entry.anchor = anchorFor(entry.dueDay, since);
+  }
+  entry.editedAt = stamp(nowMs);
+  return true;
+}
+
+function removeByHand(state, id, nowMs) {
+  const entry = entryOf(state, id);
+  if (!entry) return false;
+  state.recurring.splice(state.recurring.indexOf(entry), 1);
+  tombsOf(state)[entry.id] = stamp(nowMs);
+  return true;
+}
+
+function tickByHand(state, id, day, paid, nowMs) {
+  const entry = entryOf(state, id);
+  if (!entry || !isYmd(day) || typeof paid !== 'boolean') return false;
+  if (!occurrences(entry, addDays(day, -1), day).includes(day)) return false;
+  if (!isObject(entry.marks)) entry.marks = {};
+  entry.marks[day] = { paid, at: stamp(nowMs) };
+  return true;
+}
+
+function skipRow(state, id, txId, nowMs) {
+  const entry = entryOf(state, id);
+  const tx = entry && typeof txId === 'string' ? listOf(state.txs).find((row) => isObject(row) && row.id === txId) : null;
+  if (!tx || !isYmd(tx.day)) return false;
+  const key = payeeKey(tx.mkey);
+  if (key === '') return false;
+  if (!isObject(entry.skips)) entry.skips = {};
+  entry.skips[tx.day + '|' + key] = { on: true, at: stamp(nowMs) };
+  if (entry.payee === key) {
+    const accounts = accountsOf(state);
+    const stays = listOf(state.txs).some((row) => row !== tx && isSent(accounts, row, FAR_DAY) && couldBeRowOf(entry, row, payeeKey(row.mkey)));
+    if (!stays) {
+      entry.payee = null;
+      entry.payeeAt = stamp(nowMs);
+    }
+  }
+  return true;
+}
+
+/* ------------------------------------------------------------- the bank rows */
+
+function claimByHand(state, today, nowMs) {
+  if (!isObject(state) || !isYmd(today)) return new Map();
+  const entries = activeEntries(state);
+  if (!entries.length) return new Map();
+  const accounts = accountsOf(state);
+  const keys = new Map();
+  const keyOf = (tx) => {
+    if (!keys.has(tx.mkey)) keys.set(tx.mkey, payeeKey(tx.mkey));
+    return keys.get(tx.mkey);
+  };
+  const sent = listOf(state.txs).filter((tx) => isSent(accounts, tx, today) && keyOf(tx) !== '');
+  const until = addDays(today, AHEAD_DAYS);
+  const schedules = new Map(entries.map((entry) => [entry, occurrences(entry, FIRST_DAY, until)]));
+
+  // each lesson changes who could want which row, so the rows are shared out again until nothing is learned
+  const from = addDays(today, -PAST_DAYS);
+  let shared = shareOut(entries, sent, keyOf, from);
+  for (let pass = 0; pass < entries.length; pass++) {
+    if (!learnPayees(entries, shared.open, keyOf, schedules, from, stamp(nowMs))) break;
+    shared = shareOut(entries, sent, keyOf, from);
+  }
+  // an entry that still has no payee takes the pending row this payment would be learned from, were it
+  // posted: the row is linked like any pending row, and nothing is written, so nothing stays if it vanishes
+  for (const entry of entries) {
+    if (entry.payee) continue;
+    const waiting = (shared.open.get(entry) || []).filter((tx) => tx.pending && looksByHand(tx) && !heldByAnother(entries, entry, keyOf(tx)));
+    const row = fromThisPayment(entry, waiting, keyOf, schedules.get(entry));
+    if (row !== null) shared.claims.set(row.id, entry.id);
+  }
+  return shared.claims;
+}
+
+function unpaidByPayee(state, claims, today) {
+  const owed = new Map();
+  if (!isObject(state) || !isYmd(today) || !(claims instanceof Map)) return owed;
+  const counted = countsPending(state);
+  const rows = new Map();
+  for (const tx of listOf(state.txs)) {
+    if (!isObject(tx) || !claims.has(tx.id) || (tx.pending && !counted)) continue;
+    const id = claims.get(tx.id);
+    if (!rows.has(id)) rows.set(id, []);
+    rows.get(id).push(tx);
+  }
+  for (const entry of activeEntries(state)) {
+    if (!entry.payee || !isDueDay(entry.dueDay)) continue;
+    const days = byHandStanding(entry, rows.get(entry.id) || [], addDays(today, OTHER_REACH_DAYS))
+      .filter((item) => item.row === null)
+      .map((item) => item.day);
+    if (!days.length) continue;
+    if (!owed.has(entry.payee)) owed.set(entry.payee, []);
+    owed.get(entry.payee).push({ dueDay: entry.dueDay, days });
+  }
+  return owed;
+}
+
+function shareOut(entries, sent, keyOf, from) {
+  const claims = new Map();
+  const open = new Map();
+  const contested = []; // rows that fell to an entry without a payee though an entry of that amount holds their payee
+  const barred = new Map(entries.map((entry) => [entry, barredOf(entry)]));
+  const byPayee = new Map();
+  for (const tx of sent) {
+    if (!byPayee.has(keyOf(tx))) byPayee.set(keyOf(tx), []);
+    byPayee.get(keyOf(tx)).push(tx);
+  }
+  for (const tx of sent) {
+    const key = keyOf(tx);
+    const amount = Math.round(tx.amount);
+    const could = entries.filter((entry) => !isSkipped(entry, tx, key) && (entry.payee ? entry.payee === key : !barred.get(entry).has(key)));
+    const exact = could.filter((entry) => entry.amount === amount);
+    if (exact.length) {
+      const winner = nearestEntry(exact, tx.day);
+      if (winner.payee) claims.set(tx.id, winner.id);
+      else {
+        if (open.has(winner)) open.get(winner).push(tx);
+        else open.set(winner, [tx]);
+        const holders = exact.filter((entry) => entry.payee);
+        if (holders.length) contested.push({ tx, key, winner, holders });
+      }
+      continue;
+    }
+    const winner = nearestEntry(could.filter((entry) => entry.payee && isYmd(entry.since) && tx.day < entry.since), tx.day);
+    if (winner !== null && leadsItsDay(winner, tx, byPayee.get(key), key)) claims.set(tx.id, winner.id);
+  }
+  // such a row stays with the entry without a payee only when that entry has a history with the payee
+  // (posted rows in two calendar months of its own share, E2(a)); otherwise it goes to the holders
+  const histories = new Map();
+  for (const { tx, key, winner, holders } of contested) {
+    if (!histories.has(winner)) histories.set(winner, regularPayees(winner, open.get(winner).filter((row) => !row.pending && looksByHand(row)), keyOf, from));
+    if (histories.get(winner).has(key)) continue;
+    claims.set(tx.id, nearestEntry(holders, tx.day).id);
+  }
+  for (const { tx, winner } of contested) {
+    if (claims.has(tx.id)) open.set(winner, open.get(winner).filter((row) => row !== tx));
+  }
+  return { claims, open };
+}
+
+function heldByAnother(entries, entry, key) {
+  return entries.some((other) => other !== entry && other.payee === key && other.amount === entry.amount);
+}
+
+function leadsItsDay(entry, tx, rows, key) {
+  const mine = nearestDue(entry.dueDay, tx.day);
+  if (mine.day >= entry.since) return false; // nearer the entry's first days than any day before it began
+  for (const other of rows) {
+    if (other === tx || other.day >= entry.since || isSkipped(entry, other, key)) continue;
+    const theirs = nearestDue(entry.dueDay, other.day);
+    if (theirs.day !== mine.day) continue;
+    if (Math.round(other.amount) === entry.amount) return false;
+    if (theirs.gap < mine.gap || (theirs.gap === mine.gap && other.day < tx.day)) return false;
+  }
+  return true;
+}
+
+function nearestEntry(entries, day) {
+  let best = null;
+  for (const entry of entries) {
+    const near = nearestDue(entry.dueDay, day);
+    const candidate = { entry, gap: near.gap, day: near.day };
+    if (best === null || closer(candidate, best)) best = candidate;
+  }
+  return best === null ? null : best.entry;
+}
+
+function nearestDue(dueDay, day) {
+  const first = startOfMonth(monthOf(day));
+  let best = null;
+  for (const step of [-1, 0, 1]) {
+    const occurrence = addMonths(first, step, dueDay);
+    const gap = Math.abs(diffDays(occurrence, day));
+    if (best === null || gap < best.gap) best = { day: occurrence, gap };
+  }
+  return best;
+}
+
+function learnPayees(entries, open, keyOf, schedules, from, at) {
+  let learned = false;
+  for (const entry of entries) {
+    if (entry.payee) continue;
+    const rows = (open.get(entry) || []).filter((tx) => !tx.pending && looksByHand(tx));
+    // a payee another entry of this amount holds is learned from the past only, never from one row
+    const single = fromThisPayment(entry, rows.filter((tx) => !heldByAnother(entries, entry, keyOf(tx))), keyOf, schedules.get(entry));
+    const payee = fromThePast(entry, rows, keyOf, from) || (single === null ? null : keyOf(single));
+    if (!payee) continue;
+    entry.payee = payee;
+    entry.payeeAt = at;
+    learned = true;
+  }
+  return learned;
+}
+
+function fromThePast(entry, rows, keyOf, from) {
+  const seen = pastPayees(entry, rows, keyOf, from);
+  const regular = [...seen].filter(([, one]) => one.months.size >= 2);
+  if (regular.length === 1) return regular[0][0];
+  const near = regular.filter(([, one]) => one.gaps <= NEAR_MEAN_DAYS * one.count);
+  return near.length === 1 ? near[0][0] : null;
+}
+
+function regularPayees(entry, rows, keyOf, from) {
+  return new Set([...pastPayees(entry, rows, keyOf, from)].filter(([, one]) => one.months.size >= 2).map(([key]) => key));
+}
+
+function pastPayees(entry, rows, keyOf, from) {
+  const seen = new Map();
+  for (const tx of rows) {
+    if (tx.day <= from) continue;
+    const key = keyOf(tx);
+    if (!seen.has(key)) seen.set(key, { months: new Set(), gaps: 0, count: 0 });
+    const one = seen.get(key);
+    one.months.add(monthOf(tx.day));
+    one.gaps += nearestDue(entry.dueDay, tx.day).gap;
+    one.count += 1;
+  }
+  return seen;
+}
+
+function fromThisPayment(entry, rows, keyOf, schedule) {
+  let best = null;
+  for (const tx of rows) {
+    if (isYmd(entry.since) && tx.day < entry.since) continue;
+    const near = nearest(schedule, tx.day);
+    if (near === null || near.gap > LEARN_REACH_DAYS) continue;
+    const candidate = { gap: near.gap, day: near.day, rowDay: tx.day, key: keyOf(tx), tx };
+    if (best === null || closerRow(candidate, best)) best = candidate;
+  }
+  return best === null ? null : best.tx;
+}
+
+function closer(a, b) {
+  if (a.gap !== b.gap) return a.gap < b.gap;
+  if (a.day !== b.day) return a.day < b.day;
+  return a.entry.id < b.entry.id;
+}
+
+function closerRow(a, b) {
+  if (a.gap !== b.gap) return a.gap < b.gap;
+  if (a.day !== b.day) return a.day < b.day;
+  if (a.rowDay !== b.rowDay) return a.rowDay < b.rowDay;
+  if (a.key !== b.key) return a.key < b.key;
+  return a.tx.id < b.tx.id;
+}
+
+function nearest(schedule, day) {
+  let best = null;
+  for (const occurrence of schedule || []) {
+    const gap = Math.abs(diffDays(occurrence, day));
+    if (best === null || gap < best.gap) best = { day: occurrence, gap };
+  }
+  return best;
+}
+
+const FAR_DAY = '9999-12-31';
+
+function isSent(accounts, tx, today) {
+  if (!isObject(tx) || typeof tx.id !== 'string' || tx.source === 'manual' || tx.kind === 'decline' || tx.matchId) return false;
+  if (tx.flow !== 'out' || tx.pairId != null || !isYmd(tx.day) || tx.day > today) return false;
+  if (!Number.isFinite(tx.amount) || !(tx.amount > 0) || typeof tx.mkey !== 'string') return false;
+  const account = accounts.get(tx.accountId);
+  return !!account && !account.hidden && ACCOUNT_TYPES[account.type].group === 'cash';
+}
+
+function looksByHand(tx) {
+  if (SENT_BY_HAND.has(tx.ruleId)) return true;
+  return tx.kind === 'transfer' && !NOT_BY_HAND.has(tx.ruleId);
+}
+
+function couldBeRowOf(entry, tx, key) {
+  if (entry.payee !== key || isSkipped(entry, tx, key)) return false;
+  return Math.round(tx.amount) === entry.amount || (isYmd(entry.since) && tx.day < entry.since);
+}
+
+function isSkipped(entry, tx, key) {
+  for (const [day, skipped] of skipsOf(entry)) {
+    if (skipped === key && Math.abs(diffDays(day, tx.day)) <= SKIP_REACH_DAYS) return true;
+  }
+  return false;
+}
+
+function skipsOf(entry) {
+  const out = [];
+  if (!isObject(entry.skips)) return out;
+  for (const name of Object.keys(entry.skips)) {
+    const skip = entry.skips[name];
+    const cut = name.indexOf('|');
+    if (!isObject(skip) || skip.on !== true || cut < 0 || !isYmd(name.slice(0, cut))) continue;
+    out.push([name.slice(0, cut), name.slice(cut + 1)]);
+  }
+  return out;
+}
+
+function barredOf(entry) {
+  return new Set(skipsOf(entry).map(([, key]) => key));
+}
+
+/* --------------------------------------------------------------- after Undo */
+
+function restampByHand(before, after, nowMs) {
+  if (!isObject(after)) return false;
+  const at = stamp(nowMs);
+  const was = new Map(byHandEntries(before).map((entry) => [entry.id, entry]));
+  const now = new Map(byHandEntries(after).map((entry) => [entry.id, entry]));
+  let wrote = false;
+  for (const entry of now.values()) {
+    const old = was.get(entry.id);
+    if (!old) {
+      entry.editedAt = at;
+      if (isObject(after.share) && isObject(after.share.tombs)) delete after.share.tombs[entry.id];
+      wrote = true;
+      continue;
+    }
+    if (['name', 'amount', 'dueDay', 'since', 'active'].some((field) => entry[field] !== old[field])) {
+      entry.editedAt = at;
+      wrote = true;
+    }
+    if (restampMap(entry, old, 'marks', 'paid', at)) wrote = true;
+    if (restampMap(entry, old, 'skips', 'on', at)) wrote = true;
+    if ((entry.payee || null) !== (old.payee || null)) {
+      entry.payeeAt = at;
+      wrote = true;
+    }
+  }
+  for (const id of was.keys()) {
+    if (now.has(id)) continue;
+    tombsOf(after)[id] = at;
+    wrote = true;
+  }
+  return wrote;
+}
+
+function restampMap(entry, old, field, flag, at) {
+  const mine = isObject(entry[field]) ? entry[field] : (entry[field] = {});
+  const theirs = isObject(old[field]) ? old[field] : {};
+  let wrote = false;
+  for (const name of new Set([...Object.keys(mine), ...Object.keys(theirs)])) {
+    const a = Object.hasOwn(mine, name) && isObject(mine[name]) ? mine[name] : null;
+    const b = Object.hasOwn(theirs, name) && isObject(theirs[name]) ? theirs[name] : null;
+    if (a !== null && b !== null && a[flag] === b[flag] && a.at === b.at) continue;
+    mine[name] = { [flag]: a !== null && a[flag] === true, at };
+    wrote = true;
+  }
+  return wrote;
+}
+
+/* ------------------------------------------------------------- the checklist */
+
+function byHandMonth(state, today, nowMs) {
+  const month = { ym: isYmd(today) ? monthOf(today) : '', rows: [], paid: 0, count: 0, unpaid: 0, transit: 0 };
+  if (!isObject(state) || !isYmd(today)) return month;
+  const entries = activeEntries(state);
+  if (!entries.length) return month;
+  const first = startOfMonth(month.ym);
+  const last = endOfMonth(month.ym);
+  const accounts = accountsOf(state);
+  const byId = new Map();
+  for (const tx of listOf(state.txs)) if (isObject(tx) && typeof tx.id === 'string') byId.set(tx.id, tx);
+  const rollover = rolloverOf(state);
+  const now = stamp(nowMs);
+  const earlier = [];
+  const current = [];
+  // the posted sent rows by payee, read once and only when an unpaid occurrence asks: a row is fingerprinted once, not once per entry
+  let posted = null;
+  const postedOf = (payee) => {
+    if (posted === null) {
+      posted = new Map();
+      const keys = new Map();
+      for (const tx of listOf(state.txs)) {
+        if (!isSent(accounts, tx, today) || tx.pending) continue;
+        if (!keys.has(tx.mkey)) keys.set(tx.mkey, payeeKey(tx.mkey));
+        const key = keys.get(tx.mkey);
+        if (posted.has(key)) posted.get(key).push(tx);
+        else posted.set(key, [tx]);
+      }
+    }
+    return posted.get(payee) || [];
+  };
+
+  for (const entry of entries) {
+    const standing = byHandStandingOf(state, entry, last);
+    const pending = pendingOf(standing, byHandStandingOf(state, entry, last, true));
+    const others = othersOf(postedOf, entries, entry, last);
+    const arrears = standing.filter((item) => item.day < first && item.row === null && !(item.tick && item.tick.paid));
+    const shown = arrears.slice(Math.max(0, arrears.length - BY_HAND_ARREARS)).concat(standing.filter((item) => item.day >= first));
+    // an earlier month's payment ticked in the last days is no longer on the list, and its money is still on its way
+    for (const item of standing) {
+      if (item.day < first && item.row === null && item.tick && item.tick.paid && now - item.tick.at < TRANSIT_MS) month.transit += entry.amount;
+    }
+    for (const item of shown) {
+      const row = {
+        entry, day: item.day, amount: entry.amount, status: 'due', paidDay: null, txId: null, merchant: null,
+        pendingDay: null, pendingTxId: null, otherDay: null, otherTxId: null, otherAmount: null, daysTo: null,
+      };
+      const tx = item.row === null ? null : byId.get(item.row.id) || null;
+      if (item.row !== null) {
+        row.status = item.row.pending ? 'pending' : 'bank';
+        row.paidDay = item.row.day;
+        row.txId = item.row.id;
+        row.merchant = tx ? (typeof tx.merchant === 'string' && tx.merchant ? tx.merchant : tx.mkey) : null;
+        if (tx && Number.isFinite(tx.amount)) row.amount = Math.round(tx.amount);
+      } else {
+        if (item.tick && item.tick.paid) {
+          row.status = 'hand';
+          row.paidDay = gameDay(item.tick.at, rollover);
+          if (now - item.tick.at < TRANSIT_MS) month.transit += row.amount;
+        } else {
+          row.daysTo = diffDays(today, item.day);
+          row.status = row.daysTo >= 0 ? 'due' : 'overdue';
+          month.unpaid += row.amount;
+          const other = others.get(item.day);
+          if (other) {
+            row.otherDay = other.day;
+            row.otherTxId = other.id;
+            row.otherAmount = other.amount;
+          }
+        }
+        const waiting = pending.get(item.day);
+        if (waiting) {
+          row.pendingDay = waiting.day;
+          row.pendingTxId = waiting.id;
+        }
+      }
+      (item.day < first ? earlier : current).push(row);
+    }
+  }
+  earlier.sort(inDayOrder);
+  current.sort(inDayOrder);
+  month.rows = earlier.concat(current);
+  month.count = current.length;
+  month.paid = sum(current, (row) => (row.status === 'bank' || row.status === 'pending' || row.status === 'hand' ? 1 : 0));
+  return month;
+}
+
+function pendingOf(without, withPending) {
+  const out = new Map();
+  const had = new Map(without.map((item) => [item.day, item]));
+  const displacers = [];
+  for (const item of withPending) {
+    const before = had.get(item.day);
+    if (item.row !== null && item.row.pending && before && before.row !== null) displacers.push(item.row);
+  }
+  for (const item of withPending) {
+    const before = had.get(item.day);
+    if (!before || before.row !== null || item.row === null) continue;
+    const row = item.row.pending ? item.row : displacers.shift();
+    if (row) out.set(item.day, row);
+  }
+  return out;
+}
+
+function othersOf(postedOf, entries, entry, untilDay) {
+  const out = new Map();
+  if (!entry.payee) return out;
+  const schedule = occurrences(entry, FIRST_DAY, addDays(untilDay, AHEAD_DAYS));
+  const gaps = new Map();
+  for (const tx of postedOf(entry.payee)) {
+    if (isSkipped(entry, tx, entry.payee)) continue;
+    if (tx.recurringId != null && tx.recurringId !== entry.id) continue; // the charge of another line of the Book
+    const amount = Math.round(tx.amount);
+    if (amount === entry.amount || (isYmd(entry.since) && tx.day < entry.since)) continue;
+    if (entries.some((other) => other !== entry && other.payee === entry.payee && other.amount === amount)) continue;
+    const near = nearest(schedule, tx.day);
+    if (near === null || near.gap > OTHER_REACH_DAYS) continue;
+    const held = out.get(near.day);
+    const gap = gaps.get(near.day);
+    if (held && (gap < near.gap || (gap === near.gap && (held.day < tx.day || (held.day === tx.day && held.id <= tx.id))))) continue;
+    out.set(near.day, { id: tx.id, day: tx.day, amount });
+    gaps.set(near.day, near.gap);
+  }
+  return out;
+}
+
+function inDayOrder(a, b) {
+  if (a.day !== b.day) return a.day < b.day ? -1 : 1;
+  if (a.entry.name !== b.entry.name) return a.entry.name < b.entry.name ? -1 : 1;
+  return a.entry.id < b.entry.id ? -1 : a.entry.id > b.entry.id ? 1 : 0;
+}
+
+/* ------------------------------------------------------------------ helpers */
+
+function anchorFor(dueDay, since) {
+  if (!isDueDay(dueDay) || !isYmd(since)) return '';
+  const inMonth = addMonths(startOfMonth(monthOf(since)), 0, dueDay);
+  return inMonth >= since ? inMonth : addMonths(startOfMonth(monthOf(since)), 1, dueDay);
+}
+
+function paidThisMonth(state, entry, today) {
+  const ym = monthOf(today);
+  const item = byHandStandingOf(state, entry, endOfMonth(ym)).find((one) => monthOf(one.day) === ym);
+  return !item || item.row !== null || !!(item.tick && item.tick.paid);
+}
+
+function byHandEntries(state) {
+  if (!isObject(state)) return [];
+  return listOf(state.recurring).filter((entry) => isObject(entry) && entry.byHand === true && typeof entry.id === 'string' && entry.id !== '');
+}
+
+function activeEntries(state) {
+  return byHandEntries(state)
+    .filter(runsByHand)
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+}
+
+function entryOf(state, id) {
+  if (typeof id !== 'string') return null;
+  return byHandEntries(state).find((entry) => entry.id === id) || null;
+}
+
+function accountsOf(state) {
+  const accounts = new Map();
+  for (const account of listOf(state.accounts)) {
+    if (!isObject(account) || typeof account.id !== 'string' || !Object.hasOwn(ACCOUNT_TYPES, account.type)) continue;
+    if (!accounts.has(account.id)) accounts.set(account.id, account);
+  }
+  return accounts;
+}
+
+function countsPending(state) {
+  const settings = isObject(state.settings) ? state.settings : {};
+  return settings.countPending === undefined ? true : !!settings.countPending;
+}
+
+function tombsOf(state) {
+  if (!isObject(state.share)) state.share = { tombs: {} };
+  if (!isObject(state.share.tombs)) state.share.tombs = {};
+  return state.share.tombs;
+}
+
+function rolloverOf(state) {
+  const hour = isObject(state.settings) ? state.settings.rolloverHour : null;
+  return Number.isFinite(hour) && hour >= 0 && hour < 24 ? hour : 0;
+}
+
+function nameOf(value) {
+  if (typeof value !== 'string') return null;
+  const name = value.trim();
+  return name.length >= 1 && name.length <= NAME_MAX ? name : null;
+}
+
+function isAmount(value) {
+  return Number.isInteger(value) && value >= 1 && value <= AMOUNT_MAX;
+}
+
+function isDueDay(value) {
+  return Number.isInteger(value) && value >= 1 && value <= LAST_DAY;
+}
+
+function stamp(nowMs) {
+  return Number.isFinite(nowMs) ? nowMs : 0;
+}
+
+function copyOf(map) {
+  const out = {};
+  for (const key of Object.keys(map)) {
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype' || !isObject(map[key])) continue;
+    out[key] = { ...map[key] };
+  }
+  return out;
+}
+
+function isObject(x) {
+  return x !== null && typeof x === 'object' && !Array.isArray(x);
+}
+
+function listOf(x) {
+  return Array.isArray(x) ? x : [];
+}
+return { payeeKey, makeByHand, addByHand, editByHand, removeByHand, tickByHand, skipRow, claimByHand, unpaidByPayee, restampByHand, byHandMonth };
+})();
+
 // ---- js/model/forecast.js
 __mods["js/model/forecast.js"] = (function () {
 const { CADENCES } = __mods["js/model/schema.js"];
@@ -9234,10 +10284,12 @@ return { AHEAD_DAYS, recentTransactions };
 // ---- js/model/detect.js
 __mods["js/model/detect.js"] = (function () {
 const { ACCOUNT_TYPES, CADENCES, CATEGORIES, PURPOSES, klassOf, makeRecurring, makeStream } = __mods["js/model/schema.js"];
-const { addDays, diffDays, eachDay, gameDayStartMs, isYmd, maxYmd, weekStart } = __mods["js/model/dates.js"];
+const { addDays, addMonths, diffDays, eachDay, gameDayStartMs, isYmd, maxYmd, weekStart } = __mods["js/model/dates.js"];
 const { roundCents } = __mods["js/model/money.js"];
 const { reclassify } = __mods["js/model/classify.js"];
 const { makeLedger, todayOf } = __mods["js/model/ledger.js"];
+const { runsByHand } = __mods["js/model/book.js"];
+const { claimByHand, payeeKey, unpaidByPayee } = __mods["js/model/byhand.js"];
 /*
  * How the specification is read where it leaves a choice (each is implemented where it is named):
  *  - A charge is money out as a spend, or as a payment from a cash account (a loan payment, a standing
@@ -9288,6 +10340,8 @@ const STEADY_SHARE = 0.10;
 const STEADY_FLOOR = 200;
 const VARIABLE_SHARE = 0.35;
 const PAY_SHARE = 0.15;
+const SAME_PAYMENT_SHARE = 0.10;
+const ON_ITS_DAY_DAYS = 5;
 const TYPICAL_COUNT = 3;
 
 const BILL_LAPSE_PERIODS = 1.5;
@@ -9322,10 +10376,22 @@ function detectRecurring(state, nowMs) {
   if (!isObject(state)) return report;
   const entries = listIn(state, 'recurring');
   const ctx = readContext(state, nowMs);
+  // The payments the owner sends take their rows first: such a row is never a charge of another line,
+  // and a detected line of the same payment gives way, so nothing is counted twice.
+  const claims = claimByHand(state, ctx.today, nowMs);
+  const sentByOwner = byHandPayees(entries);
+  const owedByOwner = unpaidByPayee(state, claims, ctx.today);
+  const held = heldRows(state, claims);
+  for (let i = entries.length - 1; i >= 0; i--) {
+    if (isSamePayment(sentByOwner, entries[i]) || isOwnersLine(sentByOwner, owedByOwner, entries[i], held)) entries.splice(i, 1);
+  }
   const known = entries.filter(hasKey);
   const anchorsBefore = new Map(known.map((entry) => [entry, entry.anchor]));
-  const groups = groupRows(ctx.rows.filter((tx) => isCharge(ctx, tx)));
-  const claims = new Map();
+  // a row on the day of a payment the owner sends that the bank has not settled is that payment at
+  // another amount (E9 F1): it is left free, for the checklist to offer, and joins no line, unless a
+  // line of the payee that stays takes it (an amount within 10% of the line's): then it is that line's row
+  const groups = groupRows(ctx.rows.filter((tx) => !claims.has(tx.id) && isCharge(ctx, tx) &&
+    (!isOnOwedDay(owedByOwner, tx, [tx]) || isLineRow(known, tx))));
   const matched = new Set();
 
   for (const rows of groups) {
@@ -9338,6 +10404,8 @@ function detectRecurring(state, nowMs) {
         claim(claims, series.rows, entry.id);
       } else {
         const created = newEntry(ctx, series);
+        if (isSamePayment(sentByOwner, created)) continue; // the owner's line of this payment stands; no second one is made
+        if (isOnOwedDay(owedByOwner, created, series.rows)) continue; // the owner sends another amount now and has not said so yet
         entries.push(created);
         claim(claims, series.rows, created.id);
         if (created.active) report.added.push(created.id);
@@ -9733,6 +10801,74 @@ function settleEntry(ctx, entry, anchorBefore, report) {
   }
 }
 
+function byHandPayees(entries) {
+  const payees = new Map();
+  for (const entry of entries) {
+    if (!runsByHand(entry) || typeof entry.payee !== 'string' || !entry.payee) continue;
+    if (!payees.has(entry.payee)) payees.set(entry.payee, []);
+    payees.get(entry.payee).push(entry.amount);
+  }
+  return payees;
+}
+
+function heldRows(state, claims) {
+  const held = new Map();
+  for (const tx of listOf(state.txs)) {
+    if (!isObject(tx) || typeof tx.recurringId !== 'string' || claims.has(tx.id)) continue;
+    if (!held.has(tx.recurringId)) held.set(tx.recurringId, []);
+    held.get(tx.recurringId).push(tx);
+  }
+  return held;
+}
+
+function isOwnersLine(payees, owed, entry, held) {
+  if (!payees.size || !isObject(entry) || entry.source !== 'detected' || runsByHand(entry) || isDismissed(entry)) return false;
+  if (typeof entry.mkey !== 'string' || !entry.mkey || !payees.has(payeeKey(entry.mkey))) return false;
+  const rows = held.get(entry.id) || [];
+  if (rows.length === 0) return true;
+  // a row the line took of its own amount on the day of an unpaid occurrence (isLineRow) does not by
+  // itself make the line the owner's: (c) is read on the rows it had before, when it has any
+  const before = rows.filter((row) => !(isOnOwedDay(owed, entry, [row]) && isLineRow([entry], row)));
+  return isOnOwedDay(owed, entry, before.length ? before : rows);
+}
+
+function isOnOwedDay(owed, entry, rows) {
+  if (!owed.size || !isObject(entry) || typeof entry.mkey !== 'string' || !entry.mkey || !rows.length) return false;
+  const payments = owed.get(payeeKey(entry.mkey));
+  if (!payments) return false;
+  let last = '';
+  for (const row of rows) {
+    if (!isObject(row) || !isYmd(row.day)) return false;
+    if (row.day > last) last = row.day;
+  }
+  return payments.some(({ dueDay, days }) =>
+    rows.every((row) => nearestOccurrence(dueDay, row.day).gap <= ON_ITS_DAY_DAYS) && days.includes(nearestOccurrence(dueDay, last).day));
+}
+
+function isLineRow(lines, tx) {
+  if (typeof tx.mkey !== 'string' || !tx.mkey || !Number.isFinite(tx.amount)) return false;
+  const payee = payeeKey(tx.mkey);
+  return lines.some((entry) => entry.source === 'detected' && !runsByHand(entry) && !isDismissed(entry) &&
+    typeof entry.mkey === 'string' && payeeKey(entry.mkey) === payee && Number.isFinite(entry.amount) &&
+    Math.abs(tx.amount - entry.amount) <= SAME_PAYMENT_SHARE * entry.amount);
+}
+
+function nearestOccurrence(dueDay, day) {
+  let best = null;
+  for (const step of [-1, 0, 1]) {
+    const occurrence = addMonths(day.slice(0, 8) + '01', step, dueDay);
+    const gap = Math.abs(diffDays(occurrence, day));
+    if (best === null || gap < best.gap) best = { day: occurrence, gap };
+  }
+  return best;
+}
+
+function isSamePayment(payees, entry) {
+  if (!payees.size || !isObject(entry) || entry.source !== 'detected' || runsByHand(entry) || typeof entry.mkey !== 'string' || !entry.mkey) return false;
+  const amounts = payees.get(payeeKey(entry.mkey));
+  return !!amounts && amounts.some((amount) => Math.abs(entry.amount - amount) <= SAME_PAYMENT_SHARE * amount);
+}
+
 function linkCharges(state, claims) {
   const freed = [];
   for (const tx of listOf(state.txs)) {
@@ -9979,6 +11115,7 @@ const { annotateRound } = __mods["js/model/annotate.js"];
 const { assess, coachNotes, monthReview } = __mods["js/model/assess.js"];
 const { cardsNow, allCardsMonths, cardMonths, historyDays } = __mods["js/model/cards.js"];
 const { bookTotals, upcoming, renewals } = __mods["js/model/book.js"];
+const { byHandMonth } = __mods["js/model/byhand.js"];
 const { pace, paceMinDays, projectNetWorth, reserveGoal, incomeLadder, cardPayoff } = __mods["js/model/forecast.js"];
 const { topMerchants } = __mods["js/model/classify.js"];
 const { recentTransactions } = __mods["js/model/recent.js"];
@@ -10050,6 +11187,7 @@ function makeDerived(state, now) {
     cardMonthsFor(id, n = 6) { return once('cardMonthsFor:' + id + ':' + n, () => cardMonths(state, id, n, now, shared())); },
 
     get bookTotals() { return once('bookTotals', () => bookTotals(state)); },
+    get byHand() { return once('byHand', () => byHandMonth(state, today, now)); },
     upcoming(days = 30) { return once('upcoming:' + days, () => upcoming(state, today, days)); },
     renewals(days = 120) { return once('renewals:' + days, () => renewals(state, today, days)); },
 
@@ -11804,6 +12942,765 @@ async function unlinkBank(opts = {}) {
   poke();
 }
 return { initSync, syncInfo, linkBank, syncNow, autoSync, unlinkBank };
+})();
+
+// ---- js/model/share.js
+__mods["js/model/share.js"] = (function () {
+const { makeByHand } = __mods["js/model/byhand.js"];
+const { isYmd } = __mods["js/model/dates.js"];
+const { refresh } = __mods["js/model/detect.js"];
+const VERSION = 1;
+const APP = 'networth';
+const MAX_ENTRIES = 200;
+const MAX_TOMBS = 1000;
+const NAME_MAX = 60;
+const AMOUNT_MAX = 1e10;
+const LAST_DAY = 31;
+const MAX_FLAGS = 400;
+const MAX_TEXT = 2000000;
+const MAX_STAMP = 1e14;
+const MAX_DEPTH = 12;
+const TOMB_KEEP_MS = 400 * 86400000;
+const RESTARTS = 3;
+const KNOWN = new Set(['v', 'app', 'savedAt', 'byHand']);
+const UNSAFE = new Set(['__proto__', 'constructor', 'prototype']);
+const ID = /^[A-Za-z0-9_.:-]{1,80}$/;
+const PAYEE = /^p[0-9a-f]{13}$/;
+const SKIP_KEY = /^(\d{4}-\d{2}-\d{2})\|p[0-9a-f]{13}$/;
+
+/* ------------------------------------------------------------------ reading */
+
+function readSharedFile(text) {
+  if (typeof text !== 'string' || text.length > MAX_TEXT) return null;
+  let raw = null;
+  try { raw = JSON.parse(text); } catch { return null; }
+  return fileOf(raw);
+}
+
+function fileOf(raw) {
+  if (!isObject(raw) || raw.v !== VERSION || raw.app !== APP) return null;
+  const savedAt = raw.savedAt === undefined ? 0 : raw.savedAt;
+  const list = raw.byHand === undefined ? {} : raw.byHand;
+  if (!isStamp(savedAt) || !isObject(list)) return null;
+  const ids = Object.keys(list);
+  if (ids.length > MAX_ENTRIES + MAX_TOMBS) return null;
+  const byHand = {};
+  let payments = 0;
+  let tombs = 0;
+  for (const id of ids) {
+    const entry = isId(id) ? entryOf(list[id]) : null;
+    if (!entry) return null;
+    if (entry.deleted) tombs += 1; else payments += 1;
+    if (payments > MAX_ENTRIES || tombs > MAX_TOMBS) return null;
+    byHand[id] = entry;
+  }
+  const out = { v: VERSION, app: APP, savedAt, byHand };
+  for (const key of Object.keys(raw)) {
+    if (!KNOWN.has(key) && !UNSAFE.has(key)) out[key] = plain(raw[key], 0);
+  }
+  return out;
+}
+
+function entryOf(raw) {
+  if (!isObject(raw) || !isStamp(raw.editedAt)) return null;
+  const payee = raw.payee == null ? null : raw.payee;
+  const payeeAt = raw.payeeAt === undefined ? 0 : raw.payeeAt;
+  if (payee !== null && !(typeof payee === 'string' && PAYEE.test(payee))) return null;
+  if (!isStamp(payeeAt)) return null;
+  const marks = flagsOf(raw.marks, isYmd, 'paid');
+  const skips = flagsOf(raw.skips, isSkipKey, 'on');
+  if (!marks || !skips) return null;
+  if (raw.deleted === true) return tomb(raw.editedAt, payee, payeeAt, marks, skips);
+  if (raw.deleted !== false && raw.deleted !== undefined) return null;
+  const { name, amount, dueDay, since, active } = raw;
+  if (typeof name !== 'string' || name !== name.trim() || name.length < 1 || name.length > NAME_MAX) return null;
+  if (!Number.isInteger(amount) || amount < 1 || amount > AMOUNT_MAX) return null;
+  if (!Number.isInteger(dueDay) || dueDay < 1 || dueDay > LAST_DAY) return null;
+  if (!isYmd(since) || typeof active !== 'boolean') return null;
+  return { name, amount, dueDay, since, active, editedAt: raw.editedAt, deleted: false, payee, payeeAt, marks, skips };
+}
+
+function tomb(editedAt, payee, payeeAt, marks, skips) {
+  const out = { deleted: true, editedAt };
+  if (payee !== null || payeeAt > 0) { out.payee = payee; out.payeeAt = payeeAt; }
+  if (Object.keys(marks).length) out.marks = marks;
+  if (Object.keys(skips).length) out.skips = skips;
+  return out;
+}
+
+function flagsOf(value, keyOk, flag) {
+  if (value === undefined) return {};
+  if (!isObject(value)) return null;
+  const keys = Object.keys(value);
+  if (keys.length > MAX_FLAGS) return null;
+  const out = {};
+  for (const key of keys) {
+    const item = value[key];
+    if (UNSAFE.has(key) || !keyOk(key) || !isObject(item) || typeof item[flag] !== 'boolean' || !isStamp(item.at)) return null;
+    out[key] = { [flag]: item[flag], at: item.at };
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------ writing */
+
+function exportShared(state, nowMs) {
+  const byHand = {};
+  const doc = isObject(state) ? state : {};
+  for (const r of listOf(doc.recurring)) {
+    if (!isObject(r) || r.byHand !== true || !isId(r.id)) continue;
+    const entry = projected(r);
+    if (entry) byHand[r.id] = entry;
+  }
+  const tombs = isObject(doc.share) && isObject(doc.share.tombs) ? doc.share.tombs : {};
+  for (const id of Object.keys(tombs)) {
+    const at = tombs[id];
+    if (!isId(id) || Object.hasOwn(byHand, id) || !isStamp(at) || nowMs - at > TOMB_KEEP_MS) continue;
+    byHand[id] = { deleted: true, editedAt: at };
+  }
+  return { v: VERSION, app: APP, savedAt: isStamp(nowMs) ? nowMs : 0, byHand };
+}
+
+function projected(r) {
+  return entryOf({
+    name: r.name, amount: r.amount, dueDay: r.dueDay, since: r.since, active: r.active !== false,
+    editedAt: r.editedAt || 0, deleted: false, payee: r.payee || null, payeeAt: r.payeeAt || 0,
+    marks: isObject(r.marks) ? r.marks : {}, skips: isObject(r.skips) ? r.skips : {},
+  });
+}
+
+/* ------------------------------------------------------------------ merging */
+
+function mergeShared(a, b) {
+  const x = fileOf(a) || blank();
+  const y = fileOf(b) || blank();
+  const out = { v: VERSION, app: APP, savedAt: Math.max(x.savedAt, y.savedAt), byHand: {} };
+  for (const id of union(x.byHand, y.byHand)) {
+    const p = own(x.byHand, id);
+    const q = own(y.byHand, id);
+    out.byHand[id] = !q ? p : !p ? q : mergeEntry(p, q);
+  }
+  for (const key of union(x, y)) {
+    if (KNOWN.has(key)) continue;
+    const p = own(x, key);
+    const q = own(y, key);
+    out[key] = q === undefined ? p : p === undefined ? q : (canon(p) <= canon(q) ? p : q);
+  }
+  return out;
+}
+
+function mergeEntry(p, q) {
+  const d = definitionWins(p, q) ? p : q;
+  const pay = payeeWins(p, q) ? p : q;
+  const payee = pay.payee == null ? null : pay.payee;
+  const payeeAt = pay.payeeAt || 0;
+  const marks = mergeFlags(p.marks, q.marks, 'paid');
+  const skips = mergeFlags(p.skips, q.skips, 'on');
+  if (d.deleted) return tomb(d.editedAt, payee, payeeAt, marks, skips);
+  return { name: d.name, amount: d.amount, dueDay: d.dueDay, since: d.since, active: d.active, editedAt: d.editedAt,
+    deleted: false, payee, payeeAt, marks, skips };
+}
+
+function definition(e) {
+  return canon({ name: e.name, amount: e.amount, dueDay: e.dueDay, since: e.since, active: e.active, deleted: !!e.deleted });
+}
+
+function definitionWins(p, q) {
+  if (p.editedAt !== q.editedAt) return p.editedAt > q.editedAt;
+  if (!!p.deleted !== !!q.deleted) return !!p.deleted;
+  return definition(p) <= definition(q);
+}
+
+function payeeWins(p, q) {
+  const pa = p.payeeAt || 0;
+  const qa = q.payeeAt || 0;
+  if (pa !== qa) return pa > qa;
+  const pk = p.payee == null ? null : p.payee;
+  const qk = q.payee == null ? null : q.payee;
+  if ((pk === null) !== (qk === null)) return pk !== null;
+  return pk === null || pk <= qk;
+}
+
+function mergeFlags(a, b, flag) {
+  const x = a || {};
+  const y = b || {};
+  const out = {};
+  for (const key of union(x, y)) {
+    const p = own(x, key);
+    const q = own(y, key);
+    const first = !q || (p && (p.at !== q.at ? p.at > q.at : p[flag] || !q[flag]));
+    const from = first ? p : q;
+    out[key] = { [flag]: from[flag], at: from.at };
+  }
+  return out;
+}
+
+function sameShared(a, b) {
+  return canon(unsaved(a)) === canon(unsaved(b));
+}
+
+function unsaved(x) {
+  return isObject(x) ? { ...x, savedAt: 0 } : x;
+}
+
+/* ----------------------------------------------------------------- applying */
+
+function sharedChanges(state, merged) {
+  return planOf(state, merged).length;
+}
+
+function applyShared(state, merged, nowMs) {
+  void nowMs; // every time written here is the file's own, so that the device then agrees with the file
+  const ops = planOf(state, merged);
+  if (!ops.length) return { changed: false };
+  if (!Array.isArray(state.recurring)) state.recurring = [];
+  if (!isObject(state.share)) state.share = { tombs: {} };
+  if (!isObject(state.share.tombs)) state.share.tombs = {};
+  const tombs = state.share.tombs;
+  for (const { op, id, want } of ops) {
+    const at = state.recurring.findIndex((r) => isObject(r) && r.id === id);
+    if (op === 'remove') {
+      if (at >= 0) state.recurring.splice(at, 1);
+      tombs[id] = want.editedAt;
+    } else if (op === 'tomb') {
+      tombs[id] = want.editedAt;
+    } else if (op === 'untomb') {
+      delete tombs[id];
+    } else {
+      const fresh = makeByHand({ id, name: want.name, amount: want.amount, dueDay: want.dueDay, since: want.since, active: want.active,
+        editedAt: want.editedAt, payee: want.payee, payeeAt: want.payeeAt, marks: want.marks, skips: want.skips });
+      if (op === 'create') {
+        state.recurring.push(fresh);
+      } else {
+        const have = state.recurring[at];
+        for (const field of ['name', 'amount', 'dueDay', 'since', 'anchor', 'active', 'editedAt', 'payee', 'payeeAt', 'marks', 'skips']) {
+          have[field] = fresh[field];
+        }
+      }
+      delete tombs[id];
+    }
+  }
+  return { changed: true };
+}
+
+function planOf(state, merged) {
+  const file = fileOf(merged);
+  if (!file || !isObject(state)) return [];
+  const list = listOf(state.recurring);
+  const tombs = isObject(state.share) && isObject(state.share.tombs) ? state.share.tombs : {};
+  const ops = [];
+  for (const id of Object.keys(file.byHand)) {
+    const want = file.byHand[id];
+    const have = list.find((r) => isObject(r) && r.id === id);
+    if (have && have.byHand !== true) continue;
+    const buried = Object.hasOwn(tombs, id);
+    if (want.deleted) {
+      if (have) ops.push({ op: 'remove', id, want });
+      else if (buried && tombs[id] !== want.editedAt) ops.push({ op: 'tomb', id, want });
+    } else if (!have) {
+      ops.push({ op: 'create', id, want });
+    } else if (canon(projected(have)) !== canon(want)) {
+      ops.push({ op: 'update', id, want });
+    } else if (buried) {
+      ops.push({ op: 'untomb', id, want });
+    }
+  }
+  return ops;
+}
+
+/* ------------------------------------------------------------------ a round */
+
+async function roundShared(device, transport, clock) {
+  let changed = false;
+  const stale = () => !!(device.stale && device.stale());
+  for (let turn = 0; ; turn++) {
+    if (stale()) return { ok: false, skipped: true };
+    const got = await transport.read();
+    const file = got.text == null ? blank() : readSharedFile(got.text);
+    if (!file) throw unreadable();
+    if (stale()) return { ok: false, skipped: true };
+    const now = clock();
+    const local = exportShared(device.state(), now);
+    let merged = mergeShared(local, file);
+    if (sharedChanges(device.state(), merged)) {
+      // What the file brought that this device did not have: an earlier copy of the document (the one
+      // Undo puts back) takes in the same entries of the file, merged with its own, so that an Undo
+      // takes back the owner's change only and never what another device sent.
+      const arrived = { ...file, byHand: {} };
+      for (const id of Object.keys(file.byHand)) {
+        if (canon(own(local.byHand, id)) !== canon(merged.byHand[id])) arrived.byHand[id] = file.byHand[id];
+      }
+      const all = merged;
+      device.update(
+        (s) => { if (applyShared(s, all, now).changed) refresh(s, now); },
+        (s) => { applyShared(s, mergeShared(exportShared(s, now), arrived), now); },
+      );
+      changed = true;
+      merged = mergeShared(exportShared(device.state(), now), merged); // a payee that run of detection learned
+    }
+    merged = withoutOldTombs(merged, now);
+    const count = Object.keys(merged.byHand).filter((id) => !merged.byHand[id].deleted).length;
+    const none = got.text == null;
+    if (none ? isBlank(merged) : sameShared(merged, file)) return { ok: true, changed, wrote: false, file: !none, count };
+    const text = JSON.stringify({ ...merged, savedAt: now }, null, 1);
+    if (!readSharedFile(text)) throw unreadable();
+    if (stale()) return { ok: false, skipped: true };
+    try {
+      await transport.write(text, got.sha);
+      return { ok: true, changed, wrote: true, file: true, count };
+    } catch (err) {
+      if (!err || err.code !== 'conflict' || turn >= RESTARTS) throw err;
+    }
+  }
+}
+
+function withoutOldTombs(file, nowMs) {
+  const byHand = {};
+  for (const id of Object.keys(file.byHand)) {
+    const entry = file.byHand[id];
+    if (!(entry.deleted && nowMs - entry.editedAt > TOMB_KEEP_MS)) byHand[id] = entry;
+  }
+  return { ...file, byHand };
+}
+
+function unreadable() {
+  const err = new Error('The shared file is not one this version of Networth can read.');
+  err.code = 'file';
+  return err;
+}
+
+/* ------------------------------------------------------------------ helpers */
+
+function blank() {
+  return { v: VERSION, app: APP, savedAt: 0, byHand: {} };
+}
+
+function isBlank(file) {
+  return Object.keys(file).every((key) => KNOWN.has(key)) && Object.keys(file.byHand).length === 0;
+}
+
+function isId(id) {
+  return typeof id === 'string' && ID.test(id) && !UNSAFE.has(id);
+}
+
+function isSkipKey(key) {
+  const m = SKIP_KEY.exec(key);
+  return !!m && isYmd(m[1]);
+}
+
+function isStamp(x) {
+  return Number.isFinite(x) && x >= 0 && x <= MAX_STAMP;
+}
+
+function own(obj, key) {
+  return Object.hasOwn(obj, key) ? obj[key] : undefined;
+}
+
+function union(a, b) {
+  return [...new Set([...Object.keys(a), ...Object.keys(b)])].sort();
+}
+
+function canon(x) {
+  if (Array.isArray(x)) return '[' + x.map(canon).join(',') + ']';
+  if (isObject(x)) return '{' + Object.keys(x).sort().map((key) => JSON.stringify(key) + ':' + canon(x[key])).join(',') + '}';
+  return x === undefined ? 'null' : JSON.stringify(x);
+}
+
+function plain(value, depth) {
+  if (value === null || typeof value !== 'object') return value;
+  if (depth >= MAX_DEPTH) return null;
+  if (Array.isArray(value)) return value.map((item) => plain(item, depth + 1));
+  const out = {};
+  for (const key of Object.keys(value)) {
+    if (!UNSAFE.has(key)) out[key] = plain(value[key], depth + 1);
+  }
+  return out;
+}
+
+function isObject(x) {
+  return x !== null && typeof x === 'object' && !Array.isArray(x);
+}
+
+function listOf(x) {
+  return Array.isArray(x) ? x : [];
+}
+return { readSharedFile, exportShared, mergeShared, sameShared, sharedChanges, applyShared, roundShared };
+})();
+
+// ---- js/github.js
+__mods["js/github.js"] = (function () {
+const API = 'https://api.github.com';
+const REPOSITORY = 'networth-data';
+const FILE = 'networth-shared.json';
+const MESSAGE = 'Networth: shared list';
+const TIMEOUT_MS = 20000;
+const OWNER = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/;
+const KEY = /^[\x21-\x7e]{20,400}$/;
+const SHA = /^[0-9a-f]{40,64}$/;
+const HOST = /^([a-z0-9-]+)\.github\.io$/i;
+
+const MESSAGES = {
+  key: 'GitHub refused the key: it may have expired. Paste a new one.',
+  missing: 'GitHub finds no repository networth-data that this key can see. The key needs that 1 repository, with Contents: Read and write.',
+  conflict: 'Another device wrote the list at the same moment, 4 times in a row.',
+  network: 'GitHub could not be reached, or gave no answer in 20 seconds.',
+  server: 'GitHub answered with an error of its own (a 5xx).',
+  rate: 'GitHub asked for a pause; nothing is asked of it for 10 minutes.',
+  file: 'The shared file is not one this version of Networth can read. It was left as it is.',
+};
+
+class ShareError extends Error {
+  constructor(code) {
+    super(MESSAGES[code] || MESSAGES.network);
+    this.name = 'ShareError';
+    this.code = MESSAGES[code] ? code : 'network';
+  }
+}
+
+function shareMessage(code) {
+  return MESSAGES[code] || MESSAGES.network;
+}
+
+function isShareKey(key) {
+  return typeof key === 'string' && KEY.test(key);
+}
+
+function shareOwner(where) {
+  const host = where && typeof where.hostname === 'string' ? where.hostname : '';
+  const m = HOST.exec(host);
+  if (m) return OWNER.test(m[1]) ? m[1] : null;
+  if (host !== 'localhost' && host !== '127.0.0.1' && host !== '[::1]') return null;
+  let asked = null;
+  try { asked = new URLSearchParams(where.search || '').get('share'); } catch { asked = null; }
+  return asked && OWNER.test(asked) ? asked : null;
+}
+
+function sharedUrl(owner) {
+  if (typeof owner !== 'string' || !OWNER.test(owner)) throw new ShareError('missing');
+  return API + '/repos/' + owner + '/' + REPOSITORY + '/contents/' + FILE;
+}
+
+function toBase64(text) {
+  const bytes = new TextEncoder().encode(String(text));
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(binary);
+}
+
+function fromBase64(encoded) {
+  if (typeof encoded !== 'string') return null;
+  try {
+    const binary = atob(encoded.replace(/\s+/g, ''));
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch { return null; }
+}
+
+function codeOf(res) {
+  const status = res.status;
+  if (status === 429) return 'rate';
+  if (status === 403) {
+    let left = null;
+    try { left = res.headers.get('x-ratelimit-remaining'); } catch { left = null; }
+    return left === '0' ? 'rate' : 'key';
+  }
+  if (status === 401) return 'key';
+  if (status === 404) return 'missing';
+  if (status === 409 || status === 422) return 'conflict';
+  return 'server';
+}
+
+async function call(owner, key, init, doFetch) {
+  const url = sharedUrl(owner);
+  if (!isShareKey(key)) throw new ShareError('key');
+  const abort = typeof AbortController === 'function' ? new AbortController() : null;
+  let timer = null;
+  const late = new Promise((_, reject) => {
+    timer = setTimeout(() => { if (abort) abort.abort(); reject(new ShareError('network')); }, TIMEOUT_MS);
+  });
+  const asked = (async () => {
+    let res = null;
+    try {
+      res = await doFetch(url, {
+        ...init,
+        headers: { Authorization: 'Bearer ' + key, Accept: 'application/vnd.github+json' },
+        cache: 'no-store',
+        credentials: 'omit',
+        referrerPolicy: 'no-referrer',
+        signal: abort ? abort.signal : undefined,
+      });
+    } catch {
+      throw new ShareError('network'); // whatever fetch said is dropped: it may quote the request
+    }
+    if (!res || !(res.status >= 200 && res.status < 300)) throw new ShareError(res ? codeOf(res) : 'network');
+    try { return await res.json(); } catch { throw new ShareError('server'); }
+  })();
+  try {
+    return await Promise.race([asked, late]);
+  } finally {
+    clearTimeout(timer);
+    asked.catch(() => {}); // an answer that arrives after the 20 seconds is nobody's
+  }
+}
+
+async function readSharedText(owner, key, doFetch) {
+  sharedUrl(owner); // an owner that is none is an error here, not "no file yet"
+  let body = null;
+  try {
+    body = await call(owner, key, { method: 'GET' }, doFetch);
+  } catch (err) {
+    if (err instanceof ShareError && err.code === 'missing') return { text: null, sha: null };
+    throw err;
+  }
+  const text = body && body.encoding === 'base64' ? fromBase64(body.content) : null;
+  if (text === null || typeof body.sha !== 'string' || !SHA.test(body.sha)) throw new ShareError('file');
+  return { text, sha: body.sha };
+}
+
+async function writeSharedText(owner, key, text, sha, doFetch) {
+  const payload = { message: MESSAGE, content: toBase64(text) };
+  if (typeof sha === 'string' && SHA.test(sha)) payload.sha = sha;
+  const body = await call(owner, key, { method: 'PUT', body: JSON.stringify(payload) }, doFetch);
+  const next = body && body.content && typeof body.content.sha === 'string' ? body.content.sha : null;
+  return { sha: next };
+}
+return { ShareError, shareMessage, isShareKey, shareOwner, sharedUrl, toBase64, fromBase64, readSharedText, writeSharedText };
+})();
+
+// ---- js/share.js
+__mods["js/share.js"] = (function () {
+const { store } = __mods["js/store.js"];
+const { loadShareKey, loadShareRefused, refuseShareKey, saveShareKey, wipeShareKey } = __mods["js/db.js"];
+const { nowMs } = __mods["js/model/dates.js"];
+const { exportShared, roundShared, sameShared } = __mods["js/model/share.js"];
+const { ShareError, isShareKey, readSharedText, shareMessage, shareOwner, writeSharedText } = __mods["js/github.js"];
+const SPACING_MS = 2000;
+const RATE_PAUSE_MS = 10 * 60 * 1000;
+const CODES = new Set(['key', 'missing', 'conflict', 'network', 'server', 'rate', 'file']);
+const OTHER = 'Sharing stopped on this device before anything was sent. Nothing was changed on GitHub.';
+
+const live = {
+  owner: null,
+  on: false,
+  busy: false,
+  code: null,
+  failedAt: null,
+  agreedAt: null,
+  count: 0,
+  file: true,
+  pauseUntil: 0,
+};
+
+let generation = 0;
+let current = null;
+let held = 0;
+let timer = null;
+let timerAt = 0;
+let lastStart = -Infinity;
+let again = false;
+let applying = false;
+let seenRev = -1;
+let seenDoc = null;
+let lastExport = null;
+
+function doFetch(url, init) {
+  return fetch(url, init);
+}
+
+function poke() {
+  store.setUi({ shareTick: (store.ui.shareTick || 0) + 1 });
+}
+
+function usable() {
+  return !!live.owner && live.on && held === 0 && !!store.state && !store.status.readonly;
+}
+
+function watch() {
+  if (store.rev === seenRev && store.state === seenDoc) return;
+  seenRev = store.rev;
+  seenDoc = store.state;
+  if (!usable()) { lastExport = null; return; }
+  const now = exportShared(store.state, 0);
+  const changed = lastExport !== null && !sameShared(now, lastExport);
+  lastExport = now;
+  if (changed && !applying) ask(SPACING_MS, false);
+}
+
+function ask(delay, manual) {
+  if (!usable()) return;
+  if (!manual && live.code === 'key') return; // a refused key is not tried again by itself
+  if (nowMs() < live.pauseUntil) return;
+  if (live.busy) { again = true; return; }
+  const at = Math.max(Date.now() + delay, lastStart + SPACING_MS);
+  if (timer !== null && timerAt <= at) return;
+  if (timer !== null) clearTimeout(timer);
+  timerAt = at;
+  timer = setTimeout(() => { timer = null; run().catch(() => {}); }, Math.max(0, at - Date.now()));
+}
+
+async function run() {
+  if (!usable() || nowMs() < live.pauseUntil) return;
+  if (live.busy || current) { again = true; return; }
+  current = round();
+  try { await current; } finally { current = null; }
+}
+
+async function idle() {
+  while (current) await current.catch(() => {});
+}
+
+async function round() {
+  if (timer !== null) { clearTimeout(timer); timer = null; }
+  const gen = generation;
+  const stale = () => gen !== generation || !store.state || store.status.readonly;
+  live.busy = true;
+  lastStart = Date.now();
+  again = false;
+  poke();
+  let result = null;
+  let code = null;
+  let key = null;
+  try {
+    try {
+      key = await loadShareKey();
+      if (stale()) return;
+      if (!isShareKey(key)) throw new ShareError('key');
+      const owner = live.owner;
+      const device = {
+        state: () => store.state,
+        stale,
+        update: (change, past) => {
+          applying = true;
+          try { store.update(change, { past }); } finally { applying = false; }
+        },
+      };
+      const transport = {
+        read: () => readSharedText(owner, key, doFetch),
+        write: (text, sha) => writeSharedText(owner, key, text, sha, doFetch),
+      };
+      result = await roundShared(device, transport, nowMs);
+    } catch (err) {
+      // only the code is kept: nothing an error says is shown or logged
+      code = err && typeof err.code === 'string' && CODES.has(err.code) ? err.code : 'other';
+    }
+    try {
+      // the refusal is kept with the key; a round that agreed takes it away (Share now worked)
+      if (gen === generation && code === 'key' && isShareKey(key)) await refuseShareKey(key);
+      else if (gen === generation && result && result.ok && await loadShareRefused()) await saveShareKey(key);
+    } catch { /* a slot the browser would not write: the refusal then holds for this page only */ }
+  } finally {
+    live.busy = false;
+    if (gen === generation) {
+      if (code) {
+        live.code = code;
+        live.failedAt = nowMs();
+        if (code === 'rate') live.pauseUntil = nowMs() + RATE_PAUSE_MS;
+      } else if (result && result.ok) {
+        live.code = null;
+        live.agreedAt = nowMs();
+        live.count = result.count || 0;
+        live.file = result.file !== false;
+      }
+      if (store.state && usable()) lastExport = exportShared(store.state, 0);
+    }
+    poke();
+    if (gen === generation && again && !code) ask(0, false); // a change made while the round ran
+  }
+}
+
+async function initShare(where) {
+  live.owner = shareOwner(where);
+  if (!live.owner) return false;
+  live.on = isShareKey(await loadShareKey());
+  if (live.on && await loadShareRefused()) live.code = 'key'; // refused at an earlier load: no round by itself
+  store.subscribe(watch);
+  watch();
+  return live.on;
+}
+
+function autoShare() {
+  ask(0, false);
+}
+
+function shareInfo() {
+  const paused = live.pauseUntil > nowMs();
+  return {
+    available: !!live.owner,
+    owner: live.owner,
+    on: live.on,
+    busy: live.busy,
+    state: !live.on ? 'off' : live.busy ? 'working' : live.code ? 'error' : live.agreedAt ? 'ok' : 'waiting',
+    code: live.code,
+    message: live.code ? (CODES.has(live.code) ? shareMessage(live.code) : OTHER) : null,
+    failedAt: live.failedAt,
+    agreedAt: live.agreedAt,
+    count: live.count,
+    file: live.file,
+    retryAt: paused ? live.pauseUntil : null,
+    canShare: usable() && !live.busy && !paused,
+  };
+}
+
+async function startShare(pasted) {
+  const key = typeof pasted === 'string' ? pasted.trim() : '';
+  if (!live.owner || !store.state || store.status.readonly) return { ok: false, message: 'Nothing is shared from this page.' };
+  if (!isShareKey(key)) {
+    return { ok: false, message: 'That is not a key: a key is 1 line of 20 or more characters without spaces. Nothing was stored.' };
+  }
+  generation++; // a round still running under the old key stops at its next step and reports nothing
+  if (timer !== null) { clearTimeout(timer); timer = null; }
+  held += 1;
+  let saved = false;
+  try {
+    await idle();
+    saved = await saveShareKey(key); // a key pasted takes the place of a refused one, and of its refusal
+  } finally {
+    held -= 1;
+  }
+  if (!saved) {
+    return { ok: false, message: 'This browser would not store the key. Open Networth in a normal (not private) window and paste it 1 more time.' };
+  }
+  again = false;
+  live.on = true;
+  live.code = null;
+  live.failedAt = null;
+  seenRev = -1;
+  watch();
+  await shareNow();
+  return live.code ? { ok: false, message: shareInfo().message } : { ok: true };
+}
+
+async function shareNow() {
+  if (current && held === 0) await idle(); // the round already running answers
+  if (!usable() || live.busy || nowMs() < live.pauseUntil) return shareInfo();
+  const wait = lastStart + SPACING_MS - Date.now();
+  if (wait > 0) await new Promise((resolve) => { setTimeout(resolve, wait); });
+  await run();
+  return shareInfo();
+}
+
+async function forgetShare() {
+  generation++; // a running round stops at its next step: nothing more is sent with this key
+  if (timer !== null) { clearTimeout(timer); timer = null; }
+  held += 1;
+  try {
+    await idle();
+    await wipeShareKey();
+  } finally {
+    held -= 1;
+  }
+  again = false;
+  live.on = false;
+  live.code = null;
+  live.failedAt = null;
+  live.agreedAt = null;
+  live.count = 0;
+  live.file = true;
+  lastExport = null;
+  poke();
+}
+return { initShare, autoShare, shareInfo, startShare, shareNow, forgetShare };
 })();
 
 // ---- js/model/demo.js
@@ -14449,7 +16346,7 @@ const NEGATIVE_ORDER = ['??', '?', '?!'];
 
 function money(cents, opts = {}) {
   const text = opts.signed ? fmtSigned(cents, { decimals: opts.decimals ?? 2 }) : fmt(cents, { decimals: opts.decimals ?? 2 });
-  const cls = cx('fig', opts.size && 'fig-' + opts.size, opts.est && 'est', opts.tint && tone(cents), opts.cls);
+  const cls = cx('fig', opts.size && 'fig-' + opts.size, opts.est && 'est', opts.tint && tone(cents), opts.tint && opts.rim && 'rim', opts.cls);
   return html`<span class="${cls}">${opts.est ? html`<span class="approx">≈</span>` : ''}${text}</span>`;
 }
 
@@ -14743,9 +16640,14 @@ return { money, inlineMoney, figured, tone, fmtScore, scoreOf, plainSigned, resu
 __mods["js/views/board.js"] = (function () {
 const { html, cx, attrs } = __mods["js/ui/dom.js"];
 const { store } = __mods["js/store.js"];
+const { openSheet } = __mods["js/router.js"];
+const { context, toast } = __mods["js/runtime.js"];
 const { fmt, fmtPct, ratio, toneBand } = __mods["js/model/money.js"];
 const { addDays, diffDays, fmtDate, fmtMonth, fmtTime, isYmd, monthOf, ymd } = __mods["js/model/dates.js"];
 const { firstTransactionDay } = __mods["js/model/cards.js"];
+const { nextOccurrence, runsByHand } = __mods["js/model/book.js"];
+const { editByHand, skipRow, tickByHand } = __mods["js/model/byhand.js"];
+const { refresh } = __mods["js/model/detect.js"];
 const { evalGlyph, timeTroubleGlyph, moveGlyph, resultMark } = __mods["js/ui/glyphs.js"];
 const { money, inlineMoney, keptLine, statusLine, roundTitle, colourOf, crosstable, movesList, notableMoves, worstGlyph, spentUnposted, recentList, toneStyle } = __mods["js/views/parts.js"];
 const TEN_MINUTES_MS = 10 * 60 * 1000;
@@ -14853,7 +16755,17 @@ function model(ctx) {
     lapsed: (Array.isArray(pos.lapsedPay) ? pos.lapsedPay : []).filter((item) => item && typeof item === 'object'),
     streams: Array.isArray(ctx.state.streams) ? ctx.state.streams : [],
     payOnArrival: payOnArrival(ctx),
+    pay: payModel(ctx),
   };
+}
+
+function payModel(ctx) {
+  const bh = ctx.d.byHand;
+  if (!bh || !Array.isArray(bh.rows)) return null;
+  const entries = (Array.isArray(ctx.state.recurring) ? ctx.state.recurring : []).filter((rec) => rec && runsByHand(rec));
+  if (!entries.length) return null;
+  const cents = (n) => (Number.isFinite(n) && n > 0 ? Math.round(n) : 0);
+  return { ym: bh.ym, rows: bh.rows, paid: bh.paid || 0, count: bh.count || 0, unpaid: cents(bh.unpaid), transit: cents(bh.transit), entries };
 }
 
 /* ------------------------------------------------------------ A. net worth */
@@ -14946,14 +16858,14 @@ function heroMeta(ctx, v) {
   const items = [];
   items.push(html`<div class="tally-item">
     <span class="lab">Yesterday</span>
-    ${y ? money(y.result, { est: y.partial || pos.smoothing, signed: true, tint: true }) : html`<span class="fig">—</span>`}
+    ${y ? money(y.result, { est: y.partial || pos.smoothing, signed: true, tint: true, rim: true }) : html`<span class="fig">—</span>`}
     <span class="cap">${y
       ? (ctx.wide ? yesterdayParts(y, pos.smoothing) : html`${fmtDate(y.day, 'dowshort')}${y.partial ? ', in pencil' : ''}`)
       : html`no record of ${fmtDate(addDays(ctx.today, -1), 'short')}`}</span>
   </div>`);
   items.push(html`<div class="tally-item">
     <span class="lab">This month</span>
-    ${money(ret.kept, { est: !!pos.smoothing || pos.provisional > 0, signed: true, tint: true })}
+    ${money(ret.kept, { est: !!pos.smoothing || pos.provisional > 0, signed: true, tint: true, rim: true })}
     <span class="cap">${ret.rate == null
       ? 'nothing counted as earned yet this month'
       : ret.kept >= 0
@@ -14998,7 +16910,16 @@ function heroMore(ctx, v) {
         <button class="btn-link" type="button" data-action="app.sheet" data-sheet="account">Add</button></p>`}
       <p class="board-liquid"><span class="lab"><b>Liquid</b></span>${money(pos.liquid, { est: liquidEst })}<span class="cap">cash minus cards</span></p>
     </div>
+    ${liquidAfter(v)}
     ${y ? html`<p class="cap board-yesterday">Yesterday, ${fmtDate(y.day, 'short')}: ${yesterdayParts(y, pos.smoothing)}.</p>` : ''}`;
+}
+
+function liquidAfter(v) {
+  const pay = v.pay;
+  if (!pay || !(pay.unpaid + pay.transit > 0)) return '';
+  const left = v.pos.liquid - pay.unpaid - pay.transit;
+  const sent = pay.transit > 0 ? html`${pay.unpaid > 0 ? ' and ' : ''}${inlineMoney(pay.transit, { est: true })} sent, not yet at the bank` : '';
+  return html`<p class="cap board-liquid-after">After ${pay.unpaid > 0 ? html`${inlineMoney(pay.unpaid, { est: true })} still to send` : ''}${sent}: <span class="nowrap">${inlineMoney(left, { est: true })}</span></p>`;
 }
 
 /* ----------------------------------------------------- B. cash on hand */
@@ -15081,7 +17002,7 @@ function clockDue(ctx, c) {
     </div>
     ${shown.length ? html`<ul class="board-due" aria-label="What is due">
       ${shown.map((item) => html`<li data-key="${item.id + item.day}">
-        <span class="board-due-name">${item.name}</span>
+        <span class="board-due-name">${item.name}${item.byHand ? html` <span class="board-tag">You send it</span>` : ''}</span>
         <span class="${cx('lab', 'lab-s', item.overdue && 'board-overdue')}">${item.overdue ? 'overdue since ' + fmtDate(item.day, 'short') : fmtDate(item.day, 'dowshort')}</span>
         ${money(item.amount, { est: true })}
       </li>`)}
@@ -15100,6 +17021,78 @@ function reserveBlock(ctx) {
     <ol class="ticks" aria-label="Reserve milestones, in days of typical outflow">
       ${c.milestones.map((m, i) => html`<li${attrs({ class: m.reached ? 'is-done' : i === next ? 'is-next' : null })}>${m.label}${m.reached ? html`<span class="vh">, reached</span>` : i === next ? html`<span class="vh">, next</span>` : ''}</li>`)}
     </ol>`;
+}
+
+/* ------------------------------------------------- payments to make */
+
+const PAID = { bank: true, pending: true, hand: true };
+
+function dueWords(n) {
+  return n <= 0 ? 'due today' : n === 1 ? 'due tomorrow' : 'due in ' + n + ' days';
+}
+
+function payNote(row, earlier) {
+  const short = (day) => (isYmd(day) ? fmtDate(day, 'short') : 'a day not on record');
+  const lead = earlier ? fmtMonth(monthOf(row.day), 'name') + '’s payment' + DOT : '';
+  if (row.status === 'bank') return html`<i class="bank-mark"></i>At the bank ${short(row.paidDay)}${row.merchant ? html`${DOT}${row.merchant}` : ''}`;
+  if (row.status === 'pending') return html`Pending at the bank since ${short(row.paidDay)}${row.merchant ? html`${DOT}${row.merchant}` : ''}`;
+  if (row.status === 'hand') {
+    return row.pendingDay
+      ? html`Ticked ${short(row.paidDay)}; pending at the bank since ${short(row.pendingDay)}.`
+      : html`Ticked ${short(row.paidDay)}; the bank has not shown it.`;
+  }
+  if (row.pendingDay) return html`${lead}pending at the bank since ${short(row.pendingDay)}`;
+  if (row.status === 'overdue') return html`${lead}<span class="board-overdue">overdue since ${short(row.day)}</span>`;
+  return html`${lead}${dueWords(Number.isFinite(row.daysTo) ? row.daysTo : 0)}`;
+}
+
+function payRow(ctx, v, row) {
+  const rec = row.entry || {};
+  const name = rec.name || 'Unnamed payment';
+  const when = fmtDate(row.day, 'dowshort');
+  const atBank = row.status === 'bank' || row.status === 'pending';
+  const ticked = !!PAID[row.status];
+  const earlier = monthOf(row.day) < v.pay.ym;
+  const say = name + ', ' + when;
+  const box = atBank
+    ? html`<span class="pay-box" role="img" aria-label="${say + (row.status === 'bank' ? ': paid at the bank' : ': pending at the bank')}"><span class="check-box is-on is-bank" aria-hidden="true"></span></span>`
+    : html`<button class="pay-box" type="button" data-action="board.pay-tick" data-id="${rec.id}" data-day="${row.day}" aria-pressed="${ticked ? 'true' : 'false'}" aria-label="${say + (ticked ? ': ticked as paid' : ': not paid yet')}"><span class="${cx('check-box', ticked && 'is-on')}" aria-hidden="true"></span></button>`;
+  const text = html`<span class="pay-name">${name}</span> <span class="lab lab-s pay-when">${when}</span>
+      <em class="pay-note">${payNote(row, earlier)}</em>`;
+  const main = atBank && row.txId
+    ? html`<button class="pay-main" type="button" data-action="app.sheet" data-sheet="tx" data-id="${row.txId}">${text}</button>`
+    : html`<button class="pay-main" type="button" data-action="app.sheet" data-sheet="recurring" data-id="${rec.id}">${text}</button>`;
+  const other = !ticked && Number.isFinite(row.otherAmount) && row.otherAmount > 0;
+  return html`<li class="${cx('pay-row', ticked && 'is-paid')}" data-key="${rec.id + ':' + row.day}">
+    ${box}
+    ${main}
+    ${money(row.amount, { est: row.status !== 'bank' })}
+    ${atBank && row.txId ? html`<p class="cap pay-more"><button class="btn-link" type="button" data-action="board.pay-skip" data-id="${rec.id}" data-tx="${row.txId}">Not this payment</button></p>` : ''}
+    ${other ? html`<p class="cap pay-more"><span>${v.cover
+        ? html`The bank shows another amount to this payee on ${fmtDate(row.otherDay, 'short')}.`
+        : html`The bank shows ${inlineMoney(row.otherAmount)} to this payee on ${fmtDate(row.otherDay, 'short')}.`}</span>
+      <button class="btn-link" type="button" data-action="board.pay-amount" data-id="${rec.id}" data-day="${row.day}">${v.cover ? 'Change the amount' : 'Change the amount to ' + fmt(row.otherAmount)}</button></p>` : ''}
+  </li>`;
+}
+
+function payBlock(ctx, v) {
+  const pay = v.pay;
+  if (!pay) return '';
+  const month = fmtMonth(pay.ym, 'name');
+  let none = '';
+  if (!pay.rows.length) {
+    // every payment's schedule starts in a later month: say which comes first, and when
+    const next = pay.entries.map((rec) => ({ rec, day: nextOccurrence(rec, addDays(ctx.today, -1)) })).filter((x) => isYmd(x.day)).sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : 0))[0];
+    none = html`<p class="cap board-quiet">0 payments are left to make in ${month}.${next ? html` The next is ${next.rec.name || 'an unnamed payment'}, ${inlineMoney(next.rec.amount, { est: true })} on ${fmtDate(next.day, 'dowshort')}.` : ''}</p>`;
+  }
+  return html`
+    <div class="sec-head">
+      <h2 class="lab" id="b-pay"><b>Payments to make</b><i class="sep"></i>${month}</h2>
+      <span class="lab">${pay.paid} of ${pay.count} paid</span>
+    </div>
+    ${none}
+    ${pay.rows.length ? html`<ul class="board-pay" aria-label="${'Payments to make, ' + month}">${pay.rows.map((row) => payRow(ctx, v, row))}</ul>` : ''}
+    <p class="cap board-line pay-foot">${pay.unpaid > 0 ? html`<span>${inlineMoney(pay.unpaid, { est: true })} still to send.</span> ` : ''}<button class="btn-link" type="button" data-action="board.pay-add">Add a payment</button></p>`;
 }
 
 /* ---------------------------------------------------------- C. the round */
@@ -15533,7 +17526,7 @@ function wideBoard(ctx, v) {
     <h1 class="vh">The Board, ${fmtDate(ctx.today, 'long')}</h1>
     <div class="cols">
       <section class="col col-8 hero" aria-labelledby="b-nw">${heroMain(ctx, v)}${heroMore(ctx, v)}</section>
-      <section class="col col-4 clock" aria-labelledby="b-clock">${clockMain(ctx, v)}<div class="clock-reserve">${reserveBlock(ctx)}</div></section>
+      <section class="col col-4 clock" aria-labelledby="b-clock">${clockMain(ctx, v)}<div class="clock-reserve">${reserveBlock(ctx)}</div>${v.pay ? html`<section class="board-pay-col" aria-labelledby="b-pay">${payBlock(ctx, v)}</section>` : ''}</section>
     </div>
     <div class="cols">
       <div class="col col-5">
@@ -15566,6 +17559,7 @@ function narrowBoard(ctx, v) {
     <h1 class="vh">The Board, ${fmtDate(ctx.today, 'long')}</h1>
     <section class="band hero board-top" aria-labelledby="b-nw">${heroMain(ctx, v)}</section>
     <section class="band clock board-top" aria-labelledby="b-clock">${clockMain(ctx, v)}</section>
+    ${v.pay ? html`<section class="band board-pay-band" aria-labelledby="b-pay">${payBlock(ctx, v)}</section>` : ''}
     <section class="band" aria-labelledby="b-today">${v.matchOn ? todayBlock(ctx, v) : prematchBlock(ctx, v)}</section>
     <section class="band" aria-labelledby="b-recent">${recentBlock(ctx, v)}</section>
     ${last ? html`<section class="band" aria-labelledby="b-last">${last}</section>` : ''}
@@ -15593,9 +17587,79 @@ function render(ctx) {
   return ctx.wide ? wideBoard(ctx, v) : narrowBoard(ctx, v);
 }
 
+function offerUndo(message, label, undone) {
+  toast(message, {
+    action: 'Undo',
+    onAction: () => {
+      if (store.undoLabel === label && store.undo()) toast(undone);
+    },
+  });
+}
+
+function payRowOf(ctx, id, day) {
+  const bh = ctx.d.byHand;
+  const rows = bh && Array.isArray(bh.rows) ? bh.rows : [];
+  return rows.find((row) => row.entry && row.entry.id === id && (!day || row.day === day)) || null;
+}
+
 const actions = {
   'board.hero': () => {
     store.setUi({ heroMode: store.ui.heroMode === 'bank' ? 'live' : 'bank' });
+  },
+
+  'board.pay-tick': ({ data }) => {
+    const ctx = context();
+    const row = payRowOf(ctx, data.id, data.day);
+    if (!row || row.status === 'bank' || row.status === 'pending') return;
+    const paid = row.status !== 'hand';
+    const name = row.entry.name || 'The payment';
+    const when = fmtDate(row.day, 'dowshort');
+    const undoLabel = paid ? 'Payment ticked' : 'Payment unticked';
+    let done = false;
+    store.update((s) => { done = tickByHand(s, data.id, data.day, paid, ctx.now); }, { undo: undoLabel });
+    if (!done) return;
+    const amount = ctx.state.settings.cover ? '' : ', ' + fmt(row.amount);
+    offerUndo(paid ? 'Ticked: ' + name + amount + ', ' + when + '.' : 'Unticked: ' + name + ', ' + when + '.',
+      undoLabel, paid ? name + ', ' + when + ', is unticked again.' : name + ', ' + when + ', is ticked again.');
+  },
+
+  'board.pay-skip': ({ data }) => {
+    const ctx = context();
+    const row = payRowOf(ctx, data.id, null);
+    const tx = ctx.state.txs.find((one) => one && one.id === data.tx);
+    if (!row || !tx) return;
+    const name = row.entry.name || 'the payment';
+    const undoLabel = 'Row taken off the payment';
+    let done = false;
+    store.update((s) => {
+      done = skipRow(s, data.id, data.tx, ctx.now);
+      if (done) refresh(s, ctx.now);
+    }, { undo: undoLabel });
+    if (!done) return;
+    offerUndo('The bank’s row of ' + fmtDate(tx.day, 'short') + ' no longer pays ' + name + '.', undoLabel, 'The row of ' + fmtDate(tx.day, 'short') + ' pays ' + name + ' again.');
+  },
+
+  'board.pay-amount': ({ data }) => {
+    const ctx = context();
+    const row = payRowOf(ctx, data.id, data.day);
+    if (!row || !(row.otherAmount > 0)) return;
+    const name = row.entry.name || 'The payment';
+    const amount = row.otherAmount;
+    const undoLabel = 'Amount of the payment changed';
+    let done = false;
+    store.update((s) => {
+      done = editByHand(s, data.id, { amount }, ctx.today, ctx.now);
+      if (done) refresh(s, ctx.now);
+    }, { undo: undoLabel });
+    if (!done) return;
+    const after = payRowOf(context(), data.id, null);
+    offerUndo(name + (ctx.state.settings.cover ? ' takes the bank’s amount' : ' is now ' + fmt(amount)) + (after ? ', from ' + fmtMonth(monthOf(after.day), 'name') + '.' : '.'),
+      undoLabel, name + ' is at its earlier amount again.');
+  },
+
+  'board.pay-add': () => {
+    if (store.ui.payForm) store.setUi({ payForm: null });
+    openSheet('recurring', { pay: 'new' });
   },
 };
 return { render, actions };
@@ -16820,7 +18884,7 @@ const { html, cx } = __mods["js/ui/dom.js"];
 const { store } = __mods["js/store.js"];
 const { openSheet } = __mods["js/router.js"];
 const { fmt } = __mods["js/model/money.js"];
-const { addDays, diffDays, fmtDate, isYmd, relDay } = __mods["js/model/dates.js"];
+const { addDays, diffDays, fmtDate, isYmd, monthOf, relDay } = __mods["js/model/dates.js"];
 const { ACCOUNT_TYPES, CADENCES, STREAM_KINDS, accountLabel, categoryLabel } = __mods["js/model/schema.js"];
 const { annualCost, dailyCost, nextOccurrence } = __mods["js/model/book.js"];
 const { moveGlyph, timeTroubleGlyph } = __mods["js/ui/glyphs.js"];
@@ -16915,7 +18979,7 @@ function bookModel(ctx) {
 
   // An occurrence whose charge has already landed is not on its way any more.
   const upcoming = ctx.d.upcoming(UPCOMING_DAYS)
-    .filter((row) => !(charged.get(row.id) >= row.day))
+    .filter((row) => (byId.get(row.id) || {}).byHand || !(charged.get(row.id) >= row.day))
     .map((row) => {
       const rec = byId.get(row.id) || null;
       // every amount still to come has not posted, fixed-price or not: an estimate (R4a)
@@ -16931,11 +18995,48 @@ function bookModel(ctx) {
     totals: ctx.d.bookTotals,
     debtPerMonth: debts.reduce((n, item) => n + item.perMonth, 0),
     debtCount: debts.length,
-    byHand: active.filter(({ rec }) => rec.source === 'manual' && !charged.has(rec.id)).length,
+    // the owner's typed Book lines (tagged 'Entered by you'); the payments they send have their own lines (E9 F3)
+    byHand: active.filter(({ rec }) => rec.source === 'manual' && !rec.byHand && !charged.has(rec.id)).length,
+    pay: payRowsOf(ctx),
+    sent: active.filter(({ rec }) => rec.byHand).length,
   };
 }
 
+function payRowsOf(ctx) {
+  const bh = ctx.d.byHand;
+  const map = new Map();
+  for (const row of bh && Array.isArray(bh.rows) ? bh.rows : []) {
+    if (!row || !row.entry) continue;
+    if (!map.has(row.entry.id)) map.set(row.entry.id, []);
+    map.get(row.entry.id).push(row);
+  }
+  return map;
+}
+
+const PAY_PAID = { bank: true, pending: true, hand: true };
+
+function payWords(m, rec) {
+  const rows = m.pay.get(rec.id) || [];
+  const ym = monthOf(m.today);
+  // an earlier month still unpaid speaks first: it is the oldest thing owed
+  const row = rows.find((one) => one.status === 'overdue') || rows.find((one) => monthOf(one.day) === ym) || null;
+  if (!row) return '';
+  const short = (day) => (isYmd(day) ? fmtDate(day, 'short') : 'a day not on record');
+  if (row.status === 'bank') return 'Paid at the bank ' + short(row.paidDay);
+  if (row.status === 'pending') return 'Pending at the bank since ' + short(row.paidDay);
+  if (row.status === 'hand') return 'Ticked ' + short(row.paidDay);
+  if (row.status === 'overdue') return html`<span class="bk-overdue">Overdue since ${short(row.day)}</span>`;
+  return 'Due ' + short(row.day);
+}
+
 function nextDay(m, rec) {
+  if (rec.byHand) {
+    // a payment the owner sends: the first day from today on that is not settled yet (the engine says which are)
+    const paid = new Set((m.pay.get(rec.id) || []).filter((row) => PAY_PAID[row.status]).map((row) => row.day));
+    let day = nextOccurrence(rec, addDays(m.today, -1));
+    if (day && paid.has(day)) day = nextOccurrence(rec, day);
+    return day;
+  }
   let next = nextOccurrence(rec, addDays(m.today, -1));
   if (next && m.charged.get(rec.id) >= next) next = nextOccurrence(rec, next);
   return next;
@@ -17017,7 +19118,7 @@ function totalsBand(ctx, m) {
 
 function entryTags(rec) {
   if (!rec) return '';
-  return html`${rec.toAccountId != null ? html` <span class="bk-tag">Toward debt</span>` : ''}`;
+  return html`${rec.toAccountId != null ? html` <span class="bk-tag">Toward debt</span>` : ''}${rec.byHand ? html` <span class="bk-tag">You send it</span>` : ''}`;
 }
 
 function upcomingSection(ctx, m) {
@@ -17050,7 +19151,7 @@ function upcomingSection(ctx, m) {
     body.push(html`<tr class="${cx(due && 'is-due')}" data-key="${row.id + ':' + row.day}">
       <td class="bk-when">${due ? html`<span class="vh">Before payday. </span>` : ''}<span class="not-phone">${fmtDate(row.day, 'dow')}, </span>${fmtDate(row.day, 'short')}<em class="bk-rel"><span class="only-phone">${fmtDate(row.day, 'dow')} · </span>${relDay(row.day, m.today)}</em></td>
       <td><button class="bk-line" type="button" data-action="book.open" data-sheet="recurring" data-id="${row.id}">${row.name}</button>
-        <em class="bk-sub-note">${account || 'Account not known'}${entryTags(row.rec)}</em></td>
+        <em class="bk-sub-note">${account || (row.rec && row.rec.byHand ? '' : 'Account not known')}${entryTags(row.rec)}</em></td>
       <td class="${cx('num', row.est && 'est')}">${row.est ? html`<span class="approx">≈</span>` : ''}${fmt(row.amount)}</td>
     </tr>`);
   }
@@ -17200,10 +19301,11 @@ function entryRow(ctx, m, item) {
   const debt = rec.toAccountId != null;
   const lastReported = !assumed(m.charged, rec) && m.charged.has(rec.id);
   const est = !lastReported;
+  const standing = rec.byHand ? payWords(m, rec) : '';
   return html`<li class="bk-entry" data-key="${rec.id}">
     <button class="bk-open" type="button" data-action="book.open" data-sheet="recurring" data-id="${rec.id}">
       <span class="bk-name">${nameWithMark(rec)}</span>
-      <em class="bk-note">${categoryLabel(rec.category)}${account ? ' · ' + account : ''}${debt ? html` · pays down ${accountName(ctx, rec.toAccountId) || 'a debt'} <span class="bk-tag">Toward debt</span>` : ''}${rec.source === 'manual' ? html` <span class="bk-tag">Entered by you</span>` : ''}</em>
+      <em class="bk-note">${rec.byHand ? html`${standing || (next ? 'First due ' + comingDay(next, m.today) : 'No day on its schedule')} <span class="bk-tag">You send it</span>` : html`${categoryLabel(rec.category)}${account ? ' · ' + account : ''}${debt ? html` · pays down ${accountName(ctx, rec.toAccountId) || 'a debt'} <span class="bk-tag">Toward debt</span>` : ''}${rec.source === 'manual' ? html` <span class="bk-tag">Entered by you</span>` : ''}`}</em>
     </button>
     <span class="${cx('bk-amt fig', est && 'est')}">${est ? html`<span class="approx">≈</span>` : ''}${fmt(rec.amount)}</span>
     <span class="bk-meta">
@@ -17227,19 +19329,25 @@ function linesBand(ctx, m) {
       ${m.inactive.map((rec) => {
         const dismissed = Array.isArray(rec.locks) && rec.locks.includes('active');
         return html`<li data-key="${rec.id}"><button class="row" type="button" data-action="book.open" data-sheet="recurring" data-id="${rec.id}">
-          <span class="row-label">${rec.name || 'Unnamed line'} <em class="row-note">${dismissed ? 'Taken out of the Book by you' : 'Ended'} · ${cadenceText(rec.cadence)}${rec.anchor ? ' · last charged ' + fmtDate(rec.anchor, 'medium') : ''}</em></span>
+          <span class="row-label">${rec.name || 'Unnamed line'} <em class="row-note">${rec.byHand ? 'A payment you send, switched off' : dismissed ? 'Taken out of the Book by you' : 'Ended'} · ${cadenceText(rec.cadence)}${rec.anchor && !rec.byHand ? ' · last charged ' + fmtDate(rec.anchor, 'medium') : ''}</em></span>
           <span class="row-value fig">${fmt(rec.amount)}</span>
         </button></li>`;
       })}
     </ul>
   </details>` : '';
+  const send = html`<p class="cap bk-send">${m.sent
+    ? html`${plural(m.sent, 'line')} you send yourself each month; the Board keeps ${m.sent === 1 ? 'its' : 'their'} checklist.`
+    : html`A payment you send yourself each month, by Zelle or bank transfer, gets a checklist on the Board.`}
+    <button class="btn-link" type="button" data-action="book.pay-add">Add a payment you send</button></p>`;
   if (!m.active.length) {
     return html`<section class="band">${head}
+      ${send}
       <p class="cap bk-quiet">No active line. The feed enters a bill after its second or third charge; one that has not been charged yet can be added by hand, with its amount and its next date.</p>
       ${ended}
     </section>`;
   }
   return html`<section class="band">${head}
+    ${send}
     <ol class="bk-list" aria-label="The lines of the Book, by cost a month">
       <li class="bk-entry bk-head" data-key="head" aria-hidden="true">
         <span class="lab">Line</span><span class="lab bk-amt">Amount</span>
@@ -17385,6 +19493,11 @@ const actions = {
     if (!data.id || (data.sheet !== 'recurring' && data.sheet !== 'stream')) return;
     clearFormErrors();
     openSheet(data.sheet, { id: data.id });
+  },
+  'book.pay-add': () => {
+    clearFormErrors();
+    if (store.ui.payForm) store.setUi({ payForm: null });
+    openSheet('recurring', { pay: 'new' });
   },
   'book.add': () => {
     clearFormErrors();
@@ -18307,6 +20420,7 @@ const { store } = __mods["js/store.js"];
 const { context, toast } = __mods["js/runtime.js"];
 const { navigate } = __mods["js/router.js"];
 const { linkBank, unlinkBank } = __mods["js/sync.js"];
+const { startShare, shareNow, forgetShare, shareInfo } = __mods["js/share.js"];
 const { wipeStorage, listSnapshots } = __mods["js/db.js"];
 const { ACCOUNT_TYPES, CADENCES, PURPOSES, SCHEMA_VERSION, accountLabel, checkDoc, migrate, defaultState } = __mods["js/model/schema.js"];
 const { fmt } = __mods["js/model/money.js"];
@@ -18316,6 +20430,7 @@ const { makeDerived } = __mods["js/derive.js"];
 const { coverText } = __mods["js/views/parts.js"];
 const APP_VERSION = '1.0.0';
 const BRIDGE_URL = 'https://bridge.simplefin.org';
+const TOKEN_URL = 'https://github.com/settings/personal-access-tokens/new';
 const THEME_KEY = 'networth.theme';
 const DAY_MS = 24 * 3600 * 1000;
 const READINGS_PER_DAY = 20;
@@ -18533,9 +20648,152 @@ function bankSection(ctx) {
       ${dangerous(ctx, 'unlink', { ask: 'Unlink, keep the record', action: 'settings.unlink', go: 'Unlink — the record stays',
         sentence: 'The key is forgotten on this device and nothing new arrives. Every account, move and round already here stays.' })}
       ${dangerous(ctx, 'unlink-erase', { ask: 'Unlink and erase everything', action: 'settings.erase', go: 'Erase — this cannot be undone',
-        sentence: 'The key, every account, move and round, and the daily snapshots (up to 14) are removed from this device. A saved copy is the only way back.' })}
+        sentence: 'The bank key, the key of the shared list if this device has one, every account, move and round, and the daily snapshots (up to 14) are removed from this device. A saved copy is the only way back.' })}
     </div>
   </section>`;
+}
+
+/* ------------------------------------------------- sharing between devices */
+
+const SHARED_WHAT = 'Nothing the bank reported goes there: no balance, no transaction, no account. Only what you entered, your ticks, and an unreadable fingerprint of who each payment goes to, so every device recognises it the same way.';
+
+function shareForm(ctx) {
+  const busy = ctx.share.busy;
+  const error = ctx.ui.settingsShareError;
+  return html`<form class="set-link set-share-form" data-submit="settings.share-start" autocomplete="off">
+    <label class="field">
+      <span class="field-label lab">The key</span>
+      <input class="input set-share-key" type="password" name="key" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
+        placeholder="Paste the key here" ${busy ? html`disabled` : ''}>
+      <span class="field-help cap">Kept on this device only, outside the record: it is in no saved copy, and this box is cleared the moment it is used. Each device needs 1 paste.</span>
+    </label>
+    <div class="set-link-status" role="status" aria-live="polite">${
+      error ? html`<p class="notice is-error"><i class="notice-mark"></i><span><b>Not started</b>${error}</span></p>` : ''}</div>
+    <p class="cluster cluster-center set-link-go">
+      <button class="btn btn-solid" type="submit" ${busy ? html`disabled` : ''}>Start sharing</button>
+    </p>
+  </form>`;
+}
+
+function shareSteps() {
+  return html`<ol class="set-share-steps">
+    <li>Open <a class="btn-link" href="${TOKEN_URL}" target="_blank" rel="noopener noreferrer">GitHub’s page for a fine-grained token</a>; it opens in a new tab.</li>
+    <li>Name it, choose the longest expiry, and under “Only select repositories” pick <b>networth-data</b>. Under Repository permissions set <b>Contents</b> to <b>Read and write</b>; nothing else.</li>
+    <li>Create it, copy it, and paste it here.</li>
+  </ol>`;
+}
+
+function shareFacts(ctx) {
+  const sh = ctx.share;
+  return html`<ul class="rows set-facts">
+    <li class="row">
+      <span class="row-label">Last agreed <em class="row-note">this device and the shared file held the same list</em></span>
+      <span class="row-value" data-cover-keep>${sh.agreedAt ? whenText(sh.agreedAt, ctx) : 'not yet'}</span>
+    </li>
+    <li class="row">
+      <span class="row-label">Payments you send <em class="row-note">${sh.file ? 'on the shared list' : 'GitHub shows this key no shared file yet; it is written with the first payment'}</em></span>
+      <span class="row-value" data-cover-keep>${sh.agreedAt ? sh.count : '—'}</span>
+    </li>
+    <li class="row">
+      <span class="row-label">Kept in <em class="row-note">a private repository of your own</em></span>
+      <span class="row-value set-share-where" data-cover-keep>${sh.owner}/networth-data</span>
+    </li>
+  </ul>`;
+}
+
+function shareNowRow(ctx) {
+  const sh = ctx.share;
+  if (sh.busy) {
+    return html`<p class="sync set-busy" data-state="syncing" role="status"><i class="sync-mark"></i><span class="sync-text"><b>Comparing with the shared list</b>…</span></p>`;
+  }
+  const note = sh.retryAt ? 'GitHub asked for a pause. Ready again at ' + fmtTime(sh.retryAt) + '.'
+    : sh.code === 'key' ? 'Nothing is shared by itself until a new key is pasted or Share now is tapped.'
+    : 'Networth also shares by itself: 2 seconds after a change here, and each time it is opened.';
+  return html`<p class="cluster cluster-center set-refresh">
+    <button class="btn btn-s" type="button" data-action="settings.share-now" ${sh.canShare ? '' : html`disabled`}>Share now</button>
+    <span class="cap grow">${note}</span>
+  </p>`;
+}
+
+function shareForget(ctx) {
+  return html`<div class="set-dangers">
+    ${dangerous(ctx, 'share-forget', { ask: 'Forget the key on this device', action: 'settings.share-forget', go: 'Forget — the list stays',
+      sentence: 'The key is removed from this 1 device and nothing more is shared from it. The payments already here stay, the file on GitHub stays as it is, and the other devices carry on.' })}
+  </div>`;
+}
+
+function shareSection(ctx) {
+  const sh = ctx.share;
+  if (!sh || !sh.available) return '';
+  const head = (state) => html`<div class="sec-head">
+    <h2 class="lab"><b>Share between devices</b><i class="sep"></i>the payments you send</h2>
+    <span class="lab">${state}</span>
+  </div>`;
+  const what = html`<section class="col col-5 set-sec" aria-label="What is shared">
+    <div class="sec-head"><h3 class="lab"><b>What is shared</b><i class="sep"></i>1 private file</h3></div>
+    <p class="set-lede">The payments you send yourself and their ticks, in the file networth-shared.json of ${sh.owner}/networth-data on your own GitHub.</p>
+    <p class="cap set-help">${SHARED_WHAT}</p>
+  </section>`;
+
+  if (ctx.demo) {
+    return html`<div class="cols">
+      <section class="col col-7 set-sec" aria-label="Share between devices">
+        ${head('Sample game')}
+        <p class="title set-state">Sample game — nothing is shared.</p>
+        <p class="set-lede">With your own record, 1 paste on each device keeps the payments you send, and their ticks, the same on all of them.</p>
+      </section>
+      ${what}
+    </div>`;
+  }
+
+  if (!sh.on) {
+    return html`<div class="cols">
+      <section class="col col-7 set-sec" aria-label="Share between devices">
+        ${head('Off')}
+        <p class="title set-state">Not sharing. 1 paste on each device starts it.</p>
+        <p class="set-lede">The payments you send yourself, and their ticks, are then kept in a private file on your own GitHub (${sh.owner}/networth-data):
+          what is added or ticked on 1 device shows on the others within seconds of opening them, and nothing is typed twice.</p>
+        <p class="cap set-help">${SHARED_WHAT}</p>
+      </section>
+      <section class="col col-5 set-sec" aria-label="The key">
+        <div class="sec-head"><h3 class="lab"><b>The key</b><i class="sep"></i>3 steps, once per device</h3></div>
+        ${shareSteps()}
+        ${shareForm(ctx)}
+      </section>
+    </div>`;
+  }
+
+  if (sh.code === 'key' && !sh.busy) {
+    return html`<div class="cols">
+      <section class="col col-7 set-sec" aria-label="Share between devices">
+        ${head('Refused')}
+        <p class="title set-state">GitHub refused the key.</p>
+        <p class="notice is-error"><i class="notice-mark"></i><span><b>Not shared</b>${sh.message}${sh.failedAt ? ' Tried ' + whenText(sh.failedAt, ctx) + '.' : ''}</span></p>
+        <p class="set-lede">The list on this device is intact and nothing was changed on GitHub. A new key takes the same 3 steps.</p>
+        ${shareForm(ctx)}
+        ${shareNowRow(ctx)}
+        ${shareForget(ctx)}
+      </section>
+      <section class="col col-5 set-sec" aria-label="The key">
+        <div class="sec-head"><h3 class="lab"><b>A new key</b><i class="sep"></i>3 steps</h3></div>
+        ${shareSteps()}
+        <p class="cap set-help">${SHARED_WHAT}</p>
+      </section>
+    </div>`;
+  }
+
+  return html`<div class="cols">
+    <section class="col col-7 set-sec" aria-label="Share between devices">
+      ${head(sh.busy ? 'Working' : sh.code ? 'Not shared' : 'On')}
+      <p class="title set-state">${sh.code ? 'The last round did not go through.' : sh.agreedAt ? 'Sharing through your own GitHub.' : 'Sharing: the first round has not run yet.'}</p>
+      ${sh.code && !sh.busy ? html`<div class="set-problems"><p class="notice is-error"><i class="notice-mark"></i><span><b>Not shared</b>${sh.message}${
+        sh.failedAt ? ' Tried ' + whenText(sh.failedAt, ctx) + '; nothing on this device was changed.' : ''}</span></p></div>` : ''}
+      ${shareFacts(ctx)}
+      ${shareNowRow(ctx)}
+      ${shareForget(ctx)}
+    </section>
+    ${what}
+  </div>`;
 }
 
 /* ----------------------------------------------------------------- the day */
@@ -18734,7 +20992,7 @@ function recordSection(ctx) {
       <p class="cap">These are conveniences. Nothing here is ever required: the record keeps itself.</p>
       <div class="set-dangers">
         ${dangerous(ctx, 'erase', { ask: 'Erase everything on this device', action: 'settings.erase', go: 'Erase — this cannot be undone',
-          sentence: 'The bank key, every account, move and round, and the daily snapshots (up to 14) are removed from this device. A saved copy is the only way back.' })}
+          sentence: 'The bank key, the key of the shared list if this device has one, every account, move and round, and the daily snapshots (up to 14) are removed from this device. A saved copy is the only way back.' })}
       </div>`}
   </section>`;
 }
@@ -18772,6 +21030,7 @@ function aboutSection() {
 /* ------------------------------------------------------------------ render */
 
 function render(ctx) {
+  const shared = !!(ctx.share && ctx.share.available);
   return html`<div class="set">
     <section class="band set-top">
       <div class="sec-head">
@@ -18780,15 +21039,16 @@ function render(ctx) {
       </div>
       <div class="set-top-row">
         <h1 class="title title-l set-title">Settings</h1>
-        <p class="cap set-top-note">The bank link, how a day is counted, appearance, your own rules and the record. ${ctx.demo
+        <p class="cap set-top-note">The bank link, ${shared ? 'sharing between devices, ' : ''}how a day is counted, appearance, your own rules and the record. ${ctx.demo
           ? 'In the sample game a change lasts until this page is closed or reloaded, and none is kept'
-          : 'Every control saves the moment it changes'}, and none of the 6 sections needs a visit: the board is complete as it stands.</p>
+          : 'Every control saves the moment it changes'}, and none of the ${shared ? 7 : 6} sections needs a visit: the board is complete as it stands.</p>
       </div>
     </section>
     <div class="cols">
       ${bankSection(ctx)}
       ${daySection(ctx)}
     </div>
+    ${shareSection(ctx)}
     <div class="cols">
       ${appearanceSection(ctx)}
       ${rulesSection(ctx)}
@@ -18901,7 +21161,7 @@ async function link({ el, values }) {
 
 function ask({ data }) {
   const what = data.what;
-  if (what !== 'unlink' && what !== 'unlink-erase' && what !== 'erase') return;
+  if (what !== 'unlink' && what !== 'unlink-erase' && what !== 'erase' && what !== 'share-forget') return;
   store.setUi({ settingsConfirm: store.ui.settingsConfirm === what ? null : what });
 }
 
@@ -18931,8 +21191,9 @@ async function erase() {
   const asked = store.ui.settingsConfirm;
   if (store.status.readonly || (asked !== 'erase' && asked !== 'unlink-erase')) return;
   pendingRestore = null;
-  store.setUi({ settingsConfirm: null, settingsRestore: null, settingsRestoreError: null, settingsLinkError: null });
+  store.setUi({ settingsConfirm: null, settingsRestore: null, settingsRestoreError: null, settingsLinkError: null, settingsShareError: null });
   try {
+    await forgetShare(); // the key of the shared list goes first: nothing of the erasing is sent to the other devices
     await unlinkBank({ erase: true }); // forgets the key and installs an empty record
     await store.flush(); // a save still on its way finishes first, so it cannot land after the wipe
     await wipeStorage({ all: true }); // the daily snapshots too: "everything" means everything
@@ -18944,6 +21205,50 @@ async function erase() {
   applyTheme('auto', true);
   navigate('#/connect', { replace: true });
   toast('Erased ' + whenSaid() + '. Nothing of yours is left on this device.');
+}
+
+/* ------------------------------------------------- sharing between devices */
+
+async function shareStart({ el, values }) {
+  const ctx = context();
+  if (store.status.readonly || (ctx && ctx.share && ctx.share.busy)) return;
+  const key = values && typeof values.key === 'string' ? values.key : '';
+  const field = el && el.querySelector ? el.querySelector('input[name="key"]') : null;
+  if (field) field.value = ''; // the key leaves the page at once, whatever happens next
+  store.setUi({ settingsShareError: null, settingsConfirm: null });
+  let res;
+  try {
+    res = await startShare(key);
+  } catch {
+    res = { ok: false, message: 'Sharing could not be started. Try again in a moment.' };
+  }
+  const info = shareInfo();
+  if (res && res.ok) {
+    toast('Sharing since ' + fmtTime(info.agreedAt || Date.now()) + ': ' + plural(info.count, 'payment', 'payments') + ' on the shared list.');
+    return;
+  }
+  // once the key is kept, the section itself says what the round met
+  if (!info.on) store.setUi({ settingsShareError: (res && res.message) || 'Sharing was not started. Try again in a moment.' });
+}
+
+async function shareRound() {
+  if (store.status.readonly) return;
+  let info;
+  try { info = await shareNow(); } catch { info = shareInfo(); }
+  if (info.busy) return;
+  if (info.code) toast(info.message);
+  else if (info.agreedAt) toast('Agreed with the shared list at ' + fmtTime(info.agreedAt) + ': ' + plural(info.count, 'payment', 'payments') + '.');
+}
+
+async function shareForgetKey() {
+  if (store.status.readonly || store.ui.settingsConfirm !== 'share-forget') return;
+  store.setUi({ settingsConfirm: null, settingsShareError: null });
+  try {
+    await forgetShare();
+    toast('Key forgotten ' + whenSaid() + '. The list stays on this device and the file stays on GitHub.');
+  } catch {
+    toast('The key could not be removed. Try again.');
+  }
 }
 
 function exportCopy() {
@@ -19049,6 +21354,9 @@ const actions = {
   'settings.cancel': cancel,
   'settings.unlink': unlink,
   'settings.erase': erase,
+  'settings.share-start': shareStart,
+  'settings.share-now': shareRound,
+  'settings.share-forget': shareForgetKey,
   'settings.export': exportCopy,
   'settings.restore-pick': restorePick,
   'settings.restore': restore,
@@ -20173,6 +22481,7 @@ const { CATEGORIES, KLASSES, PURPOSES, GLYPHS, ACCOUNT_TYPES, accountLabel, cate
 const { learnRule, confirmMove } = __mods["js/model/classify.js"];
 const { refresh } = __mods["js/model/detect.js"];
 const { removeManual } = __mods["js/model/merge.js"];
+const { skipRow } = __mods["js/model/byhand.js"];
 const { moveGlyph } = __mods["js/ui/glyphs.js"];
 const { store } = __mods["js/store.js"];
 const { closeSheet } = __mods["js/router.js"];
@@ -20300,8 +22609,14 @@ function statusNote(tx) {
   return tx.postedDay ? 'posted ' + fmtDate(tx.postedDay, 'dowshort') : 'posted';
 }
 
+function paysOf(state, tx) {
+  if (!tx || !tx.recurringId || !Array.isArray(state.recurring)) return null;
+  return state.recurring.find((rec) => rec && rec.id === tx.recurringId && rec.byHand === true) || null;
+}
+
 function facts(ctx, tx) {
   const account = tx.accountId ? ctx.d.account(tx.accountId) : null;
+  const pays = paysOf(ctx.state, tx);
   const pencil = tx.pending || tx.source === 'manual';
   const sign = tx.kind === 'income' || tx.kind === 'refund' ? '+' : '';
   const amount = tx.kind === 'decline'
@@ -20319,6 +22634,10 @@ function facts(ctx, tx) {
     ${account ? html`<li class="row" data-key="account">
       <span class="row-label">Account</span>
       <span class="tx-v">${accountLabel(account)}${account.institution ? html` <em class="row-note">${account.institution}</em>` : ''}</span>
+    </li>` : ''}
+    ${pays ? html`<li class="row tx-pays" data-key="pays">
+      <span class="row-label">Pays ${pays.name || 'an unnamed payment'}, a payment you send</span>
+      <button class="btn-link" type="button" data-action="tx.pay-skip" data-id="${tx.id}">Not this payment</button>
     </li>` : ''}
     ${tx.raw ? html`<li class="tx-raw" data-key="raw">
       <span class="lab">As the bank wrote it</span>
@@ -20640,6 +22959,23 @@ const actions = {
     const def = CATEGORIES[el.value];
     const radio = def && el.form ? el.form.querySelector('input[name="klass"][value="' + def.klass + '"]') : null;
     if (radio) radio.checked = true;
+  },
+  'tx.pay-skip': ({ data }) => {
+    const ctx = context();
+    const tx = ctx ? findTx(ctx.state, data.id) : null;
+    const pays = tx ? paysOf(ctx.state, tx) : null;
+    if (!pays) return;
+    const words = 'Row taken off the payment';
+    let done = false;
+    store.update((s) => {
+      done = skipRow(s, pays.id, tx.id, ctx.now);
+      if (done) refresh(s, ctx.now);
+    }, { undo: words });
+    if (!done) { if (store.undoLabel === words) store.undo(); return; }
+    toast('The bank’s row of ' + fmtDate(tx.day, 'short') + ' no longer pays ' + (pays.name || 'the payment') + '.', {
+      action: 'Undo',
+      onAction: () => { if (store.undoLabel === words && store.undo()) toast('The row of ' + fmtDate(tx.day, 'short') + ' pays ' + (pays.name || 'the payment') + ' again.'); },
+    });
   },
   'tx.remove': ({ data }) => {
     const ctx = context();
@@ -21637,15 +23973,20 @@ const { store } = __mods["js/store.js"];
 const { closeSheet } = __mods["js/router.js"];
 const { context, toast } = __mods["js/runtime.js"];
 const { fmt, toCents } = __mods["js/model/money.js"];
-const { addDays, fmtDate, isYmd, relDay } = __mods["js/model/dates.js"];
+const { addDays, addMonthsYm, fmtDate, fmtMonth, isYmd, monthOf, relDay } = __mods["js/model/dates.js"];
 const { ACCOUNT_TYPES, CADENCES, CATEGORIES, KLASSES, PURPOSES, accountLabel, makeRecurring } = __mods["js/model/schema.js"];
 const { annualCost, dailyCost, nextOccurrence } = __mods["js/model/book.js"];
 const { merchantOf } = __mods["js/model/classify.js"];
 const { refresh } = __mods["js/model/detect.js"];
+const { addByHand, byHandMonth, editByHand, removeByHand } = __mods["js/model/byhand.js"];
 const VERDICTS = [['', 'None'], ['keep', 'Keep'], ['review', 'Review'], ['cut', 'Cut']];
 const KLASS_ORDER = ['book', 'need', 'want', 'oneoff', 'game'];
 const NAME_MAX = 80;
 const NOTE_MAX = 500;
+const PAY_NAME_MAX = 60;
+const PAY_AMOUNT_MAX = 1e10;
+const PAY_AMOUNT_TEXT = /^\$?(?:\d{1,3}(?:,\d{3})+|\d+|(?=\.\d))(?:\.\d{0,2})?$/;
+const PAY_LAST_DAY = 31;
 const FED_FIELDS = { name: 'name', amount: 'amount', variable: 'whether it varies', cadence: 'cadence', anchor: 'last charge day', category: 'category', purpose: 'purpose', toAccountId: 'what it pays down' };
 
 /* ------------------------------------------------------------------ helpers */
@@ -21707,6 +24048,7 @@ function offerUndo(message, label, undone) {
 
 const label = (ctx, params) => {
   const rec = findEntry(ctx.state, params && params.id);
+  if (rec ? rec.byHand : params && params.pay) return rec ? 'Payment you send: ' + (rec.name || 'unnamed payment') : 'New payment you send';
   return rec ? 'Book entry: ' + (rec.name || 'unnamed line') : 'New Book entry';
 };
 
@@ -21733,9 +24075,127 @@ function categoryOptions(selected) {
   </optgroup>`);
 }
 
+/* ------------------------------------------------- a payment the owner sends */
+
+function ordinal(n) {
+  const tens = n % 100;
+  const unit = n % 10;
+  return n + (tens >= 11 && tens <= 13 ? 'th' : unit === 1 ? 'st' : unit === 2 ? 'nd' : unit === 3 ? 'rd' : 'th');
+}
+
+function payRows(ctx, id) {
+  const bh = ctx.d.byHand;
+  return bh && Array.isArray(bh.rows) ? bh.rows.filter((row) => row.entry && row.entry.id === id) : [];
+}
+
+function appliesFrom(ctx, rec) {
+  const ym = monthOf(ctx.today);
+  const row = payRows(ctx, rec.id).find((one) => monthOf(one.day) === ym);
+  const open = !rec.active || (row && (row.status === 'due' || row.status === 'overdue'));
+  return open ? ym : addMonthsYm(ym, 1);
+}
+
+function payStanding(ctx, rec) {
+  const rows = payRows(ctx, rec.id);
+  const ym = monthOf(ctx.today);
+  const row = rows.find((one) => monthOf(one.day) === ym) || rows[rows.length - 1] || null;
+  const short = (day) => (isYmd(day) ? fmtDate(day, 'short') : 'a day not on record');
+  let standing = 'switched off: not on the list, not counted as due';
+  if (rec.active) {
+    const next = nextOccurrence(rec, addDays(ctx.today, -1));
+    standing = !row ? (next ? 'first due ' + fmtDate(next, 'dowshort') : 'no day on its schedule yet')
+      : row.status === 'bank' ? 'paid at the bank ' + short(row.paidDay)
+        : row.status === 'pending' ? 'pending at the bank since ' + short(row.paidDay)
+          : row.status === 'hand' ? 'ticked ' + short(row.paidDay)
+            : row.status === 'overdue' ? 'overdue since ' + short(row.day)
+              : 'due ' + fmtDate(row.day, 'dowshort') + ' · ' + relDay(row.day, ctx.today);
+  }
+  const { count, last } = chargesOf(ctx.state, rec.id);
+  return html`<ul class="rows bks-facts">
+    <li class="row"><span class="row-label">${fmtMonth(ym, 'name')}</span><span class="row-value" data-cover-keep>${standing}</span></li>
+    <li class="row"><span class="row-label">Seen at the bank</span><span class="row-value" data-cover-keep>${count ? plural(count, 'payment') + ', the last on ' + fmtDate(last, 'medium') : 'none yet'}</span></li>
+  </ul>`;
+}
+
+function renderPay(ctx, rec) {
+  const isNew = !rec;
+  const id = rec ? rec.id : '';
+  const form = ctx.ui.payForm && ctx.ui.payForm.key === (id || 'new') ? ctx.ui.payForm : null;
+  const errors = form ? form.errors : {};
+  const day = rec && Number.isInteger(rec.dueDay) ? rec.dueDay : 1;
+  const days = [];
+  for (let n = 1; n < PAY_LAST_DAY; n++) days.push(n);
+  return html`<form class="sheet-body bks-pay" data-submit="recurring.pay-save" data-input="recurring.pay-touch" data-id="${id}" novalidate ${attrs({ 'data-cover': !!ctx.state.settings.cover })}>
+    <p class="sheet-head lab"><b>Payment you send</b><i class="sep"></i>${isNew ? 'each month' : 'the ' + (day >= PAY_LAST_DAY ? 'last day' : ordinal(day)) + ' of each month'}</p>
+    <h2 class="sheet-title">${isNew ? 'A payment to make each month.' : rec.name || 'Unnamed payment'}</h2>
+    ${isNew
+      ? html`<p class="cap">For a payment you send yourself by Zelle or bank transfer. It is on the Board’s list each month and is ticked when the bank shows it or you tick it; until then it is taken off what is liquid. 3 fields; the bank’s own row ticks it from then on.</p>`
+      : payStanding(ctx, rec)}
+
+    <label class="${cx('field', errors.name && 'is-invalid')}">
+      <span class="field-label lab">Name</span>
+      <input class="input" type="text" name="name" value="${rec ? rec.name : ''}" maxlength="${PAY_NAME_MAX}" autocomplete="off" ${attrs({ 'aria-invalid': errors.name ? 'true' : null, placeholder: isNew ? 'e.g. Flat share' : null })}>
+      ${errors.name ? html`<span class="field-error">${errors.name}</span>` : ''}
+    </label>
+
+    <div class="field-row field-row-even">
+      <label class="${cx('field', errors.amount && 'is-invalid')}">
+        <span class="field-label lab">Amount, in dollars</span>
+        <input class="input input-fig" type="text" inputmode="decimal" name="amount" data-fig value="${isNew ? '' : dollars(rec.amount)}" autocomplete="off" ${attrs({ 'aria-invalid': errors.amount ? 'true' : null, placeholder: isNew ? '0.00' : null })}>
+        ${errors.amount ? html`<span class="field-error">${errors.amount}</span>` : ''}
+      </label>
+      <label class="${cx('field', errors.dueDay && 'is-invalid')}">
+        <span class="field-label lab">Day of the month</span>
+        <span class="select"><select name="dueDay" ${attrs({ 'aria-invalid': errors.dueDay ? 'true' : null })}>
+          ${days.map((n) => html`<option value="${n}" ${attrs({ selected: n === day })}>${ordinal(n)}</option>`)}
+          <option value="${PAY_LAST_DAY}" ${attrs({ selected: day >= PAY_LAST_DAY })}>Last day</option>
+        </select></span>
+        ${errors.dueDay ? html`<span class="field-error">${errors.dueDay}</span>` : ''}
+      </label>
+    </div>
+    <p class="cap">${isNew
+      ? html`The bank ticks it by the exact amount, so enter what you send to the cent. The 30th falls on the last day of a month that has no 30th.`
+      : html`A change of the amount or the day applies from ${fmtMonth(appliesFrom(ctx, rec))}. The bank ticks it by the exact amount.`}</p>
+
+    ${isNew ? '' : html`<label class="switch switch-block bks-switch">
+      <span class="switch-text">Switched on <em>Off: it leaves the Board’s list and is not counted as due; its ${plural(Object.keys(rec.marks || {}).length, 'tick')} and its name are kept.</em></span>
+      <input type="checkbox" role="switch" name="active" ${attrs({ checked: !!rec.active })}>
+      <span class="switch-track" aria-hidden="true"></span>
+    </label>`}
+
+    <div class="sheet-actions">
+      ${isNew ? '' : html`<button class="btn" type="button" data-action="recurring.pay-remove" data-id="${id}">Remove</button>`}
+      <button class="btn btn-solid" type="submit">${isNew ? 'Add the payment' : 'Save'}</button>
+    </div>
+  </form>`;
+}
+
+function readPay(values, rec) {
+  const errors = {};
+  const text = (key) => (typeof values[key] === 'string' ? values[key].trim() : '');
+  const fields = {};
+
+  const name = text('name');
+  if (name && name.length <= PAY_NAME_MAX) fields.name = name;
+  else errors.name = name ? 'A name is at most ' + PAY_NAME_MAX + ' characters.' : 'A payment needs a name of your own, 1 to ' + PAY_NAME_MAX + ' characters.';
+
+  // dollars with at most two decimals, as typed: what the bank ticks is the exact amount, so nothing is rounded (E9 F2)
+  const amount = PAY_AMOUNT_TEXT.test(text('amount')) ? toCents(text('amount')) : null;
+  if (amount != null && Number.isInteger(amount) && amount >= 1 && amount <= PAY_AMOUNT_MAX) fields.amount = amount;
+  else errors.amount = amount != null && amount > PAY_AMOUNT_MAX ? 'An amount is at most 100,000,000.00.' : 'An amount looks like 250.00.';
+
+  const dueDay = Number(values.dueDay);
+  if (Number.isInteger(dueDay) && dueDay >= 1 && dueDay <= PAY_LAST_DAY) fields.dueDay = dueDay;
+  else errors.dueDay = 'A day from the 1st to the 30th, or the last day.';
+
+  if (rec) fields.active = values.active === 'on';
+  return Object.keys(errors).length ? { errors } : { fields };
+}
+
 function render(ctx, params) {
   const id = params && params.id ? params.id : '';
   const rec = findEntry(ctx.state, id);
+  if (rec ? rec.byHand : params && params.pay) return renderPay(ctx, rec);
   if (id && !rec) {
     return html`<div class="sheet-body">
       <p class="sheet-head lab"><b>Book entry</b></p>
@@ -21903,6 +24363,82 @@ function readForm(values, rec, state) {
 }
 
 const actions = {
+  'recurring.pay-save': ({ el, values, data }) => {
+    const ctx = context();
+    const id = data.id || '';
+    const rec = findEntry(ctx.state, id);
+    if (id && (!rec || !rec.byHand)) { closeSheet(); return; }
+    const read = readPay(values || {}, rec);
+    if (read.errors) {
+      store.setUi({ payForm: { key: id || 'new', errors: read.errors } });
+      const first = ['name', 'amount', 'dueDay'].find((key) => read.errors[key]);
+      const field = el && typeof el.querySelector === 'function' ? el.querySelector('[name="' + first + '"]') : null;
+      if (field) field.focus();
+      return;
+    }
+    const fields = read.fields;
+    if (store.ui.payForm) store.setUi({ payForm: null });
+
+    if (!rec) {
+      const undoLabel = 'Payment added';
+      let added = null;
+      store.update((s) => {
+        added = addByHand(s, fields, ctx.today, ctx.now);
+        if (added) refresh(s, ctx.now);
+      }, { undo: undoLabel });
+      if (!added) { if (store.undoLabel === undoLabel) store.undo(); return; }
+      const addedId = added.id;
+      closeSheet();
+      // the checklist as the engine has it now (the page's own context is drawn a moment later)
+      const row = byHandMonth(store.state, ctx.today, ctx.now).rows.filter((one) => one.entry && one.entry.id === addedId).pop() || null;
+      const words = !row ? '.'
+        : row.status === 'bank' ? ': the bank shows it paid on ' + fmtDate(row.paidDay, 'short') + '.'
+          : row.status === 'pending' ? ': pending at the bank since ' + fmtDate(row.paidDay, 'short') + '.'
+            : row.status === 'overdue' ? ', due since ' + fmtDate(row.day, 'dowshort') + '.'
+              : ', due ' + fmtDate(row.day, 'dowshort') + '.';
+      offerUndo(fields.name + ' is on the list of payments to make' + words, undoLabel, fields.name + ' is taken off the list again.');
+      return;
+    }
+
+    const changed = Object.keys(fields).filter((key) => (key === 'active' ? !!rec.active : rec[key]) !== fields[key]);
+    if (!changed.length) { closeSheet(); return; }
+    const terms = changed.includes('amount') || changed.includes('dueDay');
+    const from = terms ? fmtMonth(appliesFrom(ctx, rec)) : '';
+    const undoLabel = 'Payment changed';
+    let done = false;
+    store.update((s) => {
+      done = editByHand(s, id, fields, ctx.today, ctx.now);
+      if (done) refresh(s, ctx.now);
+    }, { undo: undoLabel });
+    closeSheet();
+    if (!done) { if (store.undoLabel === undoLabel) store.undo(); return; }
+    const off = changed.includes('active') && !fields.active;
+    offerUndo(plural(changed.length, 'field') + ' saved on ' + fields.name + '.'
+      + (off ? ' It is off the list of payments to make.' : terms ? ' The change applies from ' + from + '.' : ''),
+    undoLabel, fields.name === rec.name ? rec.name + ' is as it was.' : 'The payment is as it was.');
+  },
+
+  'recurring.pay-touch': () => {
+    if (store.ui.payForm) store.setUi({ payForm: null });
+  },
+
+  'recurring.pay-remove': ({ data }) => {
+    const ctx = context();
+    const rec = findEntry(ctx.state, data.id);
+    if (!rec || !rec.byHand) { closeSheet(); return; }
+    const undoLabel = 'Payment removed';
+    const name = rec.name || 'The payment';
+    const { count } = chargesOf(ctx.state, rec.id);
+    let done = false;
+    store.update((s) => {
+      done = removeByHand(s, data.id, ctx.now);
+      if (done) refresh(s, ctx.now);
+    }, { undo: undoLabel });
+    closeSheet();
+    if (!done) { if (store.undoLabel === undoLabel) store.undo(); return; }
+    offerUndo(name + ' is removed from the payments to make' + (count ? '; its ' + plural(count, 'bank row') + ' ' + (count === 1 ? 'is' : 'are') + ' ordinary again.' : '.'), undoLabel, name + ' is back on the list.');
+  },
+
   'recurring.save': ({ el, values, data }) => {
     const ctx = context();
     const id = data.id || '';
@@ -22413,6 +24949,8 @@ const { startRouter, onRoute, currentRoute, navigate, openSheet, closeSheet } = 
 const { setContext, setServices } = __mods["js/runtime.js"];
 const { makeDerived } = __mods["js/derive.js"];
 const { initSync, syncInfo, autoSync, syncNow } = __mods["js/sync.js"];
+const { initShare, shareInfo, autoShare } = __mods["js/share.js"];
+const { restampByHand } = __mods["js/model/byhand.js"];
 const { buildDemoState, demoFeed } = __mods["js/model/demo.js"];
 const { mergeFeed } = __mods["js/model/merge.js"];
 const { refresh } = __mods["js/model/detect.js"];
@@ -22495,6 +25033,9 @@ async function boot() {
   store.load(doc ? migrate(doc) : defaultState(nowMs()));
   if (!search.get('theme')) applyTheme(store.state.settings.theme);
   await initSync();
+  // an Undo makes what it put back the newest, so that the other devices take the Undo and do not bring the change back
+  store.onRestore((before, after) => { restampByHand(before, after, nowMs()); });
+  await initShare(location);
 
   registerActions({ ...appActions, ...boardActions, ...scoresheetActions, ...materialActions, ...bookActions, ...analysisActions,
     ...settingsActions, ...connectActions, ...moveActions, ...planActions, ...sweepActions, ...txActions, ...dayActions,
@@ -22516,6 +25057,7 @@ async function boot() {
 
   render();
   autoSync();
+  autoShare();
   registerWorker();
 }
 
@@ -22542,6 +25084,7 @@ function onVisibility() {
     const seen = store.state.meta.lastSeen;
     if (seen && nowMs() - seen.at > 10 * 60 * 1000) store.setUi({ seen });
     autoSync();
+    autoShare();
     schedule();
   }
 }
@@ -22628,6 +25171,7 @@ function buildContext() {
     d: makeDerived(state, now),
     demo: store.status.readonly,
     sync: syncInfo(),
+    share: shareInfo(),
     wide: typeof matchMedia === 'function' ? matchMedia(WIDE).matches : true,
   };
 }

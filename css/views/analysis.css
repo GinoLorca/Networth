@@ -170,6 +170,14 @@ label.an-set { cursor: text; }
   .an-table .an-td-target .an-in input { min-height: 40px; }
   .an-table th.num, .an-table td.num { width: auto; }
 }
+/* a narrow column with a large root (320px, root 20px): figures no smaller than a default-root reader sees,
+   hyphenated names and closer cells instead of a page wider than the screen */
+@container (max-width: 15.5rem) {
+  .an-table tbody th { hyphens: auto; -webkit-hyphens: auto; }
+  .an-table th, .an-table td { padding-right: 4px; }
+  .an-table td.num, .an-table .an-group td.num, .an-table tfoot td.num { font-size: .85rem; }
+  .an-table thead th { white-space: normal; }
+}
 
 /* ------------------------------------------------- before a larger purchase */
 

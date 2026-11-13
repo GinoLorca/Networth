@@ -11,6 +11,8 @@ import { defaultState, makeAccount, makeRecurring, makeStream, makeTx } from '..
 import { addDays, addMonths } from '../js/model/dates.js';
 import { edge, round } from '../js/model/ledger.js';
 import { computeHabit, detectRecurring, detectStreams, detectSweeps, refresh, startMatch } from '../js/model/detect.js';
+import { bookTotals } from '../js/model/book.js';
+import { addByHand, makeByHand, payeeKey, removeByHand } from '../js/model/byhand.js';
 
 /* ------------------------------------------------------------------ fixtures */
 
@@ -1602,4 +1604,124 @@ test('an entry whose cadence the owner changed to a shorter one is not ended by 
   entry.locks = [];
   entry.cadence = 'monthly';
   assert.deepEqual(detectRecurring(state, at(2026, 9, 1)).lapsed, [entry.id]);
+});
+
+/* ------------------------------------------------ a payment the owner sends, and the line detection made of it */
+
+const ZELLE = 'Zelle payment to R Lindqvist';
+const ZELLE_MKEY = 'zelle to r lindqvist';
+
+/** Money leaving checking, as the bank words it: the classifier (refresh) decides what it is. */
+function sentOut(state, day, amount, raw, extra = {}) {
+  return addRow(state, { accountId: CHECKING, day, amount, flow: 'out', raw, ...extra });
+}
+
+function linkedTo(state, id) {
+  return state.txs.filter((tx) => tx.recurringId === id).map((tx) => tx.day).sort();
+}
+
+test('a monthly Zelle is a detected line; made a payment the owner sends, that line is gone and its rows are the payment\'s', () => {
+  const state = newState();
+  const rows = ['2026-03-04', '2026-04-05', '2026-05-04', '2026-06-04'].map((day) => sentOut(state, day, 25000, ZELLE));
+  refresh(state, NOW);
+  assert.deepEqual(rows.map((row) => [row.kind, row.ruleId, row.mkey]), rows.map(() => ['spend', 'builtin:zelle', ZELLE_MKEY]));
+  const detected = state.recurring.find((entry) => entry.mkey === ZELLE_MKEY);
+  assert.deepEqual([state.recurring.length, detected.source, detected.amount, detected.cadence], [1, 'detected', 25000, 'monthly']);
+  const totals = bookTotals(state);
+
+  const entry = addByHand(state, { name: 'Flat share', amount: 25000, dueDay: 5 }, TODAY, NOW);
+  const report = refresh(state, NOW + 1).recurring;
+  assert.deepEqual(report, { added: [], repriced: [], lapsed: [] });
+  assert.deepEqual(state.recurring.map((line) => line.id), [entry.id]);
+  assert.equal(entry.payee, payeeKey(ZELLE_MKEY));
+  assert.equal(entry.mkey, '');
+  for (const row of rows) assert.deepEqual([row.recurringId, row.klass, row.review], [entry.id, 'book', false]);
+  assert.deepEqual([bookTotals(state).count, bookTotals(state).perMonth], [totals.count, totals.perMonth]);
+
+  // five more runs: nothing moves
+  const frozen = JSON.stringify([state.recurring, state.txs]);
+  for (let i = 2; i <= 6; i++) {
+    assert.deepEqual(refresh(state, NOW + i).recurring, { added: [], repriced: [], lapsed: [] });
+    assert.equal(JSON.stringify([state.recurring, state.txs]), frozen);
+  }
+
+  // removed, its rows are free in the same run and detection finds the line again
+  removeByHand(state, entry.id, NOW + 7);
+  const again = refresh(state, NOW + 7).recurring;
+  assert.equal(again.added.length, 1);
+  const line = state.recurring.find((one) => one.id === again.added[0]);
+  assert.deepEqual([state.recurring.length, line.source, line.mkey, line.amount], [1, 'detected', ZELLE_MKEY, 25000]);
+  assert.deepEqual(linkedTo(state, line.id), rows.map((row) => row.day));
+  assert.deepEqual([bookTotals(state).count, bookTotals(state).perMonth], [totals.count, totals.perMonth]);
+});
+
+test('a row whose klass the owner set keeps it when a payment the owner sends takes the row', () => {
+  const state = newState();
+  const rows = ['2026-04-05', '2026-05-04', '2026-06-04'].map((day) => sentOut(state, day, 25000, ZELLE));
+  refresh(state, NOW);
+  rows[1].klass = 'want';
+  rows[1].locks = ['klass'];
+  const entry = addByHand(state, { name: 'Flat share', amount: 25000, dueDay: 5 }, TODAY, NOW);
+  refresh(state, NOW);
+  assert.deepEqual(rows.map((row) => [row.recurringId, row.klass]), [[entry.id, 'book'], [entry.id, 'want'], [entry.id, 'book']]);
+});
+
+test('a detected line to the same payee: within 10% of the payment it is that payment; further off it is another line and stays', () => {
+  const build = (other) => {
+    const state = newState();
+    for (const day of ['2026-03-04', '2026-04-05', '2026-05-04', '2026-06-04']) sentOut(state, day, 25000, ZELLE);
+    const rows = ['2026-03-18', '2026-04-18', '2026-05-18'].map((day) => sentOut(state, day, other, ZELLE));
+    refresh(state, NOW);
+    const before = state.recurring.filter((line) => line.mkey === ZELLE_MKEY).map((line) => line.amount).sort((a, b) => a - b);
+    const entry = addByHand(state, { name: 'Flat share', amount: 25000, dueDay: 5 }, TODAY, NOW);
+    for (let i = 1; i <= 3; i++) refresh(state, NOW + i);
+    return { state, rows, entry, before, lines: state.recurring.filter((line) => line.source === 'detected' && line.mkey === ZELLE_MKEY) };
+  };
+  // $60.00 to the same person every month is something else: its line stays and keeps its rows
+  const far = build(6000);
+  assert.deepEqual(far.before, [6000, 25000]);
+  assert.deepEqual(far.lines.map((line) => line.amount), [6000]);
+  for (const row of far.rows) assert.equal(row.recurringId, far.lines[0].id);
+  assert.equal(linkedTo(far.state, far.entry.id).length, 4);
+  assert.equal(bookTotals(far.state).perMonth, 31000);
+  // $275.01 is more than 10% away: another line; $275.00 is within it: no second line of the one payment
+  assert.deepEqual(build(27501).lines.map((line) => line.amount), [27501]);
+  const near = build(27500);
+  assert.deepEqual(near.lines, []);
+  for (const row of near.rows) assert.equal(row.recurringId, null); // not its exact amount: they wait, linked to nothing
+  assert.equal(bookTotals(near.state).perMonth, 25000);
+});
+
+test('a bank transfer is never a line by detection; a payment the owner sends takes it, and keeps it run after run', () => {
+  const state = newState();
+  const rows = ['2026-04-30', '2026-05-29'].map((day) => sentOut(state, day, 8500, 'Online transfer to Harbor Parking'));
+  const own = movePair(state, '2026-05-30', 8500, { from: CHECKING, to: SAVINGS, kind: 'transfer' });
+  refresh(state, NOW);
+  assert.deepEqual(rows.map((row) => [row.kind, row.recurringId]), [['transfer', null], ['transfer', null]]);
+  assert.equal(state.recurring.length, 0);
+  const asWorded = rows.map((row) => [row.kind, row.recurringId, row.klass, row.category]);
+  state.recurring.push(makeByHand({ id: 'rec_parking', name: 'Parking', amount: 8500, dueDay: 31, since: '2026-05-01', editedAt: NOW }));
+  refresh(state, NOW);
+  const entry = state.recurring[0];
+  assert.equal(entry.payee, payeeKey(rows[0].mkey));
+  assert.deepEqual(rows.map((row) => [row.kind, row.recurringId, row.klass, row.review]), rows.map(() => ['transfer', 'rec_parking', 'book', false]));
+  assert.deepEqual([own.out.recurringId, own.arriving.recurringId], [null, null]); // a move between the owner's accounts never pays it
+  const frozen = JSON.stringify([state.recurring, state.txs]);
+  for (let i = 1; i <= 5; i++) {
+    refresh(state, NOW + i);
+    assert.equal(JSON.stringify([state.recurring, state.txs]), frozen);
+  }
+  // switched off, the rows go back to what their text says
+  entry.active = false;
+  refresh(state, NOW + 9);
+  assert.deepEqual(rows.map((row) => [row.kind, row.recurringId, row.klass, row.category]), asWorded);
+});
+
+test('detection alone never touches a payment the owner sends: not its amount, its anchor or its switch', () => {
+  const state = newState();
+  const entry = makeByHand({ id: 'rec_flat', name: 'Flat share', amount: 25000, dueDay: 5, since: '2025-06-01', editedAt: 5 });
+  state.recurring.push(entry);
+  const before = JSON.stringify(entry);
+  assert.deepEqual(detectRecurring(state, NOW), { added: [], repriced: [], lapsed: [] }); // a year unpaid: still on
+  assert.equal(JSON.stringify(entry), before);
 });

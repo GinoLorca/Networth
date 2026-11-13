@@ -157,3 +157,75 @@ test('an account keeps what the last reading carried and its history bookkeeping
   assert.deepEqual([migrated.accounts[1].feed, migrated.accounts[1].backfill], [null, null]);
   assert.deepEqual(migrated.accounts[0].backfill, { need: true, step: 2, done: false, gaveUp: false, tries: 2, at: 1794400000000 });
 });
+
+/* ------------------------------------------------ a payment the owner sends, and what travels between devices */
+
+const BY_HAND_FIELDS = ['byHand', 'dueDay', 'payee', 'payeeAt', 'marks', 'skips', 'editedAt'];
+
+function withFlatShare(fields = {}) {
+  const d = sound();
+  d.recurring.push(JSON.parse(JSON.stringify(makeRecurring({
+    id: 'rec_flat', name: 'Flat share', amount: 25000, cadence: 'monthly', anchor: '2026-06-05', source: 'manual', mkey: '', since: '2026-06-01',
+    byHand: true, dueDay: 5, payee: 'p0123456789abc', payeeAt: 7, editedAt: 9,
+    marks: { '2026-06-05': { paid: true, at: 11 } }, skips: { '2026-06-04|p0123456789abc': { on: false, at: 12 } },
+    ...fields,
+  }))));
+  return d;
+}
+
+test('a Book line is not a payment the owner sends until it is made one; the record keeps the removals to share', () => {
+  const line = makeRecurring();
+  assert.deepEqual(BY_HAND_FIELDS.map((field) => line[field]), [false, null, null, 0, {}, {}, 0]);
+  assert.notEqual(makeRecurring().marks, line.marks, 'each line has its own marks');
+  assert.notEqual(makeRecurring().skips, line.skips);
+  assert.deepEqual(defaultState(NOW).share, { tombs: {} });
+});
+
+test('checkDoc accepts a record with a payment the owner sends, and one from before there were any', () => {
+  const d = withFlatShare();
+  d.share.tombs.rec_gone = 1794300000000;
+  assert.equal(checkDoc(d), null);
+  assert.equal(checkDoc(migrate(JSON.parse(JSON.stringify(d)))), null);
+
+  const older = withFlatShare();
+  delete older.share;
+  for (const line of older.recurring) for (const field of BY_HAND_FIELDS) delete line[field];
+  assert.equal(checkDoc(older), null);
+  migrate(older);
+  assert.deepEqual(older.share, { tombs: {} });
+  assert.deepEqual(BY_HAND_FIELDS.map((field) => older.recurring[0][field]), [false, null, null, 0, {}, {}, 0]);
+  assert.equal(checkDoc(older), null);
+
+  // a payment the owner sends with no day, or with another cadence, would be due and on no checklist: refused
+  assert.notEqual(checkDoc(withFlatShare({ dueDay: null })), null);
+  assert.notEqual(checkDoc(withFlatShare({ cadence: 'weekly' })), null);
+  const partial = withFlatShare({ marks: null, skips: null, payee: null });
+  partial.share = {};
+  assert.equal(checkDoc(partial), null);
+  migrate(partial);
+  assert.deepEqual([partial.recurring[0].marks, partial.recurring[0].skips, partial.share], [{}, {}, { tombs: {} }]);
+});
+
+test('migrate leaves the marks, the skips and the removals of a record as they are', () => {
+  const d = withFlatShare();
+  d.share.tombs.rec_gone = 1794300000000;
+  const before = JSON.parse(JSON.stringify({ line: d.recurring[0], share: d.share }));
+  migrate(d);
+  assert.deepEqual({ line: d.recurring[0], share: d.share }, before);
+});
+
+test('checkDoc refuses a payment the owner sends, or a removal, that is not shaped like one', () => {
+  const bad = [
+    withFlatShare({ dueDay: 0 }), withFlatShare({ dueDay: 32 }), withFlatShare({ dueDay: 5.5 }), withFlatShare({ dueDay: '5' }),
+    withFlatShare({ payee: 7 }), withFlatShare({ payee: {} }),
+    withFlatShare({ marks: [] }), withFlatShare({ marks: 'paid' }), withFlatShare({ marks: { '2026-06-05': true } }), withFlatShare({ marks: { '2026-06-05': [] } }),
+    withFlatShare({ skips: 3 }), withFlatShare({ skips: { '2026-06-04|p0123456789abc': 'on' } }),
+    withFlatShare({ byHand: 'yes' }), withFlatShare({ payeeAt: 'now' }), withFlatShare({ editedAt: {} }),
+  ];
+  for (const d of bad) assert.equal(typeof checkDoc(d), 'string', JSON.stringify(d.recurring[0]).slice(0, 200));
+  for (const share of ['x', [], { tombs: [] }, { tombs: 'none' }, { tombs: { rec_gone: 'yesterday' } }, { tombs: { rec_gone: null } }]) {
+    const d = withFlatShare();
+    d.share = share;
+    assert.equal(typeof checkDoc(d), 'string', JSON.stringify(share));
+  }
+});

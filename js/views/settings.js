@@ -32,6 +32,7 @@ import { store } from '../store.js';
 import { context, toast } from '../runtime.js';
 import { navigate } from '../router.js';
 import { linkBank, unlinkBank } from '../sync.js';
+import { startShare, shareNow, forgetShare, shareInfo } from '../share.js';
 import { wipeStorage, listSnapshots } from '../db.js';
 import { ACCOUNT_TYPES, CADENCES, PURPOSES, SCHEMA_VERSION, accountLabel, checkDoc, migrate, defaultState } from '../model/schema.js';
 import { fmt } from '../model/money.js';
@@ -42,6 +43,7 @@ import { coverText } from './parts.js';
 
 const APP_VERSION = '1.0.0';
 const BRIDGE_URL = 'https://bridge.simplefin.org';
+const TOKEN_URL = 'https://github.com/settings/personal-access-tokens/new';
 const THEME_KEY = 'networth.theme';
 const DAY_MS = 24 * 3600 * 1000;
 const READINGS_PER_DAY = 20;
@@ -263,9 +265,152 @@ function bankSection(ctx) {
       ${dangerous(ctx, 'unlink', { ask: 'Unlink, keep the record', action: 'settings.unlink', go: 'Unlink — the record stays',
         sentence: 'The key is forgotten on this device and nothing new arrives. Every account, move and round already here stays.' })}
       ${dangerous(ctx, 'unlink-erase', { ask: 'Unlink and erase everything', action: 'settings.erase', go: 'Erase — this cannot be undone',
-        sentence: 'The key, every account, move and round, and the daily snapshots (up to 14) are removed from this device. A saved copy is the only way back.' })}
+        sentence: 'The bank key, the key of the shared list if this device has one, every account, move and round, and the daily snapshots (up to 14) are removed from this device. A saved copy is the only way back.' })}
     </div>
   </section>`;
+}
+
+/* ------------------------------------------------- sharing between devices */
+
+const SHARED_WHAT = 'Nothing the bank reported goes there: no balance, no transaction, no account. Only what you entered, your ticks, and an unreadable fingerprint of who each payment goes to, so every device recognises it the same way.';
+
+function shareForm(ctx) {
+  const busy = ctx.share.busy;
+  const error = ctx.ui.settingsShareError;
+  return html`<form class="set-link set-share-form" data-submit="settings.share-start" autocomplete="off">
+    <label class="field">
+      <span class="field-label lab">The key</span>
+      <input class="input set-share-key" type="password" name="key" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
+        placeholder="Paste the key here" ${busy ? html`disabled` : ''}>
+      <span class="field-help cap">Kept on this device only, outside the record: it is in no saved copy, and this box is cleared the moment it is used. Each device needs 1 paste.</span>
+    </label>
+    <div class="set-link-status" role="status" aria-live="polite">${
+      error ? html`<p class="notice is-error"><i class="notice-mark"></i><span><b>Not started</b>${error}</span></p>` : ''}</div>
+    <p class="cluster cluster-center set-link-go">
+      <button class="btn btn-solid" type="submit" ${busy ? html`disabled` : ''}>Start sharing</button>
+    </p>
+  </form>`;
+}
+
+function shareSteps() {
+  return html`<ol class="set-share-steps">
+    <li>Open <a class="btn-link" href="${TOKEN_URL}" target="_blank" rel="noopener noreferrer">GitHub’s page for a fine-grained token</a>; it opens in a new tab.</li>
+    <li>Name it, choose the longest expiry, and under “Only select repositories” pick <b>networth-data</b>. Under Repository permissions set <b>Contents</b> to <b>Read and write</b>; nothing else.</li>
+    <li>Create it, copy it, and paste it here.</li>
+  </ol>`;
+}
+
+function shareFacts(ctx) {
+  const sh = ctx.share;
+  return html`<ul class="rows set-facts">
+    <li class="row">
+      <span class="row-label">Last agreed <em class="row-note">this device and the shared file held the same list</em></span>
+      <span class="row-value" data-cover-keep>${sh.agreedAt ? whenText(sh.agreedAt, ctx) : 'not yet'}</span>
+    </li>
+    <li class="row">
+      <span class="row-label">Payments you send <em class="row-note">${sh.file ? 'on the shared list' : 'GitHub shows this key no shared file yet; it is written with the first payment'}</em></span>
+      <span class="row-value" data-cover-keep>${sh.agreedAt ? sh.count : '—'}</span>
+    </li>
+    <li class="row">
+      <span class="row-label">Kept in <em class="row-note">a private repository of your own</em></span>
+      <span class="row-value set-share-where" data-cover-keep>${sh.owner}/networth-data</span>
+    </li>
+  </ul>`;
+}
+
+function shareNowRow(ctx) {
+  const sh = ctx.share;
+  if (sh.busy) {
+    return html`<p class="sync set-busy" data-state="syncing" role="status"><i class="sync-mark"></i><span class="sync-text"><b>Comparing with the shared list</b>…</span></p>`;
+  }
+  const note = sh.retryAt ? 'GitHub asked for a pause. Ready again at ' + fmtTime(sh.retryAt) + '.'
+    : sh.code === 'key' ? 'Nothing is shared by itself until a new key is pasted or Share now is tapped.'
+    : 'Networth also shares by itself: 2 seconds after a change here, and each time it is opened.';
+  return html`<p class="cluster cluster-center set-refresh">
+    <button class="btn btn-s" type="button" data-action="settings.share-now" ${sh.canShare ? '' : html`disabled`}>Share now</button>
+    <span class="cap grow">${note}</span>
+  </p>`;
+}
+
+function shareForget(ctx) {
+  return html`<div class="set-dangers">
+    ${dangerous(ctx, 'share-forget', { ask: 'Forget the key on this device', action: 'settings.share-forget', go: 'Forget — the list stays',
+      sentence: 'The key is removed from this 1 device and nothing more is shared from it. The payments already here stay, the file on GitHub stays as it is, and the other devices carry on.' })}
+  </div>`;
+}
+
+function shareSection(ctx) {
+  const sh = ctx.share;
+  if (!sh || !sh.available) return '';
+  const head = (state) => html`<div class="sec-head">
+    <h2 class="lab"><b>Share between devices</b><i class="sep"></i>the payments you send</h2>
+    <span class="lab">${state}</span>
+  </div>`;
+  const what = html`<section class="col col-5 set-sec" aria-label="What is shared">
+    <div class="sec-head"><h3 class="lab"><b>What is shared</b><i class="sep"></i>1 private file</h3></div>
+    <p class="set-lede">The payments you send yourself and their ticks, in the file networth-shared.json of ${sh.owner}/networth-data on your own GitHub.</p>
+    <p class="cap set-help">${SHARED_WHAT}</p>
+  </section>`;
+
+  if (ctx.demo) {
+    return html`<div class="cols">
+      <section class="col col-7 set-sec" aria-label="Share between devices">
+        ${head('Sample game')}
+        <p class="title set-state">Sample game — nothing is shared.</p>
+        <p class="set-lede">With your own record, 1 paste on each device keeps the payments you send, and their ticks, the same on all of them.</p>
+      </section>
+      ${what}
+    </div>`;
+  }
+
+  if (!sh.on) {
+    return html`<div class="cols">
+      <section class="col col-7 set-sec" aria-label="Share between devices">
+        ${head('Off')}
+        <p class="title set-state">Not sharing. 1 paste on each device starts it.</p>
+        <p class="set-lede">The payments you send yourself, and their ticks, are then kept in a private file on your own GitHub (${sh.owner}/networth-data):
+          what is added or ticked on 1 device shows on the others within seconds of opening them, and nothing is typed twice.</p>
+        <p class="cap set-help">${SHARED_WHAT}</p>
+      </section>
+      <section class="col col-5 set-sec" aria-label="The key">
+        <div class="sec-head"><h3 class="lab"><b>The key</b><i class="sep"></i>3 steps, once per device</h3></div>
+        ${shareSteps()}
+        ${shareForm(ctx)}
+      </section>
+    </div>`;
+  }
+
+  if (sh.code === 'key' && !sh.busy) {
+    return html`<div class="cols">
+      <section class="col col-7 set-sec" aria-label="Share between devices">
+        ${head('Refused')}
+        <p class="title set-state">GitHub refused the key.</p>
+        <p class="notice is-error"><i class="notice-mark"></i><span><b>Not shared</b>${sh.message}${sh.failedAt ? ' Tried ' + whenText(sh.failedAt, ctx) + '.' : ''}</span></p>
+        <p class="set-lede">The list on this device is intact and nothing was changed on GitHub. A new key takes the same 3 steps.</p>
+        ${shareForm(ctx)}
+        ${shareNowRow(ctx)}
+        ${shareForget(ctx)}
+      </section>
+      <section class="col col-5 set-sec" aria-label="The key">
+        <div class="sec-head"><h3 class="lab"><b>A new key</b><i class="sep"></i>3 steps</h3></div>
+        ${shareSteps()}
+        <p class="cap set-help">${SHARED_WHAT}</p>
+      </section>
+    </div>`;
+  }
+
+  return html`<div class="cols">
+    <section class="col col-7 set-sec" aria-label="Share between devices">
+      ${head(sh.busy ? 'Working' : sh.code ? 'Not shared' : 'On')}
+      <p class="title set-state">${sh.code ? 'The last round did not go through.' : sh.agreedAt ? 'Sharing through your own GitHub.' : 'Sharing: the first round has not run yet.'}</p>
+      ${sh.code && !sh.busy ? html`<div class="set-problems"><p class="notice is-error"><i class="notice-mark"></i><span><b>Not shared</b>${sh.message}${
+        sh.failedAt ? ' Tried ' + whenText(sh.failedAt, ctx) + '; nothing on this device was changed.' : ''}</span></p></div>` : ''}
+      ${shareFacts(ctx)}
+      ${shareNowRow(ctx)}
+      ${shareForget(ctx)}
+    </section>
+    ${what}
+  </div>`;
 }
 
 /* ----------------------------------------------------------------- the day */
@@ -466,7 +611,7 @@ function recordSection(ctx) {
       <p class="cap">These are conveniences. Nothing here is ever required: the record keeps itself.</p>
       <div class="set-dangers">
         ${dangerous(ctx, 'erase', { ask: 'Erase everything on this device', action: 'settings.erase', go: 'Erase — this cannot be undone',
-          sentence: 'The bank key, every account, move and round, and the daily snapshots (up to 14) are removed from this device. A saved copy is the only way back.' })}
+          sentence: 'The bank key, the key of the shared list if this device has one, every account, move and round, and the daily snapshots (up to 14) are removed from this device. A saved copy is the only way back.' })}
       </div>`}
   </section>`;
 }
@@ -504,6 +649,7 @@ function aboutSection() {
 /* ------------------------------------------------------------------ render */
 
 export function render(ctx) {
+  const shared = !!(ctx.share && ctx.share.available);
   return html`<div class="set">
     <section class="band set-top">
       <div class="sec-head">
@@ -512,15 +658,16 @@ export function render(ctx) {
       </div>
       <div class="set-top-row">
         <h1 class="title title-l set-title">Settings</h1>
-        <p class="cap set-top-note">The bank link, how a day is counted, appearance, your own rules and the record. ${ctx.demo
+        <p class="cap set-top-note">The bank link, ${shared ? 'sharing between devices, ' : ''}how a day is counted, appearance, your own rules and the record. ${ctx.demo
           ? 'In the sample game a change lasts until this page is closed or reloaded, and none is kept'
-          : 'Every control saves the moment it changes'}, and none of the 6 sections needs a visit: the board is complete as it stands.</p>
+          : 'Every control saves the moment it changes'}, and none of the ${shared ? 7 : 6} sections needs a visit: the board is complete as it stands.</p>
       </div>
     </section>
     <div class="cols">
       ${bankSection(ctx)}
       ${daySection(ctx)}
     </div>
+    ${shareSection(ctx)}
     <div class="cols">
       ${appearanceSection(ctx)}
       ${rulesSection(ctx)}
@@ -633,7 +780,7 @@ async function link({ el, values }) {
 
 function ask({ data }) {
   const what = data.what;
-  if (what !== 'unlink' && what !== 'unlink-erase' && what !== 'erase') return;
+  if (what !== 'unlink' && what !== 'unlink-erase' && what !== 'erase' && what !== 'share-forget') return;
   store.setUi({ settingsConfirm: store.ui.settingsConfirm === what ? null : what });
 }
 
@@ -664,8 +811,9 @@ async function erase() {
   const asked = store.ui.settingsConfirm;
   if (store.status.readonly || (asked !== 'erase' && asked !== 'unlink-erase')) return;
   pendingRestore = null;
-  store.setUi({ settingsConfirm: null, settingsRestore: null, settingsRestoreError: null, settingsLinkError: null });
+  store.setUi({ settingsConfirm: null, settingsRestore: null, settingsRestoreError: null, settingsLinkError: null, settingsShareError: null });
   try {
+    await forgetShare(); // the key of the shared list goes first: nothing of the erasing is sent to the other devices
     await unlinkBank({ erase: true }); // forgets the key and installs an empty record
     await store.flush(); // a save still on its way finishes first, so it cannot land after the wipe
     await wipeStorage({ all: true }); // the daily snapshots too: "everything" means everything
@@ -677,6 +825,50 @@ async function erase() {
   applyTheme('auto', true);
   navigate('#/connect', { replace: true });
   toast('Erased ' + whenSaid() + '. Nothing of yours is left on this device.');
+}
+
+/* ------------------------------------------------- sharing between devices */
+
+async function shareStart({ el, values }) {
+  const ctx = context();
+  if (store.status.readonly || (ctx && ctx.share && ctx.share.busy)) return;
+  const key = values && typeof values.key === 'string' ? values.key : '';
+  const field = el && el.querySelector ? el.querySelector('input[name="key"]') : null;
+  if (field) field.value = ''; // the key leaves the page at once, whatever happens next
+  store.setUi({ settingsShareError: null, settingsConfirm: null });
+  let res;
+  try {
+    res = await startShare(key);
+  } catch {
+    res = { ok: false, message: 'Sharing could not be started. Try again in a moment.' };
+  }
+  const info = shareInfo();
+  if (res && res.ok) {
+    toast('Sharing since ' + fmtTime(info.agreedAt || Date.now()) + ': ' + plural(info.count, 'payment', 'payments') + ' on the shared list.');
+    return;
+  }
+  // once the key is kept, the section itself says what the round met
+  if (!info.on) store.setUi({ settingsShareError: (res && res.message) || 'Sharing was not started. Try again in a moment.' });
+}
+
+async function shareRound() {
+  if (store.status.readonly) return;
+  let info;
+  try { info = await shareNow(); } catch { info = shareInfo(); }
+  if (info.busy) return;
+  if (info.code) toast(info.message);
+  else if (info.agreedAt) toast('Agreed with the shared list at ' + fmtTime(info.agreedAt) + ': ' + plural(info.count, 'payment', 'payments') + '.');
+}
+
+async function shareForgetKey() {
+  if (store.status.readonly || store.ui.settingsConfirm !== 'share-forget') return;
+  store.setUi({ settingsConfirm: null, settingsShareError: null });
+  try {
+    await forgetShare();
+    toast('Key forgotten ' + whenSaid() + '. The list stays on this device and the file stays on GitHub.');
+  } catch {
+    toast('The key could not be removed. Try again.');
+  }
 }
 
 function exportCopy() {
@@ -782,6 +974,9 @@ export const actions = {
   'settings.cancel': cancel,
   'settings.unlink': unlink,
   'settings.erase': erase,
+  'settings.share-start': shareStart,
+  'settings.share-now': shareRound,
+  'settings.share-forget': shareForgetKey,
   'settings.export': exportCopy,
   'settings.restore-pick': restorePick,
   'settings.restore': restore,

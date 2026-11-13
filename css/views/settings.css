@@ -38,6 +38,17 @@
 .set-link-status:empty { display: none; }
 .set-link-go { gap: var(--s-2) var(--s-5); }
 
+/* sharing between devices: the three steps as a plain numbered list, the key in a single line */
+.set-share-steps { margin: 0; padding-left: 1.5em; list-style: decimal; max-width: 56ch; }
+.set-share-steps > li { padding-left: .25em; }
+.set-share-steps > li + li { margin-top: var(--s-2); }
+.set-share-steps .btn-link { display: inline; }
+.set-share-key { width: 100%; max-width: 448px; }
+.set-share-where { overflow-wrap: anywhere; text-align: right; }
+.set-sec > .set-lede + .set-help { margin-top: var(--s-3); }
+/* on a phone the one link of the steps is a 44px target */
+@media (max-width: 719px) { .set-share-steps .btn-link { display: inline-flex; align-items: center; min-height: var(--tap); } }
+
 /* dangerous actions: quiet links in a ruled foot; the confirmation opens under the one that was asked */
 .set-dangers { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--s-2) var(--s-5); padding-top: var(--s-3); border-top: var(--rule-hair); }
 .set-danger { min-width: 0; }

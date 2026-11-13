@@ -10,12 +10,17 @@
 /* a figure from the bank inside italic or running text stays upright */
 .bk-roman { font-style: normal; }
 
-/* a small ruled tag after a name or a note: TOWARD DEBT · ENTERED BY YOU */
+/* a small ruled tag after a name or a note: TOWARD DEBT · ENTERED BY YOU · YOU SEND IT */
 .bk-tag {
   display: inline-block; margin-left: 3px; padding: 2px 5px 1px; border: 1px solid var(--hair);
   font-family: var(--f-label); font-weight: 600; font-style: normal; font-size: .6875rem; line-height: 1.2; letter-spacing: .1em; text-transform: uppercase;
   color: var(--ink-2); white-space: nowrap; vertical-align: 1px;
 }
+
+/* a payment the owner sends: its standing when it is late, and the line above the list that offers the way in */
+.bk-overdue { color: var(--spot); }
+.bk-send { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px var(--s-4); padding: 4px 0 8px; }
+.bk-send .btn-link { margin-left: auto; }
 
 /* a passage where a section has nothing to list, and the note under a list */
 .bk-quiet { max-width: 54ch; padding: 2px 0 6px; font-size: .90625rem; }
@@ -58,6 +63,11 @@
 .bk-upcoming tbody tr:has(+ .bk-payday) > td { border-bottom: 0; }
 @media (min-width: 720px) {
   .bk-when { padding-right: var(--s-5); }
+}
+/* a narrow band with a large root (320px, root 20px): "Mon · in 12 days" wraps instead of widening the page */
+.band:has(> .bk-upcoming) { container-type: inline-size; }
+@container (max-width: 15.5rem) {
+  .bk-rel { white-space: normal; }
 }
 
 /* ------------------------------------------------- before payday, renewals */

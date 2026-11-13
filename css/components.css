@@ -609,8 +609,70 @@ a.row:hover .row-label, button.row:hover .row-label { text-decoration: underline
   .mat-worth-fig[data-tone] .approx { -webkit-text-fill-color: var(--spot); }
   [data-cover] .mat-worth-fig[data-tone] { background-image: none; }
 }
+
+/* The rim light. Now and then a narrow light glides along the top of the coloured numerals, left to
+   right, as light catches the rim of a coin, and is gone; it comes back after six seconds. It is the
+   figure's own hue lifted toward white, a second layer over the fill. --rim is where it stands, measured
+   leftward from the right end of the figure; the figure animates it and its numeral cells inherit it,
+   so a digit the ticker changes or a cell it replaces never restarts the pass. Each cell knows how far its
+   right edge stands from that end (--rim-x: the digits and the points to its right), so the cells show
+   one light. The two result deltas of the Board carry .rim and take the same light over their flat colour.
+   Never under reduced motion, cover, forced colours or print; unregistered, --rim only ever jumps between
+   two places off the figure, so a browser without @property keeps the figure still. */
+@property --rim { syntax: '<length>'; inherits: true; initial-value: -1000px; }
+@keyframes rim {
+  0% { --rim: var(--rim-from); animation-timing-function: cubic-bezier(.4, 0, .3, 1); }
+  19%, 100% { --rim: -.8em; }                                       /* 1.4 s of light, 6 s of rest */
+}
+@media screen and (prefers-reduced-motion: no-preference) {
+  @supports ((background-clip: text) or (-webkit-background-clip: text)) {
+    :where(.hero-fig[data-tone], .mat-worth-fig[data-tone], .fig.rim:is(.gain, .loss)):not([data-cover] *) {
+      --rim-c: color-mix(in oklch, var(--tone-hi), white var(--rim-lift, 62%));
+      --rim-from: calc(var(--n, 10) * .56em + .5em);
+      animation: rim 7.4s .6s infinite backwards;
+    }
+    .hero-fig[data-tone]:not([data-cover] *) { --rim-from: calc(var(--hero-ems, 5.05) * 1em - .4em); animation-delay: 1.4s; }
+    .hero-fig[data-tone]:not([data-cover] *) nw-ticker :is(.tk-main, .tk-mini) > span,
+    .mat-worth-fig[data-tone]:not([data-cover] *), .fig.rim:is(.gain, .loss):not([data-cover] *) {
+      --rim-light: radial-gradient(var(--rim-rx, .34em) var(--rim-ry, .38em) at calc(100% - var(--rim-pad, .18em) - var(--rim, -1000px) + var(--rim-x, 0px)) 17%,
+        var(--rim-c) var(--rim-core, 22%), color-mix(in oklch, var(--rim-c) 50%, transparent) 50%, transparent);
+      background-image: var(--rim-light), linear-gradient(172deg, var(--tone-hi) 22%, var(--tone-lo) 80%);
+    }
+    /* at night the figure is already light: the rim is whiter and its core harder, so it still reads */
+    :root[data-theme="dark"] { --rim-lift: 92%; --rim-core: 34%; }
+    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --rim-lift: 92%; --rim-core: 34%; } }
+    /* the cells of the live figure, counted from the right: two decimals, the point, then threes and commas */
+    .tk-main > * { --rim-x: calc((var(--i, 0) - var(--np, 0)) * var(--rim-dw, 1.02ch) + var(--np, 0) * .2em); }
+    .tk--approx .tk-main > * { --rim-dw: 1.1ch; }
+    .tk-main > :nth-last-child(2) { --i: 1 } .tk-main > :nth-last-child(3) { --i: 2 } .tk-main > :nth-last-child(4) { --i: 3 }
+    .tk-main > :nth-last-child(5) { --i: 4 } .tk-main > :nth-last-child(6) { --i: 5 } .tk-main > :nth-last-child(7) { --i: 6 }
+    .tk-main > :nth-last-child(8) { --i: 7 } .tk-main > :nth-last-child(9) { --i: 8 } .tk-main > :nth-last-child(10) { --i: 9 }
+    .tk-main > :nth-last-child(11) { --i: 10 } .tk-main > :nth-last-child(12) { --i: 11 } .tk-main > :nth-last-child(13) { --i: 12 }
+    .tk-main > :nth-last-child(14) { --i: 13 } .tk-main > :nth-last-child(15) { --i: 14 } .tk-main > :nth-last-child(16) { --i: 15 }
+    .tk-main > :nth-last-child(n+4) { --np: 1 } .tk-main > :nth-last-child(n+8) { --np: 2 } .tk-main > :nth-last-child(n+12) { --np: 3 } .tk-main > :nth-last-child(n+16) { --np: 4 }
+    /* the two small digits stand past the right end, at a third of the size: their light is drawn three times larger in their own ems */
+    .tk-mini > * { --rim-rx: 1.1em; --rim-x: calc(-.14em - 1.16ch); }
+    .tk-mini > :last-child { --rim-x: calc(-.14em - 2.32ch); }
+    /* the smaller figures take a wider, brighter light, or it would be lost on their thin strokes */
+    :where(.mat-worth-fig, .fig.rim) { --rim-rx: .6em; --rim-ry: .6em; --rim-core: 35%; }
+    :where(.fig.rim) { --rim-rx: .85em; --rim-ry: .7em; }
+    .mat-worth-fig[data-tone]:not([data-cover] *) { --rim-pad: .12em; }
+    /* the deltas: their flat colour as the base, the light over it, let out sideways for an italic overhang */
+    .fig.rim:is(.gain, .loss):not([data-cover] *) {
+      --rim-pad: .14em; --rim-from: 5em; --rim-c: color-mix(in oklch, currentColor, white var(--rim-lift, 50%));
+      background-image: var(--rim-light); background-color: currentColor;
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+      padding-inline: .14em; margin-inline: -.14em;
+    }
+    .fig.rim .approx { -webkit-text-fill-color: var(--spot); }
+    .tally-item:nth-child(1) > .fig.rim { animation-delay: 3.2s; }
+    .tally-item:nth-child(2) > .fig.rim { animation-delay: 3.5s; }
+  }
+}
 @media (forced-colors: active) {
-  .hero-fig[data-tone] nw-ticker :is(.tk-main, .tk-mini) > span, .mat-worth-fig[data-tone] { background-image: none; -webkit-text-fill-color: currentColor; color: CanvasText; }
+  .hero-fig[data-tone] nw-ticker :is(.tk-main, .tk-mini) > span, .mat-worth-fig[data-tone] { background-image: none !important; -webkit-text-fill-color: currentColor; color: CanvasText; }
+  :is(.hero-fig, .mat-worth-fig, .fig.rim) { animation: none !important; }
+  .fig.rim:is(.gain, .loss) { background: none !important; -webkit-text-fill-color: currentColor !important; }
 }
 @media (min-width: 720px) {
   .hero-fig { font-size: min(15.2vw, 9.375rem); }

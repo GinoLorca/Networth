@@ -35,13 +35,14 @@ const NEGATIVE_ORDER = ['??', '?', '?!'];
 /**
  * A money figure in the design system's type.
  * @param {number|null} cents
- * @param {{ est?: boolean, signed?: boolean, size?: 's'|'m'|'l'|'xl', tint?: boolean, decimals?: 0|2, cls?: string }} [opts]
+ * @param {{ est?: boolean, signed?: boolean, size?: 's'|'m'|'l'|'xl', tint?: boolean, rim?: boolean, decimals?: 0|2, cls?: string }} [opts]
  *   est = computed or not yet final (italic, with the approximately sign); signed = show + on positive;
- *   tint = colour it as a result delta (gain / loss); size adds .fig-s … .fig-xl.
+ *   tint = colour it as a result delta (gain / loss); rim = with tint, the rim light passes over it now and then
+ *   (.rim; the Board's two result deltas only); size adds .fig-s … .fig-xl.
  */
 export function money(cents, opts = {}) {
   const text = opts.signed ? fmtSigned(cents, { decimals: opts.decimals ?? 2 }) : fmt(cents, { decimals: opts.decimals ?? 2 });
-  const cls = cx('fig', opts.size && 'fig-' + opts.size, opts.est && 'est', opts.tint && tone(cents), opts.cls);
+  const cls = cx('fig', opts.size && 'fig-' + opts.size, opts.est && 'est', opts.tint && tone(cents), opts.tint && opts.rim && 'rim', opts.cls);
   return html`<span class="${cls}">${opts.est ? html`<span class="approx">≈</span>` : ''}${text}</span>`;
 }
 

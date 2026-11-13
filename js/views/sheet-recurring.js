@@ -7,7 +7,13 @@
  * schema.makeRecurring({ source: 'manual', … }): its anchor is the last or next charge day and its
  * merchant key comes from classify.merchantOf, so the bank's own charges take it over when they arrive.
  *
- * Actions: recurring.save (the form; a field that cannot be read is named under itself and focused),
+ * A payment the owner sends themselves each month (an entry with `byHand`, or the sheet opened with
+ * params.pay) has a short form of its own under the head "Payment you send": name, amount, day of the
+ * month, and for an existing one "Switched on" and Remove. It saves through byhand.js (addByHand,
+ * editByHand, removeByHand), with detect.refresh in the same store.update, and offers Undo.
+ *
+ * Actions: recurring.pay-save · recurring.pay-touch · recurring.pay-remove (the payment's form), and
+ *          recurring.save (the form; a field that cannot be read is named under itself and focused),
  *          recurring.touch (typing clears a shown error),
  *          recurring.dismiss ("this is not a recurring bill": active false, locked, with undo),
  *          recurring.restore (an ended or dismissed line recurs again, with undo).
@@ -18,16 +24,23 @@ import { store } from '../store.js';
 import { closeSheet } from '../router.js';
 import { context, toast } from '../runtime.js';
 import { fmt, toCents } from '../model/money.js';
-import { addDays, fmtDate, isYmd, relDay } from '../model/dates.js';
+import { addDays, addMonthsYm, fmtDate, fmtMonth, isYmd, monthOf, relDay } from '../model/dates.js';
 import { ACCOUNT_TYPES, CADENCES, CATEGORIES, KLASSES, PURPOSES, accountLabel, makeRecurring } from '../model/schema.js';
 import { annualCost, dailyCost, nextOccurrence } from '../model/book.js';
 import { merchantOf } from '../model/classify.js';
 import { refresh } from '../model/detect.js';
+import { addByHand, byHandMonth, editByHand, removeByHand } from '../model/byhand.js';
 
 const VERDICTS = [['', 'None'], ['keep', 'Keep'], ['review', 'Review'], ['cut', 'Cut']];
 const KLASS_ORDER = ['book', 'need', 'want', 'oneoff', 'game'];
 const NAME_MAX = 80;
 const NOTE_MAX = 500;
+/** The limits of a payment the owner sends, as byhand.js checks them. */
+const PAY_NAME_MAX = 60;
+const PAY_AMOUNT_MAX = 1e10;
+/** An amount the owner sends: dollars, with thousands set off by commas or not, and at most two decimals ("$1,250.00", "85", "9.5"). */
+const PAY_AMOUNT_TEXT = /^\$?(?:\d{1,3}(?:,\d{3})+|\d+|(?=\.\d))(?:\.\d{0,2})?$/;
+const PAY_LAST_DAY = 31;
 /** Fields the bank feed keeps up to date unless the owner has set them. */
 const FED_FIELDS = { name: 'name', amount: 'amount', variable: 'whether it varies', cadence: 'cadence', anchor: 'last charge day', category: 'category', purpose: 'purpose', toAccountId: 'what it pays down' };
 
@@ -94,6 +107,7 @@ function offerUndo(message, label, undone) {
 
 export const label = (ctx, params) => {
   const rec = findEntry(ctx.state, params && params.id);
+  if (rec ? rec.byHand : params && params.pay) return rec ? 'Payment you send: ' + (rec.name || 'unnamed payment') : 'New payment you send';
   return rec ? 'Book entry: ' + (rec.name || 'unnamed line') : 'New Book entry';
 };
 
@@ -120,9 +134,133 @@ function categoryOptions(selected) {
   </optgroup>`);
 }
 
+/* ------------------------------------------------- a payment the owner sends */
+
+function ordinal(n) {
+  const tens = n % 100;
+  const unit = n % 10;
+  return n + (tens >= 11 && tens <= 13 ? 'th' : unit === 1 ? 'st' : unit === 2 ? 'nd' : unit === 3 ? 'rd' : 'th');
+}
+
+/** The checklist's rows of one payment (derive: byHand), oldest first. */
+function payRows(ctx, id) {
+  const bh = ctx.d.byHand;
+  return bh && Array.isArray(bh.rows) ? bh.rows.filter((row) => row.entry && row.entry.id === id) : [];
+}
+
+/**
+ * The month a change of the amount or the day applies from: this month while its payment is not paid
+ * (or the payment is switched off), the next once it is. The engine decides the same way (editByHand).
+ */
+function appliesFrom(ctx, rec) {
+  const ym = monthOf(ctx.today);
+  const row = payRows(ctx, rec.id).find((one) => monthOf(one.day) === ym);
+  const open = !rec.active || (row && (row.status === 'due' || row.status === 'overdue'));
+  return open ? ym : addMonthsYm(ym, 1);
+}
+
+function payStanding(ctx, rec) {
+  const rows = payRows(ctx, rec.id);
+  const ym = monthOf(ctx.today);
+  const row = rows.find((one) => monthOf(one.day) === ym) || rows[rows.length - 1] || null;
+  const short = (day) => (isYmd(day) ? fmtDate(day, 'short') : 'a day not on record');
+  let standing = 'switched off: not on the list, not counted as due';
+  if (rec.active) {
+    const next = nextOccurrence(rec, addDays(ctx.today, -1));
+    standing = !row ? (next ? 'first due ' + fmtDate(next, 'dowshort') : 'no day on its schedule yet')
+      : row.status === 'bank' ? 'paid at the bank ' + short(row.paidDay)
+        : row.status === 'pending' ? 'pending at the bank since ' + short(row.paidDay)
+          : row.status === 'hand' ? 'ticked ' + short(row.paidDay)
+            : row.status === 'overdue' ? 'overdue since ' + short(row.day)
+              : 'due ' + fmtDate(row.day, 'dowshort') + ' · ' + relDay(row.day, ctx.today);
+  }
+  const { count, last } = chargesOf(ctx.state, rec.id);
+  return html`<ul class="rows bks-facts">
+    <li class="row"><span class="row-label">${fmtMonth(ym, 'name')}</span><span class="row-value" data-cover-keep>${standing}</span></li>
+    <li class="row"><span class="row-label">Seen at the bank</span><span class="row-value" data-cover-keep>${count ? plural(count, 'payment') + ', the last on ' + fmtDate(last, 'medium') : 'none yet'}</span></li>
+  </ul>`;
+}
+
+function renderPay(ctx, rec) {
+  const isNew = !rec;
+  const id = rec ? rec.id : '';
+  const form = ctx.ui.payForm && ctx.ui.payForm.key === (id || 'new') ? ctx.ui.payForm : null;
+  const errors = form ? form.errors : {};
+  const day = rec && Number.isInteger(rec.dueDay) ? rec.dueDay : 1;
+  const days = [];
+  for (let n = 1; n < PAY_LAST_DAY; n++) days.push(n);
+  return html`<form class="sheet-body bks-pay" data-submit="recurring.pay-save" data-input="recurring.pay-touch" data-id="${id}" novalidate ${attrs({ 'data-cover': !!ctx.state.settings.cover })}>
+    <p class="sheet-head lab"><b>Payment you send</b><i class="sep"></i>${isNew ? 'each month' : 'the ' + (day >= PAY_LAST_DAY ? 'last day' : ordinal(day)) + ' of each month'}</p>
+    <h2 class="sheet-title">${isNew ? 'A payment to make each month.' : rec.name || 'Unnamed payment'}</h2>
+    ${isNew
+      ? html`<p class="cap">For a payment you send yourself by Zelle or bank transfer. It is on the Board’s list each month and is ticked when the bank shows it or you tick it; until then it is taken off what is liquid. 3 fields; the bank’s own row ticks it from then on.</p>`
+      : payStanding(ctx, rec)}
+
+    <label class="${cx('field', errors.name && 'is-invalid')}">
+      <span class="field-label lab">Name</span>
+      <input class="input" type="text" name="name" value="${rec ? rec.name : ''}" maxlength="${PAY_NAME_MAX}" autocomplete="off" ${attrs({ 'aria-invalid': errors.name ? 'true' : null, placeholder: isNew ? 'e.g. Flat share' : null })}>
+      ${errors.name ? html`<span class="field-error">${errors.name}</span>` : ''}
+    </label>
+
+    <div class="field-row field-row-even">
+      <label class="${cx('field', errors.amount && 'is-invalid')}">
+        <span class="field-label lab">Amount, in dollars</span>
+        <input class="input input-fig" type="text" inputmode="decimal" name="amount" data-fig value="${isNew ? '' : dollars(rec.amount)}" autocomplete="off" ${attrs({ 'aria-invalid': errors.amount ? 'true' : null, placeholder: isNew ? '0.00' : null })}>
+        ${errors.amount ? html`<span class="field-error">${errors.amount}</span>` : ''}
+      </label>
+      <label class="${cx('field', errors.dueDay && 'is-invalid')}">
+        <span class="field-label lab">Day of the month</span>
+        <span class="select"><select name="dueDay" ${attrs({ 'aria-invalid': errors.dueDay ? 'true' : null })}>
+          ${days.map((n) => html`<option value="${n}" ${attrs({ selected: n === day })}>${ordinal(n)}</option>`)}
+          <option value="${PAY_LAST_DAY}" ${attrs({ selected: day >= PAY_LAST_DAY })}>Last day</option>
+        </select></span>
+        ${errors.dueDay ? html`<span class="field-error">${errors.dueDay}</span>` : ''}
+      </label>
+    </div>
+    <p class="cap">${isNew
+      ? html`The bank ticks it by the exact amount, so enter what you send to the cent. The 30th falls on the last day of a month that has no 30th.`
+      : html`A change of the amount or the day applies from ${fmtMonth(appliesFrom(ctx, rec))}. The bank ticks it by the exact amount.`}</p>
+
+    ${isNew ? '' : html`<label class="switch switch-block bks-switch">
+      <span class="switch-text">Switched on <em>Off: it leaves the Board’s list and is not counted as due; its ${plural(Object.keys(rec.marks || {}).length, 'tick')} and its name are kept.</em></span>
+      <input type="checkbox" role="switch" name="active" ${attrs({ checked: !!rec.active })}>
+      <span class="switch-track" aria-hidden="true"></span>
+    </label>`}
+
+    <div class="sheet-actions">
+      ${isNew ? '' : html`<button class="btn" type="button" data-action="recurring.pay-remove" data-id="${id}">Remove</button>`}
+      <button class="btn btn-solid" type="submit">${isNew ? 'Add the payment' : 'Save'}</button>
+    </div>
+  </form>`;
+}
+
+/** Read the payment's form with the limits of byhand.js. Returns { fields } or { errors }. */
+function readPay(values, rec) {
+  const errors = {};
+  const text = (key) => (typeof values[key] === 'string' ? values[key].trim() : '');
+  const fields = {};
+
+  const name = text('name');
+  if (name && name.length <= PAY_NAME_MAX) fields.name = name;
+  else errors.name = name ? 'A name is at most ' + PAY_NAME_MAX + ' characters.' : 'A payment needs a name of your own, 1 to ' + PAY_NAME_MAX + ' characters.';
+
+  // dollars with at most two decimals, as typed: what the bank ticks is the exact amount, so nothing is rounded (E9 F2)
+  const amount = PAY_AMOUNT_TEXT.test(text('amount')) ? toCents(text('amount')) : null;
+  if (amount != null && Number.isInteger(amount) && amount >= 1 && amount <= PAY_AMOUNT_MAX) fields.amount = amount;
+  else errors.amount = amount != null && amount > PAY_AMOUNT_MAX ? 'An amount is at most 100,000,000.00.' : 'An amount looks like 250.00.';
+
+  const dueDay = Number(values.dueDay);
+  if (Number.isInteger(dueDay) && dueDay >= 1 && dueDay <= PAY_LAST_DAY) fields.dueDay = dueDay;
+  else errors.dueDay = 'A day from the 1st to the 30th, or the last day.';
+
+  if (rec) fields.active = values.active === 'on';
+  return Object.keys(errors).length ? { errors } : { fields };
+}
+
 export function render(ctx, params) {
   const id = params && params.id ? params.id : '';
   const rec = findEntry(ctx.state, id);
+  if (rec ? rec.byHand : params && params.pay) return renderPay(ctx, rec);
   if (id && !rec) {
     return html`<div class="sheet-body">
       <p class="sheet-head lab"><b>Book entry</b></p>
@@ -291,6 +429,85 @@ function readForm(values, rec, state) {
 }
 
 export const actions = {
+  /** The form of a payment the owner sends: a new one is added to the list, an existing one changed. */
+  'recurring.pay-save': ({ el, values, data }) => {
+    const ctx = context();
+    const id = data.id || '';
+    const rec = findEntry(ctx.state, id);
+    if (id && (!rec || !rec.byHand)) { closeSheet(); return; }
+    const read = readPay(values || {}, rec);
+    if (read.errors) {
+      store.setUi({ payForm: { key: id || 'new', errors: read.errors } });
+      const first = ['name', 'amount', 'dueDay'].find((key) => read.errors[key]);
+      const field = el && typeof el.querySelector === 'function' ? el.querySelector('[name="' + first + '"]') : null;
+      if (field) field.focus();
+      return;
+    }
+    const fields = read.fields;
+    if (store.ui.payForm) store.setUi({ payForm: null });
+
+    if (!rec) {
+      const undoLabel = 'Payment added';
+      let added = null;
+      store.update((s) => {
+        added = addByHand(s, fields, ctx.today, ctx.now);
+        if (added) refresh(s, ctx.now);
+      }, { undo: undoLabel });
+      if (!added) { if (store.undoLabel === undoLabel) store.undo(); return; }
+      const addedId = added.id;
+      closeSheet();
+      // the checklist as the engine has it now (the page's own context is drawn a moment later)
+      const row = byHandMonth(store.state, ctx.today, ctx.now).rows.filter((one) => one.entry && one.entry.id === addedId).pop() || null;
+      const words = !row ? '.'
+        : row.status === 'bank' ? ': the bank shows it paid on ' + fmtDate(row.paidDay, 'short') + '.'
+          : row.status === 'pending' ? ': pending at the bank since ' + fmtDate(row.paidDay, 'short') + '.'
+            : row.status === 'overdue' ? ', due since ' + fmtDate(row.day, 'dowshort') + '.'
+              : ', due ' + fmtDate(row.day, 'dowshort') + '.';
+      offerUndo(fields.name + ' is on the list of payments to make' + words, undoLabel, fields.name + ' is taken off the list again.');
+      return;
+    }
+
+    const changed = Object.keys(fields).filter((key) => (key === 'active' ? !!rec.active : rec[key]) !== fields[key]);
+    if (!changed.length) { closeSheet(); return; }
+    const terms = changed.includes('amount') || changed.includes('dueDay');
+    const from = terms ? fmtMonth(appliesFrom(ctx, rec)) : '';
+    const undoLabel = 'Payment changed';
+    let done = false;
+    store.update((s) => {
+      done = editByHand(s, id, fields, ctx.today, ctx.now);
+      if (done) refresh(s, ctx.now);
+    }, { undo: undoLabel });
+    closeSheet();
+    if (!done) { if (store.undoLabel === undoLabel) store.undo(); return; }
+    const off = changed.includes('active') && !fields.active;
+    offerUndo(plural(changed.length, 'field') + ' saved on ' + fields.name + '.'
+      + (off ? ' It is off the list of payments to make.' : terms ? ' The change applies from ' + from + '.' : ''),
+    undoLabel, fields.name === rec.name ? rec.name + ' is as it was.' : 'The payment is as it was.');
+  },
+
+  /** Typing in the payment's form clears an error it was showing. */
+  'recurring.pay-touch': () => {
+    if (store.ui.payForm) store.setUi({ payForm: null });
+  },
+
+  /** Remove a payment the owner sends: off the list on every device, its bank rows ordinary again. */
+  'recurring.pay-remove': ({ data }) => {
+    const ctx = context();
+    const rec = findEntry(ctx.state, data.id);
+    if (!rec || !rec.byHand) { closeSheet(); return; }
+    const undoLabel = 'Payment removed';
+    const name = rec.name || 'The payment';
+    const { count } = chargesOf(ctx.state, rec.id);
+    let done = false;
+    store.update((s) => {
+      done = removeByHand(s, data.id, ctx.now);
+      if (done) refresh(s, ctx.now);
+    }, { undo: undoLabel });
+    closeSheet();
+    if (!done) { if (store.undoLabel === undoLabel) store.undo(); return; }
+    offerUndo(name + ' is removed from the payments to make' + (count ? '; its ' + plural(count, 'bank row') + ' ' + (count === 1 ? 'is' : 'are') + ' ordinary again.' : '.'), undoLabel, name + ' is back on the list.');
+  },
+
   'recurring.save': ({ el, values, data }) => {
     const ctx = context();
     const id = data.id || '';

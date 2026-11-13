@@ -26,6 +26,8 @@ let saving = null;
 /** epoch ms of the latest change made in this page, for the note when a newer save elsewhere replaces it */
 let editedAt = null;
 const undoStack = [];
+/** Called by undo() with (the document before the Undo, the document put back); see store.onRestore. */
+let restoreHook = null;
 
 const status = {
   /** 'indexeddb' | 'localstorage' | 'memory' | 'demo' */
@@ -147,13 +149,24 @@ export const store = {
   /**
    * Change the document. `mutator` receives the document and edits it in place.
    * @param {(state: object) => void} mutator
-   * @param {{ undo?: string, silent?: boolean }} [opts] undo: label for the undo toast (stores a pre-image)
+   * @param {{ undo?: string, silent?: boolean, past?: (state: object) => void }} [opts] undo: label for the undo toast
+   *        (stores a pre-image). past: the same arrival made in every pre-image Undo holds, for a change that did not
+   *        come from the owner (what another device sent), so that a later Undo does not take it back.
    */
   update(mutator, opts = {}) {
     if (!doc) return;
     if (opts.undo) {
       undoStack.push({ label: opts.undo, json: JSON.stringify(doc) });
       if (undoStack.length > UNDO_DEPTH) undoStack.shift();
+    }
+    if (typeof opts.past === 'function') {
+      for (const entry of undoStack) {
+        try {
+          const copy = JSON.parse(entry.json);
+          opts.past(copy);
+          entry.json = JSON.stringify(copy);
+        } catch { /* that pre-image stays as it was */ }
+      }
     }
     mutator(doc);
     rev++;
@@ -177,13 +190,26 @@ export const store = {
     const entry = undoStack.pop();
     if (!entry) return null;
     const revNow = (doc.meta.rev || 0) + 1;
+    const before = doc;
     doc = JSON.parse(entry.json);
     doc.meta.rev = revNow;
+    if (restoreHook) {
+      try { restoreHook(before, doc); } catch (err) { console.error('[store] restore hook failed', err); }
+    }
     rev++;
     editedAt = Date.now();
     schedulePersist();
     notify();
     return entry.label;
+  },
+
+  /**
+   * Register the one function `undo()` calls with (the document as it was just before the Undo, the
+   * document just put back), before subscribers are told. It may change the document put back.
+   * @param {((before: object, after: object) => void)|null} fn
+   */
+  onRestore(fn) {
+    restoreHook = typeof fn === 'function' ? fn : null;
   },
 
   /** Run `fn` on every change (state or ui). Returns an unsubscribe function. */

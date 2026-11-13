@@ -80,3 +80,9 @@
   .sheet-body .btn-link { position: relative; }
   .sheet-body .btn-link::before { content: ""; position: absolute; inset: min(0px, calc((100% - var(--tap)) / 2)); }
 }
+
+/* ------------------------------------------------ a payment you send */
+/* the line of a bank row's sheet that names the payment it pays, with its one text button */
+.tx-pays { flex-wrap: wrap; gap: 2px var(--s-3); }
+.tx-pays .row-label { flex: 1 1 12em; min-width: 0; overflow-wrap: anywhere; }
+.tx-pays .btn-link { margin-left: auto; flex: none; }

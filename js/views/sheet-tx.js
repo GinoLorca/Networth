@@ -11,7 +11,10 @@
  *
  * Cover mode: the sheet body carries data-cover itself (the sheet host is outside the covered page).
  *
- * Actions: tx.save (submit) · tx.category (the class follows a new category) · tx.remove
+ * A bank row that pays a payment the owner sends (a Book entry with `byHand`) says so under its account,
+ * and can be taken off that payment ("Not this payment": byhand.skipRow, then detect.refresh, with undo).
+ *
+ * Actions: tx.save (submit) · tx.category (the class follows a new category) · tx.remove · tx.pay-skip
  * The business block is shown by the stylesheet from the form's own state (css/views/scoresheet.css, .tx-biz).
  */
 
@@ -22,6 +25,7 @@ import { CATEGORIES, KLASSES, PURPOSES, GLYPHS, ACCOUNT_TYPES, accountLabel, cat
 import { learnRule, confirmMove } from '../model/classify.js';
 import { refresh } from '../model/detect.js';
 import { removeManual } from '../model/merge.js';
+import { skipRow } from '../model/byhand.js';
 import { moveGlyph } from '../ui/glyphs.js';
 import { store } from '../store.js';
 import { closeSheet } from '../router.js';
@@ -154,8 +158,15 @@ function statusNote(tx) {
   return tx.postedDay ? 'posted ' + fmtDate(tx.postedDay, 'dowshort') : 'posted';
 }
 
+/** The payment the owner sends that this bank row pays, or null. */
+function paysOf(state, tx) {
+  if (!tx || !tx.recurringId || !Array.isArray(state.recurring)) return null;
+  return state.recurring.find((rec) => rec && rec.id === tx.recurringId && rec.byHand === true) || null;
+}
+
 function facts(ctx, tx) {
   const account = tx.accountId ? ctx.d.account(tx.accountId) : null;
+  const pays = paysOf(ctx.state, tx);
   const pencil = tx.pending || tx.source === 'manual';
   const sign = tx.kind === 'income' || tx.kind === 'refund' ? '+' : '';
   const amount = tx.kind === 'decline'
@@ -173,6 +184,10 @@ function facts(ctx, tx) {
     ${account ? html`<li class="row" data-key="account">
       <span class="row-label">Account</span>
       <span class="tx-v">${accountLabel(account)}${account.institution ? html` <em class="row-note">${account.institution}</em>` : ''}</span>
+    </li>` : ''}
+    ${pays ? html`<li class="row tx-pays" data-key="pays">
+      <span class="row-label">Pays ${pays.name || 'an unnamed payment'}, a payment you send</span>
+      <button class="btn-link" type="button" data-action="tx.pay-skip" data-id="${tx.id}">Not this payment</button>
     </li>` : ''}
     ${tx.raw ? html`<li class="tx-raw" data-key="raw">
       <span class="lab">As the bank wrote it</span>
@@ -504,6 +519,24 @@ export const actions = {
     const def = CATEGORIES[el.value];
     const radio = def && el.form ? el.form.querySelector('input[name="klass"][value="' + def.klass + '"]') : null;
     if (radio) radio.checked = true;
+  },
+  /** "Not this payment": the row is taken off the payment the owner sends, and never offered to it again. */
+  'tx.pay-skip': ({ data }) => {
+    const ctx = context();
+    const tx = ctx ? findTx(ctx.state, data.id) : null;
+    const pays = tx ? paysOf(ctx.state, tx) : null;
+    if (!pays) return;
+    const words = 'Row taken off the payment';
+    let done = false;
+    store.update((s) => {
+      done = skipRow(s, pays.id, tx.id, ctx.now);
+      if (done) refresh(s, ctx.now);
+    }, { undo: words });
+    if (!done) { if (store.undoLabel === words) store.undo(); return; }
+    toast('The bank’s row of ' + fmtDate(tx.day, 'short') + ' no longer pays ' + (pays.name || 'the payment') + '.', {
+      action: 'Undo',
+      onAction: () => { if (store.undoLabel === words && store.undo()) toast('The row of ' + fmtDate(tx.day, 'short') + ' pays ' + (pays.name || 'the payment') + ' again.'); },
+    });
   },
   /** Remove a tapped-in move or a declined purchase (bank rows cannot be removed). */
   'tx.remove': ({ data }) => {

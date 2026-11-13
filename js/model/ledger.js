@@ -17,7 +17,7 @@ import {
   monthOf, parts, startOfMonth, weekStart,
 } from './dates.js';
 import { roundCents } from './money.js';
-import { BILL_LAPSE_PERIODS, earlyDays, lastOccurrence, nextOccurrence, occurrences, upcoming } from './book.js';
+import { BILL_LAPSE_PERIODS, byHandStandingOf, byHandUnpaid, earlyDays, lastOccurrence, nextOccurrence, occurrences, runsByHand, upcoming } from './book.js';
 import { dailyInterest, loanValueOn } from './loans.js';
 
 const EPOCH = '1970-01-01';
@@ -544,9 +544,11 @@ function buildIndex(core) {
     capital: new Map(),       // manual account id -> [{ n, value }] capitalised purchases
     loanPayments: new Map(),  // amortised loan id -> [{ day, amount }] payments seen in the feed
     loanOfEntry: loansByEntry(core),
+    tickResets: new Map(),    // by-hand entry id -> day numbers on which a tick, never met by a bank row, starts its accrual again
     countPending: isOn(core.settings.countPending),
   };
   for (const tx of listOf(core.doc.txs)) indexRow(core, index, tx);
+  indexTicks(core, index);
   index.order = [...index.buckets.keys()].sort(ascending);
   index.effectRunning = runningTotals(index, 'effect');
   index.provisionalRunning = runningTotals(index, 'provisional');
@@ -616,6 +618,42 @@ function indexRow(core, index, tx) {
   } else if (holder && holder.bank) {
     indexBankRow(core, index, tx, n, holder);
   }
+}
+
+/** A tick this many days old that no bank row has met is a payment made outside the linked accounts. */
+const TICK_TRANSIT_DAYS = 4;
+
+/**
+ * A tick the owner made on a payment they send moves no figure: no money is tallied and the day-by-day
+ * accrual runs on, because the bank still holds the money (the occurrence is settled for the clock by
+ * the Book's own rule, book.byHandStanding). Only when 4 days have gone by since the tick and no bank
+ * row has settled that occurrence does the accrual start again, from the day those 4 days ended (the
+ * game day of the tick plus 4) and never from an earlier one: a tick rewrites no day already played.
+ * A row dated on or after that day leaves the restart standing, for the same reason; a row dated
+ * before it is the payment itself, and the accrual starts again from the row alone.
+ */
+function indexTicks(core, index) {
+  for (const entry of listOf(core.doc.recurring)) {
+    if (!isByHand(entry) || !isObject(entry.marks)) continue;
+    const days = Object.keys(entry.marks).filter((day) => isYmd(day));
+    let standing = null;
+    for (const day of days) {
+      const mark = entry.marks[day];
+      if (!isObject(mark) || mark.paid !== true || !Number.isFinite(mark.at)) continue;
+      const from = addDays(gameDay(mark.at, core.rollover), TICK_TRANSIT_DAYS);
+      const n = core.cal.num(from);
+      if (n === null || n > core.todayN) continue;
+      if (standing === null) standing = byHandStandingOf(core.doc, entry, days.reduce((a, b) => (a > b ? a : b), core.today));
+      const item = standing.find((one) => one.day === day);
+      if (!item || (item.row !== null && item.row.day < from)) continue;
+      pushTo(index.tickResets, entry.id, n);
+    }
+  }
+}
+
+/** A payment the owner sends themselves that runs (book.runsByHand): due and overdue by its own rule. */
+function isByHand(entry) {
+  return runsByHand(entry) && typeof entry.id === 'string';
 }
 
 /** A move the owner tapped in: no bank balance holds it yet, so it is carried separately. */
@@ -952,18 +990,26 @@ function billItem(core, index, entry) {
   const loan = index.loanOfEntry.get(entry.id) || null;
   const daily = dailyOf(entry);
   const cadenceDays = CADENCES[entry.cadence].days;
+  const resets = makeResets(core, entry, charges, addedByOwner(entry));
+  const ticks = uniqueSorted(index.tickResets.get(entry.id) || []);
   return {
     id: entry.id,
     name: nameOf(entry),
     capDays: BILL_CAP_PERIODS * cadenceDays,
-    lapseDays: BILL_LAPSE_PERIODS * cadenceDays,
-    lastReset: makeResets(core, entry, charges, byHand(entry)),
+    // a payment the owner sends stays owed until it is paid or switched off: its accrual holds at the cap
+    lapseDays: isByHand(entry) ? Infinity : BILL_LAPSE_PERIODS * cadenceDays,
+    // a tick no bank row met starts the accrual again from its own day on, and changes nothing before it
+    lastReset: !ticks.length ? resets : (n) => {
+      const reset = resets(n);
+      const i = lastAtOrBelow(ticks, n);
+      return i < 0 || (reset !== null && reset >= ticks[i]) ? reset : ticks[i];
+    },
     dailyOn: loan ? (n) => dailyInterest(-valueAt(seriesOf(core, loan), n), loan.account.apr) : () => daily,
   };
 }
 
 /** An entry the owner added by hand: nothing is known of it before its anchor or the day it was added. */
-function byHand(entry) {
+function addedByOwner(entry) {
   return entry.source === 'manual' || isYmd(entry.since);
 }
 
@@ -977,6 +1023,9 @@ function byHand(entry) {
  *    from its anchor alone, so that it lapses like any other when no charge is ever seen, and has
  *    nothing before that anchor.
  *  - An entry added by hand has nothing before its `since` day.
+ *  - A payment the owner sends (book.runsByHand) keeps, for the days before its first linked row, the
+ *    rule those days were played under: nothing before its anchor, and from the anchor on the anchor or
+ *    `since`, whichever is later. The first bank row ever linked to it rewrites no earlier day.
  * @returns {(n: number) => number|null}
  */
 function makeResets(core, item, linkedDays, fromAnchorOnly = false) {
@@ -989,11 +1038,12 @@ function makeResets(core, item, linkedDays, fromAnchorOnly = false) {
   let projected = [];
   let coveredFrom = core.todayN; // `projected` holds the schedule after this day
   let start; // where the one period ahead of the first linked transaction begins
+  const ownRule = fromAnchorOnly && isByHand(item);
 
   return (n) => {
     if (n >= firstLinked) return linked[lastAtOrBelow(linked, n)];
     if (sinceN !== null && n < sinceN) return null;
-    if (linked.length) {
+    if (linked.length && !ownRule) {
       if (start === undefined) {
         // the scheduled day just ahead of the first linked transaction; one period ahead when the schedule has none
         const ahead = occurrences(item, core.cal.day(firstLinked - longestGap - 1), core.cal.day(firstLinked - 1));
@@ -1546,19 +1596,45 @@ function dueWithin(core, days) {
   const entries = new Map(listOf(core.doc.recurring).filter(isObject).map((entry) => [entry.id, entry]));
   // What is overdue is always listed, whatever the window.
   for (const row of days >= 1 ? upcoming(core.doc, core.today, days) : []) {
-    if (!drawsOnCash(core, row.accountId) || isCharged(core, row, entries.get(row.id))) continue;
-    due.push({ id: row.id, name: nameOf(row), day: row.day, amount: Math.round(row.amount) });
     const entry = entries.get(row.id);
+    if (isByHand(entry)) {
+      // the Book has already left out the occurrences a row or a tick settles
+      due.push({ id: row.id, name: nameOf(row), day: row.day, amount: Math.round(row.amount), byHand: true });
+      continue;
+    }
+    if (!drawsOnCash(core, row.accountId) || isCharged(core, row, entry)) continue;
+    due.push({ id: row.id, name: nameOf(row), day: row.day, amount: Math.round(row.amount) });
     if (entry && entry.toAccountId != null) debtsInBook.add(entry.toAccountId);
   }
   for (const entry of entries.values()) {
+    if (isByHand(entry)) {
+      // every unpaid occurrence whose day has passed stays due: it never lapses while the entry is on
+      if (!hasCadence(entry) || !positive(entry.amount)) continue;
+      for (const item of byHandUnpaid(core.doc, entry, core.today)) {
+        due.push({ id: entry.id, name: nameOf(entry), day: item.day, amount: Math.round(entry.amount), overdue: true, byHand: true });
+      }
+      continue;
+    }
+    if (entry.byHand === true) continue; // a payment the owner sends that does not run (book.runsByHand) is on no list
     const late = overdueOf(core, entry);
     if (!late) continue;
     due.push(late);
     if (entry.toAccountId != null) debtsInBook.add(entry.toAccountId);
   }
   for (const item of days >= 1 ? cardMinimums(core, days) : []) if (!debtsInBook.has(item.id)) due.push(item);
-  return due.sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : 0));
+  return due.sort(inDueOrder);
+}
+
+/**
+ * By day. Within a day the ordinary items come first, in the order they were found, then the payments
+ * the owner sends by name, then by id: a total order, so that every device lists them alike.
+ */
+function inDueOrder(a, b) {
+  if (a.day !== b.day) return a.day < b.day ? -1 : 1;
+  if (!a.byHand !== !b.byHand) return a.byHand ? 1 : -1;
+  if (!a.byHand) return 0;
+  if (a.name !== b.name) return a.name < b.name ? -1 : 1;
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 }
 
 /**
@@ -1580,7 +1656,7 @@ function overdueOf(core, entry) {
   if (settled.some((posted) => posted >= n - early)) return null;
   // An entry never settled is late only when the owner added it by hand, and only for an occurrence
   // after its anchor (a past anchor is the last charge the owner knows of) and after the day it was added.
-  if (!settled.length && !byHand(entry)) return null;
+  if (!settled.length && !addedByOwner(entry)) return null;
   const reset = makeResets(core, entry, settled, true)(core.todayN);
   if (reset === null || core.todayN - reset > BILL_LAPSE_PERIODS * cadenceDays) return null;
   if (!settled.length && n <= reset) return null;

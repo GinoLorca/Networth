@@ -360,6 +360,8 @@ export function makeRecurring(fields = {}) {
     cadence: 'monthly', anchor: '', category: 'subscriptions', purpose: 'personal',
     essential: false, verdict: null, active: true, source: 'detected', confidence: 0,
     locks: [], toAccountId: null, since: null, note: '',
+    // a payment the owner sends themselves (model/byhand.js): on the checklist until the bank shows it or it is ticked
+    byHand: false, dueDay: null, payee: null, payeeAt: 0, marks: {}, skips: {}, editedAt: 0,
     ...fields,
   };
 }
@@ -458,6 +460,8 @@ export function defaultState(now) {
     },
     /** kept money actually moved to the card or savings: { weekOf, amount, day, txId, via: 'auto'|'tap' } */
     sweeps: [],
+    /** what travels between the owner's devices: tombs[entryId] = ms a payment the owner sends was removed */
+    share: { tombs: {} },
     goals: {
       /** cash reserve target, cents */
       reserve: { target: 1000000 },
@@ -528,6 +532,16 @@ export function checkDoc(doc) {
   }
   for (const r of doc.recurring) {
     if (!Object.hasOwn(CADENCES, r.cadence) || !isCents(r.amount)) return 'This copy contains an unreadable Book entry.';
+    if (r.dueDay != null && !(Number.isInteger(r.dueDay) && r.dueDay >= 1 && r.dueDay <= 31)) return 'This copy contains an unreadable Book entry.';
+    if (r.payee != null && typeof r.payee !== 'string') return 'This copy contains an unreadable Book entry.';
+    // a payment the owner sends is monthly, has its day and an anchor that is a day: without them it would be due and on no checklist
+    if (r.byHand === true && (r.dueDay == null || r.cadence !== 'monthly' || !isDay(r.anchor))) return 'This copy contains an unreadable Book entry.';
+    for (const key of ['marks', 'skips']) {
+      if (r[key] != null && !Object.values(r[key]).every(isPlain)) return 'This copy contains an unreadable Book entry.';
+    }
+  }
+  if (doc.share != null && doc.share.tombs != null && !Object.values(doc.share.tombs).every((x) => Number.isFinite(x))) {
+    return 'This copy has an unreadable part (share.tombs).';
   }
   for (const s of doc.streams) {
     if ((s.cadence != null && !Object.hasOwn(CADENCES, s.cadence)) || !isCents(s.amount)) return 'This copy contains an unreadable pay stream.';
@@ -622,7 +636,7 @@ function sameKinds(value, template, path) {
   return null;
 }
 
-const CHECK_FREE_FORM = new Set(['days', 'targets', 'notesSeen', 'dismissed', 'purposes']);
+const CHECK_FREE_FORM = new Set(['days', 'targets', 'notesSeen', 'dismissed', 'purposes', 'tombs', 'marks', 'skips']);
 
 /**
  * Bring a loaded document up to the current schema: fills any missing field with its default
@@ -639,13 +653,17 @@ export function migrate(doc) {
   doc.meta.v = SCHEMA_VERSION;
   doc.accounts = doc.accounts.map((a) => ({ ...makeAccount({ type: a.type }), ...a }));
   doc.txs = doc.txs.map((t) => ({ ...makeTx({ category: t.category }), ...t }));
-  doc.recurring = doc.recurring.map((r) => ({ ...makeRecurring(), ...r }));
+  doc.recurring = doc.recurring.map((r) => {
+    const entry = { ...makeRecurring(), ...r };
+    for (const key of ['marks', 'skips']) if (!isPlain(entry[key])) entry[key] = {};
+    return entry;
+  });
   doc.streams = doc.streams.map((s) => ({ ...makeStream(), ...s }));
   doc.habits.sort((a, b) => (a.from < b.from ? -1 : a.from > b.from ? 1 : 0));
   return doc;
 }
 
-const FREE_FORM = new Set(['days', 'targets', 'notesSeen', 'dismissed', 'purposes']);
+const FREE_FORM = new Set(['days', 'targets', 'notesSeen', 'dismissed', 'purposes', 'tombs']);
 
 /**
  * For a few hours the published app shipped placeholders in place of the built-in rules and goals

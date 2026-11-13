@@ -8,6 +8,7 @@
  *   ?now=2026-06-10T14:36   pretend it is this local time
  *   ?theme=paper|night      force a theme for this visit
  *   ?ns=name                use a separate saved document (tests)
+ *   ?share=owner            on a development host: share through that GitHub account's networth-data (off without it)
  */
 
 import { html, morph, bindActions, registerActions } from './ui/dom.js';
@@ -19,6 +20,8 @@ import { startRouter, onRoute, currentRoute, navigate, openSheet, closeSheet } f
 import { setContext, setServices } from './runtime.js';
 import { makeDerived } from './derive.js';
 import { initSync, syncInfo, autoSync, syncNow } from './sync.js';
+import { initShare, shareInfo, autoShare } from './share.js';
+import { restampByHand } from './model/byhand.js';
 import { buildDemoState, demoFeed } from './model/demo.js';
 import { mergeFeed } from './model/merge.js';
 import { refresh } from './model/detect.js';
@@ -107,6 +110,9 @@ async function boot() {
   store.load(doc ? migrate(doc) : defaultState(nowMs()));
   if (!search.get('theme')) applyTheme(store.state.settings.theme);
   await initSync();
+  // an Undo makes what it put back the newest, so that the other devices take the Undo and do not bring the change back
+  store.onRestore((before, after) => { restampByHand(before, after, nowMs()); });
+  await initShare(location);
 
   registerActions({ ...appActions, ...boardActions, ...scoresheetActions, ...materialActions, ...bookActions, ...analysisActions,
     ...settingsActions, ...connectActions, ...moveActions, ...planActions, ...sweepActions, ...txActions, ...dayActions,
@@ -128,6 +134,7 @@ async function boot() {
 
   render();
   autoSync();
+  autoShare();
   registerWorker();
 }
 
@@ -155,6 +162,7 @@ function onVisibility() {
     const seen = store.state.meta.lastSeen;
     if (seen && nowMs() - seen.at > 10 * 60 * 1000) store.setUi({ seen });
     autoSync();
+    autoShare();
     schedule();
   }
 }
@@ -243,6 +251,7 @@ function buildContext() {
     d: makeDerived(state, now),
     demo: store.status.readonly,
     sync: syncInfo(),
+    share: shareInfo(),
     wide: typeof matchMedia === 'function' ? matchMedia(WIDE).matches : true,
   };
 }

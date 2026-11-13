@@ -7,7 +7,11 @@
  *          .board-top marks the two bands that share the first screenful of a phone with today's standing
  * Hero:    .board-compo (the one line of composition) · .board-meta (yesterday, this month, last look)
  *          .board-split (+ .is-long) and .board-under (.board-under-note, .board-liquid) · .board-yesterday
- * Clock:   .board-due (what is due, up to three rows) · .board-nodue · .board-reserve · .board-runnote
+ * Clock:   .board-due (what is due, up to three rows; .board-tag on a payment the owner sends) · .board-nodue
+ *          .board-reserve · .board-runnote
+ * Payments to make: .board-pay-col (wide: under the reserve) · .board-pay-band (phones) · .board-pay > .pay-row
+ *          (.pay-box, .pay-main with .pay-name .pay-when .pay-note, the amount, .pay-more) · .pay-foot
+ *          .board-liquid-after (the liquid figure once they are sent)
  * Round:   .board-vs · .board-premise · .board-standing · .board-kept · .board-more · .board-quiet
  *          .board-actions · .board-line · .board-result (+ -mark) · .board-ann · .board-lede · .board-sofar
  * Figures: .board-figs > .board-fig (+ .is-empty)
@@ -44,7 +48,12 @@ button.hero-fig:focus-visible { outline-offset: 2px; }
 .board-liquid .cap { margin-left: auto; }
 .board-yesterday { margin-top: var(--s-2); padding-top: 7px; border-top: var(--rule-hair); }
 
+/* what is left of the liquid figure once the payments still to send have gone: an estimate, under it */
+.board-liquid-after { margin-top: 3px; text-wrap: balance; }
+.board-liquid-after [data-fig] { font-family: var(--f-figure); font-size: .90625rem; white-space: nowrap; }
+
 @media (min-width: 720px) {
+  .board-liquid-after { text-align: right; }
   .board-under { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-2) var(--s-5); }
   .board-under-note { flex: 1 1 auto; min-width: 0; max-width: 64ch; }
   .board-liquid { flex: none; margin: 0 0 0 auto; padding: 0; border: 0; }
@@ -72,6 +81,50 @@ button.hero-fig:focus-visible { outline-offset: 2px; }
 .board-due .fig { font-size: 1rem; line-height: 1.2; text-align: right; white-space: nowrap; }
 .board-due > .board-due-more { display: block; }
 .board-nodue { padding-top: 9px; border-top: var(--rule-hair); }
+
+/* a small ruled tag after a name in the due list: YOU SEND IT */
+.board-tag {
+  display: inline-block; margin-left: 2px; padding: 2px 5px 1px; border: 1px solid var(--hair);
+  font-family: var(--f-label); font-weight: 600; font-style: normal; font-size: .6875rem; line-height: 1.2; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-2); white-space: nowrap; vertical-align: 1px;
+}
+
+/* ------------------------------------------------------ payments to make */
+/* The month's checklist of what the owner sends: a box, the name with its day and its standing under
+   it, the amount. The rows are ruled like the due list above them; a paid row is set back. */
+.board-pay-col { margin-top: var(--s-4); padding-top: 0; border-top: var(--rule-hair); }
+.board-pay { margin-top: 6px; border-top: var(--rule-hair); }
+.pay-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) minmax(4.6em, auto); column-gap: 0; align-items: start; border-bottom: var(--rule-hair); }
+.pay-row > .fig { grid-column: 3; grid-row: 1; padding: 11px 0 0 10px; font-size: 1rem; line-height: 1.35; text-align: right; white-space: nowrap; }
+/* the box: 16px square, pressed over a full 44px. The hit area reaches into the gutter, not into the name. */
+.pay-box { grid-column: 1; grid-row: 1; display: flex; align-items: flex-start; width: var(--tap); min-height: var(--tap); margin-left: -16px; padding: 13px 0 0 16px; }
+button.pay-box { cursor: pointer; }
+.pay-box .check-box { background-color: transparent; }
+.pay-box .check-box.is-on::before, .pay-box .check-box.is-on::after { opacity: 1; }
+/* the bank's own tick is printed, not pencilled: a solid square with the cross let into it */
+.pay-box .check-box.is-bank { background-color: var(--ink); }
+.pay-box .check-box.is-bank::before, .pay-box .check-box.is-bank::after { width: 12px; margin-left: -6px; background-color: var(--paper); }
+button.pay-box:focus-visible { outline: 0; }
+button.pay-box:focus-visible .check-box { outline: 2px solid var(--spot); outline-offset: 3px; }
+@media (hover: hover) { button.pay-box:hover .check-box { box-shadow: 0 0 0 1px var(--ink); } }
+.pay-main { grid-column: 2; grid-row: 1; display: block; min-width: 0; min-height: var(--tap); padding: 10px 0 8px; text-align: left; color: var(--ink); }
+.pay-name { overflow-wrap: anywhere; font-size: .90625rem; line-height: 1.35; margin-right: 4px; }
+.pay-when { color: var(--ink-3); white-space: nowrap; }
+.pay-note { display: block; margin-top: 1px; font-family: var(--f-text); font-style: italic; font-size: .78125rem; line-height: 1.35; color: var(--ink-2); overflow-wrap: anywhere; }
+.pay-note .bank-mark { margin-right: 6px; vertical-align: 1px; }
+.pay-row.is-paid .pay-name { color: var(--ink-2); }
+.pay-main:focus-visible { outline-offset: -2px; }
+@media (hover: hover) { .pay-main:hover .pay-name { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .2em; } }
+/* what may be said about a row: under its name, in the name's column and the amount's */
+.pay-more { grid-column: 2 / -1; margin: -4px 0 -4px; padding-bottom: 0; font-size: .78125rem; line-height: 1.35; }
+.pay-more .btn-link { margin: 0; vertical-align: baseline; font-size: var(--t-label-s); white-space: normal; text-align: left; }
+.pay-more > span { display: block; margin-bottom: 1px; }
+.pay-more [data-fig] { font-family: var(--f-figure); font-style: normal; font-size: .84375rem; white-space: nowrap; }
+.pay-foot { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px var(--s-3); }
+.pay-foot [data-fig] { font-family: var(--f-figure); font-size: .90625rem; white-space: nowrap; }
+/* (two classes: the button's left margin in a .board-line is set after this rule) */
+.board-line.pay-foot .btn-link { margin-left: auto; }
+.board-pay-band { padding-bottom: 12px; }
 
 /* the reserve as a band of its own (phones) */
 .board-reserve { margin-top: var(--s-2); }
@@ -153,6 +206,11 @@ button.hero-fig:focus-visible { outline-offset: 2px; }
 /* a card's own name from the bank: one line, cut with an ellipsis */
 .board-clip { max-width: 58%; overflow: hidden; text-overflow: ellipsis; }
 .board-pace .fig { white-space: nowrap; }
+/* a narrow column with a large root: the figure wraps between its words ("≈$413.19 / lower") instead of widening the page */
+.board-pace { container-type: inline-size; }
+@container (max-width: 15.5rem) {
+  .board-pace .fig { white-space: normal; }
+}
 .board-ladder { margin-top: var(--s-2); }
 /* the norms beyond the next one: smaller and set back */
 .board-ladder .rung.is-later { padding: 4px 0; }

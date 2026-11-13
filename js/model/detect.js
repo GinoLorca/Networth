@@ -6,10 +6,12 @@
  */
 
 import { ACCOUNT_TYPES, CADENCES, CATEGORIES, PURPOSES, klassOf, makeRecurring, makeStream } from './schema.js';
-import { addDays, diffDays, eachDay, gameDayStartMs, isYmd, maxYmd, weekStart } from './dates.js';
+import { addDays, addMonths, diffDays, eachDay, gameDayStartMs, isYmd, maxYmd, weekStart } from './dates.js';
 import { roundCents } from './money.js';
 import { reclassify } from './classify.js';
 import { makeLedger, todayOf } from './ledger.js';
+import { runsByHand } from './book.js';
+import { claimByHand, payeeKey, unpaidByPayee } from './byhand.js';
 
 /*
  * How the specification is read where it leaves a choice (each is implemented where it is named):
@@ -72,6 +74,10 @@ const STEADY_SHARE = 0.10;
 const STEADY_FLOOR = 200;
 const VARIABLE_SHARE = 0.35;
 const PAY_SHARE = 0.15;
+/** A detected line within this share of a payment the owner sends to the same payee is that payment. */
+const SAME_PAYMENT_SHARE = 0.10;
+/** A row this near an occurrence of a payment the owner sends is on that payment's day (E9 F1). */
+const ON_ITS_DAY_DAYS = 5;
 /** The expected amount is the median of this many newest amounts. */
 const TYPICAL_COUNT = 3;
 
@@ -128,10 +134,22 @@ export function detectRecurring(state, nowMs) {
   if (!isObject(state)) return report;
   const entries = listIn(state, 'recurring');
   const ctx = readContext(state, nowMs);
+  // The payments the owner sends take their rows first: such a row is never a charge of another line,
+  // and a detected line of the same payment gives way, so nothing is counted twice.
+  const claims = claimByHand(state, ctx.today, nowMs);
+  const sentByOwner = byHandPayees(entries);
+  const owedByOwner = unpaidByPayee(state, claims, ctx.today);
+  const held = heldRows(state, claims);
+  for (let i = entries.length - 1; i >= 0; i--) {
+    if (isSamePayment(sentByOwner, entries[i]) || isOwnersLine(sentByOwner, owedByOwner, entries[i], held)) entries.splice(i, 1);
+  }
   const known = entries.filter(hasKey);
   const anchorsBefore = new Map(known.map((entry) => [entry, entry.anchor]));
-  const groups = groupRows(ctx.rows.filter((tx) => isCharge(ctx, tx)));
-  const claims = new Map();
+  // a row on the day of a payment the owner sends that the bank has not settled is that payment at
+  // another amount (E9 F1): it is left free, for the checklist to offer, and joins no line, unless a
+  // line of the payee that stays takes it (an amount within 10% of the line's): then it is that line's row
+  const groups = groupRows(ctx.rows.filter((tx) => !claims.has(tx.id) && isCharge(ctx, tx) &&
+    (!isOnOwedDay(owedByOwner, tx, [tx]) || isLineRow(known, tx))));
   const matched = new Set();
 
   for (const rows of groups) {
@@ -144,6 +162,8 @@ export function detectRecurring(state, nowMs) {
         claim(claims, series.rows, entry.id);
       } else {
         const created = newEntry(ctx, series);
+        if (isSamePayment(sentByOwner, created)) continue; // the owner's line of this payment stands; no second one is made
+        if (isOnOwedDay(owedByOwner, created, series.rows)) continue; // the owner sends another amount now and has not said so yet
         entries.push(created);
         claim(claims, series.rows, created.id);
         if (created.active) report.added.push(created.id);
@@ -629,6 +649,98 @@ function settleEntry(ctx, entry, anchorBefore, report) {
     entry.active = true;
     report.added.push(entry.id);
   }
+}
+
+/** The payees of the payments the owner sends that run (book.runsByHand), each with the amounts sent to it: fingerprint -> cents[]. */
+function byHandPayees(entries) {
+  const payees = new Map();
+  for (const entry of entries) {
+    if (!runsByHand(entry) || typeof entry.payee !== 'string' || !entry.payee) continue;
+    if (!payees.has(entry.payee)) payees.set(entry.payee, []);
+    payees.get(entry.payee).push(entry.amount);
+  }
+  return payees;
+}
+
+/**
+ * The rows each line held at the last run that no payment the owner sends has taken in this one:
+ * entry id -> rows.
+ */
+function heldRows(state, claims) {
+  const held = new Map();
+  for (const tx of listOf(state.txs)) {
+    if (!isObject(tx) || typeof tx.recurringId !== 'string' || claims.has(tx.id)) continue;
+    if (!held.has(tx.recurringId)) held.set(tx.recurringId, []);
+    held.get(tx.recurringId).push(tx);
+  }
+  return held;
+}
+
+/**
+ * E9 F1 (b) and (c) for a detected line that exists (E9 F1 (a) is isSamePayment): a line of the payee
+ * of a running payment the owner sends that now holds no row at all (every row it had belongs to that
+ * payment), or whose every row is on the payment's day while the payment's occurrence nearest its newest
+ * row has no bank row. A line the owner dismissed stays, so that it is never made again.
+ */
+function isOwnersLine(payees, owed, entry, held) {
+  if (!payees.size || !isObject(entry) || entry.source !== 'detected' || runsByHand(entry) || isDismissed(entry)) return false;
+  if (typeof entry.mkey !== 'string' || !entry.mkey || !payees.has(payeeKey(entry.mkey))) return false;
+  const rows = held.get(entry.id) || [];
+  if (rows.length === 0) return true;
+  // a row the line took of its own amount on the day of an unpaid occurrence (isLineRow) does not by
+  // itself make the line the owner's: (c) is read on the rows it had before, when it has any
+  const before = rows.filter((row) => !(isOnOwedDay(owed, entry, [row]) && isLineRow([entry], row)));
+  return isOnOwedDay(owed, entry, before.length ? before : rows);
+}
+
+/**
+ * E9 F1 (c): every row is on the day of one payment the owner sends to the same payee (within 5 days of
+ * an occurrence of its schedule read both ways), and that payment's occurrence nearest the newest row
+ * has no bank row (unpaid, or ticked with no row). The owner has changed what they send and not yet the
+ * entry, and a line of these rows would count the payment twice. A second payment to the payee on
+ * another day, or on the same day once the owner's own payment is at the bank, keeps its line.
+ */
+function isOnOwedDay(owed, entry, rows) {
+  if (!owed.size || !isObject(entry) || typeof entry.mkey !== 'string' || !entry.mkey || !rows.length) return false;
+  const payments = owed.get(payeeKey(entry.mkey));
+  if (!payments) return false;
+  let last = '';
+  for (const row of rows) {
+    if (!isObject(row) || !isYmd(row.day)) return false;
+    if (row.day > last) last = row.day;
+  }
+  return payments.some(({ dueDay, days }) =>
+    rows.every((row) => nearestOccurrence(dueDay, row.day).gap <= ON_ITS_DAY_DAYS) && days.includes(nearestOccurrence(dueDay, last).day));
+}
+
+/**
+ * A row a detected line of its payee that survived the removal step would take: the same payee, and an
+ * amount within 10% of the line's. Such a row on the day of a payment the owner sends is not held back.
+ */
+function isLineRow(lines, tx) {
+  if (typeof tx.mkey !== 'string' || !tx.mkey || !Number.isFinite(tx.amount)) return false;
+  const payee = payeeKey(tx.mkey);
+  return lines.some((entry) => entry.source === 'detected' && !runsByHand(entry) && !isDismissed(entry) &&
+    typeof entry.mkey === 'string' && payeeKey(entry.mkey) === payee && Number.isFinite(entry.amount) &&
+    Math.abs(tx.amount - entry.amount) <= SAME_PAYMENT_SHARE * entry.amount);
+}
+
+/** The day of a monthly schedule on `dueDay` (the last day in a shorter month) nearest `day`, the earlier on a tie, read both ways. */
+function nearestOccurrence(dueDay, day) {
+  let best = null;
+  for (const step of [-1, 0, 1]) {
+    const occurrence = addMonths(day.slice(0, 8) + '01', step, dueDay);
+    const gap = Math.abs(diffDays(occurrence, day));
+    if (best === null || gap < best.gap) best = { day: occurrence, gap };
+  }
+  return best;
+}
+
+/** A detected line that is a payment the owner sends: the same payee, and an amount within 10% of it. */
+function isSamePayment(payees, entry) {
+  if (!payees.size || !isObject(entry) || entry.source !== 'detected' || runsByHand(entry) || typeof entry.mkey !== 'string' || !entry.mkey) return false;
+  const amounts = payees.get(payeeKey(entry.mkey));
+  return !!amounts && amounts.some((amount) => Math.abs(entry.amount - amount) <= SAME_PAYMENT_SHARE * amount);
 }
 
 /** Write the links: a claimed charge joins the Book, one no longer claimed goes back to what its text says. */

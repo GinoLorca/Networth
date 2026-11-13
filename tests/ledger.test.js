@@ -2072,3 +2072,158 @@ test('a loan payment before the loan\'s first entry is part interest, part princ
   assert.ok(day.bills < 30000 - principal + 300, 'the principal is not a bill: ' + day.bills);
   assert.equal(day.other, 0);
 });
+
+/* ----------------------------------------------------- a payment the owner sends: due, overdue, counted */
+
+/** "Flat share", $250.00 on the 5th, on the list since `since` (the first day of a month). */
+function flatShare(since = '2026-06-01', fields = {}) {
+  return makeRecurring({
+    id: 'rec_flat', name: 'Flat share', amount: 25000, cadence: 'monthly', source: 'manual', mkey: '', accountId: null,
+    byHand: true, dueDay: 5, since, anchor: since.slice(0, 8) + '05', category: 'other', essential: true, ...fields,
+  });
+}
+
+const flatDue = (state, now = NOON) => clock(state, now).due.filter((item) => item.id === 'rec_flat');
+
+test('clock: a payment the owner sends is due until a posted row or a tick settles it, and overdue once its day has passed', () => {
+  const state = salaried();
+  const entry = flatShare();
+  state.recurring.push(entry);
+  const overdue = { id: 'rec_flat', name: 'Flat share', day: '2026-06-05', amount: 25000, overdue: true, byHand: true };
+  assert.deepEqual(flatDue(state), [overdue]);
+  const without = salaried();
+  assert.equal(clock(state, NOON).dueTotal, clock(without, NOON).dueTotal + 25000);
+  assert.equal(clock(state, NOON).shortfall, Math.max(0, clock(state, NOON).dueTotal - clock(state, NOON).cash));
+
+  // before its day it is due inside the window, not overdue; on its day it is due today
+  assert.deepEqual(flatDue(state, at(2026, 6, 4)), [{ id: 'rec_flat', name: 'Flat share', day: '2026-06-05', amount: 25000, byHand: true }]);
+  assert.deepEqual(flatDue(state, at(2026, 6, 5)), [{ id: 'rec_flat', name: 'Flat share', day: '2026-06-05', amount: 25000, byHand: true }]);
+  assert.deepEqual(flatDue(state, at(2026, 6, 6)), [overdue]);
+
+  // a tick settles it; an untick leaves it owed
+  entry.marks = { '2026-06-05': { paid: true, at: NOON } };
+  assert.deepEqual(flatDue(state), []);
+  assert.equal(clock(state, NOON).dueTotal, clock(without, NOON).dueTotal);
+  entry.marks = { '2026-06-05': { paid: false, at: NOON + 1 } };
+  assert.deepEqual(flatDue(state), [overdue]);
+
+  // a pending row settles it exactly while pending rows count (the ledger has then taken the money off cash);
+  // posted, it settles either way: no tick needed, and eleven days late is still June's
+  const row = tx('2026-06-16', 25000, { kind: 'spend', category: 'other', klass: 'book', recurringId: 'rec_flat', pending: true, postedDay: null });
+  state.txs.push(row);
+  assert.deepEqual(flatDue(state), []);
+  assert.equal(clock(state, NOON).cash, clock(without, NOON).cash - 25000);
+  state.settings.countPending = false;
+  assert.deepEqual(flatDue(state), [overdue]);
+  assert.equal(clock(state, NOON).cash, clock(without, NOON).cash);
+  row.pending = false;
+  assert.deepEqual(flatDue(state), []);
+  state.settings.countPending = true;
+  assert.deepEqual(flatDue(state), []);
+
+  // switched off, it is neither due nor counted
+  state.txs.pop();
+  entry.active = false;
+  assert.deepEqual(flatDue(state), []);
+});
+
+test('clock: every unpaid month of a payment the owner sends stays due, the twelve newest of the earlier months, and it never lapses', () => {
+  const state = salaried();
+  state.recurring.push(flatShare('2025-01-01'));
+  const due = flatDue(state);
+  assert.equal(due.length, 13);
+  assert.deepEqual([due[0].day, due[11].day, due[12].day], ['2025-06-05', '2026-05-05', '2026-06-05']);
+  assert.ok(due.every((item) => item.overdue === true && item.byHand === true && item.amount === 25000));
+  // one of the old ones ticked: it leaves, and the thirteenth-newest takes its place
+  state.recurring[state.recurring.length - 1].marks = { '2025-12-05': { paid: true, at: NOON } };
+  assert.deepEqual(flatDue(state).map((item) => item.day).slice(0, 2), ['2025-05-05', '2025-06-05']);
+  assert.equal(flatDue(state).some((item) => item.day === '2025-12-05'), false);
+  // far past the window too: the due window never hides what is overdue
+  assert.equal(flatDue(state, at(2026, 6, 30)).filter((item) => item.overdue).length, 13);
+});
+
+test('a payment the owner sends, counted day by day: it holds at its cap while unpaid; a tick moves no figure, and four days on starts it again', () => {
+  const state = salaried();
+  const entry = flatShare('2026-03-01');
+  state.recurring.push(entry);
+  state.sync.lastOk = null; // never stale: nothing holds the accruals still
+  const line = (now = NOON) => position(state, now).payables.find((row) => row.id === 'rec_flat');
+  const cap = 25000 * 1.25;
+  // unpaid since March 5: it counted up to the cap and stays there (an ordinary line would have lapsed and been released)
+  assert.equal(line().amount, cap);
+  assert.equal(line().since, '2026-03-05');
+  assert.equal(line(at(2026, 9, 1)).amount, cap);
+  // ticked for June on June 16: the bank still holds the money, so no figure of any day moves
+  const owed = closes(state, '2026-06-01', '2026-06-16', NOON);
+  const worth = position(state, NOON).live;
+  entry.marks = { '2026-06-05': { paid: true, at: NOON } };
+  assert.equal(line().since, '2026-03-05');
+  assert.equal(line().amount, cap);
+  assert.deepEqual(closes(state, '2026-06-01', '2026-06-16', NOON), owed);
+  assert.equal(position(state, NOON).live, worth);
+  assert.equal(flatDue(state).some((item) => item.day === '2026-06-05'), false); // and yet it is settled: not due, not overdue
+  // three days on, still nothing; four days on and no row: it was paid outside the linked accounts, and it
+  // counts again from that day (June 20), never from an earlier one
+  assert.equal(line(at(2026, 6, 19)).since, '2026-03-05');
+  assert.equal(line(at(2026, 6, 20)).since, '2026-06-20');
+  assert.equal(line(at(2026, 6, 25)).since, '2026-06-20');
+  const later = closes(state, '2026-06-01', '2026-06-25', at(2026, 6, 25));
+  entry.marks = {};
+  const laterOwed = closes(state, '2026-06-01', '2026-06-25', at(2026, 6, 25));
+  assert.deepEqual(later.slice(0, 19), laterOwed.slice(0, 19), 'no day before June 20 is rewritten');
+  assert.ok(later[24].smooth > laterOwed[24].smooth);
+  assert.deepEqual(later.map((day) => day.bank), laterOwed.map((day) => day.bank));
+  // unticked: exactly as if it had never been ticked
+  entry.marks = { '2026-06-05': { paid: false, at: NOON + 1 } };
+  assert.deepEqual(closes(state, '2026-06-01', '2026-06-16', NOON), owed);
+  // a posted row starts it again from its own day, and takes the money
+  entry.marks = {};
+  state.txs.push(tx('2026-06-05', 25000, { kind: 'spend', category: 'other', klass: 'book', recurringId: 'rec_flat' }));
+  assert.equal(line().since, '2026-06-05');
+  const paid = byDay(closes(state, '2026-06-01', '2026-06-16', NOON));
+  assert.equal(paid['2026-06-05'].spent, byDay(owed)['2026-06-05'].spent, 'a Book charge is not spending');
+  assertNoNaN(paid);
+});
+
+test('a transfer linked to a payment the owner sends is a Book charge; unlinked, or between the owner\'s accounts, it is not', () => {
+  const build = (fields) => {
+    const state = salaried();
+    state.settings.smoothing = false; // bills are then the charges themselves
+    state.accounts.push(bankAccount('acc_sav', 'savings', 100000));
+    state.recurring.push(flatShare());
+    state.txs.push(tx('2026-06-04', 25000, { kind: 'transfer', category: 'transfer', klass: 'neutral', ...fields }));
+    return state;
+  };
+  const day = (state) => byDay(closes(state, '2026-06-01', '2026-06-16', NOON))['2026-06-04'];
+  const loose = day(build({}));
+  const linked = day(build({ recurringId: 'rec_flat', klass: 'book' }));
+  assert.equal(linked.bills, loose.bills + 25000);
+  assert.equal(linked.spent, loose.spent);
+  assert.equal(linked.bank, loose.bank);
+  // the money had left either way (the day's result is what it was); linked, it has a name: a bill, not an unexplained move
+  assert.equal(linked.result, loose.result);
+  assert.equal(linked.other, loose.other + 25000);
+  // the linked transfer settles June's occurrence
+  assert.deepEqual(flatDue(build({ recurringId: 'rec_flat', klass: 'book' })), []);
+  assert.equal(flatDue(build({})).length, 1);
+  // a linked Zelle is Book spending, never a stop of the daily game
+  const zelle = build({ kind: 'spend', category: 'other', klass: 'book', recurringId: 'rec_flat', ruleId: 'builtin:zelle' });
+  assert.equal(day(zelle).bills, loose.bills + 25000);
+  assert.equal(day(zelle).spent, loose.spent);
+  assert.equal(round(zelle, '2026-06-04', NOON).stops ?? 0, round(build({}), '2026-06-04', NOON).stops ?? 0);
+});
+
+test('a payment the owner sends with nothing readable in it breaks nothing', () => {
+  const state = salaried();
+  state.recurring.push(
+    flatShare('2026-06-01', { marks: null, skips: 7 }),
+    flatShare('2026-06-01', { id: 'rec_odd', marks: { nonsense: { paid: true, at: 'x' }, '2026-06-05': 7 }, dueDay: 99, anchor: 'never' }),
+    flatShare('2026-06-01', { id: 'rec_free', amount: 0 }),
+  );
+  assert.doesNotThrow(() => {
+    assertNoNaN(clock(state, NOON));
+    assertNoNaN(position(state, NOON));
+    assertNoNaN(closes(state, '2026-06-01', '2026-06-16', NOON));
+  });
+  assert.equal(clock(state, NOON).due.some((item) => item.id === 'rec_odd' || item.id === 'rec_free'), false);
+});

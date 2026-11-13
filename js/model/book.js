@@ -46,7 +46,7 @@ export function occurrences(item, afterDay, untilDay) {
   if (afterDay >= untilDay) return [];
   const step = STEPS[item.cadence];
   if (step.days) return everyDays(item.anchor, step.days, afterDay, untilDay);
-  if (step.months) return everyMonths(item.anchor, step.months, afterDay, untilDay);
+  if (step.months) return everyMonths(item.anchor, step.months, afterDay, untilDay, dayOfMonthOf(item));
   return twiceMonthly(item.anchor, afterDay, untilDay);
 }
 
@@ -96,8 +96,12 @@ export function upcoming(state, fromDay, days) {
   const rows = [];
   const charged = lastChargeDays(state);
   for (const rec of activeEntries(state)) {
-    for (const day of occurrencesFrom(rec, fromDay, days)) {
-      if (charged.get(rec.id) >= day) continue; // it has already posted (a charge dated today)
+    if (rec.byHand === true && !runsByHand(rec)) continue; // a payment the owner sends without a day to send it on: on no list
+    const listed = occurrencesFrom(rec, fromDay, days);
+    // a payment the owner sends is settled by its own rule: by the row or the tick of that occurrence
+    const paid = rec.byHand === true && listed.length ? paidDays(byHandStandingOf(state, rec, listed[listed.length - 1])) : null;
+    for (const day of listed) {
+      if (paid ? paid.has(day) : charged.get(rec.id) >= day) continue; // it has already posted (a charge dated today)
       rows.push({
         id: rec.id, name: rec.name, day, amount: rec.amount, accountId: rec.accountId ?? null,
         category: categoryOf(rec), purpose: purposeOf(rec), variable: !!rec.variable, essential: !!rec.essential,
@@ -154,6 +158,151 @@ export function renewals(state, fromDay, days) {
   return rows.sort(byDay);
 }
 
+/** How far from its day a bank row may be and still settle an occurrence of a payment the owner sends. */
+const BY_HAND_REACH_DAYS = 16;
+/** How far past the last day asked about the schedule is read, so that next month's payment made early is not taken for this month's. */
+const BY_HAND_AHEAD_DAYS = 31;
+/** Unpaid occurrences of earlier months that are still shown and still due, per payment: the newest ones. */
+export const BY_HAND_ARREARS = 12;
+
+/**
+ * Which occurrence of a payment the owner sends each of its bank rows settles: the one rule the clock,
+ * the Book and the checklist read.
+ *  - A row dated before `entry.since` settles nothing (it is history), except a row within 16 days
+ *    before the entry's first occurrence and nearer it than the schedule day before it: that row
+ *    settles the first occurrence (rent due the 1st and sent on the 31st is paid).
+ *  - A row belongs to the occurrence nearest its day (the earlier one on a tie), the schedule being read
+ *    31 days past `untilDay`; to none when the nearest is more than 16 days away.
+ *  - Rows are taken oldest first. The first row of an occurrence settles it; a further row of an
+ *    occurrence a row already settled settles the oldest earlier occurrence that has neither a row nor
+ *    a tick with paid true, and nothing when there is none. An occurrence past `untilDay` takes its
+ *    rows in the same way (it is only not returned), so the answer for a day does not depend on
+ *    which later day was asked about.
+ * An occurrence is paid when it has a row or a tick with paid true.
+ * @param {object} entry  a by-hand Recurring
+ * @param {{ id: string, day: string }[]} rows  its posted rows
+ * @param {string} untilDay
+ * @returns {{ day: string, row: { id: string, day: string }|null, tick: { paid: boolean, at: number }|null }[]}
+ *   one item per occurrence from the first through `untilDay`, ascending
+ */
+export function byHandStanding(entry, rows, untilDay) {
+  if (!hasSchedule(entry) || !isYmd(untilDay)) return [];
+  const schedule = occurrences(entry, FIRST_DAY, addDays(untilDay, BY_HAND_AHEAD_DAYS));
+  const marks = entry.marks !== null && typeof entry.marks === 'object' ? entry.marks : {};
+  // every day of the schedule that was read takes part, so that a row sent early for an occurrence past
+  // `untilDay` is counted for that one whatever day is asked about; only the days through `untilDay` are returned
+  const standing = schedule.map((day) => ({ day, row: null, tick: tickOf(marks, day) }));
+  const since = isYmd(entry.since) ? entry.since : null;
+  // a row before `since` counts only when it was sent early for the first occurrence: within reach of it, and nearer it than the schedule day before
+  const first = schedule.length ? schedule[0] : null;
+  const before = first === null ? null : addMonths(startOfMonth(monthOf(first)), -1, dayOfMonthOf(entry));
+  const forFirst = (day) => first !== null && day < first && diffDays(day, first) <= BY_HAND_REACH_DAYS && diffDays(day, first) < diffDays(before, day);
+  const sent = (Array.isArray(rows) ? rows : [])
+    .filter((row) => row !== null && typeof row === 'object' && isYmd(row.day) && (since === null || row.day >= since || forFirst(row.day)))
+    .map((row) => ({ id: row.id, day: row.day, pending: row.pending === true, at: Number.isFinite(row.at) ? row.at : 0 }))
+    .sort(inBankOrder);
+  for (const sentRow of sent) {
+    const row = { id: sentRow.id, day: sentRow.day, pending: sentRow.pending };
+    const i = nearestIndex(schedule, row.day);
+    if (i < 0 || Math.abs(diffDays(schedule[i], row.day)) > BY_HAND_REACH_DAYS) continue;
+    if (standing[i].row === null) {
+      standing[i].row = row;
+      continue;
+    }
+    const owed = standing.slice(0, i).find((item) => !isPaid(item));
+    if (owed) owed.row = row;
+  }
+  return standing.filter((item) => item.day <= untilDay);
+}
+
+/**
+ * byHandStanding read from the document: the entry's rows are the posted bank rows linked to it.
+ * @returns {{ day: string, row: { id: string, day: string }|null, tick: { paid: boolean, at: number }|null }[]}
+ */
+export function byHandStandingOf(state, entry, untilDay, withPending) {
+  const rows = [];
+  const txs = state && Array.isArray(state.txs) ? state.txs : [];
+  const counted = withPending === undefined ? countsPending(state) : withPending === true;
+  if (entry && typeof entry.id === 'string') {
+    for (const tx of txs) {
+      if (!tx || tx.recurringId !== entry.id || tx.kind === 'decline' || tx.matchId || tx.source === 'manual') continue;
+      if (tx.pending && !counted) continue;
+      rows.push(tx);
+    }
+  }
+  return byHandStanding(entry, rows, untilDay);
+}
+
+/**
+ * The one test of a payment the owner sends that runs: the ledger, the Book and the checklist all ask
+ * it, so an entry is on all of their lists or on none.
+ * @param {object} entry
+ * @returns {boolean}
+ */
+export function runsByHand(entry) {
+  return entry !== null && typeof entry === 'object' && entry.byHand === true && !!entry.active && entry.cadence === 'monthly' &&
+    Number.isInteger(entry.dueDay) && entry.dueDay >= 1 && entry.dueDay <= LAST_DAY && isYmd(entry.anchor) &&
+    Number.isFinite(entry.amount) && entry.amount > 0;
+}
+
+/** Whether pending rows count, as the ledger reads the setting: on unless it was switched off. */
+function countsPending(state) {
+  const settings = state !== null && typeof state === 'object' && state.settings !== null && typeof state.settings === 'object' ? state.settings : {};
+  return settings.countPending === undefined ? true : !!settings.countPending;
+}
+
+/** Rows oldest first; of one day the posted before the pending, then by the time the bank gave, then by id. */
+function inBankOrder(a, b) {
+  if (a.day !== b.day) return a.day < b.day ? -1 : 1;
+  if (a.pending !== b.pending) return a.pending ? 1 : -1;
+  if (a.at !== b.at) return a.at < b.at ? -1 : 1;
+  return String(a.id) < String(b.id) ? -1 : String(a.id) > String(b.id) ? 1 : 0;
+}
+
+/**
+ * The unpaid occurrences of a payment the owner sends whose day is before `beforeDay`: every one of
+ * the month of `beforeDay`, and of the earlier months the BY_HAND_ARREARS newest. Ascending. The clock
+ * and the checklist both read their arrears here, so they name the same ones.
+ * @returns {{ day: string, row: null, tick: { paid: boolean, at: number }|null }[]}
+ */
+export function byHandUnpaid(state, entry, beforeDay) {
+  if (!isYmd(beforeDay)) return [];
+  const monthStart = startOfMonth(monthOf(beforeDay));
+  const unpaid = byHandStandingOf(state, entry, addDays(beforeDay, -1)).filter((item) => !isPaid(item));
+  const earlier = unpaid.filter((item) => item.day < monthStart);
+  return earlier.slice(Math.max(0, earlier.length - BY_HAND_ARREARS)).concat(unpaid.filter((item) => item.day >= monthStart));
+}
+
+const FIRST_DAY = '1970-01-01';
+
+function tickOf(marks, day) {
+  const mark = Object.hasOwn(marks, day) ? marks[day] : null;
+  if (mark === null || typeof mark !== 'object') return null;
+  return { paid: mark.paid === true, at: Number.isFinite(mark.at) ? mark.at : 0 };
+}
+
+function isPaid(item) {
+  return item.row !== null || (item.tick !== null && item.tick.paid === true);
+}
+
+function paidDays(standing) {
+  return new Set(standing.filter(isPaid).map((item) => item.day));
+}
+
+/** The index of the day of an ascending list nearest `day` (the earlier one on a tie), or -1 for an empty list. */
+function nearestIndex(days, day) {
+  let best = -1;
+  let bestGap = Infinity;
+  for (let i = 0; i < days.length; i++) {
+    const gap = Math.abs(diffDays(days[i], day));
+    if (gap < bestGap) {
+      best = i;
+      bestGap = gap;
+    }
+  }
+  return best;
+}
+
 /** The day of the latest transaction linked to each Book entry. */
 function lastChargeDays(state) {
   const latest = new Map();
@@ -178,6 +327,15 @@ function firstDayOf(item) {
   return since !== null && since > item.anchor ? since : item.anchor;
 }
 
+/**
+ * The day of the month a schedule keeps. A payment the owner sends keeps its `dueDay` (31 is the last
+ * day of every month), whatever shorter month its anchor fell in; anything else keeps its anchor's day.
+ */
+function dayOfMonthOf(item) {
+  if (item.byHand === true && Number.isInteger(item.dueDay) && item.dueDay >= 1 && item.dueDay <= LAST_DAY) return item.dueDay;
+  return parts(item.anchor).d;
+}
+
 function hasSchedule(item) {
   return !!item && Object.hasOwn(STEPS, item.cadence) && isYmd(item.anchor);
 }
@@ -194,9 +352,8 @@ function everyDays(anchor, step, afterDay, untilDay) {
   return out;
 }
 
-function everyMonths(anchor, step, afterDay, untilDay) {
+function everyMonths(anchor, step, afterDay, untilDay, anchorDay) {
   const out = [];
-  const anchorDay = parts(anchor).d;
   // The occurrence in or just before afterDay's month; everything earlier is certainly not after it.
   for (let k = Math.floor(monthsApart(anchor, afterDay) / step); ; k++) {
     const day = addMonths(anchor, k * step, anchorDay);
@@ -282,6 +439,7 @@ export const BILL_LAPSE_PERIODS = 1.5;
  * last linked row (`lastDay`), or since its anchor when no row was ever linked. False without a cadence.
  */
 export function entryLapsed(entry, lastDay, today) {
+  if (runsByHand(entry)) return false; // a payment the owner sends stays owed until it is paid or switched off
   const cadence = entry && typeof entry.cadence === 'string' && Object.hasOwn(CADENCES, entry.cadence) ? CADENCES[entry.cadence] : null;
   const from = isYmd(lastDay) ? lastDay : entry && isYmd(entry.anchor) ? entry.anchor : null;
   if (!cadence || !Number.isFinite(cadence.days) || from === null || !isYmd(today)) return false;

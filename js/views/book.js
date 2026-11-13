@@ -21,7 +21,7 @@ import { html, cx } from '../ui/dom.js';
 import { store } from '../store.js';
 import { openSheet } from '../router.js';
 import { fmt } from '../model/money.js';
-import { addDays, diffDays, fmtDate, isYmd, relDay } from '../model/dates.js';
+import { addDays, diffDays, fmtDate, isYmd, monthOf, relDay } from '../model/dates.js';
 import { ACCOUNT_TYPES, CADENCES, STREAM_KINDS, accountLabel, categoryLabel } from '../model/schema.js';
 import { annualCost, dailyCost, nextOccurrence } from '../model/book.js';
 import { moveGlyph, timeTroubleGlyph } from '../ui/glyphs.js';
@@ -132,7 +132,7 @@ function bookModel(ctx) {
 
   // An occurrence whose charge has already landed is not on its way any more.
   const upcoming = ctx.d.upcoming(UPCOMING_DAYS)
-    .filter((row) => !(charged.get(row.id) >= row.day))
+    .filter((row) => (byId.get(row.id) || {}).byHand || !(charged.get(row.id) >= row.day))
     .map((row) => {
       const rec = byId.get(row.id) || null;
       // every amount still to come has not posted, fixed-price or not: an estimate (R4a)
@@ -148,12 +148,51 @@ function bookModel(ctx) {
     totals: ctx.d.bookTotals,
     debtPerMonth: debts.reduce((n, item) => n + item.perMonth, 0),
     debtCount: debts.length,
-    byHand: active.filter(({ rec }) => rec.source === 'manual' && !charged.has(rec.id)).length,
+    // the owner's typed Book lines (tagged 'Entered by you'); the payments they send have their own lines (E9 F3)
+    byHand: active.filter(({ rec }) => rec.source === 'manual' && !rec.byHand && !charged.has(rec.id)).length,
+    pay: payRowsOf(ctx),
+    sent: active.filter(({ rec }) => rec.byHand).length,
   };
+}
+
+/** The checklist's rows (derive: byHand) of each payment the owner sends: Map<entry id, rows oldest first>. */
+function payRowsOf(ctx) {
+  const bh = ctx.d.byHand;
+  const map = new Map();
+  for (const row of bh && Array.isArray(bh.rows) ? bh.rows : []) {
+    if (!row || !row.entry) continue;
+    if (!map.has(row.entry.id)) map.set(row.entry.id, []);
+    map.get(row.entry.id).push(row);
+  }
+  return map;
+}
+
+const PAY_PAID = { bank: true, pending: true, hand: true };
+
+/** Where this month's payment of a line the owner sends stands, in words with a date; '' when the month has none. */
+function payWords(m, rec) {
+  const rows = m.pay.get(rec.id) || [];
+  const ym = monthOf(m.today);
+  // an earlier month still unpaid speaks first: it is the oldest thing owed
+  const row = rows.find((one) => one.status === 'overdue') || rows.find((one) => monthOf(one.day) === ym) || null;
+  if (!row) return '';
+  const short = (day) => (isYmd(day) ? fmtDate(day, 'short') : 'a day not on record');
+  if (row.status === 'bank') return 'Paid at the bank ' + short(row.paidDay);
+  if (row.status === 'pending') return 'Pending at the bank since ' + short(row.paidDay);
+  if (row.status === 'hand') return 'Ticked ' + short(row.paidDay);
+  if (row.status === 'overdue') return html`<span class="bk-overdue">Overdue since ${short(row.day)}</span>`;
+  return 'Due ' + short(row.day);
 }
 
 /** The next day an entry is expected, today included unless today's charge has landed. */
 function nextDay(m, rec) {
+  if (rec.byHand) {
+    // a payment the owner sends: the first day from today on that is not settled yet (the engine says which are)
+    const paid = new Set((m.pay.get(rec.id) || []).filter((row) => PAY_PAID[row.status]).map((row) => row.day));
+    let day = nextOccurrence(rec, addDays(m.today, -1));
+    if (day && paid.has(day)) day = nextOccurrence(rec, day);
+    return day;
+  }
   let next = nextOccurrence(rec, addDays(m.today, -1));
   if (next && m.charged.get(rec.id) >= next) next = nextOccurrence(rec, next);
   return next;
@@ -235,7 +274,7 @@ function totalsBand(ctx, m) {
 
 function entryTags(rec) {
   if (!rec) return '';
-  return html`${rec.toAccountId != null ? html` <span class="bk-tag">Toward debt</span>` : ''}`;
+  return html`${rec.toAccountId != null ? html` <span class="bk-tag">Toward debt</span>` : ''}${rec.byHand ? html` <span class="bk-tag">You send it</span>` : ''}`;
 }
 
 function upcomingSection(ctx, m) {
@@ -268,7 +307,7 @@ function upcomingSection(ctx, m) {
     body.push(html`<tr class="${cx(due && 'is-due')}" data-key="${row.id + ':' + row.day}">
       <td class="bk-when">${due ? html`<span class="vh">Before payday. </span>` : ''}<span class="not-phone">${fmtDate(row.day, 'dow')}, </span>${fmtDate(row.day, 'short')}<em class="bk-rel"><span class="only-phone">${fmtDate(row.day, 'dow')} · </span>${relDay(row.day, m.today)}</em></td>
       <td><button class="bk-line" type="button" data-action="book.open" data-sheet="recurring" data-id="${row.id}">${row.name}</button>
-        <em class="bk-sub-note">${account || 'Account not known'}${entryTags(row.rec)}</em></td>
+        <em class="bk-sub-note">${account || (row.rec && row.rec.byHand ? '' : 'Account not known')}${entryTags(row.rec)}</em></td>
       <td class="${cx('num', row.est && 'est')}">${row.est ? html`<span class="approx">≈</span>` : ''}${fmt(row.amount)}</td>
     </tr>`);
   }
@@ -419,10 +458,11 @@ function entryRow(ctx, m, item) {
   const debt = rec.toAccountId != null;
   const lastReported = !assumed(m.charged, rec) && m.charged.has(rec.id);
   const est = !lastReported;
+  const standing = rec.byHand ? payWords(m, rec) : '';
   return html`<li class="bk-entry" data-key="${rec.id}">
     <button class="bk-open" type="button" data-action="book.open" data-sheet="recurring" data-id="${rec.id}">
       <span class="bk-name">${nameWithMark(rec)}</span>
-      <em class="bk-note">${categoryLabel(rec.category)}${account ? ' · ' + account : ''}${debt ? html` · pays down ${accountName(ctx, rec.toAccountId) || 'a debt'} <span class="bk-tag">Toward debt</span>` : ''}${rec.source === 'manual' ? html` <span class="bk-tag">Entered by you</span>` : ''}</em>
+      <em class="bk-note">${rec.byHand ? html`${standing || (next ? 'First due ' + comingDay(next, m.today) : 'No day on its schedule')} <span class="bk-tag">You send it</span>` : html`${categoryLabel(rec.category)}${account ? ' · ' + account : ''}${debt ? html` · pays down ${accountName(ctx, rec.toAccountId) || 'a debt'} <span class="bk-tag">Toward debt</span>` : ''}${rec.source === 'manual' ? html` <span class="bk-tag">Entered by you</span>` : ''}`}</em>
     </button>
     <span class="${cx('bk-amt fig', est && 'est')}">${est ? html`<span class="approx">≈</span>` : ''}${fmt(rec.amount)}</span>
     <span class="bk-meta">
@@ -446,19 +486,25 @@ function linesBand(ctx, m) {
       ${m.inactive.map((rec) => {
         const dismissed = Array.isArray(rec.locks) && rec.locks.includes('active');
         return html`<li data-key="${rec.id}"><button class="row" type="button" data-action="book.open" data-sheet="recurring" data-id="${rec.id}">
-          <span class="row-label">${rec.name || 'Unnamed line'} <em class="row-note">${dismissed ? 'Taken out of the Book by you' : 'Ended'} · ${cadenceText(rec.cadence)}${rec.anchor ? ' · last charged ' + fmtDate(rec.anchor, 'medium') : ''}</em></span>
+          <span class="row-label">${rec.name || 'Unnamed line'} <em class="row-note">${rec.byHand ? 'A payment you send, switched off' : dismissed ? 'Taken out of the Book by you' : 'Ended'} · ${cadenceText(rec.cadence)}${rec.anchor && !rec.byHand ? ' · last charged ' + fmtDate(rec.anchor, 'medium') : ''}</em></span>
           <span class="row-value fig">${fmt(rec.amount)}</span>
         </button></li>`;
       })}
     </ul>
   </details>` : '';
+  const send = html`<p class="cap bk-send">${m.sent
+    ? html`${plural(m.sent, 'line')} you send yourself each month; the Board keeps ${m.sent === 1 ? 'its' : 'their'} checklist.`
+    : html`A payment you send yourself each month, by Zelle or bank transfer, gets a checklist on the Board.`}
+    <button class="btn-link" type="button" data-action="book.pay-add">Add a payment you send</button></p>`;
   if (!m.active.length) {
     return html`<section class="band">${head}
+      ${send}
       <p class="cap bk-quiet">No active line. The feed enters a bill after its second or third charge; one that has not been charged yet can be added by hand, with its amount and its next date.</p>
       ${ended}
     </section>`;
   }
   return html`<section class="band">${head}
+    ${send}
     <ol class="bk-list" aria-label="The lines of the Book, by cost a month">
       <li class="bk-entry bk-head" data-key="head" aria-hidden="true">
         <span class="lab">Line</span><span class="lab bk-amt">Amount</span>
@@ -606,6 +652,12 @@ export const actions = {
     if (!data.id || (data.sheet !== 'recurring' && data.sheet !== 'stream')) return;
     clearFormErrors();
     openSheet(data.sheet, { id: data.id });
+  },
+  /** Open the entry sheet empty, for a payment the owner sends each month. */
+  'book.pay-add': () => {
+    clearFormErrors();
+    if (store.ui.payForm) store.setUi({ payForm: null });
+    openSheet('recurring', { pay: 'new' });
   },
   /** Open the entry sheet empty, to add a line the feed has not shown yet. */
   'book.add': () => {
