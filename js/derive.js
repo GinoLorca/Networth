@@ -141,7 +141,7 @@ export function makeDerived(state, now) {
     valueOf(account) { return once('value:' + account.id, () => led().accountValueOn(account.id, today)); },
 
     /** The latest transactions on every account, newest first; `seenAt` (ms) marks what arrived since the last look. */
-    latest(limit = 12, seenAt = null) { return once('latest:' + limit + ':' + seenAt, () => recentTransactions(state, today, { limit, seenAt })); },
+    latest(limit = 12, seenAt = null, accountId = null) { return once('latest:' + limit + ':' + seenAt + ':' + accountId, () => recentTransactions(state, today, { limit, seenAt, accountId })); },
 
     get sweepTxIds() {
       return once('sweepTxIds', () => new Set(state.sweeps.map((s) => s.txId).filter(Boolean)));

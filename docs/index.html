@@ -8,7 +8,7 @@
 <meta name="description" content="Networth: a private net-worth board. It reads your bank feed itself; your data stays on your device.">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-+KyufWh895DDiXWLNliUhqFFwUop3VPB7MGqNEDYgvo='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-unS+/F/lSl/bijMB3jRRDoQ+Oz6Z2t+hXGwziWGVHR4=' 'sha256-Ur8ku0rdjIOUhY20rCJMxGBsTYq1x7I3mk4AJEN43oI=' 'sha256-HjK81dldzBx/xIeL8bxqZbhlUcJR67+FK79I0+8bNP4=' 'sha256-fW8Rb031pEL3z6SKg0UIoHj0lq9v89/SdbWzftltFMc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-SAppuCBVUiNxCfQBBmSuY3WyO3Xl62jbi5ibBOsOw/Y=' 'sha256-VzoPHmMbD+TfmkRekvrhksYUuT8rj+c4jA1P/9P6/qI=' 'sha256-/xAinrTNYppFAIdG41S3TqyTgXliWkmyzNG9HOP4uBU=' 'sha256-01lSdEAMChpzTzJQLpOoEDL4dUduCyR/7BPuEyO5V4o=' 'sha256-B3Hrzs4vbn2XI5EePJAqAUZIxGf4JkYOb2PSWp2jJm0=' 'sha256-Z6D6KTuB/jjs3qcL8ULrE5HCIeZokO1KE1f3JKMRgag=' 'sha256-BjO5ScR2hajS/xDP0c80FuQ6bCsrOTlf9EntsQtTpP0='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src https://beta-bridge.simplefin.org https://bridge.simplefin.org; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-vHznKTKck5mRY7YpPGpVnb7XXC8yA8yVYOxNQFK568A='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-unS+/F/lSl/bijMB3jRRDoQ+Oz6Z2t+hXGwziWGVHR4=' 'sha256-Ur8ku0rdjIOUhY20rCJMxGBsTYq1x7I3mk4AJEN43oI=' 'sha256-HjK81dldzBx/xIeL8bxqZbhlUcJR67+FK79I0+8bNP4=' 'sha256-fW8Rb031pEL3z6SKg0UIoHj0lq9v89/SdbWzftltFMc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-WTC4ksqK7K5yE5Yoz7FnPyllhgtjuLhNK/WtIUdETbg=' 'sha256-VzoPHmMbD+TfmkRekvrhksYUuT8rj+c4jA1P/9P6/qI=' 'sha256-/xAinrTNYppFAIdG41S3TqyTgXliWkmyzNG9HOP4uBU=' 'sha256-01lSdEAMChpzTzJQLpOoEDL4dUduCyR/7BPuEyO5V4o=' 'sha256-B3Hrzs4vbn2XI5EePJAqAUZIxGf4JkYOb2PSWp2jJm0=' 'sha256-Z6D6KTuB/jjs3qcL8ULrE5HCIeZokO1KE1f3JKMRgag=' 'sha256-BjO5ScR2hajS/xDP0c80FuQ6bCsrOTlf9EntsQtTpP0='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src https://beta-bridge.simplefin.org https://bridge.simplefin.org; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#F3EDE1" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#15130F" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1792,6 +1792,8 @@ button.hero-fig:focus-visible { outline-offset: 2px; }
 @media (min-width: 900px) {
   .board-recent { columns: 2; column-gap: var(--s-7); }
 }
+.board-recent.acct-recent { columns: 1; margin-top: var(--s-2); }
+.acct-moves-all { margin-top: var(--s-2); }
 
 </style>
 <style data-src="css/views/scoresheet.css">
@@ -3704,7 +3706,23 @@ function isFast(account) {
 }
 
 function accountLabel(account) {
-  return account.nick || account.name || ACCOUNT_TYPES[account.type].label;
+  return account.nick || tidyName(account.name) || ACCOUNT_TYPES[account.type].label;
+}
+
+function accountShort(account) {
+  if (account.nick) return account.nick;
+  const kind = ACCOUNT_TYPES[account.type] ? ACCOUNT_TYPES[account.type].label : 'Account';
+  const name = typeof account.name === 'string' ? account.name : '';
+  const digits = /(\d{4})(?!.*\d)/.exec(name);
+  return digits ? kind + ' ··' + digits[1] : tidyName(name) || kind;
+}
+
+function tidyName(name) {
+  if (typeof name !== 'string') return '';
+  const closing = /\s*\((\d{2,})\)\s*$/.exec(name);
+  if (!closing) return name;
+  const head = name.slice(0, closing.index);
+  return head.includes(closing[1]) ? head.trim() : name;
 }
 
 function categoryLabel(key) {
@@ -3724,7 +3742,7 @@ function txEffect(tx) {
 function isLive(tx) {
   return tx.kind !== 'decline' && !tx.matchId;
 }
-return { SCHEMA_VERSION, ACCOUNT_TYPES, BASES, TX_KINDS, KLASSES, PURPOSES, CATEGORIES, FLOW_CATEGORIES, GLYPHS, CADENCES, STREAM_KINDS, newId, makeAccount, makeTx, makeRecurring, makeStream, defaultState, checkDoc, migrate, accountGroup, isFast, accountLabel, categoryLabel, klassOf, txEffect, isLive };
+return { SCHEMA_VERSION, ACCOUNT_TYPES, BASES, TX_KINDS, KLASSES, PURPOSES, CATEGORIES, FLOW_CATEGORIES, GLYPHS, CADENCES, STREAM_KINDS, newId, makeAccount, makeTx, makeRecurring, makeStream, defaultState, checkDoc, migrate, accountGroup, isFast, accountLabel, accountShort, categoryLabel, klassOf, txEffect, isLive };
 })();
 
 // ---- js/runtime.js
@@ -9083,7 +9101,8 @@ const DEFAULT_LIMIT = 12;
 function recentTransactions(state, today, opts = {}) {
   const limit = Number.isInteger(opts.limit) && opts.limit > 0 ? opts.limit : DEFAULT_LIMIT;
   const seenAt = Number.isFinite(opts.seenAt) ? opts.seenAt : null;
-  const empty = { rows: [], today: { count: 0, out: 0, in: 0, unsettled: false }, fresh: 0, total: 0 };
+  const only = typeof opts.accountId === 'string' && opts.accountId ? opts.accountId : null;
+  const empty = { rows: [], today: { count: 0, out: 0, in: 0, unsettled: false }, fresh: 0, total: 0, oldest: null };
   if (!state || typeof state !== 'object' || !isYmd(today)) return empty;
 
   const accounts = new Map();
@@ -9092,15 +9111,18 @@ function recentTransactions(state, today, opts = {}) {
   }
   const listed = (tx) => {
     if (!tx || typeof tx !== 'object' || !isLive(tx) || !isYmd(tx.day) || tx.day > today) return false;
+    if (only !== null && tx.accountId !== only) return false;
     const account = tx.accountId != null ? accounts.get(tx.accountId) : null;
     return !(account && account.hidden);
   };
   const txs = (Array.isArray(state.txs) ? state.txs : []).filter(listed);
-  const present = new Set(txs.map((tx) => tx.id));
+  // with one account in view its own leg of a payment is the one to show, so no leg is skipped
+  const present = only !== null ? new Set() : new Set(txs.map((tx) => tx.id));
 
   const rows = [];
   const todayTally = { count: 0, out: 0, in: 0, unsettled: false };
   let fresh = 0;
+  let oldest = null;
   for (const tx of txs) {
     const paired = tx.pairId != null && present.has(tx.pairId);
     if (paired && tx.flow === 'in') continue;   // the same event as its outgoing leg
@@ -9116,6 +9138,7 @@ function recentTransactions(state, today, opts = {}) {
       }
       if (tx.pending || provisional) todayTally.unsettled = true;
     }
+    if (oldest === null || tx.day < oldest) oldest = tx.day;
     rows.push({ tx, account: tx.accountId != null ? accounts.get(tx.accountId) || null : null, isNew, provisional });
   }
 
@@ -9126,7 +9149,7 @@ function recentTransactions(state, today, opts = {}) {
     || arrived(b.tx) - arrived(a.tx)
     || (String(a.tx.id) < String(b.tx.id) ? -1 : String(a.tx.id) > String(b.tx.id) ? 1 : 0));
 
-  return { rows: rows.slice(0, limit), today: todayTally, fresh, total: rows.length };
+  return { rows: rows.slice(0, limit), today: todayTally, fresh, total: rows.length, oldest };
 }
 return { recentTransactions };
 })();
@@ -9976,7 +9999,7 @@ function makeDerived(state, now) {
     },
     valueOf(account) { return once('value:' + account.id, () => led().accountValueOn(account.id, today)); },
 
-    latest(limit = 12, seenAt = null) { return once('latest:' + limit + ':' + seenAt, () => recentTransactions(state, today, { limit, seenAt })); },
+    latest(limit = 12, seenAt = null, accountId = null) { return once('latest:' + limit + ':' + seenAt + ':' + accountId, () => recentTransactions(state, today, { limit, seenAt, accountId })); },
 
     get sweepTxIds() {
       return once('sweepTxIds', () => new Set(state.sweeps.map((s) => s.txId).filter(Boolean)));
@@ -14005,9 +14028,9 @@ return { evalGlyph, timeTroubleGlyph, moveGlyph, resultMark, verifiedMark };
 __mods["js/views/parts.js"] = (function () {
 const { html, cx } = __mods["js/ui/dom.js"];
 const { fmt, fmtSigned, fmtPlain, MINUS } = __mods["js/model/money.js"];
-const { fmtDate, fmtMonth, dow, parts: ymdParts, monthOf } = __mods["js/model/dates.js"];
+const { addDays, fmtDate, fmtMonth, dow, parts: ymdParts, monthOf } = __mods["js/model/dates.js"];
 const { moveGlyph } = __mods["js/ui/glyphs.js"];
-const { categoryLabel, accountLabel } = __mods["js/model/schema.js"];
+const { categoryLabel, accountLabel, accountShort } = __mods["js/model/schema.js"];
 const DOW_LETTER = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const HALF = '½';
 const NEGATIVE_ORDER = ['??', '?', '?!'];
@@ -14259,7 +14282,34 @@ function movesList(moves, annotations, opts = {}) {
 function notableMoves(round, annotations) {
   return round.moves.filter((tx) => !tx.matchId && (tx.kind === 'decline' || (tx.kind === 'spend' && tx.klass === 'game') || (annotations && annotations.has(tx.id))));
 }
-return { money, inlineMoney, figured, tone, fmtScore, scoreOf, plainSigned, resultText, keptLine, spentUnposted, statusLine, roundTitle, colourOf, worstGlyph, crosstable, movesList, notableMoves };
+
+/* --------------------------------------------------- recent transactions */
+
+function recentDay(ctx, day) {
+  if (day === ctx.today) return 'Today';
+  if (day === addDays(ctx.today, -1)) return 'Yesterday';
+  return fmtDate(day, 'dowshort');
+}
+
+function recentList(ctx, rows, opts = {}) {
+  return html`<ol class="${cx('board-recent', opts.cls)}" aria-label="${opts.label || 'Transactions, newest first'}">
+    ${rows.map(({ tx, account, isNew, provisional }) => {
+      const unsettled = !!tx.pending || provisional;
+      const incoming = tx.flow === 'in';
+      const notes = [];
+      if (opts.account !== false && account) notes.push(accountShort(account));
+      if (tx.pending) notes.push('Pending');
+      if (provisional) notes.push('Tapped in');
+      return html`<li data-key="${tx.id}"><button class="recent-row" type="button" data-action="app.sheet" data-sheet="tx" data-id="${tx.id}">
+        <span class="recent-name">${tx.merchant || categoryLabel(tx.category)}${isNew ? html` <span class="recent-new">New</span>` : ''}${notes.length
+          ? html`<em class="recent-note">${notes.join(' · ')}</em>` : ''}</span>
+        <span class="lab">${recentDay(ctx, tx.day)}</span>
+        ${money(tx.amount, { est: unsettled, signed: incoming, tint: incoming })}
+      </button></li>`;
+    })}
+  </ol>`;
+}
+return { money, inlineMoney, figured, tone, fmtScore, scoreOf, plainSigned, resultText, keptLine, spentUnposted, statusLine, roundTitle, colourOf, worstGlyph, crosstable, movesList, notableMoves, recentList };
 })();
 
 // ---- js/views/board.js
@@ -14269,9 +14319,8 @@ const { store } = __mods["js/store.js"];
 const { fmt, fmtPct, ratio } = __mods["js/model/money.js"];
 const { addDays, diffDays, fmtDate, fmtMonth, fmtTime, isYmd, monthOf, ymd } = __mods["js/model/dates.js"];
 const { firstTransactionDay } = __mods["js/model/cards.js"];
-const { accountLabel, categoryLabel } = __mods["js/model/schema.js"];
 const { evalGlyph, timeTroubleGlyph, moveGlyph, resultMark } = __mods["js/ui/glyphs.js"];
-const { money, inlineMoney, keptLine, statusLine, roundTitle, colourOf, crosstable, movesList, notableMoves, worstGlyph, spentUnposted } = __mods["js/views/parts.js"];
+const { money, inlineMoney, keptLine, statusLine, roundTitle, colourOf, crosstable, movesList, notableMoves, worstGlyph, spentUnposted, recentList } = __mods["js/views/parts.js"];
 const TEN_MINUTES_MS = 10 * 60 * 1000;
 const WORTH_DAYS = 90;
 const EDGE_ROUNDS_SHOWN = 92;
@@ -14918,12 +14967,6 @@ function figuresBlock(ctx, v) {
 const RECENT_WIDE = 12;
 const RECENT_NARROW = 8;
 
-function recentDay(ctx, day) {
-  if (day === ctx.today) return 'Today';
-  if (day === addDays(ctx.today, -1)) return 'Yesterday';
-  return fmtDate(day, 'dowshort');
-}
-
 function recentBlock(ctx, v) {
   const r = ctx.d.latest(ctx.wide ? RECENT_WIDE : RECENT_NARROW, v.seen ? v.seen.at : null);
   const sample = ctx.state.meta.origin === 'demo';
@@ -14944,22 +14987,7 @@ function recentBlock(ctx, v) {
     : 'Today: 0 transactions on the record.';
   return html`${head}
     <p class="board-recent-today">${todayLine}${r.fresh ? html` <span class="recent-new">${r.fresh} new</span> since the last look.` : ''}</p>
-    <ol class="board-recent" aria-label="Recent transactions, newest first">
-      ${r.rows.map(({ tx, account, isNew, provisional }) => {
-        const unsettled = !!tx.pending || provisional;
-        const incoming = tx.flow === 'in';
-        const tags = [];
-        if (tx.pending) tags.push('Pending');
-        if (provisional) tags.push('Tapped in');
-        const where = account ? accountLabel(account) : '';
-        return html`<li data-key="${tx.id}"><button class="recent-row" type="button" data-action="app.sheet" data-sheet="tx" data-id="${tx.id}">
-          <span class="recent-name">${tx.merchant || categoryLabel(tx.category)}${isNew ? html` <span class="recent-new">New</span>` : ''}${where || tags.length
-            ? html`<em class="recent-note">${[where, ...tags].filter(Boolean).join(' · ')}</em>` : ''}</span>
-          <span class="lab">${recentDay(ctx, tx.day)}</span>
-          ${money(tx.amount, { est: unsettled, signed: incoming, tint: incoming })}
-        </button></li>`;
-      })}
-    </ol>
+    ${recentList(ctx, r.rows, { label: 'Recent transactions, newest first' })}
     <p class="cap board-line">${r.total > r.rows.length ? html`The latest ${r.rows.length} of ${r.total.toLocaleString('en-US')}. ` : ''}${source}</p>`;
 }
 
@@ -15187,7 +15215,7 @@ __mods["js/views/scoresheet.js"] = (function () {
 const { html, cx, define, prefersReducedMotion } = __mods["js/ui/dom.js"];
 const { fmt, fmtSigned } = __mods["js/model/money.js"];
 const { fmtDate, fmtMonth, addDays, monthOf, daysInMonth, parts: ymdParts } = __mods["js/model/dates.js"];
-const { PURPOSES } = __mods["js/model/schema.js"];
+const { PURPOSES, accountShort } = __mods["js/model/schema.js"];
 const { moveGlyph, resultMark } = __mods["js/ui/glyphs.js"];
 const { icon } = __mods["js/ui/icons.js"];
 const { setParams } = __mods["js/router.js"];
@@ -15292,6 +15320,7 @@ function readRoute(ctx) {
     filter: FILTER_KEYS.has(p.filter) ? p.filter : 'all',
     purpose: PURPOSES.includes(p.purpose) && purposes[p.purpose] ? p.purpose : '',
     q: typeof p.q === 'string' ? p.q : '',
+    account: typeof p.account === 'string' && ctx.state.accounts.some((a) => a && a.id === p.account && !a.hidden) ? p.account : '',
     day: validDay(p.day) ? p.day : '',
   };
 }
@@ -15306,14 +15335,14 @@ function render(ctx) {
   const matchStart = ctx.state.meta.matchStart;
   const shown = month.rounds.filter((r) => r.day <= ctx.today).reverse();
   const needle = view.q.trim().toLowerCase();
-  const active = view.filter !== 'all' || !!view.purpose || !!needle;
+  const active = view.filter !== 'all' || !!view.purpose || !!needle || !!view.account;
 
   // every move of the month that can appear on the sheet, by round
   const all = shown.map((round) => ({ round, moves: round.moves.filter((tx) => !tx.matchId) }));
   const lookCount = all.reduce((n, r) => n + r.moves.filter((tx) => inFilter(tx, 'review')).length, 0);
   const listed = all.map(({ round, moves }) => ({
     round,
-    moves: moves.filter((tx) => inFilter(tx, view.filter) && (!view.purpose || tx.purpose === view.purpose) && matchesQuery(tx, needle)),
+    moves: moves.filter((tx) => inFilter(tx, view.filter) && (!view.purpose || tx.purpose === view.purpose) && (!view.account || tx.accountId === view.account) && matchesQuery(tx, needle)),
   }));
   // a filter hides the days it empties; a past month with no move at all prints one sentence instead of its blank days
   const blank = ym !== thisMonth && !all.some((r) => r.moves.length);
@@ -15352,8 +15381,8 @@ function monthHead(ctx, view, month, onRecord, matchStart) {
     <div class="sec-head">
       <p class="lab"><b>Scoresheet</b><span class="not-phone"><i class="sep"></i>rounds and moves</span></p>
       <nav class="ss-months" aria-label="Months">
-        ${prev ? html`<a class="btn-link" href="${href(prev)}">${icon('chevron-left')}${fmtMonth(prev, 'short')}</a>` : onRecord[0] === ym ? html`<span class="lab ss-months-end not-phone">First month on record</span>` : ''}
-        ${next ? html`<a class="btn-link" href="${href(next)}">${fmtMonth(next, 'short')}${icon('chevron-right')}</a>` : ''}
+        ${prev ? html`<a class="btn-link" href="${href(prev, { account: view.account })}">${icon('chevron-left')}${fmtMonth(prev, 'short')}</a>` : onRecord[0] === ym ? html`<span class="lab ss-months-end not-phone">First month on record</span>` : ''}
+        ${next ? html`<a class="btn-link" href="${href(next, { account: view.account })}">${fmtMonth(next, 'short')}${icon('chevron-right')}</a>` : ''}
         ${ym !== thisMonth && next !== thisMonth ? html`<a class="btn-link" href="#/scoresheet">This month</a>` : ''}
       </nav>
     </div>
@@ -15514,6 +15543,9 @@ function noScoreLine(ctx, view, matchStart) {
 
 function filterBar(ctx, view, lookCount) {
   const purposes = ctx.state.settings.purposes || {};
+  // the accounts the bank reports (and any kept by hand that hold moves): one chip each, to see one account alone
+  const withMoves = new Set(ctx.state.txs.map((tx) => tx.accountId));
+  const accounts = ctx.state.accounts.filter((account) => account && !account.hidden && withMoves.has(account.id));
   return html`<div class="ss-filters">
     <div class="seg ss-seg" role="radiogroup" aria-label="Class of move">
       ${FILTERS.map(([key, label]) => html`<label class="seg-opt"><input type="radio" name="ss-filter" value="${key}" data-change="scoresheet.filter" ${view.filter === key ? html`checked` : ''}><span>${label}</span></label>`)}
@@ -15526,6 +15558,9 @@ function filterBar(ctx, view, lookCount) {
       ${PURPOSES.filter((p) => purposes[p]).map((p) => html`<button class="chip" type="button" data-action="scoresheet.purpose" data-purpose="${p}" aria-pressed="${view.purpose === p ? 'true' : 'false'}">${purposes[p]}</button>`)}
       <button class="chip ss-look" type="button" data-action="scoresheet.look" aria-pressed="${view.filter === 'review' ? 'true' : 'false'}">Needs a look (${lookCount})</button>
     </div>
+    ${accounts.length > 1 ? html`<div class="chips ss-chips ss-accounts" role="group" aria-label="Account">
+      ${accounts.map((account) => html`<button class="chip" type="button" data-action="scoresheet.account" data-account="${account.id}" aria-pressed="${view.account === account.id ? 'true' : 'false'}">${accountShort(account)}</button>`)}
+    </div>` : ''}
   </div>`;
 }
 
@@ -15544,6 +15579,7 @@ function summaryLine(ctx, view, visible) {
   const words = [];
   if (view.filter !== 'all') words.push(FILTER_WORDS[view.filter]);
   if (view.purpose) words.push((ctx.state.settings.purposes || {})[view.purpose] || view.purpose);
+  if (view.account) { const account = ctx.d.account(view.account); if (account) words.push(accountShort(account)); }
   if (view.q.trim()) words.push('“' + view.q.trim() + '”');
   return html`<p class="ss-summary" aria-live="polite">
     <span class="cap">${words.join(' · ')}: <i data-cover-keep>${count}</i> ${count === 1 ? 'move' : 'moves'}${count ? ' on ' + visible.length + (visible.length === 1 ? ' day' : ' days') + ' of ' : ' in '}${fmtMonth(view.ym, 'name')}${out
@@ -15644,7 +15680,8 @@ const actions = {
   'scoresheet.look': ({ el }) => setParams({ filter: el.getAttribute('aria-pressed') === 'true' ? null : 'review' }),
   'scoresheet.purpose': ({ el, data }) => setParams({ purpose: el.getAttribute('aria-pressed') === 'true' ? null : data.purpose }),
   'scoresheet.search': ({ el }) => setParams({ q: el.value || null }),
-  'scoresheet.clear': () => setParams({ filter: null, purpose: null, q: null }),
+  'scoresheet.account': ({ el, data }) => setParams({ account: el.getAttribute('aria-pressed') === 'true' ? null : data.account }),
+  'scoresheet.clear': () => setParams({ filter: null, purpose: null, q: null, account: null }),
 };
 
 /* ------------------------------------------------------ the scroll-to mark */
@@ -20486,7 +20523,7 @@ const { fmtDate, fmtTime, gameDay, diffDays, parts: ymdParts } = __mods["js/mode
 const { ACCOUNT_TYPES, accountLabel, makeAccount } = __mods["js/model/schema.js"];
 const { refresh } = __mods["js/model/detect.js"];
 const { icon } = __mods["js/ui/icons.js"];
-const { money } = __mods["js/views/parts.js"];
+const { money, recentList } = __mods["js/views/parts.js"];
 const KINDS = [
   { type: 'equipment', title: 'Equipment', note: 'Instruments, tools, a computer. Slow to sell; counted at your own estimate.' },
   { type: 'vehicle', title: 'A vehicle', note: 'A car, a van, a motorbike, at what it would sell for.' },
@@ -20768,6 +20805,21 @@ function manualForm(ctx, account, type) {
 
 /* -------------------------------------------------------------- bank account */
 
+const SHEET_MOVES = 6;
+
+function movesBlock(ctx, account) {
+  if (account.hidden) return '';
+  const r = ctx.d.latest(SHEET_MOVES, null, account.id);
+  const count = r.total.toLocaleString('en-US') + (r.total === 1 ? ' transaction' : ' transactions');
+  return html`<div class="acct-set acct-moves">
+    <p class="lab"><b>Transactions</b><i class="sep"></i>${count} on the record${r.oldest ? ', from ' + shortDay(ctx, r.oldest) : ''}</p>
+    ${r.rows.length
+      ? html`${recentList(ctx, r.rows, { account: false, cls: 'acct-recent', label: 'The latest transactions on this account' })}
+        <p class="acct-moves-all"><a class="btn-link" href="${'#/scoresheet?account=' + encodeURIComponent(account.id)}">All of them, by day</a></p>`
+      : html`<p class="cap">The bank has sent a balance for this account and no transaction yet. Some banks pass a card’s transactions on a day or more after its balance; they appear here by themselves.</p>`}
+  </div>`;
+}
+
 function bankForm(ctx, account, type) {
   const errors = errorsFor(ctx, errorKey(account, type));
   const group = groupOf(type);
@@ -20792,6 +20844,7 @@ function bankForm(ctx, account, type) {
           : ', as the bank reported it ' + ageText(ctx, account.asOf)}${
         account.hidden ? ' · left out of everything' : ''}</span>
     </p>
+    ${movesBlock(ctx, account)}
 
     <div class="acct-set acct-set-first">
       ${field('nick', 'Your name for it', { value: account.nick, placeholder: account.name, maxlength: 60,

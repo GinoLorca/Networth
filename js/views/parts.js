@@ -22,9 +22,9 @@
 
 import { html, cx } from '../ui/dom.js';
 import { fmt, fmtSigned, fmtPlain, MINUS } from '../model/money.js';
-import { fmtDate, fmtMonth, dow, parts as ymdParts, monthOf } from '../model/dates.js';
+import { addDays, fmtDate, fmtMonth, dow, parts as ymdParts, monthOf } from '../model/dates.js';
 import { moveGlyph } from '../ui/glyphs.js';
-import { categoryLabel, accountLabel } from '../model/schema.js';
+import { categoryLabel, accountLabel, accountShort } from '../model/schema.js';
 
 const DOW_LETTER = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const HALF = '½';
@@ -339,4 +339,41 @@ export function movesList(moves, annotations, opts = {}) {
 /** Moves worth showing on the Board for a round: game-class spends, declines, and anything annotated. */
 export function notableMoves(round, annotations) {
   return round.moves.filter((tx) => !tx.matchId && (tx.kind === 'decline' || (tx.kind === 'spend' && tx.klass === 'game') || (annotations && annotations.has(tx.id))));
+}
+
+/* --------------------------------------------------- recent transactions */
+
+/** "Today" · "Yesterday" · "Tue, Nov 10". */
+function recentDay(ctx, day) {
+  if (day === ctx.today) return 'Today';
+  if (day === addDays(ctx.today, -1)) return 'Yesterday';
+  return fmtDate(day, 'dowshort');
+}
+
+/**
+ * Transactions as a ruled list, newest first as given: the name with its account under it, the day,
+ * the amount. Each row is a button that opens the move's own sheet. A pending or tapped-in amount is
+ * not final, so it is set as an estimate; money coming in carries its sign.
+ * @param {object} ctx
+ * @param {{ tx: object, account: object|null, isNew: boolean, provisional: boolean }[]} rows  from recent.recentTransactions
+ * @param {{ label?: string, account?: boolean, cls?: string }} [opts]
+ *   account false leaves the account's name out (the list is one account's own); cls adds a class to the list
+ */
+export function recentList(ctx, rows, opts = {}) {
+  return html`<ol class="${cx('board-recent', opts.cls)}" aria-label="${opts.label || 'Transactions, newest first'}">
+    ${rows.map(({ tx, account, isNew, provisional }) => {
+      const unsettled = !!tx.pending || provisional;
+      const incoming = tx.flow === 'in';
+      const notes = [];
+      if (opts.account !== false && account) notes.push(accountShort(account));
+      if (tx.pending) notes.push('Pending');
+      if (provisional) notes.push('Tapped in');
+      return html`<li data-key="${tx.id}"><button class="recent-row" type="button" data-action="app.sheet" data-sheet="tx" data-id="${tx.id}">
+        <span class="recent-name">${tx.merchant || categoryLabel(tx.category)}${isNew ? html` <span class="recent-new">New</span>` : ''}${notes.length
+          ? html`<em class="recent-note">${notes.join(' · ')}</em>` : ''}</span>
+        <span class="lab">${recentDay(ctx, tx.day)}</span>
+        ${money(tx.amount, { est: unsettled, signed: incoming, tint: incoming })}
+      </button></li>`;
+    })}
+  </ol>`;
 }

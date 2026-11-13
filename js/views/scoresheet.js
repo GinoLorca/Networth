@@ -5,6 +5,7 @@
  *   #/scoresheet/2026-05         another month (only months that have transactions are offered)
  *   ?filter=game|want|need|book|income|review   (absent = all)
  *   ?purpose=work                one purpose only
+ *   ?account=acc_…               one account only (kept when stepping to another month)
  *   ?q=deli                      merchant search
  *   ?day=2026-06-09              the round to bring into view (once) and mark
  *
@@ -18,7 +19,7 @@
 import { html, cx, define, prefersReducedMotion } from '../ui/dom.js';
 import { fmt, fmtSigned } from '../model/money.js';
 import { fmtDate, fmtMonth, addDays, monthOf, daysInMonth, parts as ymdParts } from '../model/dates.js';
-import { PURPOSES } from '../model/schema.js';
+import { PURPOSES, accountShort } from '../model/schema.js';
 import { moveGlyph, resultMark } from '../ui/glyphs.js';
 import { icon } from '../ui/icons.js';
 import { setParams } from '../router.js';
@@ -138,6 +139,7 @@ function readRoute(ctx) {
     filter: FILTER_KEYS.has(p.filter) ? p.filter : 'all',
     purpose: PURPOSES.includes(p.purpose) && purposes[p.purpose] ? p.purpose : '',
     q: typeof p.q === 'string' ? p.q : '',
+    account: typeof p.account === 'string' && ctx.state.accounts.some((a) => a && a.id === p.account && !a.hidden) ? p.account : '',
     day: validDay(p.day) ? p.day : '',
   };
 }
@@ -152,14 +154,14 @@ export function render(ctx) {
   const matchStart = ctx.state.meta.matchStart;
   const shown = month.rounds.filter((r) => r.day <= ctx.today).reverse();
   const needle = view.q.trim().toLowerCase();
-  const active = view.filter !== 'all' || !!view.purpose || !!needle;
+  const active = view.filter !== 'all' || !!view.purpose || !!needle || !!view.account;
 
   // every move of the month that can appear on the sheet, by round
   const all = shown.map((round) => ({ round, moves: round.moves.filter((tx) => !tx.matchId) }));
   const lookCount = all.reduce((n, r) => n + r.moves.filter((tx) => inFilter(tx, 'review')).length, 0);
   const listed = all.map(({ round, moves }) => ({
     round,
-    moves: moves.filter((tx) => inFilter(tx, view.filter) && (!view.purpose || tx.purpose === view.purpose) && matchesQuery(tx, needle)),
+    moves: moves.filter((tx) => inFilter(tx, view.filter) && (!view.purpose || tx.purpose === view.purpose) && (!view.account || tx.accountId === view.account) && matchesQuery(tx, needle)),
   }));
   // a filter hides the days it empties; a past month with no move at all prints one sentence instead of its blank days
   const blank = ym !== thisMonth && !all.some((r) => r.moves.length);
@@ -198,8 +200,8 @@ function monthHead(ctx, view, month, onRecord, matchStart) {
     <div class="sec-head">
       <p class="lab"><b>Scoresheet</b><span class="not-phone"><i class="sep"></i>rounds and moves</span></p>
       <nav class="ss-months" aria-label="Months">
-        ${prev ? html`<a class="btn-link" href="${href(prev)}">${icon('chevron-left')}${fmtMonth(prev, 'short')}</a>` : onRecord[0] === ym ? html`<span class="lab ss-months-end not-phone">First month on record</span>` : ''}
-        ${next ? html`<a class="btn-link" href="${href(next)}">${fmtMonth(next, 'short')}${icon('chevron-right')}</a>` : ''}
+        ${prev ? html`<a class="btn-link" href="${href(prev, { account: view.account })}">${icon('chevron-left')}${fmtMonth(prev, 'short')}</a>` : onRecord[0] === ym ? html`<span class="lab ss-months-end not-phone">First month on record</span>` : ''}
+        ${next ? html`<a class="btn-link" href="${href(next, { account: view.account })}">${fmtMonth(next, 'short')}${icon('chevron-right')}</a>` : ''}
         ${ym !== thisMonth && next !== thisMonth ? html`<a class="btn-link" href="#/scoresheet">This month</a>` : ''}
       </nav>
     </div>
@@ -366,6 +368,9 @@ function noScoreLine(ctx, view, matchStart) {
 
 function filterBar(ctx, view, lookCount) {
   const purposes = ctx.state.settings.purposes || {};
+  // the accounts the bank reports (and any kept by hand that hold moves): one chip each, to see one account alone
+  const withMoves = new Set(ctx.state.txs.map((tx) => tx.accountId));
+  const accounts = ctx.state.accounts.filter((account) => account && !account.hidden && withMoves.has(account.id));
   return html`<div class="ss-filters">
     <div class="seg ss-seg" role="radiogroup" aria-label="Class of move">
       ${FILTERS.map(([key, label]) => html`<label class="seg-opt"><input type="radio" name="ss-filter" value="${key}" data-change="scoresheet.filter" ${view.filter === key ? html`checked` : ''}><span>${label}</span></label>`)}
@@ -378,6 +383,9 @@ function filterBar(ctx, view, lookCount) {
       ${PURPOSES.filter((p) => purposes[p]).map((p) => html`<button class="chip" type="button" data-action="scoresheet.purpose" data-purpose="${p}" aria-pressed="${view.purpose === p ? 'true' : 'false'}">${purposes[p]}</button>`)}
       <button class="chip ss-look" type="button" data-action="scoresheet.look" aria-pressed="${view.filter === 'review' ? 'true' : 'false'}">Needs a look (${lookCount})</button>
     </div>
+    ${accounts.length > 1 ? html`<div class="chips ss-chips ss-accounts" role="group" aria-label="Account">
+      ${accounts.map((account) => html`<button class="chip" type="button" data-action="scoresheet.account" data-account="${account.id}" aria-pressed="${view.account === account.id ? 'true' : 'false'}">${accountShort(account)}</button>`)}
+    </div>` : ''}
   </div>`;
 }
 
@@ -396,6 +404,7 @@ function summaryLine(ctx, view, visible) {
   const words = [];
   if (view.filter !== 'all') words.push(FILTER_WORDS[view.filter]);
   if (view.purpose) words.push((ctx.state.settings.purposes || {})[view.purpose] || view.purpose);
+  if (view.account) { const account = ctx.d.account(view.account); if (account) words.push(accountShort(account)); }
   if (view.q.trim()) words.push('“' + view.q.trim() + '”');
   return html`<p class="ss-summary" aria-live="polite">
     <span class="cap">${words.join(' · ')}: <i data-cover-keep>${count}</i> ${count === 1 ? 'move' : 'moves'}${count ? ' on ' + visible.length + (visible.length === 1 ? ' day' : ' days') + ' of ' : ' in '}${fmtMonth(view.ym, 'name')}${out
@@ -502,7 +511,9 @@ export const actions = {
   /** The search box, as it is typed. */
   'scoresheet.search': ({ el }) => setParams({ q: el.value || null }),
   /** Drop every filter and the search. */
-  'scoresheet.clear': () => setParams({ filter: null, purpose: null, q: null }),
+  /** An account chip: that account's moves only; tap again to leave. */
+  'scoresheet.account': ({ el, data }) => setParams({ account: el.getAttribute('aria-pressed') === 'true' ? null : data.account }),
+  'scoresheet.clear': () => setParams({ filter: null, purpose: null, q: null, account: null }),
 };
 
 /* ------------------------------------------------------ the scroll-to mark */

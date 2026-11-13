@@ -684,9 +684,31 @@ export function isFast(account) {
   return !!ACCOUNT_TYPES[account.type].fast;
 }
 
-/** The label to show for an account. */
+/** The label to show for an account: the owner's own name for it, else the bank's (tidied), else its kind. */
 export function accountLabel(account) {
-  return account.nick || account.name || ACCOUNT_TYPES[account.type].label;
+  return account.nick || tidyName(account.name) || ACCOUNT_TYPES[account.type].label;
+}
+
+/**
+ * A short name for tight places (a chip, the line under a transaction): the owner's own name, else the
+ * kind of account with the last four digits the bank's name carries ("Credit card ··4321"), else the
+ * bank's name.
+ */
+export function accountShort(account) {
+  if (account.nick) return account.nick;
+  const kind = ACCOUNT_TYPES[account.type] ? ACCOUNT_TYPES[account.type].label : 'Account';
+  const name = typeof account.name === 'string' ? account.name : '';
+  const digits = /(\d{4})(?!.*\d)/.exec(name);
+  return digits ? kind + ' ··' + digits[1] : tidyName(name) || kind;
+}
+
+/** A bank's name for an account without a closing "(1234)" that only repeats digits the name already holds. */
+function tidyName(name) {
+  if (typeof name !== 'string') return '';
+  const closing = /\s*\((\d{2,})\)\s*$/.exec(name);
+  if (!closing) return name;
+  const head = name.slice(0, closing.index);
+  return head.includes(closing[1]) ? head.trim() : name;
 }
 
 export function categoryLabel(key) {

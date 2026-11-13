@@ -37,7 +37,7 @@ import { fmtDate, fmtTime, gameDay, diffDays, parts as ymdParts } from '../model
 import { ACCOUNT_TYPES, accountLabel, makeAccount } from '../model/schema.js';
 import { refresh } from '../model/detect.js';
 import { icon } from '../ui/icons.js';
-import { money } from './parts.js';
+import { money, recentList } from './parts.js';
 
 /** What can be added by hand, in the order offered. */
 const KINDS = [
@@ -325,6 +325,26 @@ function manualForm(ctx, account, type) {
 
 /* -------------------------------------------------------------- bank account */
 
+/** How many of this account's transactions the sheet lists; the rest are a tap away on the Scoresheet. */
+const SHEET_MOVES = 6;
+
+/**
+ * This account's own transactions: how many are on the record and since when, the latest few, and
+ * the way to all of them. An account the owner left out lists none (nothing of it is shown anywhere).
+ */
+function movesBlock(ctx, account) {
+  if (account.hidden) return '';
+  const r = ctx.d.latest(SHEET_MOVES, null, account.id);
+  const count = r.total.toLocaleString('en-US') + (r.total === 1 ? ' transaction' : ' transactions');
+  return html`<div class="acct-set acct-moves">
+    <p class="lab"><b>Transactions</b><i class="sep"></i>${count} on the record${r.oldest ? ', from ' + shortDay(ctx, r.oldest) : ''}</p>
+    ${r.rows.length
+      ? html`${recentList(ctx, r.rows, { account: false, cls: 'acct-recent', label: 'The latest transactions on this account' })}
+        <p class="acct-moves-all"><a class="btn-link" href="${'#/scoresheet?account=' + encodeURIComponent(account.id)}">All of them, by day</a></p>`
+      : html`<p class="cap">The bank has sent a balance for this account and no transaction yet. Some banks pass a card’s transactions on a day or more after its balance; they appear here by themselves.</p>`}
+  </div>`;
+}
+
 function bankForm(ctx, account, type) {
   const errors = errorsFor(ctx, errorKey(account, type));
   const group = groupOf(type);
@@ -349,6 +369,7 @@ function bankForm(ctx, account, type) {
           : ', as the bank reported it ' + ageText(ctx, account.asOf)}${
         account.hidden ? ' · left out of everything' : ''}</span>
     </p>
+    ${movesBlock(ctx, account)}
 
     <div class="acct-set acct-set-first">
       ${field('nick', 'Your name for it', { value: account.nick, placeholder: account.name, maxlength: 60,

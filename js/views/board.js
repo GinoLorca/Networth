@@ -23,9 +23,8 @@ import { store } from '../store.js';
 import { fmt, fmtPct, ratio } from '../model/money.js';
 import { addDays, diffDays, fmtDate, fmtMonth, fmtTime, isYmd, monthOf, ymd } from '../model/dates.js';
 import { firstTransactionDay } from '../model/cards.js';
-import { accountLabel, categoryLabel } from '../model/schema.js';
 import { evalGlyph, timeTroubleGlyph, moveGlyph, resultMark } from '../ui/glyphs.js';
-import { money, inlineMoney, keptLine, statusLine, roundTitle, colourOf, crosstable, movesList, notableMoves, worstGlyph, spentUnposted } from './parts.js';
+import { money, inlineMoney, keptLine, statusLine, roundTitle, colourOf, crosstable, movesList, notableMoves, worstGlyph, spentUnposted, recentList } from './parts.js';
 
 const TEN_MINUTES_MS = 10 * 60 * 1000;
 const WORTH_DAYS = 90;
@@ -722,13 +721,6 @@ function figuresBlock(ctx, v) {
 const RECENT_WIDE = 12;
 const RECENT_NARROW = 8;
 
-/** "Today" · "Yesterday" · "Tue, Nov 10". */
-function recentDay(ctx, day) {
-  if (day === ctx.today) return 'Today';
-  if (day === addDays(ctx.today, -1)) return 'Yesterday';
-  return fmtDate(day, 'dowshort');
-}
-
 /**
  * Every account's latest transactions, newest first: the plain answer to "did anything go through?".
  * A row opens the move's own sheet. Amounts are the bank's; a pending or tapped-in one is not final,
@@ -754,22 +746,7 @@ function recentBlock(ctx, v) {
     : 'Today: 0 transactions on the record.';
   return html`${head}
     <p class="board-recent-today">${todayLine}${r.fresh ? html` <span class="recent-new">${r.fresh} new</span> since the last look.` : ''}</p>
-    <ol class="board-recent" aria-label="Recent transactions, newest first">
-      ${r.rows.map(({ tx, account, isNew, provisional }) => {
-        const unsettled = !!tx.pending || provisional;
-        const incoming = tx.flow === 'in';
-        const tags = [];
-        if (tx.pending) tags.push('Pending');
-        if (provisional) tags.push('Tapped in');
-        const where = account ? accountLabel(account) : '';
-        return html`<li data-key="${tx.id}"><button class="recent-row" type="button" data-action="app.sheet" data-sheet="tx" data-id="${tx.id}">
-          <span class="recent-name">${tx.merchant || categoryLabel(tx.category)}${isNew ? html` <span class="recent-new">New</span>` : ''}${where || tags.length
-            ? html`<em class="recent-note">${[where, ...tags].filter(Boolean).join(' · ')}</em>` : ''}</span>
-          <span class="lab">${recentDay(ctx, tx.day)}</span>
-          ${money(tx.amount, { est: unsettled, signed: incoming, tint: incoming })}
-        </button></li>`;
-      })}
-    </ol>
+    ${recentList(ctx, r.rows, { label: 'Recent transactions, newest first' })}
     <p class="cap board-line">${r.total > r.rows.length ? html`The latest ${r.rows.length} of ${r.total.toLocaleString('en-US')}. ` : ''}${source}</p>`;
 }
 

@@ -22,23 +22,26 @@ const DEFAULT_LIMIT = 12;
 /**
  * @param {object} state  the document
  * @param {string} today  game day, 'YYYY-MM-DD'
- * @param {{ limit?: number, seenAt?: number|null }} [opts]
+ * @param {{ limit?: number, seenAt?: number|null, accountId?: string|null }} [opts]
  *   limit   rows to return (default 12)
+ *   accountId  only this account's rows (then both legs of a payment count: the one on this account is listed)
  *   seenAt  when the owner last looked (ms); a row first stored after it is `isNew`. null: nothing is new.
  * @returns {{
  *   rows: { tx: object, account: object|null, isNew: boolean, provisional: boolean }[],
  *   today: { count: number, out: number, in: number, unsettled: boolean },
- *   fresh: number, total: number }}
+ *   fresh: number, total: number, oldest: string|null }}
  *   rows   newest first: by day, then by time when the bank gives one, then by when the row arrived
  *   today  what is dated today: how many, cents out and in (transfers between own accounts are in neither);
  *          `unsettled` when one of them is pending or tapped in, so the sums are not final
  *   fresh  how many listed-or-not rows are new since `seenAt`
  *   total  how many rows there are to list in all
+ *   oldest the day of the earliest of them, or null
  */
 export function recentTransactions(state, today, opts = {}) {
   const limit = Number.isInteger(opts.limit) && opts.limit > 0 ? opts.limit : DEFAULT_LIMIT;
   const seenAt = Number.isFinite(opts.seenAt) ? opts.seenAt : null;
-  const empty = { rows: [], today: { count: 0, out: 0, in: 0, unsettled: false }, fresh: 0, total: 0 };
+  const only = typeof opts.accountId === 'string' && opts.accountId ? opts.accountId : null;
+  const empty = { rows: [], today: { count: 0, out: 0, in: 0, unsettled: false }, fresh: 0, total: 0, oldest: null };
   if (!state || typeof state !== 'object' || !isYmd(today)) return empty;
 
   const accounts = new Map();
@@ -47,15 +50,18 @@ export function recentTransactions(state, today, opts = {}) {
   }
   const listed = (tx) => {
     if (!tx || typeof tx !== 'object' || !isLive(tx) || !isYmd(tx.day) || tx.day > today) return false;
+    if (only !== null && tx.accountId !== only) return false;
     const account = tx.accountId != null ? accounts.get(tx.accountId) : null;
     return !(account && account.hidden);
   };
   const txs = (Array.isArray(state.txs) ? state.txs : []).filter(listed);
-  const present = new Set(txs.map((tx) => tx.id));
+  // with one account in view its own leg of a payment is the one to show, so no leg is skipped
+  const present = only !== null ? new Set() : new Set(txs.map((tx) => tx.id));
 
   const rows = [];
   const todayTally = { count: 0, out: 0, in: 0, unsettled: false };
   let fresh = 0;
+  let oldest = null;
   for (const tx of txs) {
     const paired = tx.pairId != null && present.has(tx.pairId);
     if (paired && tx.flow === 'in') continue;   // the same event as its outgoing leg
@@ -71,6 +77,7 @@ export function recentTransactions(state, today, opts = {}) {
       }
       if (tx.pending || provisional) todayTally.unsettled = true;
     }
+    if (oldest === null || tx.day < oldest) oldest = tx.day;
     rows.push({ tx, account: tx.accountId != null ? accounts.get(tx.accountId) || null : null, isNew, provisional });
   }
 
@@ -81,5 +88,5 @@ export function recentTransactions(state, today, opts = {}) {
     || arrived(b.tx) - arrived(a.tx)
     || (String(a.tx.id) < String(b.tx.id) ? -1 : String(a.tx.id) > String(b.tx.id) ? 1 : 0));
 
-  return { rows: rows.slice(0, limit), today: todayTally, fresh, total: rows.length };
+  return { rows: rows.slice(0, limit), today: todayTally, fresh, total: rows.length, oldest };
 }

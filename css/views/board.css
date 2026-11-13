@@ -199,3 +199,6 @@ button.hero-fig:focus-visible { outline-offset: 2px; }
 @media (min-width: 900px) {
   .board-recent { columns: 2; column-gap: var(--s-7); }
 }
+/* inside a sheet the list is one account's own: a single column, with its heading and the way to all of them */
+.board-recent.acct-recent { columns: 1; margin-top: var(--s-2); }
+.acct-moves-all { margin-top: var(--s-2); }

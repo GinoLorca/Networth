@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { defaultState, makeAccount, makeTx } from '../js/model/schema.js';
+import { defaultState, makeAccount, makeTx, accountLabel, accountShort } from '../js/model/schema.js';
 import { recentTransactions } from '../js/model/recent.js';
 import { buildDemoState } from '../js/model/demo.js';
 
@@ -102,7 +102,7 @@ test('recentTransactions: a row that arrived after the last look is new; nothing
 
 test('recentTransactions: odd input gives an empty list, never an error', () => {
   for (const state of [null, undefined, 7, {}, { txs: 'many', accounts: null }]) {
-    assert.deepEqual(recentTransactions(state, TODAY), { rows: [], today: { count: 0, out: 0, in: 0, unsettled: false }, fresh: 0, total: 0 });
+    assert.deepEqual(recentTransactions(state, TODAY), { rows: [], today: { count: 0, out: 0, in: 0, unsettled: false }, fresh: 0, total: 0, oldest: null });
   }
   assert.equal(recentTransactions(record(), 'someday').rows.length, 0);
 });
@@ -116,4 +116,33 @@ test('recentTransactions: the sample game lists its card and its checking accoun
   const kinds = new Set(rows.map((r) => r.account && r.account.type));
   assert.ok(kinds.has('credit_card'), 'card rows are in the latest twelve');
   for (let i = 1; i < rows.length; i++) assert.ok(rows[i - 1].tx.day >= rows[i].tx.day);
+});
+
+test('recentTransactions: one account only, with its own leg of a payment and the day its record begins', () => {
+  const state = record();
+  state.txs.push(
+    row('card-buy', '2026-06-09', 1240),
+    row('chk-buy', '2026-06-09', 500, { accountId: 'acc_chk' }),
+    row('pay-out', '2026-06-08', 46000, { accountId: 'acc_chk', kind: 'payment', pairId: 'pay-in' }),
+    row('pay-in', '2026-06-08', 46000, { kind: 'payment', flow: 'in', pairId: 'pay-out' }),
+    row('card-old', '2026-05-02', 990),
+  );
+  const card = recentTransactions(state, TODAY, { accountId: 'acc_card' });
+  assert.deepEqual(card.rows.map((r) => r.tx.id), ['card-buy', 'pay-in', 'card-old']);
+  assert.equal(card.total, 3);
+  assert.equal(card.oldest, '2026-05-02');
+  const none = recentTransactions(state, TODAY, { accountId: 'acc_old' });
+  assert.deepEqual([none.rows.length, none.total, none.oldest], [0, 0, null]);
+});
+
+test('account names: a closing "(1234)" that repeats the name is dropped, and tight places get a short name', () => {
+  const card = makeAccount({ id: 'a', type: 'credit_card', name: 'Harbor Rewards Card- 4321 (4321)' });
+  assert.equal(accountLabel(card), 'Harbor Rewards Card- 4321');
+  assert.equal(accountShort(card), 'Credit card ··4321');
+  assert.equal(accountLabel(makeAccount({ type: 'checking', name: 'Everyday (7788)' })), 'Everyday (7788)', 'digits the name does not repeat stay');
+  assert.equal(accountShort(makeAccount({ type: 'checking', name: 'Everyday (7788)' })), 'Checking ··7788');
+  assert.equal(accountShort(makeAccount({ type: 'savings', name: 'Rainy Day' })), 'Rainy Day');
+  assert.equal(accountShort(makeAccount({ type: 'savings', name: '' })), 'Savings');
+  const named = makeAccount({ type: 'credit_card', name: 'Harbor Rewards Card- 4321 (4321)', nick: 'Blue card' });
+  assert.deepEqual([accountLabel(named), accountShort(named)], ['Blue card', 'Blue card']);
 });
