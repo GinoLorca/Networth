@@ -15,11 +15,11 @@
  */
 
 import { html, cx } from '../ui/dom.js';
-import { fmt, fmtSigned, fmtPct } from '../model/money.js';
+import { fmt, fmtSigned, fmtPct, toneBand } from '../model/money.js';
 import { fmtDate, fmtMonth, fmtTime, gameDay, diffDays, isYmd, monthOf, parts as ymdParts } from '../model/dates.js';
 import { ACCOUNT_TYPES, accountLabel } from '../model/schema.js';
 import { largestCharges, firstTransactionDay } from '../model/cards.js';
-import { money, movesList, inlineMoney } from './parts.js';
+import { money, movesList, inlineMoney, toneStyle } from './parts.js';
 
 const CARD_MONTHS = 6;
 const LARGEST = 3;
@@ -200,7 +200,7 @@ function head(ctx, m) {
       : html`No regular pay has been found yet, so nothing accrues and ${same}`;
   const figure = (cents, est) => {
     const text = fmt(cents);
-    return html`<span class="${est ? 'fig est mat-worth-fig' : 'fig mat-worth-fig'}" style="${'--n:' + (text.length + (est ? 1 : 0))}">${est ? html`<span class="approx">≈</span>` : ''}${text}</span>`;
+    return html`<span class="${est ? 'fig est mat-worth-fig' : 'fig mat-worth-fig'}" data-tone="${toneBand(cents)}" style="${'--n:' + (text.length + (est ? 1 : 0)) + ';' + toneStyle(cents)}">${est ? html`<span class="approx">≈</span>` : ''}${text}</span>`;
   };
   const slowTotal = m.slow.reduce((n, a) => n + Math.max(0, ctx.d.valueOf(a)), 0);
   const slowShare = p.assets > 0 ? slowTotal / p.assets : 0;

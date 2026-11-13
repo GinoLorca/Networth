@@ -134,3 +134,28 @@ export function fmtPct(fraction, digits = 1) {
   if (fraction == null || !Number.isFinite(fraction)) return '—';
   return (fraction * 100).toFixed(digits).replace(/\.0+$/, '').replace(/^-/, MINUS) + '%';
 }
+
+/* ------------------------------------------------- the owner's colour scale */
+
+const TONE_YELLOW_AT = 100000;   // about $1,000: yellow
+const TONE_GREEN_FROM = 500000;  // $5,000 and up: green
+
+/**
+ * Where a net-worth figure sits on the owner's scale: 0 while it is in the red (zero or below),
+ * rising to .5 at about $1,000 and to 1 at $5,000, and 1 above that. The stylesheet turns it into
+ * the figure's colours (css/components.css, "The owner's scale").
+ * @param {number} cents
+ * @returns {number} 0..1
+ */
+export function toneOf(cents) {
+  if (!Number.isFinite(cents) || cents <= 0) return 0;
+  if (cents <= TONE_YELLOW_AT) return 0.5 * cents / TONE_YELLOW_AT;
+  if (cents < TONE_GREEN_FROM) return 0.5 + 0.5 * (cents - TONE_YELLOW_AT) / (TONE_GREEN_FROM - TONE_YELLOW_AT);
+  return 1;
+}
+
+/** The nearest of the scale's three colours, for a browser that cannot blend them: 'red' | 'yellow' | 'green'. */
+export function toneBand(cents) {
+  const t = toneOf(cents);
+  return t < 0.25 ? 'red' : t < 0.75 ? 'yellow' : 'green';
+}

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { toCents, fmt, fmtSigned, fmtPlain, fmtCompact, splitMoney, roundCents, ratio, fmtPct, sum, MINUS } from '../js/model/money.js';
+import { toCents, fmt, fmtSigned, fmtPlain, fmtCompact, splitMoney, roundCents, ratio, fmtPct, sum, MINUS, toneOf, toneBand } from '../js/model/money.js';
 
 test('toCents parses the shapes banks and people write', () => {
   assert.equal(toCents('1,234.56'), 123456);
@@ -89,4 +89,23 @@ test('toCents: one comma followed by exactly two digits and no point is a decima
   assert.equal(toCents('1,234,567'), 123456700);
   assert.equal(toCents('12,5'), 12500); // not two digits: the comma stays a separator
   assert.equal(toCents('1,23.4'), 12340); // a point is present: the comma is never the decimal mark
+});
+
+test('toneOf: red at zero and below, yellow at $1,000, green from $5,000, by degrees in between', () => {
+  assert.equal(toneOf(-186209), 0);
+  assert.equal(toneOf(0), 0);
+  assert.equal(toneOf(50000), 0.25);
+  assert.equal(toneOf(100000), 0.5);
+  assert.equal(toneOf(300000), 0.75);
+  assert.equal(toneOf(500000), 1);
+  assert.equal(toneOf(98765432), 1);
+  for (const odd of [NaN, null, undefined, 'much', Infinity]) assert.equal(toneOf(odd), 0);
+  // it never falls as the figure rises
+  let last = -1;
+  for (let cents = -200000; cents <= 700000; cents += 12345) { const t = toneOf(cents); assert.ok(t >= last && t >= 0 && t <= 1); last = t; }
+});
+
+test('toneBand: the nearest of the three colours', () => {
+  assert.deepEqual([-1, 0, 49999, 50000, 100000, 299999, 300000, 500000].map(toneBand),
+    ['red', 'red', 'red', 'yellow', 'yellow', 'yellow', 'green', 'green']);
 });

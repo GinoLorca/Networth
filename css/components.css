@@ -573,6 +573,45 @@ a.row:hover .row-label, button.row:hover .row-label { text-decoration: underline
 .hero-fig .approx { font-size: .5em; position: relative; top: -.36em; margin-right: .06em; }
 .hero-mini { font-size: .3em; color: var(--spot); margin-left: .14em; }
 .hero .tally { margin-top: var(--s-2); }
+
+/* The owner's scale for the net-worth figure. --tone (set on the figure) runs from 0, in the red,
+   through .5, about $1,000, to 1, $5,000 and up. The two ends of the figure's gradient are blended
+   from the scale's three colours, so the hue moves by degrees between them, and every numeral is
+   filled with that gradient, light above and deep below: never a flat colour. data-tone names the
+   nearest of the three for a browser that cannot blend. The ≈ sign keeps the spot colour. Under cover
+   nothing of this shows: the ticker draws its bar, which is never tinted, and a still figure is barred. */
+:is(.hero-fig, .mat-worth-fig)[data-tone] { --tone-hi: var(--tone-grn-hi); --tone-lo: var(--tone-grn-lo); }
+:is(.hero-fig, .mat-worth-fig)[data-tone="red"] { --tone-hi: var(--tone-red-hi); --tone-lo: var(--tone-red-lo); }
+:is(.hero-fig, .mat-worth-fig)[data-tone="yellow"] { --tone-hi: var(--tone-yel-hi); --tone-lo: var(--tone-yel-lo); }
+@supports (color: color-mix(in oklch, red 50%, blue)) {
+  :is(.hero-fig, .mat-worth-fig)[data-tone] {
+    --tone-hi: color-mix(in oklch, color-mix(in oklch, var(--tone-red-hi), var(--tone-yel-hi) clamp(0%, calc(var(--tone, 1) * 200%), 100%)), var(--tone-grn-hi) clamp(0%, calc((var(--tone, 1) - .5) * 200%), 100%));
+    --tone-lo: color-mix(in oklch, color-mix(in oklch, var(--tone-red-lo), var(--tone-yel-lo) clamp(0%, calc(var(--tone, 1) * 200%), 100%)), var(--tone-grn-lo) clamp(0%, calc((var(--tone, 1) - .5) * 200%), 100%));
+  }
+}
+.hero-fig[data-tone] nw-ticker :is(.tk-main, .tk-mini) > span,
+.mat-worth-fig[data-tone] { color: var(--tone-lo); }
+@supports ((background-clip: text) or (-webkit-background-clip: text)) {
+  /* each numeral sits in its own cell, so each is filled on its own; the cell's box is let out a
+     little on every side (and taken back in the margins) so that an italic numeral's overhang is filled too */
+  .hero-fig[data-tone] nw-ticker :is(.tk-main, .tk-mini) > span {
+    background-image: linear-gradient(172deg, var(--tone-hi) 22%, var(--tone-lo) 80%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    box-sizing: content-box; padding: .12em .18em; margin: -.12em -.18em;   /* content-box: the cell keeps its width, the padding only widens what is painted */
+  }
+  .mat-worth-fig[data-tone] {
+    background-image: linear-gradient(172deg, var(--tone-hi) 22%, var(--tone-lo) 80%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    padding: .06em .12em; margin: -.06em -.12em;
+  }
+  .mat-worth-fig[data-tone] .approx { -webkit-text-fill-color: var(--spot); }
+  [data-cover] .mat-worth-fig[data-tone] { background-image: none; }
+}
+@media (forced-colors: active) {
+  .hero-fig[data-tone] nw-ticker :is(.tk-main, .tk-mini) > span, .mat-worth-fig[data-tone] { background-image: none; -webkit-text-fill-color: currentColor; color: CanvasText; }
+}
 @media (min-width: 720px) {
   .hero-fig { font-size: min(15.2vw, 9.375rem); }
 }

@@ -22,6 +22,11 @@
   --spot: #B3311D;         /* the one spot colour: the ≈ sign, today, time trouble, the live digits */
   --gain: #2C5B41;         /* a result that went up — used ONLY on result deltas */
   --loss: #B3311D;         /* a result that went down — used ONLY on result deltas */
+  /* the owner's scale for the net-worth figure: in the red, about $1,000, $5,000 and up. Each colour
+     has the light end and the deep end of the gradient that fills the numerals. */
+  --tone-red-hi: #D8492F; --tone-red-lo: #8C1D10;
+  --tone-yel-hi: #CFA112; --tone-yel-lo: #8F6200;
+  --tone-grn-hi: #3F9A64; --tone-grn-lo: #1C5A36;
   --bar-white: #FFFDF7;    /* the white of the split bar */
   --bar-black: #1B1814;
   --bar-edge: #1B1814;
@@ -79,6 +84,9 @@
     --paper: #15130F; --paper-2: #1F1C16; --paper-3: #2A261E;
     --ink: #ECE4D3; --ink-2: #C4BBA8; --ink-3: #9C9381;
     --hair: #4B453A; --spot: #E8694D; --gain: #9CC7A9; --loss: #E8694D;
+    --tone-red-hi: #FFA58C; --tone-red-lo: #E4563B;
+    --tone-yel-hi: #FBE48F; --tone-yel-lo: #E3AE2B;
+    --tone-grn-hi: #C3F1CE; --tone-grn-lo: #6DC38B;
     --bar-white: #ECE4D3; --bar-black: #070605; --bar-edge: #9C9381;
     --scrim: rgba(0, 0, 0, .6);
     color-scheme: dark;
@@ -88,6 +96,9 @@
   --paper: #15130F; --paper-2: #1F1C16; --paper-3: #2A261E;
   --ink: #ECE4D3; --ink-2: #C4BBA8; --ink-3: #9C9381;
   --hair: #4B453A; --spot: #E8694D; --gain: #9CC7A9; --loss: #E8694D;
+  --tone-red-hi: #FFA58C; --tone-red-lo: #E4563B;
+  --tone-yel-hi: #FBE48F; --tone-yel-lo: #E3AE2B;
+  --tone-grn-hi: #C3F1CE; --tone-grn-lo: #6DC38B;
   --bar-white: #ECE4D3; --bar-black: #070605; --bar-edge: #9C9381;
   --scrim: rgba(0, 0, 0, .6);
   color-scheme: dark;

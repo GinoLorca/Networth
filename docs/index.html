@@ -8,7 +8,7 @@
 <meta name="description" content="Networth: a private net-worth board. It reads your bank feed itself; your data stays on your device.">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-vHznKTKck5mRY7YpPGpVnb7XXC8yA8yVYOxNQFK568A='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-unS+/F/lSl/bijMB3jRRDoQ+Oz6Z2t+hXGwziWGVHR4=' 'sha256-Ur8ku0rdjIOUhY20rCJMxGBsTYq1x7I3mk4AJEN43oI=' 'sha256-HjK81dldzBx/xIeL8bxqZbhlUcJR67+FK79I0+8bNP4=' 'sha256-fW8Rb031pEL3z6SKg0UIoHj0lq9v89/SdbWzftltFMc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-WTC4ksqK7K5yE5Yoz7FnPyllhgtjuLhNK/WtIUdETbg=' 'sha256-VzoPHmMbD+TfmkRekvrhksYUuT8rj+c4jA1P/9P6/qI=' 'sha256-/xAinrTNYppFAIdG41S3TqyTgXliWkmyzNG9HOP4uBU=' 'sha256-01lSdEAMChpzTzJQLpOoEDL4dUduCyR/7BPuEyO5V4o=' 'sha256-B3Hrzs4vbn2XI5EePJAqAUZIxGf4JkYOb2PSWp2jJm0=' 'sha256-Z6D6KTuB/jjs3qcL8ULrE5HCIeZokO1KE1f3JKMRgag=' 'sha256-BjO5ScR2hajS/xDP0c80FuQ6bCsrOTlf9EntsQtTpP0='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src https://beta-bridge.simplefin.org https://bridge.simplefin.org; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-3qRNEFQcKTVsHAD5nvawidcrekd/EC2W4hCfB1BoyAI='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-rrcgv2y0KMkdT76+jAxvRcNQTlj6UpNB9oKKC0whQNA=' 'sha256-Ur8ku0rdjIOUhY20rCJMxGBsTYq1x7I3mk4AJEN43oI=' 'sha256-ezyjTIhgn7KhhShQwvKf0YepNZ3nZZ4mOpTXvYVbRFE=' 'sha256-fW8Rb031pEL3z6SKg0UIoHj0lq9v89/SdbWzftltFMc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-WTC4ksqK7K5yE5Yoz7FnPyllhgtjuLhNK/WtIUdETbg=' 'sha256-VzoPHmMbD+TfmkRekvrhksYUuT8rj+c4jA1P/9P6/qI=' 'sha256-/xAinrTNYppFAIdG41S3TqyTgXliWkmyzNG9HOP4uBU=' 'sha256-01lSdEAMChpzTzJQLpOoEDL4dUduCyR/7BPuEyO5V4o=' 'sha256-B3Hrzs4vbn2XI5EePJAqAUZIxGf4JkYOb2PSWp2jJm0=' 'sha256-Z6D6KTuB/jjs3qcL8ULrE5HCIeZokO1KE1f3JKMRgag=' 'sha256-BjO5ScR2hajS/xDP0c80FuQ6bCsrOTlf9EntsQtTpP0='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src https://beta-bridge.simplefin.org https://bridge.simplefin.org; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#F3EDE1" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#15130F" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
@@ -31,6 +31,9 @@
   --spot: #B3311D;         
   --gain: #2C5B41;         
   --loss: #B3311D;         
+  --tone-red-hi: #D8492F; --tone-red-lo: #8C1D10;
+  --tone-yel-hi: #CFA112; --tone-yel-lo: #8F6200;
+  --tone-grn-hi: #3F9A64; --tone-grn-lo: #1C5A36;
   --bar-white: #FFFDF7;    
   --bar-black: #1B1814;
   --bar-edge: #1B1814;
@@ -75,6 +78,9 @@
     --paper: #15130F; --paper-2: #1F1C16; --paper-3: #2A261E;
     --ink: #ECE4D3; --ink-2: #C4BBA8; --ink-3: #9C9381;
     --hair: #4B453A; --spot: #E8694D; --gain: #9CC7A9; --loss: #E8694D;
+    --tone-red-hi: #FFA58C; --tone-red-lo: #E4563B;
+    --tone-yel-hi: #FBE48F; --tone-yel-lo: #E3AE2B;
+    --tone-grn-hi: #C3F1CE; --tone-grn-lo: #6DC38B;
     --bar-white: #ECE4D3; --bar-black: #070605; --bar-edge: #9C9381;
     --scrim: rgba(0, 0, 0, .6);
     color-scheme: dark;
@@ -84,6 +90,9 @@
   --paper: #15130F; --paper-2: #1F1C16; --paper-3: #2A261E;
   --ink: #ECE4D3; --ink-2: #C4BBA8; --ink-3: #9C9381;
   --hair: #4B453A; --spot: #E8694D; --gain: #9CC7A9; --loss: #E8694D;
+  --tone-red-hi: #FFA58C; --tone-red-lo: #E4563B;
+  --tone-yel-hi: #FBE48F; --tone-yel-lo: #E3AE2B;
+  --tone-grn-hi: #C3F1CE; --tone-grn-lo: #6DC38B;
   --bar-white: #ECE4D3; --bar-black: #070605; --bar-edge: #9C9381;
   --scrim: rgba(0, 0, 0, .6);
   color-scheme: dark;
@@ -659,6 +668,36 @@ a.row:hover .row-label, button.row:hover .row-label { text-decoration: underline
 .hero-fig .approx { font-size: .5em; position: relative; top: -.36em; margin-right: .06em; }
 .hero-mini { font-size: .3em; color: var(--spot); margin-left: .14em; }
 .hero .tally { margin-top: var(--s-2); }
+:is(.hero-fig, .mat-worth-fig)[data-tone] { --tone-hi: var(--tone-grn-hi); --tone-lo: var(--tone-grn-lo); }
+:is(.hero-fig, .mat-worth-fig)[data-tone="red"] { --tone-hi: var(--tone-red-hi); --tone-lo: var(--tone-red-lo); }
+:is(.hero-fig, .mat-worth-fig)[data-tone="yellow"] { --tone-hi: var(--tone-yel-hi); --tone-lo: var(--tone-yel-lo); }
+@supports (color: color-mix(in oklch, red 50%, blue)) {
+  :is(.hero-fig, .mat-worth-fig)[data-tone] {
+    --tone-hi: color-mix(in oklch, color-mix(in oklch, var(--tone-red-hi), var(--tone-yel-hi) clamp(0%, calc(var(--tone, 1) * 200%), 100%)), var(--tone-grn-hi) clamp(0%, calc((var(--tone, 1) - .5) * 200%), 100%));
+    --tone-lo: color-mix(in oklch, color-mix(in oklch, var(--tone-red-lo), var(--tone-yel-lo) clamp(0%, calc(var(--tone, 1) * 200%), 100%)), var(--tone-grn-lo) clamp(0%, calc((var(--tone, 1) - .5) * 200%), 100%));
+  }
+}
+.hero-fig[data-tone] nw-ticker :is(.tk-main, .tk-mini) > span,
+.mat-worth-fig[data-tone] { color: var(--tone-lo); }
+@supports ((background-clip: text) or (-webkit-background-clip: text)) {
+  .hero-fig[data-tone] nw-ticker :is(.tk-main, .tk-mini) > span {
+    background-image: linear-gradient(172deg, var(--tone-hi) 22%, var(--tone-lo) 80%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    box-sizing: content-box; padding: .12em .18em; margin: -.12em -.18em;   
+  }
+  .mat-worth-fig[data-tone] {
+    background-image: linear-gradient(172deg, var(--tone-hi) 22%, var(--tone-lo) 80%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    padding: .06em .12em; margin: -.06em -.12em;
+  }
+  .mat-worth-fig[data-tone] .approx { -webkit-text-fill-color: var(--spot); }
+  [data-cover] .mat-worth-fig[data-tone] { background-image: none; }
+}
+@media (forced-colors: active) {
+  .hero-fig[data-tone] nw-ticker :is(.tk-main, .tk-mini) > span, .mat-worth-fig[data-tone] { background-image: none; -webkit-text-fill-color: currentColor; color: CanvasText; }
+}
 @media (min-width: 720px) {
   .hero-fig { font-size: min(15.2vw, 9.375rem); }
 }
@@ -4192,7 +4231,24 @@ function fmtPct(fraction, digits = 1) {
   if (fraction == null || !Number.isFinite(fraction)) return '—';
   return (fraction * 100).toFixed(digits).replace(/\.0+$/, '').replace(/^-/, MINUS) + '%';
 }
-return { MINUS, toCents, roundCents, fmt, fmtSigned, fmtPlain, fmtCompact, splitMoney, sum, ratio, clamp, fmtPct };
+
+/* ------------------------------------------------- the owner's colour scale */
+
+const TONE_YELLOW_AT = 100000;   // about $1,000: yellow
+const TONE_GREEN_FROM = 500000;  // $5,000 and up: green
+
+function toneOf(cents) {
+  if (!Number.isFinite(cents) || cents <= 0) return 0;
+  if (cents <= TONE_YELLOW_AT) return 0.5 * cents / TONE_YELLOW_AT;
+  if (cents < TONE_GREEN_FROM) return 0.5 + 0.5 * (cents - TONE_YELLOW_AT) / (TONE_GREEN_FROM - TONE_YELLOW_AT);
+  return 1;
+}
+
+function toneBand(cents) {
+  const t = toneOf(cents);
+  return t < 0.25 ? 'red' : t < 0.75 ? 'yellow' : 'green';
+}
+return { MINUS, toCents, roundCents, fmt, fmtSigned, fmtPlain, fmtCompact, splitMoney, sum, ratio, clamp, fmtPct, toneOf, toneBand };
 })();
 
 // ---- js/model/book.js
@@ -14027,7 +14083,7 @@ return { evalGlyph, timeTroubleGlyph, moveGlyph, resultMark, verifiedMark };
 // ---- js/views/parts.js
 __mods["js/views/parts.js"] = (function () {
 const { html, cx } = __mods["js/ui/dom.js"];
-const { fmt, fmtSigned, fmtPlain, MINUS } = __mods["js/model/money.js"];
+const { fmt, fmtSigned, fmtPlain, MINUS, toneOf } = __mods["js/model/money.js"];
 const { addDays, fmtDate, fmtMonth, dow, parts: ymdParts, monthOf } = __mods["js/model/dates.js"];
 const { moveGlyph } = __mods["js/ui/glyphs.js"];
 const { categoryLabel, accountLabel, accountShort } = __mods["js/model/schema.js"];
@@ -14283,6 +14339,12 @@ function notableMoves(round, annotations) {
   return round.moves.filter((tx) => !tx.matchId && (tx.kind === 'decline' || (tx.kind === 'spend' && tx.klass === 'game') || (annotations && annotations.has(tx.id))));
 }
 
+/* ------------------------------------------------- the owner's colour scale */
+
+function toneStyle(cents) {
+  return '--tone:' + toneOf(cents).toFixed(3);
+}
+
 /* --------------------------------------------------- recent transactions */
 
 function recentDay(ctx, day) {
@@ -14309,18 +14371,18 @@ function recentList(ctx, rows, opts = {}) {
     })}
   </ol>`;
 }
-return { money, inlineMoney, figured, tone, fmtScore, scoreOf, plainSigned, resultText, keptLine, spentUnposted, statusLine, roundTitle, colourOf, worstGlyph, crosstable, movesList, notableMoves, recentList };
+return { money, inlineMoney, figured, tone, fmtScore, scoreOf, plainSigned, resultText, keptLine, spentUnposted, statusLine, roundTitle, colourOf, worstGlyph, crosstable, movesList, notableMoves, toneStyle, recentList };
 })();
 
 // ---- js/views/board.js
 __mods["js/views/board.js"] = (function () {
 const { html, cx, attrs } = __mods["js/ui/dom.js"];
 const { store } = __mods["js/store.js"];
-const { fmt, fmtPct, ratio } = __mods["js/model/money.js"];
+const { fmt, fmtPct, ratio, toneBand } = __mods["js/model/money.js"];
 const { addDays, diffDays, fmtDate, fmtMonth, fmtTime, isYmd, monthOf, ymd } = __mods["js/model/dates.js"];
 const { firstTransactionDay } = __mods["js/model/cards.js"];
 const { evalGlyph, timeTroubleGlyph, moveGlyph, resultMark } = __mods["js/ui/glyphs.js"];
-const { money, inlineMoney, keptLine, statusLine, roundTitle, colourOf, crosstable, movesList, notableMoves, worstGlyph, spentUnposted, recentList } = __mods["js/views/parts.js"];
+const { money, inlineMoney, keptLine, statusLine, roundTitle, colourOf, crosstable, movesList, notableMoves, worstGlyph, spentUnposted, recentList, toneStyle } = __mods["js/views/parts.js"];
 const TEN_MINUTES_MS = 10 * 60 * 1000;
 const WORTH_DAYS = 90;
 const EDGE_ROUNDS_SHOWN = 92;
@@ -14445,7 +14507,9 @@ function heroMain(ctx, v) {
     from: showLive && v.roll && !ctx.ui.heroMode ? v.seen.cents : null,
     label: showLive ? 'Net worth, live estimate:' : v.bankEst ? 'Net worth at the bank, with your own estimates:' : 'Net worth at the bank:',
   })}></nw-ticker>`;
-  const size = '--hero-ems:' + ems.toFixed(2);
+  const shown = showLive ? pos.live : pos.bank;
+  const size = '--hero-ems:' + ems.toFixed(2) + ';' + toneStyle(shown);
+  const tone = toneBand(shown);
 
   return html`
     <div class="sec-head">
@@ -14453,8 +14517,8 @@ function heroMain(ctx, v) {
       ${estimated ? html`<button class="btn-link" type="button" data-action="board.hero">${showLive ? 'At the bank' : 'Live'}</button>` : ''}
     </div>
     ${estimated
-      ? html`<button class="hero-fig" type="button" data-action="board.hero" style="${size}">${ticker}<span class="vh">${showLive ? 'Show the figure at the bank' : 'Show the live figure'}</span></button>`
-      : html`<p class="hero-fig" style="${size}">${ticker}</p>`}
+      ? html`<button class="hero-fig" type="button" data-action="board.hero" data-tone="${tone}" style="${size}">${ticker}<span class="vh">${showLive ? 'Show the figure at the bank' : 'Show the live figure'}</span></button>`
+      : html`<p class="hero-fig" data-tone="${tone}" style="${size}">${ticker}</p>`}
     ${heroCaption(ctx, v)}
     ${heroMeta(ctx, v)}`;
 }
@@ -15719,11 +15783,11 @@ return { render, actions };
 // ---- js/views/material.js
 __mods["js/views/material.js"] = (function () {
 const { html, cx } = __mods["js/ui/dom.js"];
-const { fmt, fmtSigned, fmtPct } = __mods["js/model/money.js"];
+const { fmt, fmtSigned, fmtPct, toneBand } = __mods["js/model/money.js"];
 const { fmtDate, fmtMonth, fmtTime, gameDay, diffDays, isYmd, monthOf, parts: ymdParts } = __mods["js/model/dates.js"];
 const { ACCOUNT_TYPES, accountLabel } = __mods["js/model/schema.js"];
 const { largestCharges, firstTransactionDay } = __mods["js/model/cards.js"];
-const { money, movesList, inlineMoney } = __mods["js/views/parts.js"];
+const { money, movesList, inlineMoney, toneStyle } = __mods["js/views/parts.js"];
 const CARD_MONTHS = 6;
 const LARGEST = 3;
 const STALE_DAYS = 3;
@@ -15893,7 +15957,7 @@ function head(ctx, m) {
       : html`No regular pay has been found yet, so nothing accrues and ${same}`;
   const figure = (cents, est) => {
     const text = fmt(cents);
-    return html`<span class="${est ? 'fig est mat-worth-fig' : 'fig mat-worth-fig'}" style="${'--n:' + (text.length + (est ? 1 : 0))}">${est ? html`<span class="approx">≈</span>` : ''}${text}</span>`;
+    return html`<span class="${est ? 'fig est mat-worth-fig' : 'fig mat-worth-fig'}" data-tone="${toneBand(cents)}" style="${'--n:' + (text.length + (est ? 1 : 0)) + ';' + toneStyle(cents)}">${est ? html`<span class="approx">≈</span>` : ''}${text}</span>`;
   };
   const slowTotal = m.slow.reduce((n, a) => n + Math.max(0, ctx.d.valueOf(a)), 0);
   const slowShare = p.assets > 0 ? slowTotal / p.assets : 0;

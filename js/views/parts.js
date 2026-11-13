@@ -21,7 +21,7 @@
  */
 
 import { html, cx } from '../ui/dom.js';
-import { fmt, fmtSigned, fmtPlain, MINUS } from '../model/money.js';
+import { fmt, fmtSigned, fmtPlain, MINUS, toneOf } from '../model/money.js';
 import { addDays, fmtDate, fmtMonth, dow, parts as ymdParts, monthOf } from '../model/dates.js';
 import { moveGlyph } from '../ui/glyphs.js';
 import { categoryLabel, accountLabel, accountShort } from '../model/schema.js';
@@ -339,6 +339,13 @@ export function movesList(moves, annotations, opts = {}) {
 /** Moves worth showing on the Board for a round: game-class spends, declines, and anything annotated. */
 export function notableMoves(round, annotations) {
   return round.moves.filter((tx) => !tx.matchId && (tx.kind === 'decline' || (tx.kind === 'spend' && tx.klass === 'game') || (annotations && annotations.has(tx.id))));
+}
+
+/* ------------------------------------------------- the owner's colour scale */
+
+/** The --tone custom property that puts a figure on the owner's scale (joined to its `style`); see money.toneOf. */
+export function toneStyle(cents) {
+  return '--tone:' + toneOf(cents).toFixed(3);
 }
 
 /* --------------------------------------------------- recent transactions */

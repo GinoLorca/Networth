@@ -20,11 +20,11 @@
 
 import { html, cx, attrs } from '../ui/dom.js';
 import { store } from '../store.js';
-import { fmt, fmtPct, ratio } from '../model/money.js';
+import { fmt, fmtPct, ratio, toneBand } from '../model/money.js';
 import { addDays, diffDays, fmtDate, fmtMonth, fmtTime, isYmd, monthOf, ymd } from '../model/dates.js';
 import { firstTransactionDay } from '../model/cards.js';
 import { evalGlyph, timeTroubleGlyph, moveGlyph, resultMark } from '../ui/glyphs.js';
-import { money, inlineMoney, keptLine, statusLine, roundTitle, colourOf, crosstable, movesList, notableMoves, worstGlyph, spentUnposted, recentList } from './parts.js';
+import { money, inlineMoney, keptLine, statusLine, roundTitle, colourOf, crosstable, movesList, notableMoves, worstGlyph, spentUnposted, recentList, toneStyle } from './parts.js';
 
 const TEN_MINUTES_MS = 10 * 60 * 1000;
 const WORTH_DAYS = 90;
@@ -183,7 +183,9 @@ function heroMain(ctx, v) {
     from: showLive && v.roll && !ctx.ui.heroMode ? v.seen.cents : null,
     label: showLive ? 'Net worth, live estimate:' : v.bankEst ? 'Net worth at the bank, with your own estimates:' : 'Net worth at the bank:',
   })}></nw-ticker>`;
-  const size = '--hero-ems:' + ems.toFixed(2);
+  const shown = showLive ? pos.live : pos.bank;
+  const size = '--hero-ems:' + ems.toFixed(2) + ';' + toneStyle(shown);
+  const tone = toneBand(shown);
 
   return html`
     <div class="sec-head">
@@ -191,8 +193,8 @@ function heroMain(ctx, v) {
       ${estimated ? html`<button class="btn-link" type="button" data-action="board.hero">${showLive ? 'At the bank' : 'Live'}</button>` : ''}
     </div>
     ${estimated
-      ? html`<button class="hero-fig" type="button" data-action="board.hero" style="${size}">${ticker}<span class="vh">${showLive ? 'Show the figure at the bank' : 'Show the live figure'}</span></button>`
-      : html`<p class="hero-fig" style="${size}">${ticker}</p>`}
+      ? html`<button class="hero-fig" type="button" data-action="board.hero" data-tone="${tone}" style="${size}">${ticker}<span class="vh">${showLive ? 'Show the figure at the bank' : 'Show the live figure'}</span></button>`
+      : html`<p class="hero-fig" data-tone="${tone}" style="${size}">${ticker}</p>`}
     ${heroCaption(ctx, v)}
     ${heroMeta(ctx, v)}`;
 }
