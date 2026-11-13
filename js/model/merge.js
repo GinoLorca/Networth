@@ -8,6 +8,9 @@
  *    nothing else may decide who the merchant is.
  *  - Its day is the game day of `at` when the bank gives one, else of `posted`. A pending row with
  *    no date at all is dated the day it was first fetched and keeps that day from then on.
+ *  - It is pending when the provider says so, or when it has neither a posting time nor a time it
+ *    happened. A row with no posting time that is not flagged pending and has a time it happened
+ *    posted on that day.
  *  - Rows fetched from the sample feed (`src: 'demo'`) are stored with `source: 'demo'`; every rule
  *    here treats them exactly like bank rows. Only `source: 'manual'` rows belong to the owner.
  */
@@ -38,8 +41,6 @@ const SETTLE_DAY_WINDOW = 5;
 const CONFIRM_AMOUNT_TOLERANCE = 0.15;
 const CONFIRM_DAY_WINDOW = 3;
 const PAIR_DAY_WINDOW = 3;
-/** No request can reach further back than this, so an older pending row can never be seen again. */
-const PENDING_EXPIRY_DAYS = 90;
 /** A debt reported as a positive number is recognised when its balance mirrors its own rows this closely. */
 const FLIP_TOLERANCE = 0.1;
 const FLIP_TOLERANCE_CENTS = 100;
@@ -160,20 +161,36 @@ function makeContext(state, feed, nowMs) {
     if (textOf(problem.connId, MAX_NAME)) troubledConns.add(problem.connId.trim());
     if (textOf(problem.accountId, MAX_NAME)) troubledAccounts.add(problem.accountId.trim());
   }
+  const asked = new Set(listOf(feed.only).filter((id) => typeof id === 'string' && id));
   return {
+    only: asked.size ? asked : null,
+    reading: Number.isFinite(feed.reading) ? feed.reading : fetchedAt,
     src: typeof feed.src === 'string' && feed.src ? feed.src : 'simplefin',
     txSource: feed.src === 'demo' ? 'demo' : 'bank',
     rollover,
     nowMs,
     fetchedAt,
     fetchDay: gameDay(fetchedAt, rollover),
+    fromMs: Number.isFinite(fromMs) ? fromMs : null,
+    toMs,
     fromDay: Number.isFinite(fromMs) ? gameDay(fromMs, rollover) : null,
     toDay: gameDay(toMs, rollover),
-    expiredBefore: addDays(today, -PENDING_EXPIRY_DAYS),
     today,
     rules: rulesOf(state),
     isTroubled: (entry) => troubledConns.has(entry.connId) || troubledAccounts.has(entry.extId),
   };
+}
+
+/**
+ * The time the bank gives for a feed row, the one a request's window is held against: its posting time; for a
+ * pending row the time it happened. Read as `readRow` reads them.
+ * @returns {number|null} epoch seconds; null for a row with no time at all
+ */
+function listedTime(raw) {
+  const givenAt = secondsOf(raw.at);
+  const postedAt = secondsOf(raw.posted);
+  const pending = raw.pending === true || (postedAt == null && givenAt == null);
+  return pending ? givenAt || postedAt : postedAt || givenAt;
 }
 
 /**
@@ -184,9 +201,12 @@ function readRow(raw, ctx) {
   if (!isRecord(raw)) return null;
   const amount = centsOf(raw.amount);
   if (!amount) return null;
-  const postedAt = secondsOf(raw.posted);
-  const pending = raw.pending === true || postedAt == null;
-  const happenedAt = secondsOf(raw.at) || (pending ? postedAt : null);
+  const givenAt = secondsOf(raw.at);
+  // pending: the provider says so, or the row has neither a posting time nor a time it happened;
+  // a row with no posting time that is not pending posted on the day it happened
+  const pending = raw.pending === true || (secondsOf(raw.posted) == null && givenAt == null);
+  const postedAt = secondsOf(raw.posted) || (pending ? null : givenAt);
+  const happenedAt = givenAt || (pending ? postedAt : null);
   const happenedDay = happenedAt == null ? null : feedDay(happenedAt, ctx.rollover);
   const postedDay = pending ? null : feedDay(postedAt, ctx.rollover);
   const day = happenedDay || postedDay;
@@ -201,6 +221,7 @@ function readRow(raw, ctx) {
     happenedDay,
     day,
     at: happenedAt != null && feedHasTime(happenedAt) ? happenedAt * 1000 : null,
+    time: listedTime(raw),
     raw: ([raw.description, raw.payee, raw.memo].find((text) => typeof text === 'string' && text.trim()) || '').slice(0, MAX_RAW),
     mcc,
     fp: '',
@@ -254,6 +275,70 @@ function indexAccounts(accounts, src) {
     if (typeof account.ext.id === 'string' && !index.has(account.ext.id)) index.set(account.ext.id, account);
   }
   return index;
+}
+
+/**
+ * An account whose provider id changed. When a feed that was not limited carries an account under an id the record
+ * does not know, and the record holds exactly one bank account of the same connection and the same name whose id
+ * is absent from the feed, that account takes the new id: it keeps its rows, its settings and its history state,
+ * and no second account is made. Its rows then match by fingerprint, which is built from the record's own account
+ * id and so holds across the change. Never when the feed carries two accounts of that connection and name.
+ */
+function adoptChangedIds(state, index, entries, ctx) {
+  const keyOf = (conn, name) => conn + '\u0000' + name;
+  const inFeed = new Set(entries.map((entry) => entry.extId));
+  const carried = new Map();
+  for (const entry of entries) {
+    if (entry.connId && entry.name) pushTo(carried, keyOf(entry.connId, entry.name), entry);
+  }
+  for (const [key, same] of carried) {
+    if (same.length !== 1 || index.has(same[0].extId)) continue;
+    const entry = same[0];
+    const former = state.accounts.filter((account) => isRecord(account) && account.source === 'bank' && isRecord(account.ext)
+      && account.ext.src === ctx.src && typeof account.ext.id === 'string' && index.get(account.ext.id) === account
+      && !inFeed.has(account.ext.id) && keyOf(account.ext.conn, account.name) === key);
+    if (former.length !== 1) continue;
+    index.delete(former[0].ext.id);
+    former[0].ext.id = entry.extId;
+    index.set(entry.extId, former[0]);
+  }
+}
+
+/** A history state with everything still to do (account.backfill; the steps are in feed.js). */
+function openBackfill() {
+  return { need: true, step: 0, done: false, gaveUp: false, tries: 0, at: null };
+}
+
+/** Nothing stays pending at a bank this many days: the length of one request's window (see feed.js). */
+const PENDING_KEPT_DAYS = 44;
+
+/**
+ * Decide, once, which of the accounts an ordinary feed carried need their history asked for (account.backfill).
+ *  - An account with no history state gets one when this feed created it on a device that had already completed
+ *    a reading (it appeared later), or when the record holds no bank row of it after the merge (it arrived with
+ *    a balance and no transactions). An account left out gets none.
+ *  - An account whose history is done or given up, and which had no bank row on the record, is opened again from
+ *    step 0 when this feed brought its first bank row: the provider has begun to carry its transactions.
+ *  - During a device's first reading, a state nothing has been asked for yet is taken back when a window of that
+ *    reading brings the account's rows: an account that arrives with rows on a first reading has nothing to do.
+ * Nothing is derived from the age of rows, and a state once kept is not decided again.
+ * @param {{ account: object, created: boolean, had: boolean }[]} touched  had = a bank row was on the record before the merge
+ * @param {boolean} later  the device had completed a reading before this one began
+ */
+function noteNeed(state, touched, later) {
+  const withRows = new Set(state.txs.filter(isFeedRow).map((tx) => tx.accountId));
+  for (const { account, created, had } of touched) {
+    if (account.hidden === true) continue;
+    const has = withRows.has(account.id);
+    const kept = isRecord(account.backfill) ? account.backfill : null;
+    if (!kept) {
+      if ((created && later) || !has) account.backfill = openBackfill();
+    } else if (has && !had && kept.done === true) {
+      account.backfill = openBackfill();
+    } else if (has && !later && !kept.step && !kept.done && !kept.tries && kept.at == null) {
+      account.backfill = null;
+    }
+  }
 }
 
 /**
@@ -507,10 +592,12 @@ function insertRow(state, account, row, ctx) {
   return tx;
 }
 
-/** Was the day of a stored pending row inside what this feed could have reported? */
+/**
+ * Was the day of a stored pending row inside the window this feed asked for? Only then can its absence from the
+ * feed mean it is gone: a row dated before the window is never judged by a feed that could not have carried it.
+ */
 function coversDay(day, ctx) {
   if (!isYmd(day)) return false;
-  if (day < ctx.expiredBefore) return true;
   return ctx.fromDay != null && day > ctx.fromDay && day <= ctx.toDay;
 }
 
@@ -522,10 +609,19 @@ function mergeRows(state, account, entry, stored, ctx, work) {
   const rows = readRows(entry, account.id, ctx);
   const { matches, claimed } = matchRows(rows, stored);
   let postedDelta = 0;
+  // each carried row: the day it has on the record, the time the bank gives for it, whether this feed put it there
+  const days = [];
+  // a pending row the removal by age takes out in this same merge (dropOverdue) is never stored
+  const oldest = ctx.only ? null : addDays(ctx.today, -PENDING_KEPT_DAYS);
   rows.forEach((row, i) => {
     const tx = matches[i];
     if (!tx) {
+      if (oldest && row.pending && isYmd(row.day) && row.day < oldest) {
+        days.push({ day: row.day, time: row.time, fresh: false });
+        return;
+      }
       const added = insertRow(state, account, row, ctx);
+      days.push({ day: added.day, time: row.time, fresh: true });
       work.summary.added++;
       work.summary.newTxIds.push(added.id);
       work.rereadIds.push(added.id);
@@ -534,6 +630,7 @@ function mergeRows(state, account, entry, stored, ctx, work) {
       return;
     }
     const outcome = updateRow(tx, row, ctx);
+    days.push({ day: tx.day, time: row.time, fresh: false });
     if (!outcome.changed) return;
     work.summary.updated++;
     if (outcome.reread) work.rereadIds.push(tx.id);
@@ -548,7 +645,80 @@ function mergeRows(state, account, entry, stored, ctx, work) {
   for (const row of rows) {
     if (row.day && (!work.earliestDay || row.day < work.earliestDay)) work.earliestDay = row.day;
   }
+  const zero = listOf(entry.txs).filter((raw) => isRecord(raw) && centsOf(raw.amount) === 0);
+  for (const raw of zero) days.push({ day: null, time: listedTime(raw), fresh: false });
+  noteCarried(account, rows.length, zero.length, days, ctx);
   return postedDelta;
+}
+
+/**
+ * Keep what the latest reading carried for this account (`account.feed`). The feeds of one reading share
+ * `feed.reading`, and their windows join into one stretch: `askedFromMs` and `askedToMs` are its two instants,
+ * `askedFrom` and `askedTo` its days (for the sheet's sentence). Windows are compared as the requests were sent,
+ * in whole seconds (feed.js: the start rounded down, the end rounded up; a row is carried from the start up to,
+ * not including, the end). A window wholly outside the instants already asked (it may begin where they end)
+ * adds all it carried, `count` rows and `zero` $0.00 rows. Where one window lies inside the other, the wider
+ * carries the rows of the narrower again: the larger of the two counts stands. A window that overlaps the
+ * instants already asked in part adds the carried rows, $0.00 rows too, whose time at the bank (its posting
+ * time; for a pending row the time it happened) lies outside those instants: the reading cannot have carried
+ * those before. A row with no time at all is added only when this feed itself put it on the record.
+ * A new reading starts the counts again.
+ * @param {{ day: string|null, time: number|null, fresh: boolean }[]} onRecord  each carried row: its day on the
+ *   record (null for a $0.00 row, which is not stored), the time the bank gives for it (epoch seconds), and
+ *   whether this feed stored it
+ */
+function noteCarried(account, count, zero, onRecord, ctx) {
+  const days = onRecord.map((row) => row.day).filter(isYmd).sort();
+  const carried = {
+    readAt: ctx.reading,
+    rows: count + zero,
+    first: days.length ? days[0] : null,
+    last: days.length ? days[days.length - 1] : null,
+    askedFrom: ctx.fromDay,
+    askedTo: ctx.toDay,
+    askedFromMs: ctx.fromMs,
+    askedToMs: ctx.toMs,
+  };
+  const kept = isRecord(account.feed) && account.feed.readAt === ctx.reading ? account.feed : null;
+  if (kept) {
+    const timed = Number.isFinite(kept.askedFromMs) && Number.isFinite(kept.askedToMs) && Number.isFinite(carried.askedFromMs);
+    const start = (ms) => Math.floor(ms / 1000);
+    const end = (ms) => Math.ceil(ms / 1000);
+    const keptFrom = timed ? start(kept.askedFromMs) : 0;
+    const keptTo = timed ? end(kept.askedToMs) : 0;
+    const from = timed ? start(carried.askedFromMs) : 0;
+    const to = timed ? end(carried.askedToMs) : 0;
+    const nested = timed && ((from <= keptFrom && to >= keptTo) || (keptFrom <= from && keptTo >= to));
+    const apart = !timed || from >= keptTo || to <= keptFrom;
+    const earliest = (a, b) => (a != null && b != null ? (a < b ? a : b) : a != null ? a : b);
+    const latest = (a, b) => (a != null && b != null ? (a > b ? a : b) : a != null ? a : b);
+    const before = Number.isInteger(kept.rows) && kept.rows > 0 ? kept.rows : 0;
+    const outside = (row) => (row.time == null ? row.fresh : row.time < keptFrom || row.time >= keptTo);
+    if (nested) carried.rows = Math.max(before, carried.rows);
+    else if (apart) carried.rows = before + carried.rows;
+    else carried.rows = before + onRecord.filter(outside).length;
+    carried.first = earliest(carried.first, kept.first);
+    carried.last = latest(carried.last, kept.last);
+    carried.askedFrom = earliest(carried.askedFrom, kept.askedFrom);
+    carried.askedTo = latest(carried.askedTo, kept.askedTo);
+    carried.askedFromMs = earliest(carried.askedFromMs, Number.isFinite(kept.askedFromMs) ? kept.askedFromMs : null);
+    carried.askedToMs = latest(carried.askedToMs, Number.isFinite(kept.askedToMs) ? kept.askedToMs : null);
+  }
+  account.feed = carried;
+}
+
+/**
+ * A stored pending bank row dated more than 44 days before today is removed by a feed that was not limited to
+ * accounts, whichever account it belongs to and whatever the feed says of that account: nothing stays pending
+ * at a bank that long, and a reading never reaches further back for a pending row. (A pending row that old which
+ * such a feed carries and the record does not hold is never stored: see mergeRows.) If the purchase does post
+ * later it arrives as a posted row and is stored again.
+ */
+function dropOverdue(state, ctx, removed) {
+  const oldest = addDays(ctx.today, -PENDING_KEPT_DAYS);
+  for (const tx of state.txs) {
+    if (isFeedRow(tx) && tx.pending === true && isYmd(tx.day) && tx.day < oldest) removed.add(tx);
+  }
 }
 
 /** Take the vanished pending rows out of the document and undo every link to them. */
@@ -683,7 +853,7 @@ function flagStaleProvisional(state, today) {
 
 /* ---------------------------------------------------------------------- sync */
 
-/** Connection problems as the document keeps them: { connId, name, message }, without repeats. */
+/** Provider problems as the document keeps them: { connId, accountId, name, message }, without repeats. */
 function readProblems(state, feed) {
   const names = new Map();
   const remember = (key, name) => {
@@ -707,15 +877,30 @@ function readProblems(state, feed) {
     if (!isRecord(item)) continue;
     const message = textOf(item.message, MAX_NOTE);
     const connId = textOf(item.connId, MAX_NAME);
-    if (!message || seen.has(connId + '\u0000' + message)) continue;
-    seen.add(connId + '\u0000' + message);
-    const name = names.get('conn:' + connId) || names.get('account:' + textOf(item.accountId, MAX_NAME)) || '';
-    problems.push({ connId, name, message });
+    const accountId = textOf(item.accountId, MAX_NAME);
+    const key = [connId, accountId, message].join('\u0000');
+    if (!message || seen.has(key)) continue;
+    seen.add(key);
+    const name = names.get('conn:' + connId) || names.get('account:' + accountId) || '';
+    problems.push({ connId, accountId, name, message });
   }
   return problems;
 }
 
+/**
+ * A feed asked for certain accounts says nothing about the link as a whole: it moves neither the time of the
+ * last reading nor the first day covered, and it only adds the problems it reports to the ones on file.
+ */
+function addProblems(state, feed) {
+  const key = (p) => [p.connId, p.accountId || '', p.message].join('\u0000');
+  const known = new Set(state.sync.problems.filter(isRecord).map(key));
+  for (const problem of readProblems(state, feed)) {
+    if (!known.has(key(problem))) state.sync.problems.push(problem);
+  }
+}
+
 function updateSync(state, feed, ctx, earliestDay) {
+  if (ctx.only) { addProblems(state, feed); return; }
   const sync = state.sync;
   const from = ctx.fromDay || earliestDay;
   sync.src = ctx.src;
@@ -736,6 +921,11 @@ function updateSync(state, feed, ctx, earliestDay) {
  * detection — the caller follows with detect.refresh(state, nowMs).
  * Never deletes a posted row and never overwrites an owner-locked field.
  * A feed that is not an object with an `accounts` list changes nothing.
+ * A feed asked for certain accounts (`feed.only`, provider ids) says nothing about any other account: entries
+ * for other accounts are ignored, and state.sync keeps its lastOk, from, status and error (problems are added to).
+ * Every account in the feed gets `account.feed`: what the latest reading carried for it.
+ * A feed that was not limited also decides, once, whether an account needs its history asked for
+ * (`account.backfill`, see noteNeed), and adopts an account whose provider id changed (adoptChangedIds).
  * @param {object} state      the document (mutated)
  * @param {import('./feed.js').Feed} feed
  * @param {number} nowMs
@@ -751,18 +941,29 @@ export function mergeFeed(state, feed, nowMs) {
   const noRows = { byExt: new Map(), byFp: new Map(), pending: [] };
   const work = { summary, removed: new Set(), rereadIds: [], arrivals: [], earliestDay: null };
   const merged = new Set();
-
+  const entries = [];
   for (const raw of feed.accounts) {
     const entry = readAccount(raw, ctx);
-    if (!entry || merged.has(entry.extId)) continue;
+    if (!entry || merged.has(entry.extId) || (ctx.only && !ctx.only.has(entry.extId))) continue;
     merged.add(entry.extId);
+    entries.push(entry);
+  }
+  // a reading of this device has completed (state.sync.completed, set where a reading ends well)
+  const later = state.sync.completed === true;
+  const touched = [];
+  if (!ctx.only) adoptChangedIds(state, accounts, entries, ctx);
+
+  for (const entry of entries) {
     const found = upsertAccount(state, accounts, entry, ctx, summary);
     if (!found) continue;
+    touched.push({ account: found.account, created: found.before === null, had: storedRows.has(found.account.id) });
     const postedDelta = mergeRows(state, found.account, entry, storedRows.get(found.account.id) || noRows, ctx, work);
     applyBalance(found.account, entry, found.before, postedDelta);
   }
 
+  if (!ctx.only) dropOverdue(state, ctx, work.removed);
   dropRows(state, work.removed, summary);
+  if (!ctx.only) noteNeed(state, touched, later);
   if (work.rereadIds.length) reclassify(state, work.rereadIds);
   pairTransfers(state, summary);
   confirmProvisional(state, work.arrivals, summary);

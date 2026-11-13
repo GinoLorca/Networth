@@ -499,7 +499,7 @@ test('a pending row is kept when the feed did not cover its day, its account, or
   const emptyChecking = feedAccount('ACT-CHK', '360 Checking', 100000, []);
 
   const olderWindow = start();
-  assert.equal(mergeFeed(olderWindow, feedOf([emptyChecking], { fromMs: NOW - 180 * DAY_MS, toMs: NOW - 90 * DAY_MS }), NOW).removed, 0);
+  assert.equal(mergeFeed(olderWindow, feedOf([emptyChecking], { fromMs: NOW - 132 * DAY_MS, toMs: NOW - 88 * DAY_MS }), NOW).removed, 0);
   assert.ok(txBy(olderWindow, 'hold'));
 
   const windowStartsThatDay = start();
@@ -520,12 +520,16 @@ test('a pending row is kept when the feed did not cover its day, its account, or
   assert.equal(covered.txs.length, 0);
 });
 
-test('a pending row too old for any window to reach is cleared', () => {
+test('a pending row dated before the window a feed asked for is never judged gone by that feed', () => {
   const state = newState();
   mergeFeed(state, feedOf([feedAccount('ACT-CHK', '360 Checking', 100000, [pendingRow('ancient', -475, '2026-11-10', 'DUNKIN')])]), NOW);
-  const muchLater = NOW + 120 * DAY_MS;
+  const muchLater = NOW + 30 * DAY_MS;
   const feed = feedOf([feedAccount('ACT-CHK', '360 Checking', 100000, [], { asOf: muchLater })], { fetchedAt: muchLater, fromMs: muchLater - 7 * DAY_MS, toMs: muchLater });
-  assert.equal(mergeFeed(state, feed, muchLater).removed, 1);
+  assert.equal(mergeFeed(state, feed, muchLater).removed, 0);
+  assert.equal(state.txs.length, 1);
+  // a feed whose window holds the row's day and does not carry it: the row is gone
+  const wide = feedOf([feedAccount('ACT-CHK', '360 Checking', 100000, [], { asOf: NOW + DAY_MS })], { fetchedAt: NOW + DAY_MS, fromMs: NOW - 7 * DAY_MS, toMs: NOW + DAY_MS });
+  assert.equal(mergeFeed(state, wide, NOW + DAY_MS).removed, 1);
   assert.equal(state.txs.length, 0);
 });
 
@@ -1030,12 +1034,13 @@ test('state.sync records the provider, the time, the earliest day fetched and th
     src: 'simplefin',
     lastTry: NOW - 5000,
     lastOk: NOW,
+    completed: false,
     error: null,
     status: 'ok',
     problems: [
-      { connId: 'CON-1', name: 'Example Bank', message: 'Sign in to Example Bank again' },
-      { connId: '', name: 'Example Bank', message: 'Transactions unavailable' },
-      { connId: 'CON-404', name: '', message: 'Something general' },
+      { connId: 'CON-1', accountId: '', name: 'Example Bank', message: 'Sign in to Example Bank again' },
+      { connId: '', accountId: 'ACT-SAV', name: 'Example Bank', message: 'Transactions unavailable' },
+      { connId: 'CON-404', accountId: '', name: '', message: 'Something general' },
     ],
     from: '2026-10-12',
     requests: [NOW - 5000],
@@ -1052,9 +1057,9 @@ test('state.sync.from only ever moves earlier, and problems are replaced by each
   assert.equal(state.sync.from, '2026-10-12');
   assert.deepEqual(state.sync.problems, []);
 
-  const older = feedOf(household().accounts, { fromMs: NOW - 180 * DAY_MS, toMs: NOW - 90 * DAY_MS, fetchedAt: NOW + 2 * HOUR_MS });
+  const older = feedOf(household().accounts, { fromMs: NOW - 132 * DAY_MS, toMs: NOW - 88 * DAY_MS, fetchedAt: NOW + 2 * HOUR_MS });
   mergeFeed(state, older, NOW + 2 * HOUR_MS);
-  assert.equal(state.sync.from, '2026-05-15');
+  assert.equal(state.sync.from, '2026-07-02');
   assert.equal(state.sync.lastOk, NOW + 2 * HOUR_MS);
 });
 
@@ -1092,7 +1097,7 @@ test('a feed with malformed accounts and rows never throws and never stores NaN'
         { extId: 'zero', amount: 0, posted: dateOnly('2026-11-05'), description: 'X' },
         { extId: 'inf', amount: -Infinity, posted: dateOnly('2026-11-05'), description: 'X' },
         { extId: 'far', amount: -100, posted: 9e15, description: 'X' },
-        { extId: 'bad-posted', amount: -200, posted: 'yesterday', at: dateOnly('2026-11-06'), pending: false, description: 'KEPT AS PENDING' },
+        { extId: 'bad-posted', amount: -200, posted: 'yesterday', at: dateOnly('2026-11-06'), pending: false, description: 'POSTED THE DAY IT HAPPENED' },
         { extId: 'fraction', amount: -300.6, posted: dateOnly('2026-11-07'), description: 42, payee: null, memo: ['x'], mcc: 5812 },
         { amount: -400, posted: dateOnly('2026-11-08') },
         posted('good', -500, '2026-11-09', 'PIZZERIA ROMA'),
@@ -1109,7 +1114,7 @@ test('a feed with malformed accounts and rows never throws and never stores NaN'
   assert.deepEqual([ok.balance, ok.available, ok.asOf, ok.ext.conn, ok.institution], [5000, null, NOW, '', '']);
   assert.equal(summary.added, 4);
   assert.deepEqual(state.txs.map((t) => [t.ext && t.ext.id, t.amount, t.day, t.pending]), [
-    ['bad-posted', 200, '2026-11-06', true],
+    ['bad-posted', 200, '2026-11-06', false],
     ['fraction', 301, '2026-11-07', false],
     [null, 400, '2026-11-08', false],
     ['good', 500, '2026-11-09', false],
@@ -1290,4 +1295,128 @@ test('the same provider id twice in one feed is one row', () => {
   assert.equal(summary.added, 1);
   assert.equal(state.txs.length, 1);
   assert.equal(mergeFeed(state, feedOf([feedAccount('ACT-CHK', '360 Checking', 1000, twice)]), NOW).added, 0, 'and again on the next sync');
+});
+
+/* ------------------------------------------- what a reading carried (account.feed) */
+
+test('account.feed: what the latest reading carried for the account, over all its windows', () => {
+  const state = newState();
+  // four windows of 44 days, oldest first, as a first reading asks them
+  const window = (k, checkingRows) => feedOf([
+    feedAccount('ACT-CHK', 'Everyday Checking', 150000, checkingRows),
+    feedAccount('ACT-CARD', 'Rewards Card', -20000, []),
+  ], { fromMs: NOW - k * 44 * DAY_MS, toMs: NOW - (k - 1) * 44 * DAY_MS, reading: NOW });
+  mergeFeed(state, window(4, []), NOW);
+  mergeFeed(state, window(3, [posted('k1', -500, '2026-08-01', 'CORNER GROCER'), posted('k2', -700, '2026-08-09', 'CORNER GROCER')]), NOW);
+  mergeFeed(state, window(2, []), NOW);
+  mergeFeed(state, window(1, [posted('k3', -900, '2026-11-02', 'CORNER GROCER'), pendingRow('k4', -300, '2026-11-10', 'SAMPLE CAFE')]), NOW);
+  const asked = { askedFrom: '2026-05-19', askedTo: TODAY, askedFromMs: NOW - 176 * DAY_MS, askedToMs: NOW };
+  assert.deepEqual(accountBy(state, 'ACT-CHK').feed, { readAt: NOW, rows: 4, first: '2026-08-01', last: '2026-11-10', ...asked });
+  assert.deepEqual(accountBy(state, 'ACT-CARD').feed, { readAt: NOW, rows: 0, first: null, last: null, ...asked });
+  assert.equal(checkDoc(state), null);
+
+  // a window of the same reading inside the instants already asked: the larger of the two counts stands
+  const again = feedOf([feedAccount('ACT-CARD', 'Rewards Card', -20000, [posted('c1', -1200, '2026-10-01', 'SAMPLE CAFE')])],
+    { fromMs: NOW - 44 * DAY_MS, toMs: NOW, reading: NOW, only: ['ACT-CARD'] });
+  mergeFeed(state, again, NOW);
+  assert.deepEqual(accountBy(state, 'ACT-CARD').feed, { readAt: NOW, rows: 1, first: '2026-10-01', last: '2026-10-01', ...asked });
+  assert.equal(accountBy(state, 'ACT-CHK').feed.rows, 4, 'an account the feed does not hold keeps its record');
+
+  // ...and a window that carries again what was counted adds nothing to the count
+  const inside = feedOf([feedAccount('ACT-CHK', 'Everyday Checking', 150000, [posted('k3', -900, '2026-11-02', 'CORNER GROCER'), pendingRow('k4', -300, '2026-11-10', 'SAMPLE CAFE')])],
+    { fromMs: NOW - 44 * DAY_MS, toMs: NOW, reading: NOW, only: ['ACT-CHK'] });
+  mergeFeed(state, inside, NOW);
+  assert.deepEqual(accountBy(state, 'ACT-CHK').feed, { readAt: NOW, rows: 4, first: '2026-08-01', last: '2026-11-10', ...asked });
+  assert.equal(mergeFeed(state, { ...inside, only: [] }, NOW).added, 0, 'an empty list limits nothing');
+
+  // a new reading starts the counts again; without `reading`, each feed is its own reading
+  const next = later(1, [feedAccount('ACT-CHK', 'Everyday Checking', 150000, [posted('k5', -100, '2026-11-11', 'CORNER GROCER')])], { fromMs: NOW - 7 * DAY_MS });
+  mergeFeed(state, next, NOW + DAY_MS);
+  assert.deepEqual(accountBy(state, 'ACT-CHK').feed, { readAt: NOW + DAY_MS, rows: 1, first: '2026-11-11', last: '2026-11-11', askedFrom: '2026-11-04', askedTo: '2026-11-12', askedFromMs: NOW - 7 * DAY_MS, askedToMs: NOW + DAY_MS });
+  assert.equal(accountBy(state, 'ACT-CARD').feed.readAt, NOW);
+
+  // a window of the same reading that contains every instant already asked carries those rows again: counted once
+  const at = NOW + DAY_MS;
+  const wider = feedOf([feedAccount('ACT-CHK', 'Everyday Checking', 150000, [
+    posted('k5', -100, '2026-11-11', 'CORNER GROCER'), posted('k3', -900, '2026-11-02', 'CORNER GROCER'), posted('k6', -250, '2026-10-20', 'CORNER GROCER'),
+  ])], { fetchedAt: at, fromMs: at - 44 * DAY_MS, toMs: at, reading: at, only: ['ACT-CHK'] });
+  mergeFeed(state, wider, at);
+  assert.deepEqual(accountBy(state, 'ACT-CHK').feed, { readAt: at, rows: 3, first: '2026-10-20', last: '2026-11-11', askedFrom: '2026-09-29', askedTo: '2026-11-12', askedFromMs: at - 44 * DAY_MS, askedToMs: at });
+});
+
+/* ------------------------------------- a feed asked for certain accounts (feed.only) */
+
+test('feed.only: a feed asked for one account says nothing about any other account or about the link', () => {
+  const state = newState();
+  mergeFeed(state, feedOf([
+    feedAccount('ACT-CHK', 'Everyday Checking', 150000, [posted('k1', -500, '2026-11-02', 'CORNER GROCER'), pendingRow('k2', -700, '2026-11-10', 'SAMPLE CAFE')]),
+    feedAccount('ACT-CARD', 'Rewards Card', -20000, [posted('c9', -1500, '2026-11-08', 'SAMPLE CAFE'), pendingRow('c10', -450, '2026-11-10', 'CORNER GROCER')]),
+  ], { errors: [{ code: 'con.auth', message: 'Sign in to Example Bank again', connId: 'CON-1', accountId: '' }] }), NOW);
+  const before = JSON.parse(JSON.stringify(state));
+  const checkingBefore = JSON.stringify(state.txs.filter((t) => t.accountId === accountBy(state, 'ACT-CHK').id));
+
+  const at = NOW + 5000;
+  const narrow = feedOf([
+    feedAccount('ACT-CARD', 'Rewards Card', -20000, [
+      posted('c1', -1200, '2026-10-05', 'SAMPLE CAFE'), posted('c9', -1500, '2026-11-08', 'SAMPLE CAFE'), pendingRow('c10', -450, '2026-11-10', 'CORNER GROCER'),
+    ]),
+    // an entry the request did not ask for (a provider that ignores account=): it must change nothing
+    feedAccount('ACT-CHK', 'Everyday Checking', 999999, [posted('kX', -4200, '2026-10-01', 'SOMETHING ELSE')]),
+    feedAccount('ACT-NEW', 'Unasked Account', 100, []),
+  ], { only: ['ACT-CARD'], fetchedAt: at, fromMs: at - 44 * DAY_MS, toMs: at,
+    errors: [{ code: 'act.data', message: 'Transactions delayed', connId: '', accountId: 'ACT-CARD' }] });
+  const summary = mergeFeed(state, narrow, at);
+
+  assert.deepEqual([summary.added, summary.removed, summary.accountsAdded], [1, 0, 0]);
+  const card = accountBy(state, 'ACT-CARD');
+  assert.deepEqual(state.txs.filter((t) => t.accountId === card.id).map((t) => t.ext.id).sort(), ['c1', 'c10', 'c9'], 'rows already on the record merge as the same rows');
+  assert.equal(JSON.stringify(state.txs.filter((t) => t.accountId === accountBy(state, 'ACT-CHK').id)), checkingBefore, 'the pending row of the other account is still there');
+  assert.equal(accountBy(state, 'ACT-CHK').balance, 150000);
+  assert.equal(accountBy(state, 'ACT-NEW'), undefined);
+  assert.deepEqual(accountBy(state, 'ACT-CHK').feed, before.accounts[0].feed);
+  assert.deepEqual([state.sync.lastOk, state.sync.from, state.sync.status], [before.sync.lastOk, before.sync.from, 'ok']);
+  assert.deepEqual(state.sync.problems, [
+    { connId: 'CON-1', accountId: '', name: 'Example Bank', message: 'Sign in to Example Bank again' },
+    { connId: '', accountId: 'ACT-CARD', name: 'Example Bank', message: 'Transactions delayed' },
+  ]);
+  mergeFeed(state, narrow, at);
+  assert.equal(state.sync.problems.length, 2, 'the same problem is not added twice');
+  assert.equal(state.txs.length, before.txs.length + 1);
+});
+
+test('feed.only: a pending row of the asked account that the bank no longer reports is still dropped', () => {
+  const state = newState();
+  mergeFeed(state, feedOf([feedAccount('ACT-CARD', 'Rewards Card', -20000, [pendingRow('c10', -450, '2026-11-10', 'CORNER GROCER')])]), NOW);
+  mergeFeed(state, feedOf([feedAccount('ACT-CARD', 'Rewards Card', -20000, [])], { only: ['ACT-CARD'], fromMs: NOW - 44 * DAY_MS }), NOW);
+  assert.equal(state.txs.length, 0);
+});
+
+test('a pending row older than 44 days that an ordinary feed carries is never stored: it adds nothing and confirms nothing', () => {
+  const state = newState();
+  mergeFeed(state, feedOf([feedAccount('ACT-CARD', 'Rewards Card', -20000, [posted('r1', -500, '2026-08-30', 'SAMPLE CAFE')])],
+    { fetchedAt: NOW - 70 * DAY_MS, fromMs: NOW - 100 * DAY_MS, toMs: NOW - 70 * DAY_MS }), NOW - 70 * DAY_MS);
+  state.sync.completed = true;
+  const card = accountBy(state, 'ACT-CARD');
+  // the owner typed in a hold 50 days ago; the device is back after 60 days and the window still carries the hold, pending
+  const move = addProvisional(state, { amount: 4100, merchant: 'Sample Inn', mkey: 'sample inn', accountId: card.id, day: '2026-09-22' }, NOW - 50 * DAY_MS);
+  const before = state.txs.length;
+  const carrying = feedOf([feedAccount('ACT-CARD', 'Rewards Card', -20000, [pendingRow('hold-1', -4100, '2026-09-22', 'SAMPLE INN'), { ...pendingRow('zero-1', 0, '2026-09-22', 'SAMPLE INN') }])],
+    { reading: NOW, fromMs: NOW - 67 * DAY_MS, toMs: NOW - 23 * DAY_MS });
+  const summary = mergeFeed(state, carrying, NOW);
+  assert.deepEqual([summary.added, summary.removed, summary.matched, summary.newTxIds], [0, 0, 0, []]);
+  assert.equal(txBy(state, 'hold-1'), undefined, 'the hold is not on the record');
+  assert.equal(state.txs.length, before);
+  const typed = state.txs.find((t) => t.id === move.id);
+  assert.deepEqual([typed.matchId, isLive(typed)], [null, true], 'the typed-in move stays live');
+  assert.equal(card.feed.rows, 2, 'the bank did list it (and a $0.00 row)');
+  assert.equal(checkDoc(state), null);
+
+  // a feed limited to the account does not remove by age: there the row is stored as before
+  const limited = mergeFeed(state, { ...carrying, only: ['ACT-CARD'] }, NOW);
+  assert.equal(limited.added, 1);
+  assert.equal(txBy(state, 'hold-1').pending, true);
+  // ...and the next ordinary feed removes it and frees the move it confirmed
+  const next = mergeFeed(state, feedOf([feedAccount('ACT-CARD', 'Rewards Card', -20000, [])]), NOW);
+  assert.equal(next.removed, 1);
+  assert.deepEqual([state.txs.find((t) => t.id === move.id).matchId, txBy(state, 'hold-1')], [null, undefined]);
 });

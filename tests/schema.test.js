@@ -137,3 +137,23 @@ test('migrate: a record the placeholder build never touched is not altered, and 
     assert.doesNotThrow(() => migrate(doc));
   }
 });
+
+test('an account keeps what the last reading carried and its history bookkeeping; a record without them is valid', () => {
+  const fresh = makeAccount();
+  assert.deepEqual([fresh.feed, fresh.backfill], [null, null]);
+  const doc = defaultState(0);
+  doc.accounts.push(makeAccount({
+    source: 'bank', ext: { src: 'simplefin', id: 'ACT-1', conn: 'CON-1' }, type: 'credit_card',
+    feed: { readAt: 1794400000000, rows: 12, first: '2026-08-01', last: '2026-11-10', askedFrom: '2026-05-17', askedTo: '2026-11-11', askedFromMs: 1779200000000, askedToMs: 1794400000000 },
+    backfill: { need: true, step: 2, done: false, gaveUp: false, tries: 2, at: 1794400000000 },
+  }));
+  assert.equal(checkDoc(doc), null);
+  const older = makeAccount({ type: 'checking' });
+  delete older.feed;
+  delete older.backfill;
+  doc.accounts.push(older);
+  assert.equal(checkDoc(doc), null, 'a record written before these fields existed is still read');
+  const migrated = migrate(JSON.parse(JSON.stringify(doc)));
+  assert.deepEqual([migrated.accounts[1].feed, migrated.accounts[1].backfill], [null, null]);
+  assert.deepEqual(migrated.accounts[0].backfill, { need: true, step: 2, done: false, gaveUp: false, tries: 2, at: 1794400000000 });
+});

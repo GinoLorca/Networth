@@ -91,21 +91,138 @@ document --> ledger.js / cards.js / book.js / assess.js / forecast.js --> derive
   **access URL** (`https://user:pass@host/simplefin`). That URL is the credential: it is stored
   only in device storage (`db.js` secret store), never in the document, never in a backup, never
   logged, never placed in a URL the app navigates to. Requests send it as an `Authorization: Basic` header.
-- A sync is `GET {base}/accounts?version=2&pending=1&start-date=S&end-date=E` (epoch seconds;
-  a window may not exceed 90 days). First sync: two windows of 89 days (a day inside the limit), the older first. Later syncs: from 7 days before the newest stored posted transaction.
+- A request is `GET {base}/accounts?version=2&pending=1&start-date=S&end-date=E` (epoch seconds).
+  It may be limited to accounts with `account=<provider id>` (repeatable): its feed carries `only`
+  (those ids) and holds no other account.
+- **What the provider does** (measured against its public demo, November 2026). `account=` returns
+  that account alone and may be repeated; an id the provider does not know answers 200 with no
+  accounts and no error. An account can have a balance and no transaction at all, in every window. A
+  range longer than 45 days (45 days and one second is enough; exactly 45 days is not) is answered in
+  full, with `errlist: [{ code: "gen.api", msg: "Requested date range exceeds recommended range of 45
+  days. In the future, this may be capped." }]`. Windows far back are answered (one that ended 256
+  days earlier returned rows).
+- **No request spans more than 44 days** (`FEED_WINDOW_DAYS`). `fetchSimplefin` clamps any range to its
+  most recent 44 days, and the span sent, after `start-date` and `end-date` are rounded to whole
+  seconds, is never above 44 days. Nothing is asked further back than 176 days (four windows).
+- A **reading** is one run of the sync: its ordinary windows, then the history requests below. Every
+  feed of a reading carries the same `reading` timestamp. `sync.completed` is true once a reading of
+  this device has completed: it is set where a run ends `ok`, never by one window of it
+  (`sync.lastOk` is the time of the last window merged). A record that holds a `sync.lastOk` and no
+  such mark when it is loaded is given `completed: true` by `migrate`.
+- **The ordinary windows** (`feed.syncWindows`), consecutive and oldest first, each one request,
+  merged as it arrives:
+  - *A device's first reading* (`sync.completed` is not true; `feed.isFirstReading`): the last 176
+    days as four windows of 44 days. A first reading that was interrupted is a first reading again
+    when it is retried: it asks the four windows again.
+  - *Any later reading*: from 7 days before the newest stored posted bank row, never more than 176
+    days back. A span longer than 44 days (a device back after a long absence) is cut into windows
+    of 44 days from its start, the last one ending now and holding what is left; the usual span of about 8 days is one request. A bank row
+    still pending pulls the start back to 2 days before its day, at most to 44 days before now: a
+    pending row never makes a reading cost more than one request, and only the newest posted row
+    reaches further. The reading always reaches at least 7 days back. With no bank row on the
+    record it is the last 44 days.
+- **History for an account that needs it.** A later ordinary window starts from the newest row of
+  any account, so it does not reach the earlier days of an account that arrives after the first
+  reading, or that arrived with a balance and no transactions. The need is kept on the account; it
+  is never derived from the age of rows.
+  `account.backfill` is null (nothing to do) or `{ need: true, step, done, gaveUp, tries, at }`;
+  `step` (0 to 4) is the number of windows had. `checkDoc` accepts null and this form only.
+  - *Deciding.* `mergeFeed` sets it, only when it is null, after merging a feed that was not limited
+    to accounts, for a bank account that is not left out, when (a) that feed created the account on
+    a device that had already completed a reading (`sync.completed`), or (b) the record holds no
+    bank row of the account after the merge. An account that arrives with rows in any window of a
+    device's first reading has nothing to do: its `backfill` stays null (a state set by an earlier
+    window of that reading, with nothing asked yet, is taken back when a later one brings its rows).
+  - *The steps*, newest first, while `done` is false (`feed.historyStep`): step k (k = 0, 1, 2, 3)
+    asks, with `account=` and `pending=1`, the 44 days that end k times 44 days before now.
+  - *An answer* (`feed.recordHistory`). A step is had when the provider answers it soundly, whatever
+    it brought: an empty answer is an answer (a card nobody used for two months has two empty windows
+    before its rows). `step` goes up by one; at 4 the account is `done`. An answer is not sound, and
+    the step is not had, in two cases: the feed's problems name the account or its connection; or the
+    answer carried no transaction for the account although the record holds a bank row of that account
+    dated inside the window that was asked, so the answer contradicts the record. A row on the
+    window's first day is never inside. For step 0, whose window ends now, a row dated up to and
+    including the day of now is inside, that day being the later of its UTC and its local day; for
+    steps 1 to 3 a row on the last day is not inside either. Then `tries` goes up by one and the same step is asked again 12 hours
+    later; after 6 such answers in all the account gives up (`done` and `gaveUp` true). A request
+    that fails (network, 429, 5xx) changes nothing but `at`.
+  - *Asked again.* When a feed that was not limited brings the first bank row of an account whose
+    history is done or given up and which had no bank row on the record, `mergeFeed` opens it again
+    from step 0 (`step: 0, done: false, gaveUp: false, tries: 0, at: null`): the provider has begun
+    to carry its transactions. Nothing else opens a finished account again.
+  - *Pacing.* Nothing is asked during a device's first reading (its four windows have just asked for
+    everything; `feed.isFirstReading`, asked before the windows): the first attempt comes with the
+    next reading. An account is begun at most once every 12 hours: every attempt, answered or failed,
+    sets `at`; only a request that never left the device (offline) leaves it alone and is taken out
+    of the day's log. A reading begins at most 2 accounts, the one waited longest first
+    (`feed.historyRequests`); once an account is begun its steps follow one another in that same
+    reading until it is done, a step is not had, a request fails, or the budget stops it. Before
+    every history request at least 8 of the day's 20 requests must be unused (`feed.historyAllowed`),
+    so the ordinary readings of the day always have theirs.
+  - *It can never fail a reading.* A history request that fails ends the history part of the reading
+    and nothing else. An answer that cannot be merged is treated as a request that failed: only `at`
+    is set. Whatever else goes wrong inside the history part (an error nobody foresaw) is caught in
+    `sync.js`: the reading completes and reports as if there had been no history part, and nothing is
+    written to the console.
+  - What to ask and what an answer means are decided by pure functions in `feed.js`
+    (`historyRequests`, `historyStep`, `historyAllowed`, `recordHistory`, `lacksHistory`,
+    `backfillOf`; the limits are `HISTORY`); `sync.js` only makes the requests. Each one is counted
+    in `sync.requests`.
 - Quota: the provider expects at most 24 requests a day. The app syncs automatically on open when the
   last success is more than 3 hours old, allows a manual refresh at most every 15 minutes, and never
   exceeds 20 requests in any 24 hours (`sync.requests`).
 - Failures never lose data. HTTP 403 → status `relink` (the token was revoked: link again).
-  HTTP 402 → the Bridge subscription lapsed. Provider-reported connection problems are kept in
-  `sync.problems` and shown as a coach's note with the Bridge link.
+  HTTP 402 → the Bridge subscription lapsed. Provider-reported problems are kept in
+  `sync.problems` (`{ connId, accountId, name, message }`) and shown as a coach's note with the Bridge
+  link; one that names an account, or the connection of an account, is also printed on that account's sheet.
 
 ### 3.2 Folding a feed into the document (`merge.js`)
-A feed is `{ src, fetchedAt, from, to, accounts: [{ extId, connId, institution, name, currency,
-balance, available, asOf, txs: [{ extId, amount, posted, at, pending, description, payee, memo, mcc }] }], errors }`
-with signed cents (negative = money leaving the account) and millisecond timestamps.
+A feed is `{ src, fetchedAt, fromMs, toMs, accounts: [{ extId, connId, institution, name, currency,
+balance, available, asOf, txs: [{ extId, amount, posted, at, pending, description, payee, memo, mcc }] }], errors,
+only?, reading? }` with signed cents (negative = money leaving the account) and millisecond timestamps.
 
-1. **Accounts** are matched by `(src, extId)`. A new one is created with `source: 'bank'` and a type
+A feed asked for certain accounts (`only`) says nothing about any other account: entries for other
+accounts are ignored, no row or pending row of another account is touched, and `sync.lastOk`,
+`sync.from`, `sync.status` and `sync.error` stay as they are (the problems it reports are added to
+`sync.problems`). Its rows merge by the same matching as any overlapping window, so a row already
+on the record is the same row.
+
+Every account in a feed gets `account.feed = { readAt, rows, first, last, askedFrom, askedTo,
+askedFromMs, askedToMs }`: when
+the latest reading that included it began, how many transactions the provider's answers carried for
+it over all its windows (a $0.00 row is counted, though it is not kept), the days those rows have on
+the record (an undated pending row is stored on the day it was first seen; null with none), the
+days that were asked for (for the sheet's sentence) and the two instants that were asked for. The
+windows of one reading join into one stretch that ends now, and their feeds add up, compared as
+the requests were sent (whole seconds, the end not included): a window wholly outside the instants
+already asked (it may begin where they end) adds all it carried; where one window lies inside the
+other, the wider carries the rows of the narrower again and the larger of the two counts stands; a
+window that overlaps the instants already asked in part adds the carried rows, $0.00 rows too,
+whose time at the bank (the posting time; for a pending row the time it happened) lies outside
+those instants, which the reading cannot have carried before; a row with no time at all is added
+only when this feed itself put it on the record. Another reading starts again. The account sheet prints it under
+"Transactions": "The bank was read {when}: {n} transactions for this account, {first} to {last}. It
+was asked for {askedFrom} to {askedTo}." or, when the provider listed nothing for the account, "The
+bank was read {when} and listed no transaction for this account between {askedFrom} and
+{askedTo}." — so a bank that carries nothing can be told from an app that shows nothing —
+followed by "Networth asks
+for this account's history again by itself, twice a day." only while the device is linked, the link
+is not waiting for a new key, and the account's `backfill` has `need` true and `done` false
+(`feed.lacksHistory`). With no row on the record this line stands alone: no second paragraph says the
+same. With cover on, every number inside a provider's problem message is replaced by a dash together
+with a currency mark or code next to it, on the account's sheet and in Settings (`parts.coverText`).
+The latest-transactions list (`recent.js`), on the account's sheet and on the Board, also lists a row
+the bank has dated up to 2 days ahead (banks post-date). The day after the game day reads "Tomorrow"
+only when it is also after the calendar date of now; between midnight and the day change it is
+printed as its date. "Today" counts only rows dated today. The sheet's "{n} transactions on the
+record" counts every live row of the account whatever its day; only the list stops 2 days ahead.
+
+1. **Accounts** are matched by `(src, extId)`. When a feed that was not limited carries an account
+   under an id the record does not know, and the record holds exactly one bank account of the same
+   connection and the same name whose id is absent from that feed, that account is adopted: it takes
+   the new id and keeps its rows, its settings and its history state, and no second account is made.
+   Two accounts in one feed with the same connection and name are never merged into one another.
+   Otherwise a new one is created with `source: 'bank'` and a type
    inferred from its name (`classify.inferAccountType`); the owner can correct the type once
    (`typeLocked`). Balances are stored signed in the owner's favour. Providers normally report debts as
    negative numbers. A loan reported positive, or a card reported positive by more than $50, is read
@@ -115,13 +232,25 @@ with signed cents (negative = money leaving the account) and millisecond timesta
    it by hand (`flipLocked`), and that is never changed automatically.
 2. **Transactions.** `day` is the game day of `at` when the bank gives it, else of `posted`
    (`dates.feedDay` handles date-only timestamps); `postedDay` is null while pending.
+   A row is pending when the provider says so (`pending: true`) or when it has neither a posting
+   time nor a time it happened. A row with no posting time (absent or 0) that is not flagged pending
+   and carries `transacted_at` is posted on that day.
    The fingerprint is `accountId|day|signedCents|normalisedDescription#k` (k = occurrence index among
-   identical rows in the batch). A feed row is matched to a stored row by provider id, else by
+   identical rows in the batch); `accountId` is the record's own id for the account, so a fingerprint
+   holds when the provider's id for the account changes. A feed row is matched to a stored row by provider id, else by
    fingerprint (some banks re-issue ids), else — for a row that has just posted — to a stored
    *pending* row on the same account with the same merchant key, an amount within 25% (tips) and a
    day within 5. Otherwise it is inserted and classified. Owner-set fields (`locks`, notes, plans,
    glyphs) always survive an update.
-   Stored pending rows of an account that no longer appear in a feed covering their day are removed.
+   A stored pending row of an account that no longer appears in a feed is removed only when its day
+   lies inside the window that feed asked for: a pending row dated before the window is never judged
+   gone by a feed that could not have carried it. A stored pending bank row dated more than 44 days
+   before today is removed by any feed that was not limited to accounts, whichever account it belongs
+   to and whatever the feed says of that account: nothing stays pending at a bank that long, and no
+   reading reaches further back for a pending row. A pending row that old which such a feed carries
+   and the record does not hold is never stored: it is not counted as added and confirms no move the
+   owner typed in (it still counts in `account.feed`: the bank did list it). If such a purchase does
+   post later it arrives as a posted row and is stored again.
    Posted rows are never deleted by a sync.
 3. **Provisional moves.** A move the owner tapped in before the bank reported it (`source: 'manual'`,
    kind `spend`) is matched to a newly arrived bank spend with the same merchant key (or no merchant),
@@ -307,7 +436,7 @@ Board (the daily glance) · Scoresheet (rounds and moves) · Material (what you 
 few things the bank cannot see, appearance, data). Phones get a bottom bar with a centre "+ Move".
 `pace()` is null until day M + 1 on record, where M is one full pay cycle of the longest regular stream in completed days (30 when no regular pay is known) and never under 14; the "pace" and "habit" projection lines and the reserve ETA at pace are then withheld, and the sentence says "from day {M + 1} on record; {n} so far". A reserve ETA's day is today plus its whole months, so the count and the date agree. `incomeLadder().thin` is true until day 61 on record: the annualized figures are then not offered as a year's income.
 `purchaseImpact`: `daysOfPay` = amount / daily take-home of the pay streams, null when there is no pay stream (income received is never used in its place); `cardMonthChange` is null when paid from cash and before day 7 of the month. `projectNetWorth`: `start` is the live figure floored to the cent (`Math.floor`), never rounded.
-Board. While `Clock.payAwaited` is set the clock block prints "Pay expected {payAwaited} is not on the bank's record yet."; the list is headed "Due today" when `dueUntil` is today, "Due through {dueUntil}" when pay is awaited and `dueUntil` is after today, otherwise "Due before {nextPayday}". On the payday itself with nothing awaited one line reads "Payday is today." No sentence calls today the next payday. The move sheet says "through {dueUntil}" under the same condition; its "So far" line marks Spent as an estimate while a move in it has not posted and Kept while the round is in progress. The "still scheduled" figure is an estimate. The live breakdown (at the bank, pay earned, bills used, tapped in) adds up to the floored hero, as Material's does. Before day 7 of the month the card block prints "A pace is read from day 7 of the month." under an empty pace. From $1,000,000.00 the cash figure takes the is-huge size so it fits its column at every width. Recent transactions: a band of its own (after today's round on a phone, above the crosstable on a wide screen) lists the latest transactions on every account, newest first (`recent.recentTransactions`: 8 on a phone, 12 in two columns from 900px), each with its account under the name, its day ("Today", "Yesterday", else the date) and its amount; a row opens the move's sheet. A pending or tapped-in amount is an estimate. A declined purchase, a tapped-in move the bank has confirmed, a row of an account left out and the incoming leg of a payment between two of the owner's accounts are not listed. Above the list one sentence counts what is dated today ("Today: 2 transactions, ≈$6.55 out." or "Today: 0 transactions on the record.") and how many rows arrived since the last look (a row's `loggedAt` against the time of the last look); under it the block says when the bank was read and that its feed updates about once a day. An account's own sheet (opened from Material) lists that account's latest 6 transactions, how many are on the record and since when, and links to the Scoresheet showing that account alone (`?account=`, also a chip per account in the Scoresheet's filters; the account stays in view when stepping to another month). In tight places an account is named by `accountShort` (the owner's name for it, else its kind with the last four digits of the bank's name: "Credit card ··4321"); `accountLabel` drops a closing "(4321)" that only repeats digits already in the bank's name. The net-worth figure (the Board's hero in both readings, and Material's two figures) is coloured on the owner's scale, the one place a figure takes a colour other than ink: red at zero and below, yellow at about $1,000, green from $5,000, and by degrees in between (`money.toneOf` gives 0 to 1, set on the figure as `--tone`; `toneBand` names the nearest colour for a browser that cannot blend). Every numeral is filled with a gradient of that hue, light above and deep below, never a flat colour; the ≈ sign keeps the spot colour. Under cover nothing of it shows: the redaction bar is never tinted, since a colour would give the sign away.
+Board. While `Clock.payAwaited` is set the clock block prints "Pay expected {payAwaited} is not on the bank's record yet."; the list is headed "Due today" when `dueUntil` is today, "Due through {dueUntil}" when pay is awaited and `dueUntil` is after today, otherwise "Due before {nextPayday}". On the payday itself with nothing awaited one line reads "Payday is today." No sentence calls today the next payday. The move sheet says "through {dueUntil}" under the same condition; its "So far" line marks Spent as an estimate while a move in it has not posted and Kept while the round is in progress. The "still scheduled" figure is an estimate. The live breakdown (at the bank, pay earned, bills used, tapped in) adds up to the floored hero, as Material's does. Before day 7 of the month the card block prints "A pace is read from day 7 of the month." under an empty pace. From $1,000,000.00 the cash figure takes the is-huge size so it fits its column at every width. Recent transactions: a band of its own (after today's round on a phone, above the crosstable on a wide screen) lists the latest transactions on every account, newest first (`recent.recentTransactions`: 8 on a phone, 12 in two columns from 900px), each with its account under the name, its day ("Tomorrow" for a row the bank post-dated to the day after today, when that day is also after the calendar date of now; "Today"; "Yesterday"; else the date) and its amount; a row opens the move's sheet. Rows dated up to 2 days ahead are listed but are not counted in "Today". A pending or tapped-in amount is an estimate. A declined purchase, a tapped-in move the bank has confirmed, a row of an account left out and the incoming leg of a payment between two of the owner's accounts are not listed. Above the list one sentence counts what is dated today ("Today: 2 transactions, ≈$6.55 out." or "Today: 0 transactions on the record.") and how many rows arrived since the last look (a row's `loggedAt` against the time of the last look); under it the block says when the bank was read and that its feed updates about once a day. An account's own sheet (opened from Material) lists that account's latest 6 transactions, how many are on the record and since when, and links to the Scoresheet showing that account alone (`?account=`, also a chip per account in the Scoresheet's filters; the account stays in view when stepping to another month). In tight places an account is named by `accountShort` (the owner's name for it, else its kind with the last four digits of the bank's name: "Credit card ··4321"); `accountLabel` drops a closing "(4321)" that only repeats digits already in the bank's name. The net-worth figure (the Board's hero in both readings, and Material's two figures) is coloured on the owner's scale, the one place a figure takes a colour other than ink: red at zero and below, yellow at about $1,000, green from $5,000, and by degrees in between (`money.toneOf` gives 0 to 1, set on the figure as `--tone`; `toneBand` names the nearest colour for a browser that cannot blend). Every numeral is filled with a gradient of that hue, light above and deep below, never a flat colour; the ≈ sign keeps the spot colour. Under cover nothing of it shows: the redaction bar is never tinted, since a colour would give the sign away.
 Material. Its live-figure sentence gives pay earned and bills used with the approximately sign. The card months table sits in its own scrolling block (role region, labelled Card months), so the page never scrolls sideways for it; it runs full width under its figure up to 1299px and sits side by side only from 1300px.
 Analysis. Fig. 2 marks its starting figure as an estimate only when the hero is one; in the thin sample it is the figure at the bank, roman. The net-worth sparkline floors today's value in its label for screen readers.
 Scoresheet. A round's Spent is an estimate only while it holds a move not yet posted (a pending row, or a tapped-in move with no bank match): `parts.spentUnposted(round)`. The day sheet's title states a provisional or live margin with the approximately sign. The crosstable takes cover (`ctx.state.settings.cover`) from every caller; a week cell's aria-label then carries no amount. A week's total and the month's Kept are printed with the approximately sign while any counted round in them is provisional or live, and roman when every one is final; the same rule holds on the sweep sheet. The month is one row of 30 columns when the crosstable is at least 1300px wide; narrower it is a week per row with a weekly total.

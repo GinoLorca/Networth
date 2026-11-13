@@ -268,13 +268,19 @@ test('fetchSimplefin: accepts the access URL itself and never puts its credentia
   assert.equal(calls[0].init.headers.Authorization, ACCESS.auth);
 });
 
-test('fetchSimplefin: a window longer than the limit is clamped to its most recent 89 days (a day inside the 90-day limit)', async () => {
+test('fetchSimplefin: a window longer than the limit is clamped to its most recent 44 days, and the span sent is never above it', async () => {
   const { impl, calls } = fakeFetch(respond(200, { accounts: [] }));
   const feed = await fetchSimplefin(ACCESS, { fromMs: NOW - 400 * DAY_MS, toMs: NOW }, impl, NOW);
   const params = new URL(calls[0].url).searchParams;
-  assert.equal(Number(params.get('end-date')) - Number(params.get('start-date')), (FEED_WINDOW_DAYS - 1) * 86400);
-  assert.equal(feed.fromMs, NOW - (FEED_WINDOW_DAYS - 1) * DAY_MS);
+  assert.equal(FEED_WINDOW_DAYS, 44);
+  assert.equal(Number(params.get('end-date')) - Number(params.get('start-date')), FEED_WINDOW_DAYS * 86400);
+  assert.equal(feed.fromMs, NOW - FEED_WINDOW_DAYS * DAY_MS);
   assert.equal(feed.toMs, NOW);
+  // both ends fall between two seconds: rounding them outwards would send 44 days and a second
+  await fetchSimplefin(ACCESS, { fromMs: NOW + 1 - FEED_WINDOW_DAYS * DAY_MS, toMs: NOW + 1 }, impl, NOW + 1);
+  const odd = new URL(calls[1].url).searchParams;
+  assert.equal(Number(odd.get('end-date')) - Number(odd.get('start-date')), FEED_WINDOW_DAYS * 86400);
+  assert.equal(Number(odd.get('end-date')), Math.ceil((NOW + 1) / 1000));
 });
 
 test('fetchSimplefin: missing or inverted window bounds still give a valid request', async () => {
@@ -575,16 +581,22 @@ function bankTx(fields) {
 function syncedState(txs) {
   const state = defaultState(NOW - 100 * DAY_MS);
   state.sync.lastOk = NOW - 5 * HOUR_MS;
+  state.sync.completed = true;
   state.txs = txs;
   return state;
 }
 
-test('syncWindows: never synced asks for two windows of 89 days, the older first', () => {
+test('syncWindows: before any reading has completed it asks the last 176 days as four windows of 44, the oldest first', () => {
   const windows = syncWindows(defaultState(NOW), NOW);
   assert.deepEqual(windows, [
-    { fromMs: NOW - 178 * DAY_MS, toMs: NOW - 89 * DAY_MS },
-    { fromMs: NOW - 89 * DAY_MS, toMs: NOW },
+    { fromMs: NOW - 176 * DAY_MS, toMs: NOW - 132 * DAY_MS },
+    { fromMs: NOW - 132 * DAY_MS, toMs: NOW - 88 * DAY_MS },
+    { fromMs: NOW - 88 * DAY_MS, toMs: NOW - 44 * DAY_MS },
+    { fromMs: NOW - 44 * DAY_MS, toMs: NOW },
   ]);
+  const interrupted = defaultState(NOW);
+  interrupted.sync.lastOk = NOW - HOUR_MS; // one window of a first reading was merged, the reading did not complete
+  assert.deepEqual(syncWindows(interrupted, NOW), windows);
   for (const w of windows) assert.ok(w.toMs - w.fromMs <= FEED_WINDOW_DAYS * DAY_MS);
 });
 
@@ -609,11 +621,19 @@ test('syncWindows: manual moves, demo rows and unreadable rows do not move the w
   assert.deepEqual(syncWindows(state, NOW), [{ fromMs: startOfDayMs('2026-10-14'), toMs: NOW }]);
 });
 
-test('syncWindows: never more than 89 days back', () => {
+test('syncWindows: never more than 176 days back, in consecutive windows of at most 44 days', () => {
   const old = syncedState([bankTx({ day: '2026-03-01', postedDay: '2026-03-02' })]);
-  assert.deepEqual(syncWindows(old, NOW), [{ fromMs: NOW - 89 * DAY_MS, toMs: NOW }]);
+  assert.deepEqual(syncWindows(old, NOW), [176, 132, 88, 44].map((d) => ({ fromMs: NOW - d * DAY_MS, toMs: NOW - (d - 44) * DAY_MS })));
+  const away = syncedState([bankTx({ day: '2026-08-01', postedDay: '2026-08-03' })]); // 100 days away
+  const windows = syncWindows(away, NOW);
+  const from = startOfDayMs('2026-07-27');
+  assert.deepEqual(windows, [
+    { fromMs: from, toMs: from + 44 * DAY_MS },
+    { fromMs: from + 44 * DAY_MS, toMs: from + 88 * DAY_MS },
+    { fromMs: from + 88 * DAY_MS, toMs: NOW },
+  ]);
   const empty = syncedState([]);
-  assert.deepEqual(syncWindows(empty, NOW), [{ fromMs: NOW - 89 * DAY_MS, toMs: NOW }], 'synced before, nothing stored: one window');
+  assert.deepEqual(syncWindows(empty, NOW), [{ fromMs: NOW - 44 * DAY_MS, toMs: NOW }], 'a reading completed, nothing stored: one window');
 });
 
 test('syncWindows: reaches back far enough to learn what became of an old pending row', () => {
@@ -625,6 +645,18 @@ test('syncWindows: reaches back far enough to learn what became of an old pendin
 
   const onlyPending = syncedState([bankTx({ day: '2026-11-10', postedDay: null, pending: true })]);
   assert.deepEqual(syncWindows(onlyPending, NOW), [{ fromMs: NOW - 7 * DAY_MS, toMs: NOW }], 'and always at least a week');
+
+  // a pending row never costs a second request: it pulls the start back 44 days at most
+  const stale = syncedState([
+    bankTx({ day: '2026-11-09', postedDay: '2026-11-10' }),
+    bankTx({ day: '2026-08-03', postedDay: null, pending: true }), // 100 days before
+  ]);
+  assert.deepEqual(syncWindows(stale, NOW), [{ fromMs: NOW - 44 * DAY_MS, toMs: NOW }]);
+  const nearEdge = syncedState([
+    bankTx({ day: '2026-11-09', postedDay: '2026-11-10' }),
+    bankTx({ day: '2026-09-29', postedDay: null, pending: true }), // 43 days before: 2 days earlier is past the 44
+  ]);
+  assert.deepEqual(syncWindows(nearEdge, NOW), [{ fromMs: NOW - 44 * DAY_MS, toMs: NOW }]);
 });
 
 test('syncWindows: a row dated in the future still leaves a week of overlap', () => {
@@ -635,10 +667,10 @@ test('syncWindows: a row dated in the future still leaves a week of overlap', ()
 test('syncWindows: tolerates a damaged document', () => {
   for (const state of [null, undefined, {}, { sync: null }, { sync: { lastOk: 'yes' }, txs: 'none' }]) {
     const windows = syncWindows(state, NOW);
-    assert.equal(windows.length, 2);
+    assert.equal(windows.length, 4);
     for (const w of windows) assert.ok(Number.isFinite(w.fromMs) && Number.isFinite(w.toMs) && w.fromMs < w.toMs);
   }
-  assert.equal(syncWindows({ sync: { lastOk: NOW }, txs: 'none' }, NOW).length, 1);
+  assert.equal(syncWindows({ sync: { lastOk: NOW, completed: true }, txs: 'none' }, NOW).length, 1);
 });
 
 /* ---------------------------------------------------------------------- quota */
@@ -690,7 +722,7 @@ test('quotaAllows: tolerates a damaged request log', () => {
 test('normalizeSimplefin: the provider\'s notice about a capped date range is not a problem with the bank link', () => {
   const feed = normalizeSimplefin({
     errlist: [
-      { code: 'gen.api', msg: 'Requested date range exceeds limit of 90 days and was capped.' },
+      { code: 'gen.api', msg: 'Requested date range exceeds recommended range of 45 days. In the future, this may be capped.' },
       { code: 'con.auth', msg: 'Connection to Example Bank may need attention', conn_id: 'CON-1' },
     ],
     accounts: [],
@@ -732,4 +764,27 @@ test('claimAccess: gives up after 30 seconds and aborts the request', async (t) 
   t.mock.timers.tick(1);
   assert.equal(signal.aborted, true);
   await assert.rejects(pending, isFeedError('network'));
+});
+
+/* ------------------------------------------------ a request limited to accounts */
+
+test('fetchSimplefin: a request limited to accounts names each once, and its feed holds only those accounts', async () => {
+  const body = {
+    accounts: [{ id: 'ACT-A', name: 'Card', balance: '-10.00' }, { id: 'ACT-B', name: 'Checking', balance: '20.00' }],
+    errlist: [{ code: 'act.data', msg: 'Card data delayed', account_id: 'ACT-A' }],
+  };
+  const limited = fakeFetch(respond(200, body));
+  const feed = await fetchSimplefin(ACCESS, { fromMs: NOW - 30 * DAY_MS, toMs: NOW, only: ['ACT-A', 'ACT-A', '', null, 'ACT C&x=1'] }, limited.impl, NOW);
+  const url = new URL(limited.calls[0].url);
+  assert.deepEqual(url.searchParams.getAll('account'), ['ACT-A', 'ACT C&x=1'], 'ids travel as values, encoded');
+  assert.deepEqual([...new Set(url.searchParams.keys())].sort(), ['account', 'end-date', 'pending', 'start-date', 'version']);
+  assert.deepEqual(feed.only, ['ACT-A', 'ACT C&x=1']);
+  assert.deepEqual(feed.accounts.map((a) => a.extId), ['ACT-A'], 'an account that was not asked for is left out');
+  assert.deepEqual(feed.errors, [{ code: 'act.data', message: 'Card data delayed', connId: '', accountId: 'ACT-A' }]);
+
+  const whole = fakeFetch(respond(200, body));
+  const all = await fetchSimplefin(ACCESS, { fromMs: NOW - 30 * DAY_MS, toMs: NOW, only: [] }, whole.impl, NOW);
+  assert.equal(new URL(whole.calls[0].url).searchParams.has('account'), false);
+  assert.equal(Object.hasOwn(all, 'only'), false);
+  assert.equal(all.accounts.length, 2);
 });

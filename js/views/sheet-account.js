@@ -35,9 +35,10 @@ import { openSheet, closeSheet } from '../router.js';
 import { fmt, fmtPlain, toCents } from '../model/money.js';
 import { fmtDate, fmtTime, gameDay, diffDays, parts as ymdParts } from '../model/dates.js';
 import { ACCOUNT_TYPES, accountLabel, makeAccount } from '../model/schema.js';
+import { lacksHistory } from '../model/feed.js';
 import { refresh } from '../model/detect.js';
 import { icon } from '../ui/icons.js';
-import { money, recentList } from './parts.js';
+import { coverText, money, recentList } from './parts.js';
 
 /** What can be added by hand, in the order offered. */
 const KINDS = [
@@ -332,16 +333,60 @@ const SHEET_MOVES = 6;
  * This account's own transactions: how many are on the record and since when, the latest few, and
  * the way to all of them. An account the owner left out lists none (nothing of it is shown anywhere).
  */
+/**
+ * What the latest reading carried for this account over all its windows, in one line: how many transactions, the
+ * days they span and the days that were asked; when the bank listed none, that, in plain words, with the days
+ * asked — so a bank that carries nothing can be told from an app that shows nothing. '' for an account no reading
+ * has recorded yet.
+ */
+function carriedLine(ctx, account) {
+  const feed = account.feed;
+  if (!feed || !Number.isFinite(feed.readAt)) return '';
+  const rows = Number.isInteger(feed.rows) && feed.rows > 0 ? feed.rows : 0;
+  const age = ageText(ctx, feed.readAt);
+  const when = age.startsWith('at ') ? 'today ' + age : age;
+  const asked = feed.askedFrom && feed.askedTo;
+  const count = rows.toLocaleString('en-US') + (rows === 1 ? ' transaction' : ' transactions') + ' for this account';
+  const said = !rows
+    ? ' and listed no transaction for this account' + (asked ? ' between ' + shortDay(ctx, feed.askedFrom) + ' and ' + shortDay(ctx, feed.askedTo) : '') + '.'
+    : ': ' + count + (feed.first && feed.last ? ', ' + (feed.first === feed.last ? 'on ' + shortDay(ctx, feed.first) : shortDay(ctx, feed.first) + ' to ' + shortDay(ctx, feed.last)) : '')
+      + (asked ? '. It was asked for ' + shortDay(ctx, feed.askedFrom) + ' to ' + shortDay(ctx, feed.askedTo) : '') + '.';
+  // a promise only where it can be kept: the device is linked, its key still works, and the account is still to be asked
+  const asking = !!(ctx.sync && ctx.sync.linked) && (ctx.state.sync || {}).status !== 'relink' && lacksHistory(account)
+    ? ' Networth asks for this account’s history again by itself, twice a day.' : '';
+  return html`<p class="cap acct-feed">The bank was read ${when}${said}${asking}</p>`;
+}
+
+/** Problems the provider reported that name this account or its connection (bank text: interpolated, never trusted). */
+function problemLines(ctx, account) {
+  const ext = account.ext || {};
+  const sync = ctx.state.sync || {};
+  const seen = new Set();
+  const lines = [];
+  for (const p of Array.isArray(sync.problems) ? sync.problems : []) {
+    if (!p || typeof p !== 'object' || typeof p.message !== 'string' || !p.message || seen.has(p.message)) continue;
+    const named = (p.accountId && p.accountId === ext.id) || (!p.accountId && p.connId && p.connId === ext.conn);
+    if (!named) continue;
+    seen.add(p.message);
+    // with cover on no number shows, the bank's own wording included
+    const said = coverText(ctx, p.message);
+    lines.push(html`<p class="cap acct-feed acct-feed-problem">The bank’s feed reports a problem with this account: ${said}</p>`);
+  }
+  return lines;
+}
+
 function movesBlock(ctx, account) {
   if (account.hidden) return '';
   const r = ctx.d.latest(SHEET_MOVES, null, account.id);
   const count = r.total.toLocaleString('en-US') + (r.total === 1 ? ' transaction' : ' transactions');
+  const carried = carriedLine(ctx, account); // with no row on the record this line says so; nothing repeats it
   return html`<div class="acct-set acct-moves">
     <p class="lab"><b>Transactions</b><i class="sep"></i>${count} on the record${r.oldest ? ', from ' + shortDay(ctx, r.oldest) : ''}</p>
+    ${carried}${problemLines(ctx, account)}
     ${r.rows.length
       ? html`${recentList(ctx, r.rows, { account: false, cls: 'acct-recent', label: 'The latest transactions on this account' })}
         <p class="acct-moves-all"><a class="btn-link" href="${'#/scoresheet?account=' + encodeURIComponent(account.id)}">All of them, by day</a></p>`
-      : html`<p class="cap">The bank has sent a balance for this account and no transaction yet. Some banks pass a card’s transactions on a day or more after its balance; they appear here by themselves.</p>`}
+      : carried ? '' : html`<p class="cap">The bank has sent a balance for this account and no transaction yet. Some banks pass a card’s transactions on a day or more after its balance; they appear here by themselves.</p>`}
   </div>`;
 }
 

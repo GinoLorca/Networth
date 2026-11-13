@@ -22,7 +22,7 @@
 
 import { html, cx } from '../ui/dom.js';
 import { fmt, fmtSigned, fmtPlain, MINUS, toneOf } from '../model/money.js';
-import { addDays, fmtDate, fmtMonth, dow, parts as ymdParts, monthOf } from '../model/dates.js';
+import { addDays, fmtDate, fmtMonth, dow, parts as ymdParts, monthOf, ymd } from '../model/dates.js';
 import { moveGlyph } from '../ui/glyphs.js';
 import { categoryLabel, accountLabel, accountShort } from '../model/schema.js';
 
@@ -348,11 +348,34 @@ export function toneStyle(cents) {
   return '--tone:' + toneOf(cents).toFixed(3);
 }
 
+/* ------------------------------------------------------- text under cover */
+
+/** A number in a sentence, with a currency mark or code on either side of it: "$1,234.56", "USD 40", "40 USD", "€1.234,56", "2,000 dollars". */
+const NUMBER_IN_TEXT = /(?:[$€£¥]\s?|\b[A-Z]{3}\s?)?[-−]?\d(?:[\d.,]*\d)?(?:\s?(?:[A-Z]{3}\b|[Dd]ollars?\b|[Cc]ents?\b|[$€£¥%]))?/g;
+
+/**
+ * A text that is not the app's own (a provider's message) as it may be shown: with cover on, every number in it
+ * is replaced by a dash together with the currency mark or code next to it, so no amount shows in any wording.
+ * @param {object} ctx
+ * @param {string} text
+ * @returns {string} still plain text: interpolate it through the html template like any bank text
+ */
+export function coverText(ctx, text) {
+  const said = typeof text === 'string' ? text : '';
+  const cover = !!(ctx && ctx.state && ctx.state.settings && ctx.state.settings.cover);
+  return cover ? said.replace(NUMBER_IN_TEXT, '—') : said;
+}
+
 /* --------------------------------------------------- recent transactions */
 
-/** "Today" · "Yesterday" · "Tue, Nov 10". */
+/**
+ * "Today" · "Tomorrow" (a row the bank post-dated) · "Yesterday" · "Tue, Nov 10". Between midnight and the
+ * day change the day after the game day is the calendar date of now: that is not tomorrow to the owner, so
+ * the date is printed.
+ */
 function recentDay(ctx, day) {
   if (day === ctx.today) return 'Today';
+  if (day === addDays(ctx.today, 1) && day > ymd()) return 'Tomorrow';
   if (day === addDays(ctx.today, -1)) return 'Yesterday';
   return fmtDate(day, 'dowshort');
 }

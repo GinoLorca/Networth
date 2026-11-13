@@ -107,7 +107,7 @@ const WIN_HIGHEST = 0.75;
 const DOLLAR = 100;
 
 const WEEK_DAYS = 7;
-/** Completed weeks looked back over for a sweep the app was not open to see: one sync never reaches further back than 90 days. */
+/** Completed weeks looked back over for a sweep the app was not open to see. A reading can reach 176 days back; sweeps are looked for over 13 weeks by choice. */
 const SWEEP_LOOKBACK_WEEKS = 13;
 const SWEEP_SHARE = 0.9;
 

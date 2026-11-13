@@ -354,7 +354,7 @@ everywhere('the document is plain data and holds no bank credential', ({ state }
   };
   collect(state);
   for (const key of keys) assert.doesNotMatch(key, /access|auth|token|secret|password|credential|claim|setup/i, 'key ' + key);
-  assert.deepEqual(Object.keys(state.sync).sort(), ['error', 'from', 'lastOk', 'lastTry', 'problems', 'requests', 'src', 'status']);
+  assert.deepEqual(Object.keys(state.sync).sort(), ['completed', 'error', 'from', 'lastOk', 'lastTry', 'problems', 'requests', 'src', 'status']);
   for (const account of state.accounts) assert.ok(account.ext === null || Object.keys(account.ext).sort().join() === 'conn,id,src');
 });
 

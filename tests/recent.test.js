@@ -51,11 +51,27 @@ test('recentTransactions: what is not a transaction to show is left out', () => 
     row('declined', '2026-06-09', 525, { kind: 'decline', source: 'manual' }),
     row('confirmed-tap', '2026-06-09', 500, { source: 'manual', matchId: 'kept' }),
     row('left-out', '2026-06-09', 700, { accountId: 'acc_old' }),
-    row('tomorrow', '2026-06-11', 800),
+    row('far-ahead', '2026-06-13', 800),
     row('no-day', '', 800),
   );
   state.txs.push(null, 7, {});
   assert.deepEqual(recentTransactions(state, TODAY).rows.map((r) => r.tx.id), ['kept']);
+});
+
+test('recentTransactions: a row the bank dated up to 2 days ahead is listed, and is not one of today\'s', () => {
+  const state = record();
+  state.txs.push(row('today', TODAY, 500), row('tomorrow', '2026-06-11', 800), row('in-two-days', '2026-06-12', 900), row('in-three-days', '2026-06-13', 950));
+  const r = recentTransactions(state, TODAY);
+  assert.deepEqual(r.rows.map((x) => x.tx.id), ['in-two-days', 'tomorrow', 'today']);
+  assert.equal(r.total, 3);
+  assert.equal(r.today.count, 1);
+  assert.equal(r.today.out, 500);
+  // one account's own count is of every live row on the record, the one dated 3 days ahead included; it is not listed
+  const acc = state.txs.find((t) => t.id === 'today').accountId;
+  const own = recentTransactions(state, TODAY, { accountId: acc });
+  assert.deepEqual(own.rows.map((x) => x.tx.id), ['in-two-days', 'tomorrow', 'today']);
+  assert.equal(own.total, state.txs.filter((t) => t.accountId === acc).length);
+  assert.equal(own.total, 4);
 });
 
 test('recentTransactions: a payment between two of the owner\'s accounts is listed once, as the money leaving', () => {

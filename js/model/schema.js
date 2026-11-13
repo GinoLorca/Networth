@@ -193,6 +193,14 @@ export const STREAM_KINDS = {
  * @property {{ day: string, balance: number, note: string }[]} history  manual accounts: every value the owner entered, oldest first
  * @property {string} purpose              one of PURPOSES
  * @property {string} note
+ * @property {{ readAt: number, rows: number, first: string|null, last: string|null, askedFrom: string|null, askedTo: string|null, askedFromMs: number|null, askedToMs: number|null }|null} feed
+ *           bank accounts: what the latest reading that included this account carried for it — when it was read (ms),
+ *           how many transactions over all its windows, the days they span, and the days that were asked for
+ * @property {{ need: true, step: number, done: boolean, gaveUp: boolean, tries: number, at: number|null }|null} backfill
+ *           bank accounts: null (nothing to do), or the need to ask for this account's own history, decided by
+ *           the merge — how many of its four 44-day windows have been had (0 to 4), whether the account is done,
+ *           whether it gave up, the answers counted against it, and the time (ms) of the last attempt (see
+ *           ARCHITECTURE 3.1)
  */
 
 /**
@@ -322,6 +330,7 @@ export function makeAccount(fields = {}) {
     apr: null, limit: null, minPayment: null, dueDay: null,
     quickSale: type === 'equipment' ? 0.5 : null,
     loan: null, history: [], purpose: 'personal', note: '',
+    feed: null, backfill: null,
     ...fields,
   };
 }
@@ -434,11 +443,13 @@ export function defaultState(now) {
       /** timestamp of the last attempt and of the last success */
       lastTry: null,
       lastOk: null,
+      /** a reading of this device has completed (set where a reading ends well, never by one window of it) */
+      completed: false,
       /** message from the last failure, or null */
       error: null,
       /** 'ok' | 'relink' (credentials revoked or expired) | 'error' */
       status: null,
-      /** connection problems reported by the provider: { connId, name, message } */
+      /** problems reported by the provider: { connId, accountId, name, message } (accountId = provider account id, '' when the problem names none) */
       problems: [],
       /** earliest day for which transactions were fetched */
       from: null,
@@ -507,6 +518,7 @@ export function checkDoc(doc) {
   }
   // known words only (an inherited name such as "constructor" is not one), and money as whole cents of a sane size
   for (const a of doc.accounts) {
+    if (a.backfill != null && !isBackfill(a.backfill)) return 'This copy contains an unreadable account.';
     if (!Object.hasOwn(ACCOUNT_TYPES, a.type) || !isCents(a.balance)) return 'This copy contains an unreadable account.';
   }
   for (const t of doc.txs) {
@@ -530,6 +542,15 @@ export function checkDoc(doc) {
   }
   if (doc.sweeps != null && !doc.sweeps.every(isPlain)) return 'This copy has an unreadable part (sweeps).';
   return null;
+}
+
+/** An account's history state: { need: true, step: 0..4, done, gaveUp, tries, at }. */
+function isBackfill(value) {
+  return isPlain(value) && value.need === true
+    && Number.isInteger(value.step) && value.step >= 0 && value.step <= 4
+    && typeof value.done === 'boolean' && typeof value.gaveUp === 'boolean'
+    && Number.isInteger(value.tries) && value.tries >= 0
+    && (value.at === null || Number.isFinite(value.at));
 }
 
 const CHECK_LIMITS = { txs: 250000, list: 5000, text: 20000, depth: 24, nodes: 4000000, cents: 1e14 };
@@ -611,6 +632,8 @@ const CHECK_FREE_FORM = new Set(['days', 'targets', 'notesSeen', 'dismissed', 'p
  */
 export function migrate(doc) {
   const base = defaultState(doc.meta && doc.meta.createdAt ? doc.meta.createdAt : 0);
+  // a record written before the mark existed has completed a reading if it holds the time of one
+  if (isPlain(doc.sync) && typeof doc.sync.completed !== 'boolean') doc.sync.completed = Number.isFinite(doc.sync.lastOk);
   restoreBuiltIns(doc, base);
   fillDefaults(doc, base);
   doc.meta.v = SCHEMA_VERSION;

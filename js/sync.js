@@ -11,7 +11,10 @@ import { store } from './store.js';
 import { loadSecret, saveSecret, wipeSecret, wipeStorage } from './db.js';
 import { nowMs } from './model/dates.js';
 import { defaultState } from './model/schema.js';
-import { parseSetupToken, claimAccess, fetchSimplefin, syncWindows, quotaAllows, FeedError } from './model/feed.js';
+import {
+  parseSetupToken, claimAccess, fetchSimplefin, syncWindows, quotaAllows, historyAllowed, historyRequests, historyStep, isFirstReading,
+  recordHistory, FeedError,
+} from './model/feed.js';
 import { mergeFeed } from './model/merge.js';
 import { refresh } from './model/detect.js';
 
@@ -22,7 +25,7 @@ const RETRY_AFTER_MS = 30 * 60 * 1000;
 const live = {
   linked: false,
   busy: false,
-  /** short description of what is happening, for the interface: 'Linking', 'Reading the last 90 days'… */
+  /** short description of what is happening, for the interface: 'Linking', 'Reading the latest days'… */
   step: '',
 };
 
@@ -155,6 +158,60 @@ export function syncNow(opts = {}) {
   return run;
 }
 
+/**
+ * History for the accounts that need it (ARCHITECTURE 3.1), after the ordinary windows of a reading are merged.
+ * What to ask, when, and what an answer means are decided by model/feed.js; this only makes the requests. An
+ * account that is begun is followed step after step until it is done, a step is not had, a request fails or the
+ * day's budget stops it. A request that fails ends the history part of this reading and nothing else.
+ * @param {boolean} first  this is the device's first reading: nothing is asked
+ * @returns {Promise<number>} transactions added
+ */
+async function readHistory(access, reading, stale, first) {
+  let added = 0;
+  /** @returns {Promise<'had'|'again'|'stop'>} */
+  const ask = async (step) => {
+    if (stale() || !historyAllowed(store.state, nowMs())) return 'stop';
+    live.step = 'Reading earlier history';
+    poke();
+    const noted = noteRequest();
+    let feed = null;
+    try {
+      feed = await fetchSimplefin(access, { fromMs: step.fromMs, toMs: step.toMs, pending: true, only: step.only }, doFetch, nowMs());
+    } catch {
+      if (stale()) return 'stop';
+      // offline: the request never left this device, so it is neither one of the day's requests nor an attempt
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) forgetRequest(noted);
+      else store.update((s) => { recordHistory(s, step, nowMs(), null); }, { silent: true });
+      return 'stop';
+    }
+    if (stale()) return 'stop';
+    feed.reading = reading;
+    let book = null;
+    try {
+      store.update((s) => {
+        added += mergeFeed(s, feed, nowMs()).added;
+        book = recordHistory(s, step, nowMs(), feed);
+      }, { silent: true });
+    } catch {
+      // an answer that could not be merged is an attempt like a request that failed: only its time is kept
+      store.update((s) => { recordHistory(s, step, nowMs(), null); }, { silent: true });
+      return 'stop';
+    }
+    return book && book.had ? 'had' : 'again';
+  };
+  for (const begun of historyRequests(store.state, nowMs(), first)) {
+    let step = begun;
+    let outcome = 'had';
+    while (step && outcome === 'had') {
+      outcome = await ask(step);
+      const account = outcome === 'had' ? store.state.accounts.find((a) => a.id === step.accountId) : null;
+      step = account ? historyStep(store.state, account, nowMs()) : null;
+    }
+    if (outcome === 'stop') break;
+  }
+  return added;
+}
+
 async function runSync(opts) {
   if (!store.state || store.status.readonly) return { ok: false, skipped: true };
   const gen = generation;
@@ -167,7 +224,7 @@ async function runSync(opts) {
   const windows = syncWindows(store.state, nowMs());
   const sync = store.state.sync;
   // After a failed check the 30-minute retry rule governs the automatic sync, not the 3-hour "fresh" rule:
-  // a first sync that stopped halfway has a lastOk from its first window and would otherwise wait 3 hours.
+  // a first reading that stopped halfway has a lastOk from its first window and would otherwise wait 3 hours.
   const lastOk = sync.status === 'error' ? null : sync.lastOk;
   const allow = quotaAllows(sync.requests, lastOk, nowMs(), { manual: !!opts.manual || !!opts.first, needed: windows.length });
   if (!allow.ok && !opts.first) return { ok: false, skipped: true, code: allow.reason };
@@ -181,21 +238,30 @@ async function runSync(opts) {
   poke();
   let added = 0;
   let noted = null;
+  const first = isFirstReading(store.state); // asked before any window of this run is merged
+  const reading = nowMs(); // every feed of this run carries it: what a reading brought for an account is counted per run
   try {
     for (let i = 0; i < windows.length; i++) {
       if (stale()) return { ok: false, skipped: true };
       if (windows.length > 1) {
-        live.step = i === windows.length - 1 ? 'Reading the last 90 days' : 'Reading earlier history';
+        live.step = i === windows.length - 1 ? 'Reading the latest days' : 'Reading earlier history';
         poke();
       }
       noted = noteRequest();
       const feed = await fetchSimplefin(access, { fromMs: windows[i].fromMs, toMs: windows[i].toMs, pending: true }, doFetch, nowMs());
       noted = null;
       if (stale()) return { ok: false, skipped: true }; // erased or unlinked while the bank was answering
+      feed.reading = reading;
       store.update((s) => {
         const summary = mergeFeed(s, feed, nowMs());
         added += summary.added;
       }, { silent: true });
+    }
+    try {
+      // the history part can never fail a reading: whatever goes wrong in it, the reading completes without it
+      added += await readHistory(access, reading, stale, first);
+    } catch {
+      // nothing is reported and nothing is logged: the accounts are asked again at a later reading
     }
     if (stale()) return { ok: false, skipped: true };
     live.step = 'Working out the Book and your baseline';
@@ -204,6 +270,7 @@ async function runSync(opts) {
       refresh(s, nowMs());
       s.sync.status = 'ok';
       s.sync.error = null;
+      s.sync.completed = true; // only here: a first reading that was interrupted is a first reading again
     });
     return { ok: true, added };
   } catch (err) {

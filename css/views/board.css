@@ -202,3 +202,6 @@ button.hero-fig:focus-visible { outline-offset: 2px; }
 /* inside a sheet the list is one account's own: a single column, with its heading and the way to all of them */
 .board-recent.acct-recent { columns: 1; margin-top: var(--s-2); }
 .acct-moves-all { margin-top: var(--s-2); }
+/* what the latest reading carried for this account, and any problem the feed reports with it */
+.acct-feed { margin-top: var(--s-1); overflow-wrap: anywhere; }
+.acct-feed-problem { color: var(--ink); }

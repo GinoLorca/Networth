@@ -38,6 +38,7 @@ import { fmt } from '../model/money.js';
 import { gameDay, diffDays, fmtDate, fmtTime } from '../model/dates.js';
 import { position } from '../model/ledger.js';
 import { makeDerived } from '../derive.js';
+import { coverText } from './parts.js';
 
 const APP_VERSION = '1.0.0';
 const BRIDGE_URL = 'https://bridge.simplefin.org';
@@ -200,7 +201,7 @@ function problems(ctx) {
     out.push(html`<p class="notice is-error"><i class="notice-mark"></i><span><b>Last reading</b>${s.error}</span></p>`);
   }
   for (const p of rows) {
-    out.push(html`<p class="notice is-error"><i class="notice-mark"></i><span><b>${p.name || 'A connection'}</b>${p.message || 'The Bridge reports a problem with this connection.'}</span>
+    out.push(html`<p class="notice is-error"><i class="notice-mark"></i><span><b>${p.name || 'A connection'}</b>${coverText(ctx, p.message) || 'The Bridge reports a problem with this connection.'}</span>
       <a class="btn-link" href="${BRIDGE_URL}" target="_blank" rel="noopener noreferrer">Open the Bridge</a></p>`);
   }
   return out.length ? html`<div class="set-problems">${out}</div>` : '';
