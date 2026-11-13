@@ -240,10 +240,14 @@ a {
 }
 .ev-wide, .ev--wide { width: 1.5em; }
 
-/* Tints. --gain and --loss are for result deltas only. */
+/* Tints. .gain and .loss are for result deltas only. A transaction's amount takes the colour of its cash
+   flow (model/cashflow.js): .flow-out when money left the owner, .flow-in when money reached them, ink when
+   none has moved yet. The same two tokens, so the app has one red and one green. Under cover the bar is ink. */
 .spot { color: var(--spot); }
 .gain { color: var(--gain); }
 .loss { color: var(--loss); }
+.flow-in { color: var(--gain); }
+.flow-out { color: var(--loss); }
 .ink { color: var(--ink); }
 .muted { color: var(--ink-2); }
 .faint { color: var(--ink-3); }

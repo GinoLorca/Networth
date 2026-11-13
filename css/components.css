@@ -755,6 +755,9 @@ a.row:hover .row-label, button.row:hover .row-label { text-decoration: underline
 .move.is-declined .move-a::after { content: ")"; }
 .move.is-declined .move-a { color: var(--ink-2); }
 .move.is-provisional .move-a, .move.is-pending .move-a { font-style: italic; }
+/* a move's cash flow wins over a quiet list's grey (the Scoresheet's transfers and card payments) */
+.moves .move-a.flow-in { color: var(--gain); }
+.moves .move-a.flow-out { color: var(--loss); }
 .move.is-provisional .move-a::before { content: "\2248\00A0"; font-style: normal; color: var(--spot); }
 .move.is-provisional .move-m { font-style: italic; }
 .move.is-blank { min-height: 38px; }

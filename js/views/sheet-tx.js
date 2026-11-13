@@ -27,6 +27,7 @@ import { refresh } from '../model/detect.js';
 import { removeManual } from '../model/merge.js';
 import { skipRow } from '../model/byhand.js';
 import { moveGlyph } from '../ui/glyphs.js';
+import { flowClass, flowLookups } from './parts.js';
 import { store } from '../store.js';
 import { closeSheet } from '../router.js';
 import { context, toast } from '../runtime.js';
@@ -169,9 +170,11 @@ function facts(ctx, tx) {
   const pays = paysOf(ctx.state, tx);
   const pencil = tx.pending || tx.source === 'manual';
   const sign = tx.kind === 'income' || tx.kind === 'refund' ? '+' : '';
+  const { accountOf, pairOf } = flowLookups(ctx);
+  const flow = flowClass(tx, accountOf, pairOf); // red when money left, green when it arrived, else ink
   const amount = tx.kind === 'decline'
     ? html`<span class="row-value fig tx-declined">${fmt(tx.amount)}</span>`
-    : html`<span class="${cx('row-value fig', pencil && 'est')}">${tx.source === 'manual' ? html`<span class="approx">≈</span>` : ''}${sign}${fmt(tx.amount)}</span>`;
+    : html`<span class="${cx('row-value fig', pencil && 'est', flow)}">${tx.source === 'manual' ? html`<span class="approx">≈</span>` : ''}${sign}${fmt(tx.amount)}</span>`;
   return html`<ul class="rows tx-facts">
     <li class="row" data-key="amount">
       <span class="row-label">${tx.kind === 'decline' ? 'Price' : 'Amount'} <em class="row-note">${statusNote(tx)}</em></span>

@@ -20,8 +20,8 @@
   --ink-3: #6A6256;        /* tertiary text, axis labels (still 4.5:1 on paper) */
   --hair: #C3B8A3;         /* hairline rules */
   --spot: #B3311D;         /* the one spot colour: the ≈ sign, today, time trouble, the live digits */
-  --gain: #2C5B41;         /* a result that went up — used ONLY on result deltas */
-  --loss: #B3311D;         /* a result that went down — used ONLY on result deltas */
+  --gain: #2C5B41;         /* green: a result that went up (.gain), and money that arrived (.flow-in) */
+  --loss: #B3311D;         /* red: a result that went down (.loss), and money that left (.flow-out) */
   /* the owner's scale for the net-worth figure: in the red, about $1,000, $5,000 and up. Each colour
      has the light end and the deep end of the gradient that fills the numerals. */
   --tone-red-hi: #D8492F; --tone-red-lo: #8C1D10;

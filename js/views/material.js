@@ -19,7 +19,7 @@ import { fmt, fmtSigned, fmtPct, toneBand } from '../model/money.js';
 import { fmtDate, fmtMonth, fmtTime, gameDay, diffDays, isYmd, monthOf, parts as ymdParts } from '../model/dates.js';
 import { ACCOUNT_TYPES, accountLabel } from '../model/schema.js';
 import { largestCharges, firstTransactionDay } from '../model/cards.js';
-import { money, movesList, inlineMoney, toneStyle } from './parts.js';
+import { money, movesList, inlineMoney, toneStyle, flowLookups } from './parts.js';
 
 const CARD_MONTHS = 6;
 const LARGEST = 3;
@@ -618,7 +618,7 @@ function cardCycle(ctx, m, figNo) {
       <div class="mat-largest">
         <h3 class="rows-title lab"><b>Largest charges</b> <span class="rows-title-note">${fmtMonth(ym)}</span></h3>
         ${largest.length
-          ? movesList(largest, null, { accounts: ctx.d.account, detail: 'full', label: 'Largest card charges in ' + fmtMonth(ym) })
+          ? movesList(largest, null, { accounts: ctx.d.account, pairs: flowLookups(ctx).pairOf, detail: 'full', label: 'Largest card charges in ' + fmtMonth(ym) })
           : html`<p class="cap mat-none">No charge has reached a card in ${fmtMonth(ym, 'name')} so far.</p>`}
       </div>
     </section>

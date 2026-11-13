@@ -23,7 +23,7 @@ import { PURPOSES, accountShort } from '../model/schema.js';
 import { moveGlyph, resultMark } from '../ui/glyphs.js';
 import { icon } from '../ui/icons.js';
 import { setParams } from '../router.js';
-import { crosstable, movesList, worstGlyph, scoreOf, statusLine, colourOf, inlineMoney } from './parts.js';
+import { crosstable, movesList, worstGlyph, scoreOf, statusLine, colourOf, inlineMoney, flowLookups } from './parts.js';
 
 const FILTERS = [['all', 'All'], ['game', 'Convenience'], ['want', 'Extras'], ['need', 'Necessary'], ['book', 'Book'], ['income', 'Income']];
 const FILTER_KEYS = new Set(['game', 'want', 'need', 'book', 'income', 'review']);
@@ -477,7 +477,7 @@ function roundBlock(ctx, round, moves, isTarget) {
   const label = prematch
     ? html`<b>${fmtDate(day, 'dowshort')}</b><i class="sep"></i>${colourOf(round)}`
     : html`<b>Round ${round.n}</b><i class="sep"></i>${fmtDate(day, 'dowshort')}<i class="sep"></i>${colourOf(round)}`;
-  const opts = { detail: 'full', accounts: ctx.d.account, plain: true };
+  const opts = { detail: 'full', accounts: ctx.d.account, pairs: flowLookups(ctx).pairOf, plain: true };
   const dayWords = fmtDate(day, 'dowshort');
 
   return html`<section class="${cx('ss-round', 'is-' + round.status, round.type === 'off' && 'is-off', day === ctx.today && 'is-today', isTarget && 'is-target')}" id="${'rd-' + day}">

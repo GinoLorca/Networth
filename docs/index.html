@@ -8,7 +8,7 @@
 <meta name="description" content="Networth: a private net-worth board. It reads your bank feed itself; your data stays on your device.">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-wHmBG/VXNvDTED8uqjyIM9U5Xdh1apSI+Hm4qjmvVXk='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-rrcgv2y0KMkdT76+jAxvRcNQTlj6UpNB9oKKC0whQNA=' 'sha256-Ur8ku0rdjIOUhY20rCJMxGBsTYq1x7I3mk4AJEN43oI=' 'sha256-W+qaPyJRSphS6huO5ZreMoAuHqBiJmEhyBz+PTAexi8=' 'sha256-fW8Rb031pEL3z6SKg0UIoHj0lq9v89/SdbWzftltFMc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-jIy2OdEjB9B16sWGikup16E01UhrwE3PFzd2VnlKV3k=' 'sha256-VzoPHmMbD+TfmkRekvrhksYUuT8rj+c4jA1P/9P6/qI=' 'sha256-/xAinrTNYppFAIdG41S3TqyTgXliWkmyzNG9HOP4uBU=' 'sha256-Yq5LqpSuZYrQBiwZV3GIUKl7VztQyUyyTLeHF8RzYfM=' 'sha256-3slL6XKCxBUrVwsIn+pfLSFvsWrg1SlNV1OOfV1jrRE=' 'sha256-RpDRzqnCXXASY8657qkagA06HPHFwPv1Msfot5qHAJk=' 'sha256-niQW6BHsFCuf+mNMjOPiKJl0QACazn3cmhTykWBmDew='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src https://beta-bridge.simplefin.org https://bridge.simplefin.org https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-z5WPTM9kwI29rtLsiQhAWK/9nQTOAQnF/xAJAnuXLz8='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-rrcgv2y0KMkdT76+jAxvRcNQTlj6UpNB9oKKC0whQNA=' 'sha256-e/tbGNncdNoZz13l4nvoF3bB1VC0tPaMfOMw7T5fyIM=' 'sha256-qKXjVIMLim/aWMsgDb5V+LpBiQ7fH4X4CHRe0ZHIHxs=' 'sha256-fW8Rb031pEL3z6SKg0UIoHj0lq9v89/SdbWzftltFMc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-jIy2OdEjB9B16sWGikup16E01UhrwE3PFzd2VnlKV3k=' 'sha256-VzoPHmMbD+TfmkRekvrhksYUuT8rj+c4jA1P/9P6/qI=' 'sha256-/xAinrTNYppFAIdG41S3TqyTgXliWkmyzNG9HOP4uBU=' 'sha256-Yq5LqpSuZYrQBiwZV3GIUKl7VztQyUyyTLeHF8RzYfM=' 'sha256-3slL6XKCxBUrVwsIn+pfLSFvsWrg1SlNV1OOfV1jrRE=' 'sha256-RpDRzqnCXXASY8657qkagA06HPHFwPv1Msfot5qHAJk=' 'sha256-niQW6BHsFCuf+mNMjOPiKJl0QACazn3cmhTykWBmDew='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src https://beta-bridge.simplefin.org https://bridge.simplefin.org https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#F3EDE1" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#15130F" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
@@ -261,6 +261,8 @@ a {
 .spot { color: var(--spot); }
 .gain { color: var(--gain); }
 .loss { color: var(--loss); }
+.flow-in { color: var(--gain); }
+.flow-out { color: var(--loss); }
 .ink { color: var(--ink); }
 .muted { color: var(--ink-2); }
 .faint { color: var(--ink-3); }
@@ -786,6 +788,8 @@ a.row:hover .row-label, button.row:hover .row-label { text-decoration: underline
 .move.is-declined .move-a::after { content: ")"; }
 .move.is-declined .move-a { color: var(--ink-2); }
 .move.is-provisional .move-a, .move.is-pending .move-a { font-style: italic; }
+.moves .move-a.flow-in { color: var(--gain); }
+.moves .move-a.flow-out { color: var(--loss); }
 .move.is-provisional .move-a::before { content: "\2248\00A0"; font-style: normal; color: var(--spot); }
 .move.is-provisional .move-m { font-style: italic; }
 .move.is-blank { min-height: 38px; }
@@ -16331,6 +16335,57 @@ function verifiedMark() {
 return { evalGlyph, timeTroubleGlyph, moveGlyph, resultMark, verifiedMark };
 })();
 
+// ---- js/model/cashflow.js
+__mods["js/model/cashflow.js"] = (function () {
+const { ACCOUNT_TYPES } = __mods["js/model/schema.js"];
+function groupOf(account) {
+  if (!account || !ACCOUNT_TYPES[account.type]) return null;
+  return ACCOUNT_TYPES[account.type].group;
+}
+
+function cashSide(group) {
+  return group === null || group === 'cash';
+}
+
+function debtSide(group) {
+  return group === 'card' || group === 'debt';
+}
+
+function cashFlowOf(tx, accountOf, pairOf) {
+  if (!tx || tx.kind === 'decline' || !(tx.amount > 0)) return null;
+  const lookup = typeof accountOf === 'function' ? accountOf : () => null;
+  const group = groupOf(tx.accountId ? lookup(tx.accountId) : null);
+  const out = tx.flow === 'out';
+  const into = tx.flow === 'in';
+  switch (tx.kind) {
+    case 'spend':
+      return out && cashSide(group) ? 'out' : null;
+    case 'income':
+      return into ? 'in' : null;
+    case 'refund':
+      return into && cashSide(group) ? 'in' : null;
+    case 'payment':
+      return (out && cashSide(group)) || (into && debtSide(group)) ? 'out' : null;
+    case 'transfer': {
+      // landing on a card or a loan, it pays it down: money the owner paid
+      if (into && debtSide(group)) return 'out';
+      if (!out || !cashSide(group)) return null;
+      if (!tx.pairId) return 'out'; // to someone, or to an account not on the record
+      const pair = typeof pairOf === 'function' ? pairOf(tx.pairId) : null;
+      const pairGroup = pair && pair.accountId ? groupOf(lookup(pair.accountId)) : null;
+      return debtSide(pairGroup) ? 'out' : null; // to a card or loan: a payment; else between own accounts
+    }
+    default:
+      return null;
+  }
+}
+
+function payFlowOf(status) {
+  return status === 'bank' || status === 'pending' || status === 'hand' ? 'out' : null;
+}
+return { cashFlowOf, payFlowOf };
+})();
+
 // ---- js/views/parts.js
 __mods["js/views/parts.js"] = (function () {
 const { html, cx } = __mods["js/ui/dom.js"];
@@ -16338,6 +16393,7 @@ const { fmt, fmtSigned, fmtPlain, MINUS, toneOf } = __mods["js/model/money.js"];
 const { addDays, fmtDate, fmtMonth, dow, parts: ymdParts, monthOf, ymd } = __mods["js/model/dates.js"];
 const { moveGlyph } = __mods["js/ui/glyphs.js"];
 const { categoryLabel, accountLabel, accountShort } = __mods["js/model/schema.js"];
+const { cashFlowOf, payFlowOf } = __mods["js/model/cashflow.js"];
 const DOW_LETTER = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const HALF = '½';
 const NEGATIVE_ORDER = ['??', '?', '?!'];
@@ -16373,6 +16429,26 @@ function figured(text) {
 function tone(cents) {
   if (!Number.isFinite(cents) || Math.round(cents) === 0) return '';
   return cents > 0 ? 'gain' : 'loss';
+}
+
+/* ---------------------------------------------------------------- cash flow */
+
+const FLOW_CLASS = { out: 'flow-out', in: 'flow-in' };
+
+function flowClass(tx, accountOf, pairOf) {
+  return FLOW_CLASS[cashFlowOf(tx, accountOf, pairOf)] || '';
+}
+
+function payFlowClass(status) {
+  return FLOW_CLASS[payFlowOf(status)] || '';
+}
+
+function flowLookups(ctx) {
+  const txs = ctx && ctx.state && Array.isArray(ctx.state.txs) ? ctx.state.txs : [];
+  return {
+    accountOf: ctx && ctx.d ? ctx.d.account : () => null,
+    pairOf: (id) => txs.find((t) => t && t.id === id) || null,
+  };
 }
 
 function fmtScore(x) {
@@ -16576,7 +16652,7 @@ function movesList(moves, annotations, opts = {}) {
     if (tx.planned) tags.push('Planned');
     const inner = html`<span class="move-n">${start + i}.</span>
       <span class="move-m">${moveName(tx)}${notes.length || tags.length || tx.review ? html` <em class="move-note">${notes.length ? html`<span class="move-why">${figured(notes.join(' '))}</span> ` : ''}${tags.map((t) => html`<span class="move-tag">${t}</span>`)}${tx.review ? html`<span class="move-tag">Needs a look</span>` : ''}</em>` : ''}</span>
-      <span class="move-a">${moveAmount(tx)}</span>
+      <span class="${cx('move-a', flowClass(tx, opts.accounts, opts.pairs))}">${moveAmount(tx)}</span>
       <span class="move-s">${ann ? (opts.cover ? moveGlyph(ann.glyph) : moveGlyph(ann.glyph, { title: ann.why })) : ''}</span>`;
     return open
       ? html`<li data-key="${tx.id}"><button class="${cx('move', state)}" type="button" data-action="app.sheet" data-sheet="tx" data-id="${tx.id}">${inner}</button></li>`
@@ -16616,6 +16692,7 @@ function recentDay(ctx, day) {
 }
 
 function recentList(ctx, rows, opts = {}) {
+  const { accountOf, pairOf } = flowLookups(ctx);
   return html`<ol class="${cx('board-recent', opts.cls)}" aria-label="${opts.label || 'Transactions, newest first'}">
     ${rows.map(({ tx, account, isNew, provisional }) => {
       const unsettled = !!tx.pending || provisional;
@@ -16628,12 +16705,12 @@ function recentList(ctx, rows, opts = {}) {
         <span class="recent-name">${tx.merchant || categoryLabel(tx.category)}${isNew ? html` <span class="recent-new">New</span>` : ''}${notes.length
           ? html`<em class="recent-note">${notes.join(' · ')}</em>` : ''}</span>
         <span class="lab">${recentDay(ctx, tx.day)}</span>
-        ${money(tx.amount, { est: unsettled, signed: incoming, tint: incoming })}
+        ${money(tx.amount, { est: unsettled, signed: incoming && flowClass(tx, accountOf, pairOf) !== 'flow-out', cls: flowClass(tx, accountOf, pairOf) })}
       </button></li>`;
     })}
   </ol>`;
 }
-return { money, inlineMoney, figured, tone, fmtScore, scoreOf, plainSigned, resultText, keptLine, spentUnposted, statusLine, roundTitle, colourOf, worstGlyph, crosstable, movesList, notableMoves, toneStyle, coverText, recentList };
+return { money, inlineMoney, figured, tone, flowClass, payFlowClass, flowLookups, fmtScore, scoreOf, plainSigned, resultText, keptLine, spentUnposted, statusLine, roundTitle, colourOf, worstGlyph, crosstable, movesList, notableMoves, toneStyle, coverText, recentList };
 })();
 
 // ---- js/views/board.js
@@ -16649,7 +16726,7 @@ const { nextOccurrence, runsByHand } = __mods["js/model/book.js"];
 const { editByHand, skipRow, tickByHand } = __mods["js/model/byhand.js"];
 const { refresh } = __mods["js/model/detect.js"];
 const { evalGlyph, timeTroubleGlyph, moveGlyph, resultMark } = __mods["js/ui/glyphs.js"];
-const { money, inlineMoney, keptLine, statusLine, roundTitle, colourOf, crosstable, movesList, notableMoves, worstGlyph, spentUnposted, recentList, toneStyle } = __mods["js/views/parts.js"];
+const { money, inlineMoney, keptLine, statusLine, roundTitle, colourOf, crosstable, movesList, notableMoves, worstGlyph, spentUnposted, recentList, toneStyle, flowLookups, payFlowClass } = __mods["js/views/parts.js"];
 const TEN_MINUTES_MS = 10 * 60 * 1000;
 const WORTH_DAYS = 90;
 const EDGE_ROUNDS_SHOWN = 92;
@@ -17046,6 +17123,11 @@ function payNote(row, earlier) {
   return html`${lead}${dueWords(Number.isFinite(row.daysTo) ? row.daysTo : 0)}`;
 }
 
+function flowOpts(ctx) {
+  const { accountOf, pairOf } = flowLookups(ctx);
+  return { accounts: accountOf, pairs: pairOf };
+}
+
 function payRow(ctx, v, row) {
   const rec = row.entry || {};
   const name = rec.name || 'Unnamed payment';
@@ -17066,7 +17148,7 @@ function payRow(ctx, v, row) {
   return html`<li class="${cx('pay-row', ticked && 'is-paid')}" data-key="${rec.id + ':' + row.day}">
     ${box}
     ${main}
-    ${money(row.amount, { est: row.status !== 'bank' })}
+    ${money(row.amount, { est: row.status !== 'bank', cls: payFlowClass(row.status) })}
     ${atBank && row.txId ? html`<p class="cap pay-more"><button class="btn-link" type="button" data-action="board.pay-skip" data-id="${rec.id}" data-tx="${row.txId}">Not this payment</button></p>` : ''}
     ${other ? html`<p class="cap pay-more"><span>${v.cover
         ? html`The bank shows another amount to this payee on ${fmtDate(row.otherDay, 'short')}.`
@@ -17157,7 +17239,7 @@ function todayBlock(ctx, v) {
       <nw-split data-island slim${attrs({ a: Math.max(0, r.kept), b: Math.max(0, r.conv), label })}></nw-split>
       ${ctx.wide ? '' : html`<p class="cap split-note">${premise}</p>`}
     </figure>
-    ${movesList(notable, reasons(ann.moves, v.cover), { blank: true, blankAt: notable.length + Math.max(0, others) + 1, label: 'Today’s moves' })}
+    ${movesList(notable, reasons(ann.moves, v.cover), { ...flowOpts(ctx), blank: true, blankAt: notable.length + Math.max(0, others) + 1, label: 'Today’s moves' })}
     ${notable.length || others > 0
       ? (others > 0 ? html`<p class="cap board-more"><a href="${scoresheetDay(r.day)}">${notable.length
           ? 'and ' + plural(others, 'other move', 'other moves') + ' so far today'
@@ -17205,7 +17287,7 @@ function lastBlock(ctx, v) {
     </p>
     ${ann.round ? html`<p class="cap board-ann"><b class="sym">${ann.round.glyph}</b>${figText(why || 'The round carries an annotation.')}${!why || /[.?…]$/.test(why) ? '' : '.'}</p>` : ''}
     ${r.day !== yesterday ? html`<p class="cap board-ann">The bank has not reported ${fmtDate(yesterday, 'dowshort')} yet: round ${r.n} is the latest result on record.</p>` : ''}
-    ${notable.length ? movesList(notable, reasons(ann.moves, v.cover), { label: 'Moves of round ' + r.n }) : ''}
+    ${notable.length ? movesList(notable, reasons(ann.moves, v.cover), { ...flowOpts(ctx), label: 'Moves of round ' + r.n }) : ''}
     ${others > 0 || !notable.length ? html`<p class="cap board-more"><a href="${scoresheetDay(r.day)}">${
       notable.length ? 'and ' + plural(others, 'other move', 'other moves')
         : others > 0 ? plural(others, 'move', 'moves') + ' on ' + fmtDate(r.day, 'short')
@@ -17234,7 +17316,7 @@ function prematchBlock(ctx, v) {
     ${notable.length ? html`
       <div class="board-sofar">
         <p class="lab">Convenience moves so far today<i class="sep"></i><span data-fig>${fmt(r.conv)}</span></p>
-        ${movesList(notable, reasons(ann.moves, v.cover), { label: 'Today’s convenience moves', plain: true })}
+        ${movesList(notable, reasons(ann.moves, v.cover), { ...flowOpts(ctx), label: 'Today’s convenience moves', plain: true })}
       </div>` : html`<p class="cap board-quiet">No convenience move on ${fmtDate(r.day, 'dowshort')} yet. The bank reports them as they post.</p>`}
     <div class="btn-row board-actions">
       <button class="btn" type="button" data-action="app.move"><span class="plus">+</span> Candidate move</button>
@@ -17712,7 +17794,7 @@ const { PURPOSES, accountShort } = __mods["js/model/schema.js"];
 const { moveGlyph, resultMark } = __mods["js/ui/glyphs.js"];
 const { icon } = __mods["js/ui/icons.js"];
 const { setParams } = __mods["js/router.js"];
-const { crosstable, movesList, worstGlyph, scoreOf, statusLine, colourOf, inlineMoney } = __mods["js/views/parts.js"];
+const { crosstable, movesList, worstGlyph, scoreOf, statusLine, colourOf, inlineMoney, flowLookups } = __mods["js/views/parts.js"];
 const FILTERS = [['all', 'All'], ['game', 'Convenience'], ['want', 'Extras'], ['need', 'Necessary'], ['book', 'Book'], ['income', 'Income']];
 const FILTER_KEYS = new Set(['game', 'want', 'need', 'book', 'income', 'review']);
 const FILTER_WORDS = { game: 'Convenience', want: 'Extras', need: 'Necessary', book: 'Book', income: 'Income', review: 'Needs a look' };
@@ -18144,7 +18226,7 @@ function roundBlock(ctx, round, moves, isTarget) {
   const label = prematch
     ? html`<b>${fmtDate(day, 'dowshort')}</b><i class="sep"></i>${colourOf(round)}`
     : html`<b>Round ${round.n}</b><i class="sep"></i>${fmtDate(day, 'dowshort')}<i class="sep"></i>${colourOf(round)}`;
-  const opts = { detail: 'full', accounts: ctx.d.account, plain: true };
+  const opts = { detail: 'full', accounts: ctx.d.account, pairs: flowLookups(ctx).pairOf, plain: true };
   const dayWords = fmtDate(day, 'dowshort');
 
   return html`<section class="${cx('ss-round', 'is-' + round.status, round.type === 'off' && 'is-off', day === ctx.today && 'is-today', isTarget && 'is-target')}" id="${'rd-' + day}">
@@ -18216,7 +18298,7 @@ const { fmt, fmtSigned, fmtPct, toneBand } = __mods["js/model/money.js"];
 const { fmtDate, fmtMonth, fmtTime, gameDay, diffDays, isYmd, monthOf, parts: ymdParts } = __mods["js/model/dates.js"];
 const { ACCOUNT_TYPES, accountLabel } = __mods["js/model/schema.js"];
 const { largestCharges, firstTransactionDay } = __mods["js/model/cards.js"];
-const { money, movesList, inlineMoney, toneStyle } = __mods["js/views/parts.js"];
+const { money, movesList, inlineMoney, toneStyle, flowLookups } = __mods["js/views/parts.js"];
 const CARD_MONTHS = 6;
 const LARGEST = 3;
 const STALE_DAYS = 3;
@@ -18797,7 +18879,7 @@ function cardCycle(ctx, m, figNo) {
       <div class="mat-largest">
         <h3 class="rows-title lab"><b>Largest charges</b> <span class="rows-title-note">${fmtMonth(ym)}</span></h3>
         ${largest.length
-          ? movesList(largest, null, { accounts: ctx.d.account, detail: 'full', label: 'Largest card charges in ' + fmtMonth(ym) })
+          ? movesList(largest, null, { accounts: ctx.d.account, pairs: flowLookups(ctx).pairOf, detail: 'full', label: 'Largest card charges in ' + fmtMonth(ym) })
           : html`<p class="cap mat-none">No charge has reached a card in ${fmtMonth(ym, 'name')} so far.</p>`}
       </div>
     </section>
@@ -22483,6 +22565,7 @@ const { refresh } = __mods["js/model/detect.js"];
 const { removeManual } = __mods["js/model/merge.js"];
 const { skipRow } = __mods["js/model/byhand.js"];
 const { moveGlyph } = __mods["js/ui/glyphs.js"];
+const { flowClass, flowLookups } = __mods["js/views/parts.js"];
 const { store } = __mods["js/store.js"];
 const { closeSheet } = __mods["js/router.js"];
 const { context, toast } = __mods["js/runtime.js"];
@@ -22619,9 +22702,11 @@ function facts(ctx, tx) {
   const pays = paysOf(ctx.state, tx);
   const pencil = tx.pending || tx.source === 'manual';
   const sign = tx.kind === 'income' || tx.kind === 'refund' ? '+' : '';
+  const { accountOf, pairOf } = flowLookups(ctx);
+  const flow = flowClass(tx, accountOf, pairOf); // red when money left, green when it arrived, else ink
   const amount = tx.kind === 'decline'
     ? html`<span class="row-value fig tx-declined">${fmt(tx.amount)}</span>`
-    : html`<span class="${cx('row-value fig', pencil && 'est')}">${tx.source === 'manual' ? html`<span class="approx">≈</span>` : ''}${sign}${fmt(tx.amount)}</span>`;
+    : html`<span class="${cx('row-value fig', pencil && 'est', flow)}">${tx.source === 'manual' ? html`<span class="approx">≈</span>` : ''}${sign}${fmt(tx.amount)}</span>`;
   return html`<ul class="rows tx-facts">
     <li class="row" data-key="amount">
       <span class="row-label">${tx.kind === 'decline' ? 'Price' : 'Amount'} <em class="row-note">${statusNote(tx)}</em></span>

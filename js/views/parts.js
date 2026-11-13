@@ -7,6 +7,9 @@
  *   inlineMoney(cents, opts)      an amount inside a sentence: <span data-fig>$2,417.86</span> (covered in cover mode)
  *   figured(text)                 an engine sentence with every amount in it wrapped in data-fig, so cover mode hides them
  *   tone(cents)                   'gain' | 'loss' | '' — the tint class for a RESULT delta (and nothing else)
+ *   flowClass(tx, accountOf, pairOf)  'flow-out' | 'flow-in' | '' — a transaction's amount by its cash flow (model/cashflow.js)
+ *   payFlowClass(status)          the same for a row of the payments to make: paid, pending or ticked is 'flow-out'
+ *   flowLookups(ctx)              { accountOf, pairOf } for flowClass, read from the render context
  *   fmtScore(x) / scoreOf(s, n)   6.5 -> "6½"; (6.5, 10) -> "6½/10"
  *   plainSigned(cents)            "+16.20" / "−6.40" — scoresheet notation, no currency sign
  *   resultText(round)             what a round's result cell prints: 1 · ½ · 0 · * · – · · · bye
@@ -25,6 +28,7 @@ import { fmt, fmtSigned, fmtPlain, MINUS, toneOf } from '../model/money.js';
 import { addDays, fmtDate, fmtMonth, dow, parts as ymdParts, monthOf, ymd } from '../model/dates.js';
 import { moveGlyph } from '../ui/glyphs.js';
 import { categoryLabel, accountLabel, accountShort } from '../model/schema.js';
+import { cashFlowOf, payFlowOf } from '../model/cashflow.js';
 
 const DOW_LETTER = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const HALF = '½';
@@ -82,6 +86,35 @@ export function figured(text) {
 export function tone(cents) {
   if (!Number.isFinite(cents) || Math.round(cents) === 0) return '';
   return cents > 0 ? 'gain' : 'loss';
+}
+
+/* ---------------------------------------------------------------- cash flow */
+
+const FLOW_CLASS = { out: 'flow-out', in: 'flow-in' };
+
+/**
+ * The tint class of a transaction's amount: 'flow-out' when money left the owner (red), 'flow-in' when money
+ * reached them (green), '' when none has moved yet or it stayed theirs (ink). The rule is model/cashflow.js.
+ * @param {object} tx
+ * @param {(id: string) => object|null} [accountOf]
+ * @param {(id: string) => object|null} [pairOf]
+ */
+export function flowClass(tx, accountOf, pairOf) {
+  return FLOW_CLASS[cashFlowOf(tx, accountOf, pairOf)] || '';
+}
+
+/** The tint class of a payment to make by its status: paid at the bank, pending or ticked is money that left. */
+export function payFlowClass(status) {
+  return FLOW_CLASS[payFlowOf(status)] || '';
+}
+
+/** The lookups flowClass reads, from the render context: an account by id, and a transaction by id (a pair's other leg). */
+export function flowLookups(ctx) {
+  const txs = ctx && ctx.state && Array.isArray(ctx.state.txs) ? ctx.state.txs : [];
+  return {
+    accountOf: ctx && ctx.d ? ctx.d.account : () => null,
+    pairOf: (id) => txs.find((t) => t && t.id === id) || null,
+  };
 }
 
 /** A chess score: 6.5 -> "6½", 0.5 -> "½", 7 -> "7". */
@@ -297,8 +330,10 @@ function moveName(tx) {
  * @param {object[]} moves            Tx objects, in the order to print (usually round.moves, filtered)
  * @param {Map<string, { glyph: string, why: string }>|null} annotations   from ctx.d.annotations(day).moves
  * @param {{ accounts?: (id: string) => object|null, open?: boolean, blank?: boolean, plain?: boolean,
- *           label?: string, detail?: 'why'|'full', startAt?: number, cover?: boolean }} [opts]
- *   accounts  lookup used to name the account in the quiet second line (detail 'full');
+ *           pairs?: (id: string) => object|null, label?: string, detail?: 'why'|'full', startAt?: number, cover?: boolean }} [opts]
+ *   accounts  lookup used to name the account in the quiet second line (detail 'full') and to colour the amount
+ *             by its cash flow (flowClass): without it every account is unknown and read as cash;
+ *   pairs     a transaction by id, so a transfer kept as such between cash and a card still reads as a payment;
  *   open      true (default): each row is a button that opens the move's sheet;
  *   blank     true: add the empty next-move row; plain: drop the top rule (.moves-plain);
  *   detail    'why' (default) prints the annotation's reason or the decline's "instead"; 'full' also category and account;
@@ -327,7 +362,7 @@ export function movesList(moves, annotations, opts = {}) {
     if (tx.planned) tags.push('Planned');
     const inner = html`<span class="move-n">${start + i}.</span>
       <span class="move-m">${moveName(tx)}${notes.length || tags.length || tx.review ? html` <em class="move-note">${notes.length ? html`<span class="move-why">${figured(notes.join(' '))}</span> ` : ''}${tags.map((t) => html`<span class="move-tag">${t}</span>`)}${tx.review ? html`<span class="move-tag">Needs a look</span>` : ''}</em>` : ''}</span>
-      <span class="move-a">${moveAmount(tx)}</span>
+      <span class="${cx('move-a', flowClass(tx, opts.accounts, opts.pairs))}">${moveAmount(tx)}</span>
       <span class="move-s">${ann ? (opts.cover ? moveGlyph(ann.glyph) : moveGlyph(ann.glyph, { title: ann.why })) : ''}</span>`;
     return open
       ? html`<li data-key="${tx.id}"><button class="${cx('move', state)}" type="button" data-action="app.sheet" data-sheet="tx" data-id="${tx.id}">${inner}</button></li>`
@@ -384,13 +419,15 @@ function recentDay(ctx, day) {
 /**
  * Transactions as a ruled list, newest first as given: the name with its account under it, the day,
  * the amount. Each row is a button that opens the move's own sheet. A pending or tapped-in amount is
- * not final, so it is set as an estimate; money coming in carries its sign.
+ * not final, so it is set as an estimate; money coming in carries its sign. The amount takes the colour of
+ * its cash flow (flowClass): red for money that left, green for money that arrived, ink otherwise.
  * @param {object} ctx
  * @param {{ tx: object, account: object|null, isNew: boolean, provisional: boolean }[]} rows  from recent.recentTransactions
  * @param {{ label?: string, account?: boolean, cls?: string }} [opts]
  *   account false leaves the account's name out (the list is one account's own); cls adds a class to the list
  */
 export function recentList(ctx, rows, opts = {}) {
+  const { accountOf, pairOf } = flowLookups(ctx);
   return html`<ol class="${cx('board-recent', opts.cls)}" aria-label="${opts.label || 'Transactions, newest first'}">
     ${rows.map(({ tx, account, isNew, provisional }) => {
       const unsettled = !!tx.pending || provisional;
@@ -403,7 +440,7 @@ export function recentList(ctx, rows, opts = {}) {
         <span class="recent-name">${tx.merchant || categoryLabel(tx.category)}${isNew ? html` <span class="recent-new">New</span>` : ''}${notes.length
           ? html`<em class="recent-note">${notes.join(' · ')}</em>` : ''}</span>
         <span class="lab">${recentDay(ctx, tx.day)}</span>
-        ${money(tx.amount, { est: unsettled, signed: incoming, tint: incoming })}
+        ${money(tx.amount, { est: unsettled, signed: incoming && flowClass(tx, accountOf, pairOf) !== 'flow-out', cls: flowClass(tx, accountOf, pairOf) })}
       </button></li>`;
     })}
   </ol>`;

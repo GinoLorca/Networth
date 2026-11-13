@@ -34,7 +34,7 @@ import { nextOccurrence, runsByHand } from '../model/book.js';
 import { editByHand, skipRow, tickByHand } from '../model/byhand.js';
 import { refresh } from '../model/detect.js';
 import { evalGlyph, timeTroubleGlyph, moveGlyph, resultMark } from '../ui/glyphs.js';
-import { money, inlineMoney, keptLine, statusLine, roundTitle, colourOf, crosstable, movesList, notableMoves, worstGlyph, spentUnposted, recentList, toneStyle } from './parts.js';
+import { money, inlineMoney, keptLine, statusLine, roundTitle, colourOf, crosstable, movesList, notableMoves, worstGlyph, spentUnposted, recentList, toneStyle, flowLookups, payFlowClass } from './parts.js';
 
 const TEN_MINUTES_MS = 10 * 60 * 1000;
 const WORTH_DAYS = 90;
@@ -482,6 +482,12 @@ function payNote(row, earlier) {
   return html`${lead}${dueWords(Number.isFinite(row.daysTo) ? row.daysTo : 0)}`;
 }
 
+/** What movesList needs to colour a move's amount by its cash flow: the accounts, and a pair's other leg. */
+function flowOpts(ctx) {
+  const { accountOf, pairOf } = flowLookups(ctx);
+  return { accounts: accountOf, pairs: pairOf };
+}
+
 /** One payment of the checklist: the box, the name with its day and standing, the amount, and what may be said about it. */
 function payRow(ctx, v, row) {
   const rec = row.entry || {};
@@ -503,7 +509,7 @@ function payRow(ctx, v, row) {
   return html`<li class="${cx('pay-row', ticked && 'is-paid')}" data-key="${rec.id + ':' + row.day}">
     ${box}
     ${main}
-    ${money(row.amount, { est: row.status !== 'bank' })}
+    ${money(row.amount, { est: row.status !== 'bank', cls: payFlowClass(row.status) })}
     ${atBank && row.txId ? html`<p class="cap pay-more"><button class="btn-link" type="button" data-action="board.pay-skip" data-id="${rec.id}" data-tx="${row.txId}">Not this payment</button></p>` : ''}
     ${other ? html`<p class="cap pay-more"><span>${v.cover
         ? html`The bank shows another amount to this payee on ${fmtDate(row.otherDay, 'short')}.`
@@ -600,7 +606,7 @@ function todayBlock(ctx, v) {
       <nw-split data-island slim${attrs({ a: Math.max(0, r.kept), b: Math.max(0, r.conv), label })}></nw-split>
       ${ctx.wide ? '' : html`<p class="cap split-note">${premise}</p>`}
     </figure>
-    ${movesList(notable, reasons(ann.moves, v.cover), { blank: true, blankAt: notable.length + Math.max(0, others) + 1, label: 'Today’s moves' })}
+    ${movesList(notable, reasons(ann.moves, v.cover), { ...flowOpts(ctx), blank: true, blankAt: notable.length + Math.max(0, others) + 1, label: 'Today’s moves' })}
     ${notable.length || others > 0
       ? (others > 0 ? html`<p class="cap board-more"><a href="${scoresheetDay(r.day)}">${notable.length
           ? 'and ' + plural(others, 'other move', 'other moves') + ' so far today'
@@ -649,7 +655,7 @@ function lastBlock(ctx, v) {
     </p>
     ${ann.round ? html`<p class="cap board-ann"><b class="sym">${ann.round.glyph}</b>${figText(why || 'The round carries an annotation.')}${!why || /[.?…]$/.test(why) ? '' : '.'}</p>` : ''}
     ${r.day !== yesterday ? html`<p class="cap board-ann">The bank has not reported ${fmtDate(yesterday, 'dowshort')} yet: round ${r.n} is the latest result on record.</p>` : ''}
-    ${notable.length ? movesList(notable, reasons(ann.moves, v.cover), { label: 'Moves of round ' + r.n }) : ''}
+    ${notable.length ? movesList(notable, reasons(ann.moves, v.cover), { ...flowOpts(ctx), label: 'Moves of round ' + r.n }) : ''}
     ${others > 0 || !notable.length ? html`<p class="cap board-more"><a href="${scoresheetDay(r.day)}">${
       notable.length ? 'and ' + plural(others, 'other move', 'other moves')
         : others > 0 ? plural(others, 'move', 'moves') + ' on ' + fmtDate(r.day, 'short')
@@ -679,7 +685,7 @@ function prematchBlock(ctx, v) {
     ${notable.length ? html`
       <div class="board-sofar">
         <p class="lab">Convenience moves so far today<i class="sep"></i><span data-fig>${fmt(r.conv)}</span></p>
-        ${movesList(notable, reasons(ann.moves, v.cover), { label: 'Today’s convenience moves', plain: true })}
+        ${movesList(notable, reasons(ann.moves, v.cover), { ...flowOpts(ctx), label: 'Today’s convenience moves', plain: true })}
       </div>` : html`<p class="cap board-quiet">No convenience move on ${fmtDate(r.day, 'dowshort')} yet. The bank reports them as they post.</p>`}
     <div class="btn-row board-actions">
       <button class="btn" type="button" data-action="app.move"><span class="plus">+</span> Candidate move</button>
