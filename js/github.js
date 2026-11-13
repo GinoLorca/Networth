@@ -103,8 +103,8 @@ function codeOf(res) {
 }
 
 /** One request; resolves with the parsed answer of a 2xx, rejects with a ShareError otherwise. */
-async function call(owner, key, init, doFetch) {
-  const url = sharedUrl(owner);
+async function call(owner, key, init, doFetch, at = sharedUrl(owner)) {
+  const url = at;
   if (!isShareKey(key)) throw new ShareError('key');
   const abort = typeof AbortController === 'function' ? new AbortController() : null;
   let timer = null;
@@ -165,4 +165,64 @@ export async function writeSharedText(owner, key, text, sha, doFetch) {
   const body = await call(owner, key, { method: 'PUT', body: JSON.stringify(payload) }, doFetch);
   const next = body && body.content && typeof body.content.sha === 'string' ? body.content.sha : null;
   return { sha: next };
+}
+
+/* ------------------------------------------------------------- the card alert inbox */
+
+const INBOX = 'inbox';
+const INBOX_NAME = /^\d{8}-\d{6}-\d{3}\.txt$/;
+const INBOX_DELETE = 'Networth: alert read';
+
+/** The inbox folder, or one file in it (a name of the phone's form only). */
+export function inboxUrl(owner, name) {
+  if (typeof owner !== 'string' || !OWNER.test(owner)) throw new ShareError('missing');
+  if (name !== undefined && !(typeof name === 'string' && INBOX_NAME.test(name))) throw new ShareError('file');
+  return API + '/repos/' + owner + '/' + REPOSITORY + '/contents/' + INBOX + (name === undefined ? '' : '/' + name);
+}
+
+/**
+ * List the inbox folder. No folder (GitHub's 404) is an empty inbox.
+ * @returns {Promise<{ name: string, sha: string, size: number }[]>} only files named as the phone names them
+ */
+export async function listInbox(owner, key, doFetch) {
+  const url = inboxUrl(owner);
+  let body = null;
+  try {
+    body = await call(owner, key, { method: 'GET' }, doFetch, url);
+  } catch (err) {
+    if (err instanceof ShareError && err.code === 'missing') return [];
+    throw err;
+  }
+  if (!Array.isArray(body)) throw new ShareError('file');
+  return body
+    .filter((e) => e && e.type === 'file' && typeof e.name === 'string' && INBOX_NAME.test(e.name)
+      && typeof e.sha === 'string' && SHA.test(e.sha) && Number.isFinite(e.size))
+    .slice(0, 500)
+    .map((e) => ({ name: e.name, sha: e.sha, size: e.size }));
+}
+
+/** Read one inbox file's text; null when it is gone or is not UTF-8 text. */
+export async function readInboxFile(owner, key, name, doFetch) {
+  const url = inboxUrl(owner, name);
+  let body = null;
+  try {
+    body = await call(owner, key, { method: 'GET' }, doFetch, url);
+  } catch (err) {
+    if (err instanceof ShareError && err.code === 'missing') return null;
+    throw err;
+  }
+  return body && body.encoding === 'base64' ? fromBase64(body.content) : null;
+}
+
+/** Delete one inbox file. A file already gone (another device deleted it) is not an error. */
+export async function deleteInboxFile(owner, key, name, sha, doFetch) {
+  const url = inboxUrl(owner, name);
+  if (typeof sha !== 'string' || !SHA.test(sha)) throw new ShareError('file');
+  try {
+    await call(owner, key, { method: 'DELETE', body: JSON.stringify({ message: INBOX_DELETE, sha }) }, doFetch, url);
+  } catch (err) {
+    if (err instanceof ShareError && (err.code === 'missing' || err.code === 'conflict')) return false;
+    throw err;
+  }
+  return true;
 }

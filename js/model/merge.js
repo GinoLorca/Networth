@@ -40,6 +40,13 @@ const SETTLE_DAY_WINDOW = 5;
 /** A bank spend confirms a provisional move within these limits. */
 const CONFIRM_AMOUNT_TOLERANCE = 0.15;
 const CONFIRM_DAY_WINDOW = 3;
+/** A bank spend confirms a card alert's move from its amount up to 35% more (a tip raises a charge), dated on its day or up to 5 days after. */
+const ALERT_CONFIRM_RISE = 35;
+const ALERT_CONFIRM_DAYS = 5;
+/** On a card the bank gives no rows of, an alert's move is taken in by a balance dated this many days after it at the latest. */
+const BALANCE_ONLY_DAYS = 4;
+/** An alert move the owner removed is remembered this many days (state.alertsRemoved). */
+export const ALERT_REMOVED_DAYS = 30;
 const PAIR_DAY_WINDOW = 3;
 /** A debt reported as a positive number is recognised when its balance mirrors its own rows this closely. */
 const FLIP_TOLERANCE = 0.1;
@@ -124,7 +131,7 @@ function ensureShape(state) {
  * @param {string} today  today's game day
  */
 export function isStaleProvisional(tx, today) {
-  return isProvisional(tx) && !tx.matchId && isYmd(tx.day) && isYmd(today) && diffDays(tx.day, today) > PROVISIONAL_STALE_DAYS;
+  return isProvisional(tx) && !tx.matchId && tx.inBalance !== true && isYmd(tx.day) && isYmd(today) && diffDays(tx.day, today) > PROVISIONAL_STALE_DAYS;
 }
 
 /**
@@ -297,6 +304,35 @@ function adoptChangedIds(state, index, entries, ctx) {
     const former = state.accounts.filter((account) => isRecord(account) && account.source === 'bank' && isRecord(account.ext)
       && account.ext.src === ctx.src && typeof account.ext.id === 'string' && index.get(account.ext.id) === account
       && !inFeed.has(account.ext.id) && keyOf(account.ext.conn, account.name) === key);
+    if (former.length !== 1) continue;
+    index.delete(former[0].ext.id);
+    former[0].ext.id = entry.extId;
+    index.set(entry.extId, former[0]);
+  }
+  adoptReconnected(state, index, entries, ctx);
+}
+
+/**
+ * A bank removed and added again at the provider gives each of its accounts a new id and a new connection.
+ * An account the feed carries under an id the record does not know is the record's account when exactly
+ * one bank account of the record has the same institution name and account name, and its id is absent
+ * from the feed, and the feed carries exactly one such new account: the record's account takes the new id
+ * and keeps its rows, settings, history state and alert moves (its connection follows in upsertAccount).
+ */
+function adoptReconnected(state, index, entries, ctx) {
+  const keyOf = (institution, name) => (institution && name ? institution + '\u0000' + name : null);
+  const inFeed = new Set(entries.map((entry) => entry.extId));
+  const fresh = new Map();
+  for (const entry of entries) {
+    const key = keyOf(entry.institution, entry.name);
+    if (key && !index.has(entry.extId)) pushTo(fresh, key, entry);
+  }
+  for (const [key, same] of fresh) {
+    if (same.length !== 1) continue;
+    const entry = same[0];
+    const former = state.accounts.filter((account) => isRecord(account) && account.source === 'bank' && isRecord(account.ext)
+      && account.ext.src === ctx.src && typeof account.ext.id === 'string' && index.get(account.ext.id) === account
+      && !inFeed.has(account.ext.id) && keyOf(account.institution, account.name) === key);
     if (former.length !== 1) continue;
     index.delete(former[0].ext.id);
     former[0].ext.id = entry.extId;
@@ -804,7 +840,14 @@ function pairTransfers(state, summary) {
 /** How well a bank spend fits a provisional move, or null when it does not confirm it. */
 function confirmGap(move, tx) {
   if (move.accountId && move.accountId !== tx.accountId) return null;
-  if (move.mkey && move.mkey !== tx.mkey) return null;
+  // a card alert names the merchant its own way: it is matched on the card, the amount and the day
+  if (move.mkey && move.via !== 'alert' && move.mkey !== tx.mkey) return null;
+  if (move.via === 'alert') {
+    // the bank's charge is the alert's amount or more (a tip raises it, never lowers it), on its day or in the 5 after
+    const after = diffDays(move.day, tx.day);
+    const fits = tx.amount >= move.amount && tx.amount * 100 <= move.amount * (100 + ALERT_CONFIRM_RISE) && after >= 0 && after <= ALERT_CONFIRM_DAYS;
+    return fits ? { gap: tx.amount - move.amount, days: after } : null;
+  }
   const gap = Math.abs(tx.amount - move.amount);
   const days = Math.abs(diffDays(move.day, tx.day));
   return gap <= CONFIRM_AMOUNT_TOLERANCE * move.amount && days <= CONFIRM_DAY_WINDOW ? { gap, days } : null;
@@ -842,6 +885,73 @@ function confirmProvisional(state, arrivals, summary) {
     taken.add(tx.id);
     inheritOwnerMarks(tx, move);
     summary.matched++;
+  }
+}
+
+/**
+ * Confirm one provisional move with a bank spend the record already holds (a card alert read after
+ * the bank's own row had arrived on this device): a row dated on the move's day or up to 3 days after,
+ * that no other move has taken, by the same rule as `confirmProvisional`. The bank row then counts
+ * and the move does not, so nothing is counted twice.
+ * @returns {boolean} true when a row confirmed the move
+ */
+export function confirmStored(state, move) {
+  if (!isRecord(state) || !Array.isArray(state.txs) || !isProvisional(move) || move.matchId || !isYmd(move.day)) return false;
+  const taken = new Set(state.txs.filter((tx) => isRecord(tx) && tx.matchId).map((tx) => tx.matchId));
+  let best = null;
+  for (const tx of state.txs) {
+    if (!isFeedRow(tx) || tx.kind !== 'spend' || tx.flow !== 'out' || tx.matchId || !isYmd(tx.day) || tx.day < move.day || taken.has(tx.id)) continue;
+    const fit = confirmGap(move, tx);
+    if (fit && (!best || fit.days < best.days || (fit.days === best.days && fit.gap < best.gap))) best = { tx, ...fit };
+  }
+  if (!best) return false;
+  move.matchId = best.tx.id;
+  move.review = false;
+  inheritOwnerMarks(best.tx, move);
+  return true;
+}
+
+/**
+ * A bank account is balance-only while the record holds no bank row of it: the provider carries its balance
+ * and none of its transactions, so no bank row will ever take a card alert's move over. Such a move stops
+ * counting (`inBalance`: it is taken in, as if matched) at the first reading of the account where
+ *  (a) the amount owed has risen, since the reading the record held when the move was made (`seenOwed`,
+ *      `seenAsOf`), by at least this move and every earlier one of the account not yet taken in when the
+ *      reading began (1 cent allowed per move); or
+ *  (b) the bank's balance is dated 4 days or more after the purchase.
+ * A move taken in stays listed as the purchase's only record and no longer lowers any figure.
+ * @param {object[]} accounts  the accounts this feed carried
+ */
+function takeIntoBalance(state, accounts) {
+  const withRows = new Set(state.txs.filter(isFeedRow).map((tx) => tx.accountId));
+  const rollover = rolloverOf(state);
+  for (const account of accounts) {
+    if (!isRecord(account) || withRows.has(account.id) || !Number.isFinite(account.balance) || !Number.isFinite(account.asOf)) continue;
+    const owed = -account.balance;
+    const asOfDay = gameDay(account.asOf, rollover);
+    // every alert move of the account the bank has not matched, taken in or not, oldest first
+    const moves = state.txs
+      .filter((tx) => isProvisional(tx) && tx.via === 'alert' && tx.accountId === account.id && !tx.matchId && isYmd(tx.day))
+      .sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : (a.at || 0) - (b.at || 0) || (a.id < b.id ? -1 : 1)));
+    moves.forEach((move, i) => {
+      if (move.inBalance === true) return;
+      // The rise since the reading this move saw holds this purchase and every earlier one that had not reached the
+      // balance by then: one still waiting, or one taken in by a later reading than the one this move saw.
+      let need = move.amount - 1;
+      for (let j = 0; j < i; j++) {
+        const earlier = moves[j];
+        const inBefore = earlier.inBalance === true
+          && !(Number.isFinite(earlier.inBalanceAsOf) && Number.isFinite(move.seenAsOf) && earlier.inBalanceAsOf > move.seenAsOf);
+        if (!inBefore) need += earlier.amount - 1;
+      }
+      const seen = Number.isFinite(move.seenOwed) && Number.isFinite(move.seenAsOf) && account.asOf > move.seenAsOf;
+      const risen = seen && owed - move.seenOwed >= need;
+      const dated = diffDays(move.day, asOfDay) >= BALANCE_ONLY_DAYS;
+      if (!risen && !dated) return;
+      move.inBalance = true;
+      move.inBalanceAsOf = account.asOf;
+      move.review = false;
+    });
   }
 }
 
@@ -967,6 +1077,7 @@ export function mergeFeed(state, feed, nowMs) {
   if (work.rereadIds.length) reclassify(state, work.rereadIds);
   pairTransfers(state, summary);
   confirmProvisional(state, work.arrivals, summary);
+  takeIntoBalance(state, touched.map((t) => t.account));
   flagStaleProvisional(state, ctx.today);
   updateSync(state, feed, ctx, work.earliestDay);
   return summary;
@@ -1057,10 +1168,31 @@ export function addDecline(state, move, nowMs) {
  * Remove a manual row (a provisional move or a decline). Bank rows cannot be removed.
  * @returns {boolean} true when something was removed
  */
-export function removeManual(state, txId) {
+export function removeManual(state, txId, nowMs) {
   if (!isRecord(state) || !Array.isArray(state.txs) || typeof txId !== 'string' || !txId) return false;
   const index = state.txs.findIndex((tx) => isRecord(tx) && tx.id === txId && tx.source === 'manual');
   if (index < 0) return false;
-  state.txs.splice(index, 1);
+  const [gone] = state.txs.splice(index, 1);
+  // a card alert's move the owner removed does not come back from its inbox file: its id is remembered
+  if (gone.via === 'alert') rememberRemovedAlert(state, gone.id, Number.isFinite(nowMs) ? nowMs : 0);
   return true;
+}
+
+/**
+ * Remember the id of an alert move the owner removed (state.alertsRemoved, a short list of { id, at }),
+ * and forget those older than 30 days.
+ */
+export function rememberRemovedAlert(state, id, nowMs) {
+  const kept = pruneRemovedAlerts(state, nowMs).filter((entry) => entry.id !== id);
+  kept.push({ id, at: nowMs });
+  state.alertsRemoved = kept.slice(-200);
+}
+
+/** The remembered removals no older than 30 days (the list in the record is pruned to them). */
+export function pruneRemovedAlerts(state, nowMs) {
+  const list = Array.isArray(state.alertsRemoved) ? state.alertsRemoved : [];
+  const kept = list.filter((entry) => isRecord(entry) && typeof entry.id === 'string' && Number.isFinite(entry.at)
+    && !(Number.isFinite(nowMs) && nowMs - entry.at > ALERT_REMOVED_DAYS * 24 * 3600 * 1000));
+  if (Array.isArray(state.alertsRemoved) && kept.length !== list.length) state.alertsRemoved = kept;
+  return kept;
 }

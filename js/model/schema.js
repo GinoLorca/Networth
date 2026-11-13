@@ -555,6 +555,11 @@ export function checkDoc(doc) {
     }
   }
   if (doc.sweeps != null && !doc.sweeps.every(isPlain)) return 'This copy has an unreadable part (sweeps).';
+  // the card alert moves the owner removed (merge.removeManual); older records lack the list
+  if (doc.alertsRemoved != null && !(Array.isArray(doc.alertsRemoved) && doc.alertsRemoved.length <= 1000
+    && doc.alertsRemoved.every((x) => isPlain(x) && typeof x.id === 'string' && Number.isFinite(x.at)))) {
+    return 'This copy has an unreadable part (alertsRemoved).';
+  }
   return null;
 }
 

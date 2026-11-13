@@ -39,7 +39,8 @@ import { fmt } from '../model/money.js';
 import { gameDay, diffDays, fmtDate, fmtTime } from '../model/dates.js';
 import { position } from '../model/ledger.js';
 import { makeDerived } from '../derive.js';
-import { coverText } from './parts.js';
+import { coverText, inlineMoney } from './parts.js';
+import { alertStatus } from '../model/alerts.js';
 
 const APP_VERSION = '1.0.0';
 const BRIDGE_URL = 'https://bridge.simplefin.org';
@@ -413,6 +414,77 @@ function shareSection(ctx) {
   </div>`;
 }
 
+/* ------------------------------------------------- card purchases within minutes */
+
+/** The address the phone writes each alert to: a new file in the inbox folder of the owner's private repository. */
+function inboxAddress(owner) {
+  return 'https://api.github.com/repos/' + owner + '/networth-data/contents/inbox/';
+}
+
+/** Where the reading of the inbox stands, in a few words: paused (and why or until when), reading, or waiting for the key. */
+function alertPause(ctx) {
+  const sh = ctx.share;
+  const inbox = ctx.inbox || {};
+  if (sh.code === 'key' || inbox.code === 'key') return 'Paused: GitHub refused the key';
+  if (sh.retryAt) return 'Paused until ' + fmtTime(sh.retryAt);
+  return sh.on ? 'Reading every minute' : 'Needs the key';
+}
+
+function alertLine(ctx) {
+  const sh = ctx.share;
+  const { last, waiting } = alertStatus(ctx.state, ctx.today);
+  const inbox = ctx.inbox || {};
+  const pause = alertPause(ctx);
+  const paused = pause.startsWith('Paused') ? ' ' + pause + '.' : '';
+  const read = inbox.readAt ? 'Inbox read ' + whenText(inbox.readAt, ctx) + '.' : sh.on ? 'The inbox has not been read yet on this device.' : '';
+  const status = last
+    ? html`Last alert ${whenText(last.at, ctx)}: <span data-cover-keep>${last.merchant}</span>, ${inlineMoney(last.amount, { est: true })}; ${waiting} not yet in the bank’s figures.`
+    : 'No alert has arrived yet.';
+  const n = Number.isInteger(inbox.refused) ? inbox.refused : 0;
+  // a count only: what such a text said is never kept or shown
+  const refused = n === 1 ? ' 1 text from the phone was not a purchase and was deleted.'
+    : n > 1 ? ' ' + n + ' texts from the phone were not purchases and were deleted.' : '';
+  return html`<p class="cap set-alert-status" role="status">${status} ${read}${refused}${paused}${inbox.code && inbox.code !== 'key' && inbox.code !== 'rate'
+    ? ' The last reading did not go through; it is tried again within a minute.' : ''}</p>`;
+}
+
+/** The words a shortcut stops at: a text holding one is never sent (a code, a sign-in, an approval). */
+const SHORTCUT_STOP_WORDS = 'code|passcode|\\bPIN\\b|verif|approv|confirm|one-time|\\bOTP\\b|security|sign in|log in|new device';
+
+function alertSection(ctx) {
+  const sh = ctx.share;
+  if (!sh || !sh.available || ctx.demo) return '';
+  const c = (text) => html`<code class="set-code">${text}</code>`;
+  const block = (text) => html`<code class="set-code set-code-block">${text}</code>`;
+  return html`<div class="cols">
+    <section class="col col-7 set-sec" aria-label="Card purchases within minutes">
+      <div class="sec-head">
+        <h2 class="lab"><b>Card purchases within minutes</b><i class="sep"></i>from your card’s text alerts</h2>
+        <span class="lab">${alertPause(ctx)}</span>
+      </div>
+      <p class="set-lede">Each charge on your card lowers the net worth on every device within a minute or two of your card’s bank texting you, shown like a move tapped in.
+        It takes 1 setup on the iPhone. Each alert’s text is written to your private repository. The app deletes the file once the bank’s record replaces the purchase, or once the card’s balance has taken it in, but the repository’s history keeps every file ever written.
+        The shortcut sends no text that holds a code word or no dollar figure, and the app turns only a completed purchase into a move: any other text is deleted.</p>
+      ${alertLine(ctx)}
+    </section>
+    <section class="col col-5 set-sec" aria-label="Setting up the iPhone">
+      <div class="sec-head"><h3 class="lab"><b>The iPhone</b><i class="sep"></i>10 steps, once</h3></div>
+      <ol class="set-share-steps">
+        <li>In your card’s bank’s app, turn on a text alert for every card purchase, of any amount. Save the number those texts come from as a contact.</li>
+        <li>In Shortcuts, Automation, tap <b>+</b> and choose <b>Message</b>. Set <b>Sender</b> to that contact (or <b>Message Contains</b> to a word every purchase alert holds), choose <b>Run Immediately</b>, then <b>New Blank Automation</b>.</li>
+        <li>Add <b>Match Text</b>: text <b>Shortcut Input</b>, Case Sensitive off, pattern ${block(SHORTCUT_STOP_WORDS)} Add <b>If</b>: <b>Matches</b> <b>has any value</b>; inside it, <b>Stop This Shortcut</b>.</li>
+        <li>Add a second <b>Match Text</b>: text <b>Shortcut Input</b>, pattern ${c('\\$[0-9]')}. Add <b>If</b>: <b>Matches</b> <b>does not have any value</b>; inside it, <b>Stop This Shortcut</b>.</li>
+        <li>Add <b>Base64 Encode</b>: <b>Shortcut Input</b>, <b>Line Breaks: None</b>.</li>
+        <li>Add <b>Current Date</b>, then <b>Format Date</b>: <b>Date Format: Custom</b>, format ${c('yyyyMMdd-HHmmss-SSS')}.</li>
+        <li>Add <b>Text</b>: <code class="set-code set-code-block" data-cover-keep>${inboxAddress(sh.owner)}</code> then the <b>Formatted Date</b>, then ${c('.txt')}, with no spaces.</li>
+        <li>Add <b>Get Contents of URL</b> with that <b>Text</b>. <b>Method</b>: PUT. <b>Headers</b>: ${c('Authorization')} = the word ${c('Bearer')}, then one space, then your key (the same key as pasted here; if it was not kept, make a new one the same way and paste it here on every device too), and ${c('Accept')} = ${block('application/vnd.github+json')} <b>Request Body</b>: JSON, two Text fields: ${c('message')} = ${c('alert')} and ${c('content')} = the <b>Base64 Encoded</b> result.</li>
+        <li>The first time it runs, Shortcuts asks to allow it to connect to api.github.com: choose <b>Always Allow</b>.</li>
+        <li>To test it, send yourself nothing: wait for the first real purchase alert, then look at the line under “Card purchases within minutes” here.</li>
+      </ol>
+    </section>
+  </div>`;
+}
+
 /* ----------------------------------------------------------------- the day */
 
 function payLine(ctx) {
@@ -658,9 +730,9 @@ export function render(ctx) {
       </div>
       <div class="set-top-row">
         <h1 class="title title-l set-title">Settings</h1>
-        <p class="cap set-top-note">The bank link, ${shared ? 'sharing between devices, ' : ''}how a day is counted, appearance, your own rules and the record. ${ctx.demo
+        <p class="cap set-top-note">The bank link, ${shared ? (ctx.demo ? 'sharing between devices, ' : 'sharing between devices, card purchases within minutes, ') : ''}how a day is counted, appearance, your own rules and the record. ${ctx.demo
           ? 'In the sample game a change lasts until this page is closed or reloaded, and none is kept'
-          : 'Every control saves the moment it changes'}, and none of the ${shared ? 7 : 6} sections needs a visit: the board is complete as it stands.</p>
+          : 'Every control saves the moment it changes'}, and none of the ${shared ? (ctx.demo ? 7 : 8) : 6} sections needs a visit: the board is complete as it stands.</p>
       </div>
     </section>
     <div class="cols">
@@ -668,6 +740,7 @@ export function render(ctx) {
       ${daySection(ctx)}
     </div>
     ${shareSection(ctx)}
+    ${alertSection(ctx)}
     <div class="cols">
       ${appearanceSection(ctx)}
       ${rulesSection(ctx)}

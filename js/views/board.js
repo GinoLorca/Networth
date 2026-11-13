@@ -34,7 +34,7 @@ import { nextOccurrence, runsByHand } from '../model/book.js';
 import { editByHand, skipRow, tickByHand } from '../model/byhand.js';
 import { refresh } from '../model/detect.js';
 import { evalGlyph, timeTroubleGlyph, moveGlyph, resultMark } from '../ui/glyphs.js';
-import { money, inlineMoney, keptLine, statusLine, roundTitle, colourOf, crosstable, movesList, notableMoves, worstGlyph, spentUnposted, recentList, toneStyle, flowLookups, payFlowClass } from './parts.js';
+import { money, inlineMoney, keptLine, statusLine, roundTitle, colourOf, crosstable, movesList, notableMoves, worstGlyph, spentUnposted, recentList, toneStyle, flowLookups, payFlowClass, unbankedWords } from './parts.js';
 
 const TEN_MINUTES_MS = 10 * 60 * 1000;
 const WORTH_DAYS = 90;
@@ -254,7 +254,7 @@ function heroCaption(ctx, v) {
     bits.push(html`<span class="nowrap">bills used ${money(-payC, { est: true, signed: true })}</span>`);
   }
   if (provC > 0) {
-    bits.push(html`<span class="nowrap">tapped in, not yet at the bank ${money(-provC, { est: true, signed: true })}</span>`);
+    bits.push(html`<span class="nowrap">${unbankedWords(ctx.state)}, not yet at the bank ${money(-provC, { est: true, signed: true })}</span>`);
   }
   return html`<p class="cap board-compo">${bits.map((bit, i) => html`${i ? DOT : ''}${bit}`)}${held
     ? html`<span class="board-held">The figure holds still: the bank last reported ${reported}.</span>` : ''}</p>${lapsedLines(v)}`;

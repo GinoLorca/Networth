@@ -45,6 +45,10 @@
 .set-share-steps .btn-link { display: inline; }
 .set-share-key { width: 100%; max-width: 448px; }
 .set-share-where { overflow-wrap: anywhere; text-align: right; }
+.set-code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: .875rem; white-space: nowrap; }
+/* a long pattern or address on a line of its own: it scrolls sideways rather than break inside a token, so no space is hidden */
+.set-code-block { display: block; overflow-x: auto; white-space: pre; padding: .125rem 0 .25rem; }
+.set-alert-status { margin-top: var(--s-3); }
 .set-sec > .set-lede + .set-help { margin-top: var(--s-3); }
 /* on a phone the one link of the steps is a 44px target */
 @media (max-width: 719px) { .set-share-steps .btn-link { display: inline-flex; align-items: center; min-height: var(--tap); } }

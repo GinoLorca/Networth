@@ -21,6 +21,7 @@ import { setContext, setServices } from './runtime.js';
 import { makeDerived } from './derive.js';
 import { initSync, syncInfo, autoSync, syncNow } from './sync.js';
 import { initShare, shareInfo, autoShare } from './share.js';
+import { autoInbox, inboxInfo } from './inbox.js';
 import { restampByHand } from './model/byhand.js';
 import { buildDemoState, demoFeed } from './model/demo.js';
 import { mergeFeed } from './model/merge.js';
@@ -135,6 +136,7 @@ async function boot() {
   render();
   autoSync();
   autoShare();
+  autoInbox();
   registerWorker();
 }
 
@@ -163,6 +165,7 @@ function onVisibility() {
     if (seen && nowMs() - seen.at > 10 * 60 * 1000) store.setUi({ seen });
     autoSync();
     autoShare();
+    autoInbox();
     schedule();
   }
 }
@@ -252,6 +255,7 @@ function buildContext() {
     demo: store.status.readonly,
     sync: syncInfo(),
     share: shareInfo(),
+    inbox: inboxInfo(),
     wide: typeof matchMedia === 'function' ? matchMedia(WIDE).matches : true,
   };
 }

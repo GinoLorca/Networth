@@ -465,7 +465,7 @@ function recorded(txId) {
     action: 'Undo',
     onAction: () => {
       let removed = false;
-      store.update((s) => { removed = removeManual(s, txId); });
+      store.update((s) => { removed = removeManual(s, txId, nowMs()); });
       toast(removed ? removedText : 'Already confirmed by the bank: nothing to remove.');
     },
   });

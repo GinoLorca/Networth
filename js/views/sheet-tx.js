@@ -20,7 +20,7 @@
 
 import { html, cx, attrs } from '../ui/dom.js';
 import { fmt, fmtPlain, toCents } from '../model/money.js';
-import { fmtDate, fmtTime, isYmd } from '../model/dates.js';
+import { fmtDate, fmtTime, isYmd, nowMs } from '../model/dates.js';
 import { CATEGORIES, KLASSES, PURPOSES, GLYPHS, ACCOUNT_TYPES, accountLabel, categoryLabel, klassOf, makeAccount } from '../model/schema.js';
 import { learnRule, confirmMove } from '../model/classify.js';
 import { refresh } from '../model/detect.js';
@@ -120,7 +120,7 @@ export function render(ctx, params) {
     return html`<div class="sheet-body" data-key="${'tx-' + tx.id}" ${coverAttr(ctx)}>
       ${head}
       ${facts(ctx, tx)}
-      <p class="cap">The bank has reported this move; its own row replaced the one tapped in, which no longer counts.</p>
+      <p class="cap">The bank has reported this move; its own row replaced the one ${tx.via === 'alert' ? 'from the card’s alert' : 'tapped in'}, which no longer counts.</p>
       <div class="sheet-actions">
         ${bank ? html`<button class="btn" type="button" data-action="app.sheet" data-sheet="tx" data-id="${bank.id}">The bank’s row</button>` : ''}
         <button class="btn btn-solid" type="button" data-action="app.sheet-close">Close</button>
@@ -131,6 +131,7 @@ export function render(ctx, params) {
   return html`<form class="sheet-body tx-form" data-key="${'tx-' + tx.id}" data-submit="tx.save" data-id="${tx.id}" novalidate ${coverAttr(ctx)}>
     ${head}
     ${facts(ctx, tx)}
+    ${manual && tx.inBalance === true ? html`<p class="cap">The bank gives this card’s balance but none of its transactions. Its balance has taken this purchase in, so it no longer lowers the figures; this line is its only record.</p>` : ''}
     ${ann ? html`<p class="tx-ann"><span class="tx-ann-sym">${moveGlyph(ann.glyph)}</span><span class="cap">${figured(ann.why)}.${ann.manual ? ' Your own mark.' : ''}</span></p>` : ''}
     ${classification(ctx, tx)}
     ${isSpendish(tx) && CATEGORIES[tx.category] && CATEGORIES[tx.category].stop ? html`<div class="tx-check">
@@ -154,6 +155,8 @@ export function render(ctx, params) {
 
 function statusNote(tx) {
   if (tx.kind === 'decline') return 'not paid: a declined purchase moves no money';
+  if (tx.source === 'manual' && tx.via === 'alert' && tx.inBalance === true) return 'from the card’s text alert' + (Number.isFinite(tx.at) ? ' at ' + fmtTime(tx.at) : '') + '; the bank’s balance has taken it in';
+  if (tx.source === 'manual' && tx.via === 'alert') return 'from the card’s text alert' + (Number.isFinite(tx.at) ? ' at ' + fmtTime(tx.at) : '') + '; the bank has not reported it yet';
   if (tx.source === 'manual') return 'tapped in' + (tx.loggedAt ? ' at ' + fmtTime(tx.loggedAt) : '') + '; the bank has not reported it yet';
   if (tx.pending) return 'pending at the bank: the amount can still change';
   return tx.postedDay ? 'posted ' + fmtDate(tx.postedDay, 'dowshort') : 'posted';
@@ -168,13 +171,14 @@ function paysOf(state, tx) {
 function facts(ctx, tx) {
   const account = tx.accountId ? ctx.d.account(tx.accountId) : null;
   const pays = paysOf(ctx.state, tx);
-  const pencil = tx.pending || tx.source === 'manual';
+  // a card alert's move the balance has taken in is settled: in roman, with no approximately sign
+  const pencil = tx.pending || (tx.source === 'manual' && tx.inBalance !== true);
   const sign = tx.kind === 'income' || tx.kind === 'refund' ? '+' : '';
   const { accountOf, pairOf } = flowLookups(ctx);
   const flow = flowClass(tx, accountOf, pairOf); // red when money left, green when it arrived, else ink
   const amount = tx.kind === 'decline'
     ? html`<span class="row-value fig tx-declined">${fmt(tx.amount)}</span>`
-    : html`<span class="${cx('row-value fig', pencil && 'est', flow)}">${tx.source === 'manual' ? html`<span class="approx">≈</span>` : ''}${sign}${fmt(tx.amount)}</span>`;
+    : html`<span class="${cx('row-value fig', pencil && 'est', flow)}">${tx.source === 'manual' && pencil ? html`<span class="approx">≈</span>` : ''}${sign}${fmt(tx.amount)}</span>`;
   return html`<ul class="rows tx-facts">
     <li class="row" data-key="amount">
       <span class="row-label">${tx.kind === 'decline' ? 'Price' : 'Amount'} <em class="row-note">${statusNote(tx)}</em></span>
@@ -547,7 +551,7 @@ export const actions = {
     const tx = ctx ? findTx(ctx.state, data.id) : null;
     if (!tx || tx.source !== 'manual') return;
     const words = tx.kind === 'decline' ? 'Declined purchase removed' : 'Move removed';
-    store.update((s) => { removeManual(s, tx.id); }, { undo: words });
+    store.update((s) => { removeManual(s, tx.id, nowMs()); }, { undo: words });
     closeSheet();
     toast(words + '.', { action: 'Undo', onAction: undoLast });
   },

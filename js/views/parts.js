@@ -51,6 +51,21 @@ export function money(cents, opts = {}) {
 }
 
 /**
+ * How the moves not yet at the bank arrived, in words: "tapped in", "from card alerts", or both.
+ * @param {object} state  the document
+ */
+export function unbankedWords(state) {
+  let alert = false;
+  let typed = false;
+  for (const tx of state && Array.isArray(state.txs) ? state.txs : []) {
+    if (!tx || tx.source !== 'manual' || tx.kind !== 'spend' || tx.matchId || tx.inBalance === true) continue;
+    if (tx.via === 'alert') alert = true;
+    else typed = true;
+  }
+  return alert && !typed ? 'from card alerts' : alert ? 'tapped in or from card alerts' : 'tapped in';
+}
+
+/**
  * An amount inside a sentence. It carries data-fig so that cover mode redacts it and it never
  * breaks between its sign and its digits.
  * @param {number|null} cents
@@ -159,7 +174,7 @@ export function keptLine(round) {
  * pending row or a tapped-in move with no bank row matched to it. Spent is then an estimate.
  */
 export function spentUnposted(round) {
-  return (round.moves || []).some((tx) => tx && !tx.matchId && tx.kind !== 'decline' && (tx.pending || tx.source === 'manual'));
+  return (round.moves || []).some((tx) => tx && !tx.matchId && tx.kind !== 'decline' && (tx.pending || (tx.source === 'manual' && tx.inBalance !== true)));
 }
 
 /** One plain sentence about how final a round is. */
@@ -302,7 +317,7 @@ export function crosstable(month, opts) {
 
 function moveState(tx) {
   if (tx.kind === 'decline') return 'is-declined';
-  if (tx.source === 'manual' && !tx.matchId) return 'is-provisional';
+  if (tx.source === 'manual' && !tx.matchId && tx.inBalance !== true) return 'is-provisional';
   if (tx.pending) return 'is-pending';
   return '';
 }
@@ -358,7 +373,8 @@ export function movesList(moves, annotations, opts = {}) {
     if (tx.note) notes.push(sentence(tx.note));
     const tags = [];
     if (tx.pending) tags.push('Pending');
-    if (state === 'is-provisional') tags.push('Tapped in');
+    if (state === 'is-provisional') tags.push(tx.via === 'alert' ? 'Alert' : 'Tapped in');
+    else if (tx.inBalance === true) tags.push('Alert · in the balance');
     if (tx.planned) tags.push('Planned');
     const inner = html`<span class="move-n">${start + i}.</span>
       <span class="move-m">${moveName(tx)}${notes.length || tags.length || tx.review ? html` <em class="move-note">${notes.length ? html`<span class="move-why">${figured(notes.join(' '))}</span> ` : ''}${tags.map((t) => html`<span class="move-tag">${t}</span>`)}${tx.review ? html`<span class="move-tag">Needs a look</span>` : ''}</em>` : ''}</span>
@@ -435,7 +451,8 @@ export function recentList(ctx, rows, opts = {}) {
       const notes = [];
       if (opts.account !== false && account) notes.push(accountShort(account));
       if (tx.pending) notes.push('Pending');
-      if (provisional) notes.push('Tapped in');
+      if (provisional) notes.push(tx.via === 'alert' ? 'Alert' : 'Tapped in');
+      else if (tx.inBalance === true) notes.push('Alert · in the balance');
       return html`<li data-key="${tx.id}"><button class="recent-row" type="button" data-action="app.sheet" data-sheet="tx" data-id="${tx.id}">
         <span class="recent-name">${tx.merchant || categoryLabel(tx.category)}${isNew ? html` <span class="recent-new">New</span>` : ''}${notes.length
           ? html`<em class="recent-note">${notes.join(' · ')}</em>` : ''}</span>

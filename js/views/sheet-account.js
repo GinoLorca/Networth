@@ -357,6 +357,25 @@ function carriedLine(ctx, account) {
   return html`<p class="cap acct-feed">The bank was read ${when}${said}${asking}</p>`;
 }
 
+/** A reading that ends this long after the one that last carried an account is a later reading. */
+const READING_SPAN_MS = 10 * 60 * 1000;
+
+/**
+ * When this device has completed a reading of the bank and that reading did not carry this bank account,
+ * that, plainly: it tells whether the bank link carries the account at all. '' otherwise.
+ */
+function missedLine(ctx, account) {
+  const sync = ctx.state.sync || {};
+  if (account.source !== 'bank' || sync.completed !== true || !Number.isFinite(sync.lastOk)) return '';
+  const feed = account.feed;
+  const carried = feed && Number.isFinite(feed.readAt) && feed.readAt + READING_SPAN_MS >= sync.lastOk;
+  if (carried) return '';
+  const when = ageText(ctx, sync.lastOk);
+  const asOf = account.asOf ? ageText(ctx, account.asOf) : '';
+  return html`<p class="cap acct-feed acct-missed">The last reading of the bank, ${when.startsWith('at ') ? 'today ' + when : when}, did not include this account; ${asOf
+    ? 'its balance is the one the bank gave ' + (asOf.startsWith('at ') ? 'today ' + asOf : asOf) + '.' : 'the bank has given it no balance yet.'}</p>`;
+}
+
 /** Problems the provider reported that name this account or its connection (bank text: interpolated, never trusted). */
 function problemLines(ctx, account) {
   const ext = account.ext || {};
@@ -382,7 +401,7 @@ function movesBlock(ctx, account) {
   const carried = carriedLine(ctx, account); // with no row on the record this line says so; nothing repeats it
   return html`<div class="acct-set acct-moves">
     <p class="lab"><b>Transactions</b><i class="sep"></i>${count} on the record${r.oldest ? ', from ' + shortDay(ctx, r.oldest) : ''}</p>
-    ${carried}${problemLines(ctx, account)}
+    ${missedLine(ctx, account)}${carried}${problemLines(ctx, account)}
     ${r.rows.length
       ? html`${recentList(ctx, r.rows, { account: false, cls: 'acct-recent', label: 'The latest transactions on this account' })}
         <p class="acct-moves-all"><a class="btn-link" href="${'#/scoresheet?account=' + encodeURIComponent(account.id)}">All of them, by day</a></p>`

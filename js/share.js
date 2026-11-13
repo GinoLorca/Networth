@@ -280,3 +280,26 @@ export async function forgetShare() {
   lastExport = null;
   poke();
 }
+
+/** Counts every key pasted or forgotten: a reading of the card alert inbox (inbox.js) started under another number reports nothing. */
+export function shareGeneration() {
+  return generation;
+}
+
+/**
+ * The card alert inbox (inbox.js) met a refused key or a rate answer with the same key: sharing takes
+ * the same pause, so nothing more is asked of GitHub by itself until a new key, or for 10 minutes.
+ * @param {'key'|'rate'} code
+ * @param {string} key  the key the reading used (kept with its refusal, in its own slot)
+ * @param {number} gen  the generation the reading started under
+ */
+export async function noteShareAnswer(code, key, gen) {
+  if (gen !== generation || (code !== 'key' && code !== 'rate')) return;
+  live.code = code;
+  live.failedAt = nowMs();
+  if (code === 'rate') live.pauseUntil = nowMs() + RATE_PAUSE_MS;
+  else {
+    try { if (isShareKey(key)) await refuseShareKey(key); } catch { /* the refusal then holds for this page only */ }
+  }
+  poke();
+}

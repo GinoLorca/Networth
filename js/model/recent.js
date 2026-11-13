@@ -74,7 +74,7 @@ export function recentTransactions(state, today, opts = {}) {
     if (tx.day > latest) { ahead += 1; continue; }
     const paired = tx.pairId != null && present.has(tx.pairId);
     if (paired && tx.flow === 'in') continue;   // the same event as its outgoing leg
-    const provisional = tx.source === 'manual';
+    const provisional = tx.source === 'manual' && tx.inBalance !== true; // an alert the balance took in is settled
     const isNew = seenAt !== null && Number.isFinite(tx.loggedAt) && tx.loggedAt > seenAt;
     if (isNew) fresh += 1;
     if (tx.day === today) {

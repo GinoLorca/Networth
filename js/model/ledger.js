@@ -658,8 +658,17 @@ function isByHand(entry) {
 
 /** A move the owner tapped in: no bank balance holds it yet, so it is carried separately. */
 function indexProvisional(core, index, tx, n) {
-  if (tx.kind !== 'spend' || tx.flow === 'in' || core.todayN - n > PROVISIONAL_DAYS) return;
+  if (tx.kind !== 'spend' || tx.flow === 'in') return;
   const amount = Math.round(tx.amount);
+  if (tx.inBalance === true) {
+    // a card alert's move the bank's balance has taken in (merge.takeIntoBalance): the purchase's only
+    // record, listed and spent, while the balance holds its money
+    const bucket = bucketFor(index, n);
+    bucket.moves.push(tx);
+    tallySpend(core, index, bucket, tx, n, amount);
+    return;
+  }
+  if (core.todayN - n > PROVISIONAL_DAYS) return;
   const bucket = bucketFor(index, n);
   bucket.provisional += amount;
   bucket.unconfirmed = true;

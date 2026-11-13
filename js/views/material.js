@@ -19,7 +19,7 @@ import { fmt, fmtSigned, fmtPct, toneBand } from '../model/money.js';
 import { fmtDate, fmtMonth, fmtTime, gameDay, diffDays, isYmd, monthOf, parts as ymdParts } from '../model/dates.js';
 import { ACCOUNT_TYPES, accountLabel } from '../model/schema.js';
 import { largestCharges, firstTransactionDay } from '../model/cards.js';
-import { money, movesList, inlineMoney, toneStyle, flowLookups } from './parts.js';
+import { money, movesList, inlineMoney, toneStyle, flowLookups, unbankedWords } from './parts.js';
 
 const CARD_MONTHS = 6;
 const LARGEST = 3;
@@ -188,7 +188,7 @@ function head(ctx, m) {
   const lapsed = (Array.isArray(p.lapsedPay) ? p.lapsedPay : []).filter((item) => item && typeof item === 'object');
   const bankEst = m.estAssets || m.estDebts;
   const liveEst = bankEst || p.smoothing || m.provisional > 0;
-  const tapped = m.provisional > 0 ? html`<span data-fig>${fmtSigned(-m.provisional)}</span> tapped in, not yet at the bank` : null;
+  const tapped = m.provisional > 0 ? html`<span data-fig>${fmtSigned(-m.provisional)}</span> ${unbankedWords(ctx.state)}, not yet at the bank` : null;
   const same = tapped ? html`this is the bank figure with ${tapped}.` : 'this equals the bank figure.';
   const smoothNote = p.smoothing
     ? html`the bank figure, with pay earned ${inlineMoney(m.receivable, { est: true, signed: true })}${tapped ? ',' : ' and'} bills used ${inlineMoney(-m.payable, { est: true, signed: true })}${tapped ? html` and ${tapped}` : ''}`
@@ -443,7 +443,7 @@ function reckoning(ctx, m) {
   const p = m.position;
   const bankEst = m.estAssets || m.estDebts;
   const tappedRow = m.provisional > 0
-    ? html`<li class="row"><span class="row-label"><span class="est">Tapped in, not yet at the bank</span></span>${money(-m.provisional, { est: true, signed: true, cls: 'row-value' })}</li>`
+    ? html`<li class="row"><span class="row-label"><span class="est">${unbankedWords(ctx.state).replace(/^./, (c) => c.toUpperCase())}, not yet at the bank</span></span>${money(-m.provisional, { est: true, signed: true, cls: 'row-value' })}</li>`
     : '';
   const names = m.shared.map((a) => accountLabel(a) + ' at ' + fmtPct(a.quickSale, 0)).join(', ');
   const unshared = m.slow.filter((a) => !m.shared.includes(a) && ctx.d.valueOf(a) > 0);
