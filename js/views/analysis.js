@@ -185,7 +185,7 @@ function chart(kind, data) {
 function heroEst(ctx) {
   const d = ctx.d;
   const pos = d.position;
-  return !!(pos.smoothing || pos.provisional > 0 || ctx.state.accounts.some((a) => isEstimated(ctx, a) && d.valueOf(a) !== 0));
+  return !!(pos.smoothing || pos.provisional > 0 || pos.provisionalIn > 0 || ctx.state.accounts.some((a) => isEstimated(ctx, a) && d.valueOf(a) !== 0));
 }
 
 function abstract(ctx) {

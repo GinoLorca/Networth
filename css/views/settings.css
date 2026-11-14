@@ -176,3 +176,16 @@
   .step-action .btn-s { min-height: var(--tap); display: inline-flex; align-items: center; }
   .cn-restore-pick { display: inline-flex; align-items: center; min-height: var(--tap); }
 }
+
+/* Income your other apps report (ARCHITECTURE 3.7): a line per source, a two-way choice per payer */
+.set-income-sources { list-style: none; padding: 0; margin: 0; }
+.set-income-sources > li { padding: 6px 0; border-bottom: var(--rule-hair); }
+.set-income-sources > li:last-child { border-bottom: 0; }
+.set-income-problem { display: block; font-style: italic; color: var(--ink-2); }
+.set-income-payers > * + * { margin-top: var(--s-2); }
+.set-income-payer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
+/* a long name that wraps keeps the switch in the same column as the others */
+.set-income-payer .seg { margin-left: auto; }
+.set-income-gone { list-style: none; margin: 4px 0 0; padding: 0; }
+.set-income-gone li { margin: 2px 0; }
+.set-income-name { min-width: 0; overflow-wrap: anywhere; }

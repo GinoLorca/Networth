@@ -23,6 +23,8 @@
  *                    "leave it out" of a bank account changed, or a manual debt was added or edited (the Book
  *                    ties loan payments to the loan)
  *   account.remove   remove a manual account (and references to it), close, offer undo
+ *   account.count    Cash in hand (3.7): the owner's count, made like a change from outside (never undone), close
+ *   account.uncount  Cash in hand: remove the latest count, on every device; the count before it rules again
  *
  * Cover mode: the form carries data-cover itself (the sheet host is outside the covered page), so the figure,
  * the record and every amount field that does not have the focus are redacted.
@@ -33,10 +35,12 @@ import { store } from '../store.js';
 import { context, toast } from '../runtime.js';
 import { openSheet, closeSheet } from '../router.js';
 import { fmt, fmtPlain, toCents } from '../model/money.js';
-import { fmtDate, fmtTime, gameDay, diffDays, parts as ymdParts } from '../model/dates.js';
+import { fmtDate, fmtTime, gameDay, diffDays, nowMs, parts as ymdParts } from '../model/dates.js';
 import { ACCOUNT_TYPES, accountLabel, makeAccount } from '../model/schema.js';
 import { lacksHistory } from '../model/feed.js';
 import { refresh } from '../model/detect.js';
+import { CASH_ROLE, COUNT_MAX_CENTS, countCash, removeCount } from '../model/income.js';
+import { countWords, countedWords, isCountedCash, removedWords } from './income-words.js';
 import { icon } from '../ui/icons.js';
 import { coverText, money, recentList } from './parts.js';
 
@@ -324,6 +328,50 @@ function manualForm(ctx, account, type) {
   </form>`;
 }
 
+/* ------------------------------------------------------------ Cash in hand */
+
+/**
+ * Cash in hand (ARCHITECTURE 3.7): payments another app reported as paid in cash raise it; Networth cannot
+ * see cash being spent, so the figure falls only when the owner counts their cash. The count reaches every
+ * device, and it is never undone: counting again, or Remove the latest count, corrects it. The account is kept:
+ * it has no Remove.
+ */
+function cashForm(ctx, account) {
+  const errors = errorsFor(ctx, account.id);
+  const value = ctx.d.valueOf(account);
+  // the latest of the owner's counts (each one sets the figure from its own day), and when it was made
+  const { words, count } = countedWords(ctx.state, ctx.today);
+  // right after a count the figure is the count itself: roman, as counted; a cash payment marked since makes it pencil
+  const exact = isCountedCash(ctx.state, value);
+  return html`<form class="sheet-body" data-submit="account.count" data-input="account.touch" data-id="${account.id}" novalidate autocomplete="off"${coverAttr(ctx)}>
+    <p class="sheet-head lab"><b>By hand</b><i class="sep"></i>${ACCOUNT_TYPES.cash.label}</p>
+    <h2 class="sheet-title">${accountLabel(account)}</h2>
+    <p class="acct-now">
+      ${money(value, { est: !exact })}
+      <span class="cap">in hand today · ${count
+        ? exact ? html`<span data-fig>${fmt(count.cents)}</span>, ${words}` : html`<span data-fig>${fmt(count.cents)}</span>, ${words}, with the cash payments marked since`
+        : html`the payments marked as paid in cash; ${words}`}</span>
+      ${count ? html`<span class="acct-uncount"><button class="btn-link" type="button" data-action="account.uncount" data-id="${account.id}" data-count="${count.id}">Remove the latest count</button></span>` : ''}
+    </p>
+    <div class="acct-set acct-set-first">
+      <div class="${cx('field', errors.value && 'is-invalid')}">
+        <span class="field-label lab" id="acct-cash-label">I have this much in cash now</span>
+        <label class="money">
+          <span class="vh">I have this much in cash now, in dollars</span>
+          <span class="money-cur" aria-hidden="true">$</span>
+          <input ${attrs({ class: 'money-input', type: 'text', inputmode: 'decimal', name: 'value', autocomplete: 'off', placeholder: '0.00', 'aria-invalid': errors.value ? 'true' : null, 'aria-describedby': errors.value ? 'acct-cash-error' : null })}>
+        </label>
+        ${errors.value ? html`<span class="field-error" id="acct-cash-error">${errors.value}</span>` : ''}
+        <span class="field-help cap">Networth cannot see cash being spent, so this figure falls only when you count. The count reaches all your devices; a payment marked in cash after it adds to it.</span>
+      </div>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn" type="button" data-action="app.sheet-close">Close</button>
+      <button class="btn btn-solid" type="submit">Count it</button>
+    </div>
+  </form>`;
+}
+
 /* -------------------------------------------------------------- bank account */
 
 /** How many of this account's transactions the sheet lists; the rest are a tap away on the Scoresheet. */
@@ -504,6 +552,7 @@ export function render(ctx, params = {}) {
   if (params.id) {
     const account = findAccount(ctx.state, params.id);
     if (!account) return gone();
+    if (account.role === CASH_ROLE && account.source !== 'bank') return cashForm(ctx, account);
     const type = shownType(account, params);
     return account.source === 'bank' ? bankForm(ctx, account, type) : manualForm(ctx, account, type);
   }
@@ -712,6 +761,17 @@ function undoIf(label) {
 
 /* ----------------------------------------------------------------- actions */
 
+/** Focus the Cash in hand sheet's count field ("I have this much in cash now") once the sheet has drawn again. */
+function focusCountField() {
+  const go = () => {
+    const label = document.getElementById('acct-cash-label');
+    const field = label ? label.closest('.field') : null;
+    const input = field ? field.querySelector('input') : null;
+    if (input) input.focus();
+  };
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => requestAnimationFrame(go)); else setTimeout(go, 0);
+}
+
 export const actions = {
   'account.type': ({ el }) => {
     const ctx = context();
@@ -733,10 +793,45 @@ export const actions = {
     else saveManual(ctx, account, values);
   },
 
+  /** "I have {amount} in cash now": the owner's count of Cash in hand, shared with every device (3.7). */
+  'account.count': ({ values, data }) => {
+    const ctx = context();
+    const account = ctx && values ? findAccount(ctx.state, data.id) : null;
+    if (!account || account.role !== CASH_ROLE) return;
+    const cents = parseAmount(values.value);
+    if (cents == null) { fail(account.id, { value: 'Type the cash you have now, for example 120.00.' }); return; }
+    if (cents > COUNT_MAX_CENTS) { fail(account.id, { value: 'A count can be at most ' + fmt(COUNT_MAX_CENTS) + '.' }); return; }
+    let done = false;
+    const at = nowMs(); // the moment of the count, not the time of the last render: it decides which payments come after it
+    // a count is made like a change from outside: no Undo takes it back; counting again corrects it
+    const change = (s) => countCash(s, cents, at);
+    store.update((s) => { done = change(s); }, { past: change });
+    if (!done) { fail(account.id, { value: 'This count could not be kept. Type the cash you have now, for example 120.00.' }); return; }
+    clearErrors();
+    closeSheet();
+    toast(countWords(cents, !!ctx.state.settings.cover));
+  },
+
+  /** Remove the latest count of Cash in hand, on every device: the count before it rules again from its own day (3.7). */
+  'account.uncount': ({ data }) => {
+    const ctx = context();
+    const account = ctx ? findAccount(ctx.state, data.id) : null;
+    if (!account || account.role !== CASH_ROLE || ctx.demo || store.status.readonly) return;
+    let done = false;
+    const at = nowMs();
+    const change = (s) => removeCount(s, data.count, at);
+    store.update((s) => { done = change(s); }, { past: change });
+    if (!done) return;
+    // the figure now, as the rebuild stored it (the last render's context still holds the count just removed)
+    const after = findAccount(store.state, account.id);
+    toast(removedWords(after ? Math.round(Number(after.balance) || 0) : 0, !!ctx.state.settings.cover));
+    focusCountField(); // the link is gone: the count field is the next place to act
+  },
+
   'account.remove': ({ data }) => {
     const ctx = context();
     const account = ctx ? findAccount(ctx.state, data.id) : null;
-    if (!account || account.source === 'bank') return;
+    if (!account || account.source === 'bank' || account.role === CASH_ROLE) return;
     const id = account.id;
     const undoLabel = accountLabel(account) + ' removed';
     const wasDebt = groupOf(account.type) === 'debt';

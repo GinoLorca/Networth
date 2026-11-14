@@ -95,7 +95,8 @@ const MAX_LOAN_AGE_DAYS = 18263;
  * @property {number} smooth         bank + receivable − payable. It does NOT include moves tapped in and not yet at the bank;
  *                                  `live` does (and so does every DayClose.smooth). Show `live` wherever one net worth is shown.
  * @property {number} provisional    Σ unmatched provisional spends still counting (a POSITIVE number of cents)
- * @property {number} live           smooth − provisional: the hero number, tapped-in moves included (may be fractional)
+ * @property {number} provisionalIn  Σ unmatched provisional income: payments another app reported, not yet met by their bank row (POSITIVE cents)
+ * @property {number} live           smooth − provisional + provisionalIn: the hero number, pencil moves included (may be fractional)
  * @property {number} rate           cents per SECOND the live number is rising (0 when not accruing or data is too old):
  *                                  a day's accrual over the real length of today's game day (86,400 s; 82,800 or 90,000 when the clocks change)
  * @property {number|null} dataAt    oldest balance timestamp among everyday bank accounts (ms), null when there are none
@@ -468,6 +469,7 @@ function readAccounts(doc) {
       id: account.id, account, group, bank,
       hidden: !!account.hidden,
       amortised: !bank && group === 'debt' && hasLoanTerms(account),
+      cashInHand: !bank && account.role === 'cash-in-hand',
     });
   }
   return byId;
@@ -545,6 +547,7 @@ function buildIndex(core) {
     loanPayments: new Map(),  // amortised loan id -> [{ day, amount }] payments seen in the feed
     loanOfEntry: loansByEntry(core),
     tickResets: new Map(),    // by-hand entry id -> day numbers on which a tick, never met by a bank row, starts its accrual again
+    cashIn: new Map(),        // Cash in hand account id -> [{ n, amount, at }] payments reported paid in cash (3.7)
     countPending: isOn(core.settings.countPending),
   };
   for (const tx of listOf(core.doc.txs)) indexRow(core, index, tx);
@@ -552,6 +555,7 @@ function buildIndex(core) {
   index.order = [...index.buckets.keys()].sort(ascending);
   index.effectRunning = runningTotals(index, 'effect');
   index.provisionalRunning = runningTotals(index, 'provisional');
+  index.provisionalInRunning = runningTotals(index, 'provisionalIn');
   index.cashOutRunning = runningTotals(index, 'cashOut');
   return index;
 }
@@ -566,6 +570,7 @@ function newBucket() {
     gameSpend: 0, gameRefund: 0, stops: 0,
     cashOut: 0,         // outflows from cash accounts other than transfers
     provisional: 0,     // unmatched provisional moves still counting
+    provisionalIn: 0,   // unmatched provisional income (payments reported by another app, 3.7)
     pending: false,     // the bank has a pending row on this day
     unconfirmed: false, // a provisional move is waiting for its bank row
     loans: null,        // amortised loans paid on this day
@@ -612,12 +617,23 @@ function indexRow(core, index, tx) {
     if (shown) bucketFor(index, n).moves.push(tx);
     return;
   }
-  if (tx.matchId) return;
+  // a reported payment counts in pencil again when the row that met it no longer counts (3.7)
+  if (tx.matchId && !(tx.via === 'income' && tx.source === 'manual' && !rowCounts(core, index, tx.matchId))) return;
   if (tx.source === 'manual') {
-    if (shown) indexProvisional(core, index, tx, n);
+    if (shown || (tx.via === 'income' && holder && holder.bank)) indexProvisional(core, index, tx, n);
   } else if (holder && holder.bank) {
     indexBankRow(core, index, tx, n, holder);
   }
+}
+
+/** A bank row that still counts: it exists, its account is shown, and it is not a pending row while pending rows do not count. */
+function rowCounts(core, index, id) {
+  if (!index.rowsById) index.rowsById = new Map(listOf(core.doc.txs).filter((t) => isObject(t) && t.source === 'bank').map((t) => [t.id, t]));
+  const row = index.rowsById.get(id);
+  if (!row) return false;
+  const holder = row.accountId == null ? null : core.accounts().get(row.accountId) || null;
+  if (!holder || holder.hidden) return false;
+  return !(row.pending && !index.countPending);
 }
 
 /** A tick this many days old that no bank row has met is a payment made outside the linked accounts. */
@@ -658,6 +674,10 @@ function isByHand(entry) {
 
 /** A move the owner tapped in: no bank balance holds it yet, so it is carried separately. */
 function indexProvisional(core, index, tx, n) {
+  if (tx.via === 'income') {
+    indexReported(core, index, tx, n);
+    return;
+  }
   if (tx.kind !== 'spend' || tx.flow === 'in') return;
   const amount = Math.round(tx.amount);
   if (tx.inBalance === true) {
@@ -674,6 +694,32 @@ function indexProvisional(core, index, tx, n) {
   bucket.unconfirmed = true;
   bucket.moves.push(tx);
   tallySpend(core, index, bucket, tx, n, amount);
+}
+
+/**
+ * A payment another app of the owner reported (ARCHITECTURE 3.7). Paid in cash, it is income on its day
+ * in Cash in hand, whose value it raises from that day. Sent by transfer and not yet met by its bank
+ * row, it is provisional income: earned on its day in pencil, raising every close from its day and the
+ * live number, and it never expires. A matched one never reaches here (its bank row counts).
+ */
+function indexReported(core, index, tx, n) {
+  if (tx.kind !== 'income' || tx.flow !== 'in') return;
+  const amount = Math.round(tx.amount);
+  const holder = tx.accountId == null ? null : core.accounts().get(tx.accountId) || null;
+  if (holder && holder.cashInHand) {
+    if (n > core.todayN) return;
+    const bucket = bucketFor(index, n);
+    bucket.income += amount;
+    bucket.moves.push(tx);
+    pushTo(index.cashIn, holder.id, { n, amount, at: Number.isFinite(tx.at) ? tx.at : 0 });
+    return;
+  }
+  if (n > core.todayN) return;
+  const bucket = bucketFor(index, n);
+  bucket.provisionalIn += amount;
+  bucket.income += amount;
+  bucket.unconfirmed = true;
+  bucket.moves.push(tx);
 }
 
 function indexBankRow(core, index, tx, n, holder) {
@@ -780,6 +826,11 @@ function provisionalThrough(core, n) {
   return totalThrough(index, index.provisionalRunning, n);
 }
 
+function provisionalInThrough(core, n) {
+  const index = core.index();
+  return totalThrough(index, index.provisionalInRunning, n);
+}
+
 /* ---------------------------------------------------------- manual accounts */
 
 /**
@@ -790,7 +841,7 @@ function provisionalThrough(core, n) {
 function seriesOf(core, holder) {
   let series = core.series.get(holder.id);
   if (!series) {
-    series = holder.amortised ? loanSeries(core, holder) : historySeries(core, holder);
+    series = holder.amortised ? loanSeries(core, holder) : holder.cashInHand ? cashSeries(core, holder) : historySeries(core, holder);
     core.series.set(holder.id, series);
   }
   return series;
@@ -1097,6 +1148,51 @@ function accruingDays(item, point) {
   return elapsed > item.lapseDays ? null : Math.min(elapsed, item.capDays);
 }
 
+/**
+ * Cash in hand (ARCHITECTURE 3.7): every cash payment raises it from its day, and every count the owner
+ * made (`counts`, mirrored from the shared answers) sets it from its own day: at the end of a day it is the
+ * latest count made by then plus the cash payments marked after that count, or with no count yet every
+ * cash payment. So a later count never moves the close of a day before it. A count's difference from what
+ * was expected is a revaluation on its day: neither income nor spending.
+ */
+function cashSeries(core, holder) {
+  const payments = (core.index().cashIn.get(holder.id) || []).slice().sort((a, b) => a.n - b.n || a.at - b.at);
+  // the mirror lists the counts in the order they rule: by day, and on one day the one edited last comes last
+  const counts = listOf(holder.account.counts)
+    .filter((c) => isObject(c) && Number.isFinite(c.cents) && Number.isFinite(c.at))
+    .map((c, i) => ({ n: core.cal.num(gameDay(c.at, core.rollover)), cents: Math.round(c.cents), at: c.at, i }))
+    .filter((c) => Number.isFinite(c.n))
+    .sort((a, b) => a.n - b.n || a.i - b.i);
+  // Σ of the cash payments marked at or before a time: what a count already holds
+  const byTime = payments.slice().sort((a, b) => a.at - b.at);
+  const upTo = [0];
+  for (const p of byTime) upTo.push(upTo[upTo.length - 1] + p.amount);
+  const heldBy = (at) => {
+    let lo = 0;
+    let hi = byTime.length;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (byTime[mid].at <= at) lo = mid + 1; else hi = mid; }
+    return upTo[lo];
+  };
+  const series = newSeries(0);
+  const days = [...new Set([...payments.map((p) => p.n), ...counts.map((c) => c.n)])].sort((a, b) => a - b);
+  let value = 0;
+  let total = 0; // every cash payment through the day
+  let pi = 0;
+  let ci = -1;   // the count that rules
+  for (const n of days) {
+    let earned = 0;
+    while (pi < payments.length && payments[pi].n <= n) { earned += payments[pi].amount; pi += 1; }
+    total += earned;
+    let counted = false;
+    while (ci + 1 < counts.length && counts[ci + 1].n <= n) { ci += 1; counted = true; }
+    const next = ci < 0 ? total : counts[ci].cents + total - heldBy(counts[ci].at);
+    if (counted) noteReval(series, n, next - value - earned);
+    value = next;
+    addStep(series, n, value);
+  }
+  return series;
+}
+
 function accruedTotal(items, point) {
   let total = 0;
   for (const item of items) {
@@ -1146,7 +1242,7 @@ function rawClose(core, n) {
     const bank = bankOn(core, n);
     const receivable = roundCents(accruedTotal(accruals.pay, point));
     const payable = roundCents(accruedTotal(accruals.bills, point));
-    raw = { bank, receivable, payable, smooth: bank + receivable - payable - provisionalThrough(core, n) };
+    raw = { bank, receivable, payable, smooth: bank + receivable - payable - provisionalThrough(core, n) + provisionalInThrough(core, n) };
     core.rawCloses.set(n, raw);
   }
   return raw;
@@ -1212,6 +1308,7 @@ function buildPosition(core) {
   const payable = sumOf(bills, (line) => line.amount);
   const smooth = totals.bank + receivable - payable;
   const provisional = provisionalThrough(core, core.todayN);
+  const provisionalIn = provisionalInThrough(core, core.todayN);
   const rising = core.stopPoint === null ? risingDaily(pay) - risingDaily(bills) : 0;
   return {
     at: core.now,
@@ -1230,7 +1327,8 @@ function buildPosition(core) {
     payable,
     smooth,
     provisional,
-    live: smooth - provisional,
+    provisionalIn,
+    live: smooth - provisional + provisionalIn,
     rate: rising / daySecondsOf(core),
     dataAt: core.data().at,
     syncedAt: core.syncedAt,

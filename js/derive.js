@@ -28,6 +28,7 @@
 
 import { gameDay, addDays, monthOf } from './model/dates.js';
 import { ACCOUNT_TYPES } from './model/schema.js';
+import { isIdleCash } from './model/income.js';
 import { makeLedger } from './model/ledger.js';
 import { annotateRound } from './model/annotate.js';
 import { assess, coachNotes, monthReview } from './model/assess.js';
@@ -139,7 +140,8 @@ export function makeDerived(state, now) {
 
     account(id) { return state.accounts.find((a) => a.id === id) || null; },
     accounts(group) {
-      return state.accounts.filter((a) => !a.hidden && ACCOUNT_TYPES[a.type] && ACCOUNT_TYPES[a.type].group === group);
+      // an idle Cash in hand (nothing counted, nothing paid in cash) is not listed (3.7)
+      return state.accounts.filter((a) => !a.hidden && ACCOUNT_TYPES[a.type] && ACCOUNT_TYPES[a.type].group === group && !isIdleCash(state, a));
     },
     valueOf(account) { return once('value:' + account.id, () => led().accountValueOn(account.id, today)); },
 

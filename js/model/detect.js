@@ -12,6 +12,7 @@ import { reclassify } from './classify.js';
 import { makeLedger, todayOf } from './ledger.js';
 import { runsByHand } from './book.js';
 import { claimByHand, payeeKey, unpaidByPayee } from './byhand.js';
+import { incomeClaimedRows, rebuildIncome } from './income.js';
 
 /*
  * How the specification is read where it leaves a choice (each is implemented where it is named):
@@ -205,7 +206,7 @@ export function detectStreams(state, nowMs) {
     const stream = payerOf(known, taken, rows[0]);
     if (stream) taken.add(stream);
     if (stream ? isDismissed(stream) : rows.length < STREAM_MIN_DEPOSITS) continue;
-    const pay = payProfile(rows);
+    const pay = payProfile(rows, ctx.reported);
     if (stream) {
       if (refreshStream(ctx, stream, pay)) report.updated.push(stream.id);
       claim(claims, rows, stream.id);
@@ -218,6 +219,8 @@ export function detectStreams(state, nowMs) {
     }
   }
   linkDeposits(state, claims);
+  // the streams now follow the bank rows reported payments claim (followIncome)
+  if (isObject(state.income)) delete state.income.restream;
   return report;
 }
 
@@ -316,13 +319,32 @@ export function detectSweeps(state, nowMs) {
  * @returns {{ reclassified: number, recurring: object, streams: object, matchStarted: boolean, sweeps: number }}
  */
 export function refresh(state, nowMs) {
+  const reclassified = isObject(state) ? reclassify(state) : 0;
+  // the payments another app reported, matched to the bank rows just classified (ARCHITECTURE 3.7)
+  rebuildIncome(state, nowMs);
   return {
-    reclassified: isObject(state) ? reclassify(state) : 0,
+    reclassified,
     recurring: detectRecurring(state, nowMs),
     streams: detectStreams(state, nowMs),
     matchStarted: startMatch(state, nowMs),
     sweeps: detectSweeps(state, nowMs),
   };
+}
+
+/**
+ * What runs after every change of the document (the store's update hook, app.js): rebuild income, and when the bank
+ * rows that reported payments claim changed since the streams were last decided (`income.restream`, set by the
+ * rebuild), decide the streams again in the same step. A payer whose payments are matched stops accruing at once, and
+ * accrues again once none of its rows is claimed (3.7). The reader's update, the answers and the new game day all pass
+ * through it.
+ * @param {object} state  (mutated)
+ * @param {number} nowMs
+ * @returns {{ changed: boolean }}
+ */
+export function followIncome(state, nowMs) {
+  const result = rebuildIncome(state, nowMs);
+  if (isObject(state) && isObject(state.income) && state.income.restream === true) detectStreams(state, nowMs);
+  return result;
 }
 
 /* ------------------------------------------------------------- the document */
@@ -337,7 +359,9 @@ function readContext(state, nowMs) {
   const today = todayOf(state, nowMs);
   const rows = listOf(state.txs).filter((tx) => isBankRow(tx) && tx.day <= today && isShown(accounts.get(tx.accountId)));
   const swept = new Set(listOf(state.sweeps).filter(isObject).map((sweep) => sweep.txId).filter((id) => id != null));
-  return { today, accounts, rows, byId: new Map(rows.map((tx) => [tx.id, tx])), swept };
+  // bank rows a payment another app reported claims (a history one included): their stream is counted on arrival (3.7)
+  const reported = incomeClaimedRows(state);
+  return { today, accounts, rows, byId: new Map(rows.map((tx) => [tx.id, tx])), swept, reported };
 }
 
 /** A row the bank reported that counts: not a move the owner tapped in, not a decline, not superseded. */
@@ -825,7 +849,7 @@ function kindFor(purpose) {
  * What a payer's deposits amount to as a stream. Regular cadence and stable amounts are what make it
  * accrue; pay wording (or a deposit of $100 or more) is what tells regular pay from regular interest.
  */
-function payProfile(rows) {
+function payProfile(rows, reported) {
   const recent = rows.slice(-FIT_OCCURRENCES);
   const amounts = recent.map((row) => row.amount);
   const usual = median(amounts);
@@ -835,7 +859,10 @@ function payProfile(rows) {
   const latest = rows[rows.length - 1];
   const payroll = recent.some(isPayroll);
   const amount = regular ? typicalAmount(rows) : roundCents(usual);
-  const accrue = regular && (payroll || amount >= MIN_ACCRUING_PAY);
+  // a deposit that confirms a payment another app reported is counted when it is marked, so its stream
+  // is counted on arrival and never day by day (unless the owner locked `accrue` on)
+  const confirmed = !!reported && rows.some((row) => reported.has(row.id));
+  const accrue = regular && (payroll || amount >= MIN_ACCRUING_PAY) && !confirmed;
   return {
     name: nameOf(latest),
     kind: accrue || payroll ? 'salary' : kindFor(latest.purpose),

@@ -23,7 +23,7 @@ import { ShareError, isShareKey, readSharedText, shareMessage, shareOwner, write
 const SPACING_MS = 2000;
 /** After GitHub asks for a pause, nothing is asked of it for this long. */
 const RATE_PAUSE_MS = 10 * 60 * 1000;
-const CODES = new Set(['key', 'missing', 'conflict', 'network', 'server', 'rate', 'file']);
+const CODES = new Set(['key', 'missing', 'conflict', 'network', 'server', 'rate', 'file', 'large']);
 const OTHER = 'Sharing stopped on this device before anything was sent. Nothing was changed on GitHub.';
 
 const live = {
@@ -39,6 +39,8 @@ const live = {
   agreedAt: null,
   count: 0,
   file: true,
+  /** the key generation of the last round that agreed (cleared by a round that failed) */
+  agreedGen: null,
   /** no round before this time (GitHub asked for a pause) */
   pauseUntil: 0,
 };
@@ -153,11 +155,13 @@ async function round() {
     if (gen === generation) {
       if (code) {
         live.code = code;
+        live.agreedGen = null;
         live.failedAt = nowMs();
         if (code === 'rate') live.pauseUntil = nowMs() + RATE_PAUSE_MS;
       } else if (result && result.ok) {
         live.code = null;
         live.agreedAt = nowMs();
+        live.agreedGen = gen;
         live.count = result.count || 0;
         live.file = result.file !== false;
       }
@@ -213,6 +217,14 @@ export function shareInfo() {
     retryAt: paused ? live.pauseUntil : null,
     canShare: usable() && !live.busy && !paused,
   };
+}
+
+/**
+ * Whether this device's latest share round, under the key of generation `gen`, read the shared file: then the key
+ * reaches the repository, and a 404 for income/ means the folder is not there (income.js).
+ */
+export function shareSawFile(gen) {
+  return live.code === null && live.agreedGen === gen && live.file === true;
 }
 
 /**

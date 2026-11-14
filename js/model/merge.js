@@ -19,6 +19,7 @@ import { ACCOUNT_TYPES, CATEGORIES, klassOf, makeAccount, makeTx } from './schem
 import { addDays, diffDays, feedDay, feedHasTime, gameDay, isYmd } from './dates.js';
 import { roundCents } from './money.js';
 import { classify, inferAccountType, merchantOf, normalizeDescription, reclassify } from './classify.js';
+import { rebuildIncome } from './income.js';
 
 /**
  * @typedef {Object} MergeSummary
@@ -1080,6 +1081,8 @@ export function mergeFeed(state, feed, nowMs) {
   takeIntoBalance(state, touched.map((t) => t.account));
   flagStaleProvisional(state, ctx.today);
   updateSync(state, feed, ctx, work.earliestDay);
+  // a bank row that confirms a payment another app reported takes its place at once (3.7); detection runs it again
+  rebuildIncome(state, ctx.nowMs);
   return summary;
 }
 

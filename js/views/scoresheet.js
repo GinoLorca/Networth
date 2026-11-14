@@ -117,7 +117,7 @@ function inFilter(tx, filter) {
 
 function matchesQuery(tx, needle) {
   if (!needle) return true;
-  return [tx.merchant, tx.raw, tx.note].some((s) => typeof s === 'string' && s.toLowerCase().includes(needle));
+  return [tx.merchant, tx.raw, tx.note, tx.reportedAs].some((s) => typeof s === 'string' && s.toLowerCase().includes(needle));
 }
 
 function href(ym, params) {
@@ -258,7 +258,7 @@ function worthLine(ctx, review, ym) {
   const current = ym === monthOf(ctx.today);
   const byHand = ctx.state.accounts.some((account) => account && !account.hidden && account.source === 'manual');
   // R4b: a month in progress made only of posted rows and reported balances is roman, as the Board's "This month" is
-  const est = (!current && !review.complete) || !!pos.smoothing || pos.provisional > 0 || byHand;
+  const est = (!current && !review.complete) || !!pos.smoothing || pos.provisional > 0 || pos.provisionalIn > 0 || byHand;
   if (!est) return figured(text);
   const found = [...text.matchAll(AMOUNT_IN_SENTENCE)];
   const live = current && found.length > 1 && Number.isFinite(pos.live) ? fmt(Math.floor(pos.live)) : null;

@@ -28,12 +28,14 @@ import { store } from '../store.js';
 import { openSheet } from '../router.js';
 import { context, toast } from '../runtime.js';
 import { fmt, fmtPct, ratio, toneBand } from '../model/money.js';
-import { addDays, diffDays, fmtDate, fmtMonth, fmtTime, isYmd, monthOf, ymd } from '../model/dates.js';
+import { addDays, diffDays, fmtDate, fmtMonth, fmtTime, gameDay, isYmd, monthOf, nowMs, ymd } from '../model/dates.js';
 import { firstTransactionDay } from '../model/cards.js';
 import { nextOccurrence, runsByHand } from '../model/book.js';
 import { editByHand, skipRow, tickByHand } from '../model/byhand.js';
 import { refresh } from '../model/detect.js';
+import { answerItems, answerPayer, cashAccountOf, incomeQuestions, isIdleCash } from '../model/income.js';
 import { evalGlyph, timeTroubleGlyph, moveGlyph, resultMark } from '../ui/glyphs.js';
+import { bankWhere, beforeCountWords, confirmWords, isCountedCash, itemWords, listedPayers, othersWords, payerWords } from './income-words.js';
 import { money, inlineMoney, keptLine, statusLine, roundTitle, colourOf, crosstable, movesList, notableMoves, worstGlyph, spentUnposted, recentList, toneStyle, flowLookups, payFlowClass, unbankedWords } from './parts.js';
 
 const TEN_MINUTES_MS = 10 * 60 * 1000;
@@ -154,7 +156,7 @@ function payOnArrival(ctx) {
  */
 function model(ctx) {
   const pos = ctx.d.position;
-  const estimated = pos.smoothing || pos.provisional > 0;
+  const estimated = pos.smoothing || pos.provisional > 0 || pos.provisionalIn > 0;
   const seen = ctx.ui.seen && Number.isFinite(ctx.ui.seen.cents) && Number.isFinite(ctx.ui.seen.at) ? ctx.ui.seen : null;
   const firstDay = firstTransactionDay(ctx.state);
   return {
@@ -168,7 +170,7 @@ function model(ctx) {
     // one count of history for every screen: first transaction's day through today, both included
     historyDays: Number.isFinite(ctx.d.historyDays) ? ctx.d.historyDays : 0,
     matchOn: isYmd(ctx.state.meta.matchStart) && ctx.d.todayRound.status !== 'prematch',
-    manualCount: ctx.state.accounts.filter((account) => !account.hidden && account.source === 'manual').length,
+    manualCount: ctx.state.accounts.filter((account) => !account.hidden && account.source === 'manual' && !isIdleCash(ctx.state, account)).length,
     // the figure at the bank still holds the owner's own estimates (equipment, a loan worked down)
     bankEst: ctx.state.accounts.some((account) => ownEstimate(ctx, account)),
     lapsed: (Array.isArray(pos.lapsedPay) ? pos.lapsedPay : []).filter((item) => item && typeof item === 'object'),
@@ -195,6 +197,8 @@ function payModel(ctx) {
 
 function heroMain(ctx, v) {
   const { pos, estimated, showLive } = v;
+  // the figure at the bank holds Cash in hand when it is shown, and says so (the caption lists it apart, as the clock does)
+  const bankName = handAccount(ctx) ? 'At the bank and in hand' : 'At the bank';
   // one size for both readings, so a tap changes the figure and not its scale
   const ems = (estimated ? Math.max(figureEms(pos.live, true), figureEms(pos.bank, v.bankEst)) : figureEms(pos.bank, v.bankEst)) * 1.012;
   // a ticker of its own for each reading: a tap sets the other figure at once, with no roll through
@@ -205,7 +209,7 @@ function heroMain(ctx, v) {
     rate: showLive ? pos.rate : 0,
     t0: pos.at,
     from: showLive && v.roll && !ctx.ui.heroMode ? v.seen.cents : null,
-    label: showLive ? 'Net worth, live estimate:' : v.bankEst ? 'Net worth at the bank, with your own estimates:' : 'Net worth at the bank:',
+    label: showLive ? 'Net worth, live estimate:' : 'Net worth ' + bankName.toLowerCase() + (v.bankEst ? ', with your own estimates:' : ':'),
   })}></nw-ticker>`;
   const shown = showLive ? pos.live : pos.bank;
   const size = '--hero-ems:' + ems.toFixed(2) + ';' + toneStyle(shown);
@@ -213,11 +217,11 @@ function heroMain(ctx, v) {
 
   return html`
     <div class="sec-head">
-      <h2 class="lab" id="b-nw"><b>Net worth</b><i class="sep"></i>${showLive ? html`<span class="spot">Live</span>` : 'At the bank'}</h2>
-      ${estimated ? html`<button class="btn-link" type="button" data-action="board.hero">${showLive ? 'At the bank' : 'Live'}</button>` : ''}
+      <h2 class="lab" id="b-nw"><b>Net worth</b><i class="sep"></i>${showLive ? html`<span class="spot">Live</span>` : bankName}</h2>
+      ${estimated ? html`<button class="btn-link" type="button" data-action="board.hero">${showLive ? bankName : 'Live'}</button>` : ''}
     </div>
     ${estimated
-      ? html`<button class="hero-fig" type="button" data-action="board.hero" data-tone="${tone}" style="${size}">${ticker}<span class="vh">${showLive ? 'Show the figure at the bank' : 'Show the live figure'}</span></button>`
+      ? html`<button class="hero-fig" type="button" data-action="board.hero" data-tone="${tone}" style="${size}">${ticker}<span class="vh">${showLive ? 'Show the figure ' + bankName.toLowerCase() : 'Show the live figure'}</span></button>`
       : html`<p class="hero-fig" data-tone="${tone}" style="${size}">${ticker}</p>`}
     ${heroCaption(ctx, v)}
     ${heroMeta(ctx, v)}`;
@@ -242,13 +246,17 @@ function heroCaption(ctx, v) {
   }
   const main = pos.receivables.slice().sort((a, b) => b.daily - a.daily)[0];
   const held = pos.smoothing && pos.rate === 0 && pos.freshness !== 'fresh';
-  const bits = [html`<span class="nowrap">At the bank ${money(pos.bank)}</span>`];
+  // Cash in hand is part of the sum but not at the bank: listed apart whenever it is shown, as the clock says (3.7)
+  const hand = inHand(ctx);
+  const bits = [html`<span class="nowrap">At the bank ${money(pos.bank - hand)}</span>`];
+  if (handAccount(ctx)) bits.push(html`<span class="nowrap">in hand ${money(hand, { est: !isCountedCash(ctx.state, hand) })}</span>`);
   // one live figure: the parts add up to the floored hero, so bills used takes the remainder (as Material)
   const bankC = Math.round(pos.bank);
   const recvC = Math.round(pos.receivable);
   const provC = Math.round(pos.provisional || 0);
+  const provInC = Math.round(pos.provisionalIn || 0);
   const liveC = Number.isFinite(pos.live) ? Math.floor(pos.live) : null;
-  const payC = liveC != null ? bankC + recvC - provC - liveC : Math.round(pos.payable);
+  const payC = liveC != null ? bankC + recvC - provC + provInC - liveC : Math.round(pos.payable);
   if (pos.smoothing) {
     bits.push(html`<span class="nowrap">pay earned${main ? ' since ' + fmtDate(main.since, 'short') : ''} ${money(recvC, { est: true, signed: true })}</span>`);
     bits.push(html`<span class="nowrap">bills used ${money(-payC, { est: true, signed: true })}</span>`);
@@ -256,8 +264,29 @@ function heroCaption(ctx, v) {
   if (provC > 0) {
     bits.push(html`<span class="nowrap">${unbankedWords(ctx.state)}, not yet at the bank ${money(-provC, { est: true, signed: true })}</span>`);
   }
+  if (provInC > 0) {
+    bits.push(html`<span class="nowrap">payments marked, not yet at the bank ${money(provInC, { est: true, signed: true })}</span>`);
+  }
   return html`<p class="cap board-compo">${bits.map((bit, i) => html`${i ? DOT : ''}${bit}`)}${held
     ? html`<span class="board-held">The figure holds still: the bank last reported ${reported}.</span>` : ''}</p>${lapsedLines(v)}`;
+}
+
+/** The Cash in hand account when it is part of the figures: not left out, and not idle. */
+function handAccount(ctx) {
+  const account = cashAccountOf(ctx.state);
+  return account && !account.hidden && !isIdleCash(ctx.state, account) ? account : null;
+}
+
+/** Cash in hand is part of the figures and is not exactly the owner's latest count: the sums holding it are estimates. */
+function handEst(ctx) {
+  return !!handAccount(ctx) && !isCountedCash(ctx.state, inHand(ctx));
+}
+
+/** What Cash in hand holds now when it is part of the figures (0 when there is none or it is left out). */
+function inHand(ctx) {
+  const account = handAccount(ctx);
+  if (!account) return 0;
+  return Math.round(ctx.d.valueOf(account) || 0);
 }
 
 /** A pay stream whose deposits stopped (ledger: lapsedPay): one line each, under the composition. */
@@ -293,12 +322,12 @@ function heroMeta(ctx, v) {
   </div>`);
   items.push(html`<div class="tally-item">
     <span class="lab">This month</span>
-    ${money(ret.kept, { est: !!pos.smoothing || pos.provisional > 0, signed: true, tint: true, rim: true })}
+    ${money(ret.kept, { est: !!pos.smoothing || pos.provisional > 0 || pos.provisionalIn > 0, signed: true, tint: true, rim: true })}
     <span class="cap">${ret.rate == null
       ? 'nothing counted as earned yet this month'
       : ret.kept >= 0
-        ? html`kept of ${inlineMoney(ret.earned, { est: pos.smoothing })} earned`
-        : html`more went out than the ${inlineMoney(ret.earned, { est: pos.smoothing })} earned`}</span>
+        ? html`kept of ${inlineMoney(ret.earned, { est: pos.smoothing || pos.provisionalIn > 0 })} earned`
+        : html`more went out than the ${inlineMoney(ret.earned, { est: pos.smoothing || pos.provisionalIn > 0 })} earned`}</span>
   </div>`);
   if (v.seen) {
     items.push(html`<div class="tally-item">
@@ -374,8 +403,8 @@ function clockMain(ctx, v) {
     </div>
     <div class="clock-body">
       <div>
-        <p class="${cx('clock-cash', Math.abs(c.cash) >= LONG_CASH && 'is-long', Math.abs(c.cash) >= HUGE_CASH && 'is-huge')}">${fmt(c.cash)}</p>
-        <p class="cap"><i class="bank-mark"></i>at the bank · from ${whenText(ctx, c.asOf)}</p>
+        <p class="${cx('clock-cash', Math.abs(c.cash) >= LONG_CASH && 'is-long', Math.abs(c.cash) >= HUGE_CASH && 'is-huge', handEst(ctx) && 'est')}">${handEst(ctx) ? html`<span class="approx">≈</span>` : ''}${fmt(c.cash)}</p>
+        <p class="cap"><i class="bank-mark"></i>${handAccount(ctx) ? 'at the bank and in hand' : 'at the bank'} · from ${whenText(ctx, c.asOf)}</p>
       </div>
       <div class="clock-run">
         ${days == null
@@ -746,6 +775,60 @@ function noteAction(cta) {
   return '';
 }
 
+/**
+ * What the income another app reported asks (ARCHITECTURE 3.7): how a payer pays, once per payer; and a
+ * payment sent by transfer that has not reached the bank 4 days after it was marked. One line each, with
+ * text buttons. None in the sample game.
+ */
+function incomeRows(ctx) {
+  if (ctx.demo) return [];
+  const q = incomeQuestions(ctx.state, ctx.now);
+  const rows = [];
+  // one format for every line: "{what} · {payer}, {amount}, marked {day}", then what is asked
+  const head = (label, cents, marked) => html`${label}, ${inlineMoney(cents)}, marked ${fmtDate(marked, 'short')}`;
+  for (const c of q.confirm) {
+    const shows = html`the bank shows ${inlineMoney(c.bank.cents)} on ${fmtDate(c.bank.day, 'short')}`;
+    // the payments asked about, then the row's other members (history ones, or ones already answered)
+    const one = c.asked.n === 1;
+    const asked = one ? head(c.label, c.asked.cents, c.marked) : html`${c.label}, ${c.asked.n} payments, ${inlineMoney(c.asked.cents)}`;
+    const others = c.others ? html`, ${figText(othersWords(c.others, !!ctx.state.settings.cover))}` : '';
+    rows.push({ key: 'income-confirm-' + c.key, text: html`${asked}${others}: ${shows}. ${one ? 'Did this one come by Zelle?' : 'Did these come by Zelle?'}`,
+    buttons: [['It came by Zelle', 'board.income-confirm', { source: c.source, items: c.ids.join(' '), how: 'bank', row: c.row }],
+      ['It was cash', 'board.income-confirm', { source: c.source, items: c.ids.join(' '), how: 'cash', row: c.row }]] });
+  }
+  for (const p of q.payers) {
+    const bank = !p.bank ? ''
+      : p.bank.same ? html` The bank shows ${inlineMoney(p.bank.cents)} on ${fmtDate(p.bank.day, 'short')}.`
+        : html` An earlier one reached the bank: ${inlineMoney(p.bank.cents)} on ${fmtDate(p.bank.day, 'short')}.`;
+    rows.push({ key: 'income-payer-' + p.key, text: html`${head(p.what + ' · ' + p.name, p.cents, p.marked)}. How do they pay?${bank}`,
+      buttons: [['Zelle or transfer', 'board.income-payer', { source: p.source, payer: p.payer, how: 'bank' }],
+        ['Cash', 'board.income-payer', { source: p.source, payer: p.payer, how: 'cash' }]] });
+  }
+  for (const l of q.late) {
+    rows.push({ key: 'income-late-' + l.key, text: html`${head(l.label, l.cents, l.marked)}: it has not reached the bank.`,
+      buttons: [['It was cash', 'board.income-item', { source: l.source, item: l.id, how: 'cash' }],
+        ['It’s in the bank', 'board.income-item', { source: l.source, item: l.id, how: 'gone' }],
+        ['Still coming', 'board.income-item', { source: l.source, item: l.id, how: 'wait' }]] });
+  }
+  return rows;
+}
+
+/**
+ * The questions about reported income, in a small band of their own directly above Recent transactions
+ * (both layouts), which the owner checks often: shown only when there is a question.
+ */
+function askBand(ctx) {
+  const asked = incomeRows(ctx);
+  if (!asked.length) return '';
+  return html`<section class="band board-ask" aria-labelledby="b-ask">
+    <div class="sec-head"><h2 class="lab" id="b-ask"><b>To answer</b><i class="sep"></i>reported income</h2><span class="lab">${plural(asked.length, 'question', 'questions')}</span></div>
+    <ol class="notes">${asked.map((q, i) => html`<li class="note" data-key="${q.key}">
+      <b class="note-n">${i + 1}</b><span class="note-text" id="b-ask-${i + 1}">${q.text}</span>
+      <span class="note-actions">${q.buttons.map(([label, action, data]) => html`<button class="btn-link" type="button" data-action="${action}" aria-describedby="b-ask-${i + 1}"${dataAttrs(data)}>${label}</button>`)}</span>
+    </li>`)}</ol>
+  </section>`;
+}
+
 function notesBlock(ctx) {
   const notes = ctx.d.notes.filter((n) => n && n.text);
   const sweep = ctx.d.edge.sweep;
@@ -777,9 +860,13 @@ function principlesBlock(ctx) {
 
 function worthData(ctx, v) {
   const closes = ctx.d.recent(WORTH_DAYS).filter((c) => !v.firstDay || c.day >= v.firstDay);
+  const cash = cashAccountOf(ctx.state);
+  const countDays = new Set((cash && Array.isArray(cash.counts) ? cash.counts : [])
+    .filter((c) => c && Number.isFinite(c.at)).map((c) => gameDay(c.at, ctx.state.settings.rolloverHour)));
   const data = {
     days: closes.map((c) => ({ day: c.day, smooth: c.smooth, bank: c.bank, partial: c.partial })),
-    events: closes.filter((c) => c.reval !== 0).map((c) => ({ day: c.day, label: 'revalued' })),
+    // a day on which the owner counted Cash in hand says "counted", as the sheet and the toasts do
+    events: closes.filter((c) => c.reval !== 0).map((c) => ({ day: c.day, label: countDays.has(c.day) ? 'counted' : 'revalued' })),
   };
   // the hero shows cents it has reached (floored), so the figure's last point is cut the same way
   if (v.estimated) data.live = Math.floor(v.pos.live);
@@ -820,8 +907,8 @@ function figuresBlock(ctx, v) {
         <nw-chart data-island kind="worth" data="${JSON.stringify(worth.data)}"></nw-chart>
         <figcaption class="cap"><span class="lab"><b>Fig. 1</b></span>
           ${v.pos.smoothing
-            ? html`Net worth, the last ${plural(worth.count, 'day', 'days')}. Ink: with pay earned and bills used. Dotted: at the bank. The tail in pencil is not final.`
-            : html`Net worth at the bank, the last ${plural(worth.count, 'day', 'days')}${worth.count < WORTH_DAYS ? html`: the record begins ${fmtDate(worth.from, 'short')}` : ''}. The tail in pencil is not final.`}
+            ? html`Net worth, the last ${plural(worth.count, 'day', 'days')}. Ink: with pay earned and bills used. Dotted: ${bankWhere(!!handAccount(ctx))}. The tail in pencil is not final.`
+            : html`Net worth ${bankWhere(!!handAccount(ctx))}, the last ${plural(worth.count, 'day', 'days')}${worth.count < WORTH_DAYS ? html`: the record begins ${fmtDate(worth.from, 'short')}` : ''}. The tail in pencil is not final.`}
         </figcaption>
       </figure>
       <figure class="${cx('board-fig', !edge.from && 'is-empty')}">
@@ -851,7 +938,7 @@ function recentBlock(ctx, v) {
   const sample = ctx.state.meta.origin === 'demo';
   const read = Number.isFinite(ctx.state.sync.lastOk) ? ctx.state.sync.lastOk : null;
   const head = html`<div class="sec-head">
-    <h2 class="lab" id="b-recent"><b>Recent transactions</b><i class="sep"></i>every account</h2>
+    <h2 class="lab" id="b-recent" tabindex="-1"><b>Recent transactions</b><i class="sep"></i>every account</h2>
     <a class="btn-link" href="#/scoresheet">All, by day</a>
   </div>`;
   const source = sample ? 'Sample transactions.'
@@ -862,7 +949,7 @@ function recentBlock(ctx, v) {
   }
   const t = r.today;
   const todayLine = t.count
-    ? html`Today: ${plural(t.count, 'transaction', 'transactions')}${t.out ? html`, ${inlineMoney(t.out, { est: t.unsettled })} out` : ''}${t.in ? html`, ${inlineMoney(t.in, { est: t.unsettled })} in` : ''}.`
+    ? html`Today: ${plural(t.count, 'transaction', 'transactions')}${t.out ? html`, ${inlineMoney(t.out, { est: t.unsettledOut })} out` : ''}${t.in ? html`, ${inlineMoney(t.in, { est: t.unsettledIn })} in` : ''}.`
     : 'Today: 0 transactions on the record.';
   return html`${head}
     <p class="board-recent-today">${todayLine}${r.fresh ? html` <span class="recent-new">${r.fresh} new</span> since the last look.` : ''}</p>
@@ -997,6 +1084,7 @@ function wideBoard(ctx, v) {
         <section class="band" aria-labelledby="b-princ">${principlesBlock(ctx)}</section>
       </div>
     </div>
+    ${askBand(ctx)}
     <section class="band" aria-labelledby="b-recent">${recentBlock(ctx, v)}</section>
     <div class="band">${crosstableBlock(ctx, v)}</div>
     <div class="cols">
@@ -1019,6 +1107,7 @@ function narrowBoard(ctx, v) {
     <section class="band clock board-top" aria-labelledby="b-clock">${clockMain(ctx, v)}</section>
     ${v.pay ? html`<section class="band board-pay-band" aria-labelledby="b-pay">${payBlock(ctx, v)}</section>` : ''}
     <section class="band" aria-labelledby="b-today">${v.matchOn ? todayBlock(ctx, v) : prematchBlock(ctx, v)}</section>
+    ${askBand(ctx)}
     <section class="band" aria-labelledby="b-recent">${recentBlock(ctx, v)}</section>
     ${last ? html`<section class="band" aria-labelledby="b-last">${last}</section>` : ''}
     <section class="band" aria-labelledby="b-material">
@@ -1043,6 +1132,43 @@ function narrowBoard(ctx, v) {
 export function render(ctx) {
   const v = model(ctx);
   return ctx.wide ? wideBoard(ctx, v) : narrowBoard(ctx, v);
+}
+
+/** The keys of the reported payments in Cash in hand now. */
+function inCash(state) {
+  const account = cashAccountOf(state);
+  return new Set(account ? state.txs.filter((tx) => tx && tx.via === 'income' && tx.accountId === account.id && tx.income).map((tx) => tx.income.key) : []);
+}
+
+/**
+ * What a cash answer did to Cash in hand (income-words: beforeCountWords), read after the answer: the figure is the
+ * one the rebuild stored, not the last render's.
+ */
+function cashAfter(ctx, had, kind) {
+  const account = cashAccountOf(store.state);
+  return account ? beforeCountWords(store.state, had, Math.round(Number(account.balance) || 0), ctx.today, !!store.state.settings.cover, kind) : null;
+}
+
+/** The place of the question a button belongs to (0 for the first), or 0. */
+function questionIndex(el) {
+  const li = el && typeof el.closest === 'function' ? el.closest('.board-ask .note') : null;
+  return li && li.parentNode ? [...li.parentNode.children].indexOf(li) : 0;
+}
+
+/**
+ * After an answer: the first button of the question it raised (`key`, the line's data-key), else of the next
+ * question (the one that now stands where the answered one stood), or else the Recent transactions heading.
+ */
+function focusAfterAnswer(index, key) {
+  const go = () => {
+    const notes = [...document.querySelectorAll('.board-ask .note')];
+    const raised = key ? notes.find((li) => li.getAttribute('data-key') === key) : null;
+    const at = raised || notes[index];
+    const next = at ? at.querySelector('.note-actions button') : null;
+    const target = next || document.getElementById('b-recent');
+    if (target) target.focus({ preventScroll: !next });
+  };
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => requestAnimationFrame(go)); else setTimeout(go, 0);
 }
 
 /** A toast with Undo that only undoes the change it announces. */
@@ -1119,6 +1245,63 @@ export const actions = {
     const after = payRowOf(context(), data.id, null);
     offerUndo(name + (ctx.state.settings.cover ? ' takes the bank’s amount' : ' is now ' + fmt(amount)) + (after ? ', from ' + fmtMonth(monthOf(after.day), 'name') + '.' : '.'),
       undoLabel, name + ' is at its earlier amount again.');
+  },
+
+  /**
+   * How a payer pays (3.7): payments without their own answer follow it, on every device. Like every answer it is
+   * made as a change from outside, so no Undo takes it back; the payer switch in Settings changes it.
+   */
+  'board.income-payer': ({ el, data }) => {
+    const index = questionIndex(el);
+    const ctx = context();
+    const q = incomeQuestions(ctx.state, ctx.now).payers.find((p) => p.source === data.source && p.payer === data.payer);
+    // the name Settings lists the payer by ("Avery · Group class" when another source has an Avery too)
+    const name = q ? listedPayers(ctx.state).names.get(data.source + '/' + data.payer) || q.name : 'The payer';
+    let done = false;
+    const at = nowMs(); // the moment of the answer, not the time of the last render
+    const before = inCash(ctx.state);
+    const asked = new Set(incomeQuestions(store.state, at).confirm.map((c) => c.key));
+    const change = (s) => answerPayer(s, data.source, data.payer, data.how, at);
+    store.update((s) => { done = change(s); }, { past: change });
+    if (!done) return;
+    // a payment of theirs that a bank row holds now asks to be confirmed: say so, and go to that question
+    const raised = incomeQuestions(store.state, at).confirm.find((c) => !asked.has(c.key)) || null;
+    const moved = [...inCash(store.state)].filter((key) => !before.has(key)).length;
+    toast(payerWords(name, data.how, data.how === 'cash' ? cashAfter(ctx, before, 'payer') : null, raised ? raised.bank : null, !!store.state.settings.cover, moved));
+    focusAfterAnswer(index, raised ? 'income-confirm-' + raised.key : null);
+  },
+
+  /** A payment that has not reached the bank: it was cash, it is in the bank, or it is still coming (3.7). Ask again changes it. */
+  'board.income-item': ({ el, data }) => {
+    const index = questionIndex(el);
+    const ctx = context();
+    const q = incomeQuestions(ctx.state, ctx.now).late.find((l) => l.source === data.source && l.id === data.item);
+    const label = q ? q.label : 'The payment';
+    const had = inCash(ctx.state);
+    let done = false;
+    const at = nowMs(); // the moment of the answer, not the time of the last render
+    const change = (s) => answerItems(s, data.source, [data.item], data.how, at);
+    store.update((s) => { done = change(s); }, { past: change });
+    if (!done) return;
+    toast(itemWords(label, data.how, data.how === 'cash' ? cashAfter(ctx, had) : null, at, ctx.state.settings.rolloverHour));
+    focusAfterAnswer(index);
+  },
+
+  /** A bank row counted for payments that follow their payer's cash answer: it came by Zelle, or it was cash, for every one (3.7). */
+  'board.income-confirm': ({ el, data }) => {
+    const index = questionIndex(el);
+    const ctx = context();
+    const ids = String(data.items || '').split(' ').filter(Boolean);
+    const q = incomeQuestions(ctx.state, ctx.now).confirm.find((c) => c.row === data.row);
+    const label = q ? q.label : 'The payment';
+    const had = inCash(ctx.state);
+    let done = false;
+    const at = nowMs(); // the moment of the answer, not the time of the last render
+    const change = (s) => answerItems(s, data.source, ids, data.how, at);
+    store.update((s) => { done = change(s); }, { past: change });
+    if (!done) return;
+    toast(confirmWords(label, ids.length, data.how, data.how === 'cash' ? cashAfter(ctx, had) : null));
+    focusAfterAnswer(index);
   },
 
   /** Open the entry sheet empty, for a payment the owner sends. */

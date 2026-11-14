@@ -28,6 +28,8 @@ let editedAt = null;
 const undoStack = [];
 /** Called by undo() with (the document before the Undo, the document put back); see store.onRestore. */
 let restoreHook = null;
+/** Called by update() and undo() with the document right after each change, in the same step; see store.onUpdate. */
+let updateHook = null;
 
 const status = {
   /** 'indexeddb' | 'localstorage' | 'memory' | 'demo' */
@@ -169,6 +171,9 @@ export const store = {
       }
     }
     mutator(doc);
+    if (updateHook) {
+      try { updateHook(doc); } catch (err) { console.error('[store] update hook failed', err); }
+    }
     rev++;
     doc.meta.rev = (doc.meta.rev || 0) + 1;
     editedAt = Date.now();
@@ -196,6 +201,9 @@ export const store = {
     if (restoreHook) {
       try { restoreHook(before, doc); } catch (err) { console.error('[store] restore hook failed', err); }
     }
+    if (updateHook) {
+      try { updateHook(doc); } catch (err) { console.error('[store] update hook failed', err); }
+    }
     rev++;
     editedAt = Date.now();
     schedulePersist();
@@ -210,6 +218,15 @@ export const store = {
    */
   onRestore(fn) {
     restoreHook = typeof fn === 'function' ? fn : null;
+  },
+
+  /**
+   * Register the one function `update()` and `undo()` call with the document right after each change, in the same
+   * step (before it is saved or shown). It may change the document.
+   * @param {((state: object) => void)|null} fn
+   */
+  onUpdate(fn) {
+    updateHook = typeof fn === 'function' ? fn : null;
   },
 
   /** Run `fn` on every change (state or ui). Returns an unsubscribe function. */

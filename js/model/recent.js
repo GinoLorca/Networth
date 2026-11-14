@@ -46,7 +46,7 @@ export function recentTransactions(state, today, opts = {}) {
   const limit = Number.isInteger(opts.limit) && opts.limit > 0 ? opts.limit : DEFAULT_LIMIT;
   const seenAt = Number.isFinite(opts.seenAt) ? opts.seenAt : null;
   const only = typeof opts.accountId === 'string' && opts.accountId ? opts.accountId : null;
-  const empty = { rows: [], today: { count: 0, out: 0, in: 0, unsettled: false }, fresh: 0, total: 0, oldest: null };
+  const empty = { rows: [], today: { count: 0, out: 0, in: 0, unsettled: false, unsettledIn: false, unsettledOut: false }, fresh: 0, total: 0, oldest: null };
   if (!state || typeof state !== 'object' || !isYmd(today)) return empty;
 
   const accounts = new Map();
@@ -66,7 +66,7 @@ export function recentTransactions(state, today, opts = {}) {
   const present = only !== null ? new Set() : new Set(txs.map((tx) => tx.id));
 
   const rows = [];
-  const todayTally = { count: 0, out: 0, in: 0, unsettled: false };
+  const todayTally = { count: 0, out: 0, in: 0, unsettled: false, unsettledIn: false, unsettledOut: false };
   let fresh = 0;
   let oldest = null;
   let ahead = 0; // rows of the one account in view that are dated further ahead: counted, not listed
@@ -74,7 +74,8 @@ export function recentTransactions(state, today, opts = {}) {
     if (tx.day > latest) { ahead += 1; continue; }
     const paired = tx.pairId != null && present.has(tx.pairId);
     if (paired && tx.flow === 'in') continue;   // the same event as its outgoing leg
-    const provisional = tx.source === 'manual' && tx.inBalance !== true; // an alert the balance took in is settled
+    // an alert the balance took in is settled, and so is a payment reported as paid in cash (3.7)
+    const provisional = tx.source === 'manual' && tx.inBalance !== true && !(tx.via === 'income' && tx.income && tx.income.how === 'cash');
     const isNew = seenAt !== null && Number.isFinite(tx.loggedAt) && tx.loggedAt > seenAt;
     if (isNew) fresh += 1;
     if (tx.day === today) {
@@ -84,7 +85,11 @@ export function recentTransactions(state, today, opts = {}) {
         if (tx.flow === 'in') todayTally.in += amount;
         else todayTally.out += amount;
       }
-      if (tx.pending || provisional) todayTally.unsettled = true;
+      if (tx.pending || provisional) {
+        // each sum is in pencil only for what is unsettled on its own side (a pencil payment in does not make the out sum pencil)
+        todayTally.unsettled = true;
+        if (!paired) todayTally[tx.flow === 'in' ? 'unsettledIn' : 'unsettledOut'] = true;
+      }
     }
     if (oldest === null || tx.day < oldest) oldest = tx.day;
     rows.push({ tx, account: tx.accountId != null ? accounts.get(tx.accountId) || null : null, isNew, provisional });

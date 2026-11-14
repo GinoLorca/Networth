@@ -379,7 +379,11 @@ function drawWorth(d, W, H) {
       if (left && ex - 8 - w < l) left = false;
       if (!left && ex + 8 + w > l + pw - (Math.abs(base - ey) < 26 ? lw : 0)) left = true;
       const up = ey - 20 > t;
-      out += txt('nwc-i', left === up ? ex - 7 : ex + 7, up ? ey - 8 : ey + 17, e.label, left === up ? 'end' : 'start');
+      // the side it lies on, kept inside the chart: a count is made today, at the right edge
+      let right = left !== up;
+      if (right && ex + 7 + w > W - 2) right = false;
+      else if (!right && ex - 7 - w < 2) right = true;
+      out += txt('nwc-i', right ? ex + 7 : ex - 7, up ? ey - 8 : ey + 17, e.label, right ? 'start' : 'end');
     }
   }
 
@@ -960,6 +964,13 @@ const KINDS = {
  * @param {object|Array} data  the data object (not a JSON string)
  * @returns {string}
  */
+/** The drawing of a chart as svg markup, outside the element (for the tests): null when there is nothing to draw. */
+export function chartSvg(kind, data, W, H) {
+  const k = KINDS[kind];
+  const drawn = k ? k.draw(k.read(data), W, H) : null;
+  return drawn && typeof drawn.body === 'string' ? drawn.body : null;
+}
+
 export function chartSummary(kind, data) {
   const k = KINDS[kind];
   if (!k) return 'Chart: ' + NOTE + '.';

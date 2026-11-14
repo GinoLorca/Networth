@@ -23,10 +23,11 @@ import { makeDerived } from './derive.js';
 import { initSync, syncInfo, autoSync, syncNow } from './sync.js';
 import { initShare, shareInfo, autoShare, shareNow } from './share.js';
 import { autoInbox, inboxInfo } from './inbox.js';
+import { autoIncome, incomeInfo } from './income.js';
 import { restampByHand } from './model/byhand.js';
 import { buildDemoState, demoFeed } from './model/demo.js';
 import { mergeFeed } from './model/merge.js';
-import { refresh } from './model/detect.js';
+import { followIncome, refresh } from './model/detect.js';
 import { mountSheet, showSheet, hideSheet, isSheetOpen } from './ui/sheet.js';
 import { installPull } from './ui/pull.js';
 import { initUpdate, checkVersion, reloadTo, reloadNow, pendingBuild, takeRefreshFlag, reachedAttempt } from './update.js';
@@ -117,6 +118,11 @@ async function boot() {
   await initSync();
   // an Undo makes what it put back the newest, so that the other devices take the Undo and do not bring the change back
   store.onRestore((before, after) => { restampByHand(before, after, nowMs()); });
+  // whatever a change (or an Undo) touched that the matching of reported payments reads (the pending switch, an account
+  // left out or retyped, the rollover hour, a row reclassified, paired or claimed, an answer), the payments follow in the
+  // same update (3.7); the rebuild changes nothing when its inputs did not change. When the bank rows reported payments
+  // claim changed, a payer's stream is decided again in the same update (accrual off, or back on)
+  store.onUpdate((s) => { followIncome(s, nowMs()); });
   await initShare(location);
 
   registerActions({ ...appActions, ...boardActions, ...scoresheetActions, ...materialActions, ...bookActions, ...analysisActions,
@@ -131,6 +137,8 @@ async function boot() {
 
   startRouter();
   onRoute(schedule);
+  // a hand-kept account's field errors belong to the sheet they were made on: they go whenever a sheet opens or closes
+  onRoute(() => { if (store.ui.accountErrors) store.setUi({ accountErrors: null }); });
   store.subscribe(schedule);
   if (typeof matchMedia === 'function') matchMedia(WIDE).addEventListener('change', schedule);
   setInterval(schedule, 30000);
@@ -141,6 +149,7 @@ async function boot() {
   autoSync();
   autoShare();
   autoInbox();
+  autoIncome();
   registerWorker();
   initUpdate({ isIdle, save: async () => { store.mirror(); await store.flush(); }, poke: schedule });
   // in a browser tab no touch listener is added at all: the page scrolls and bounces exactly as before
@@ -171,7 +180,7 @@ function isIdle() {
   if (refreshing || isSheetOpen() || currentRoute().sheet) return false;
   const a = document.activeElement;
   if (a && a !== document.body && a.matches('input, textarea, select, [contenteditable], [contenteditable] *')) return false;
-  return !syncInfo().busy && !shareInfo().busy && !inboxInfo().busy;
+  return !syncInfo().busy && !shareInfo().busy && !inboxInfo().busy && !incomeInfo().busy;
 }
 
 /** Make the page and the next load's bootstrap agree with the theme saved in the record. */
@@ -200,6 +209,7 @@ function onVisibility() {
     autoSync();
     autoShare();
     autoInbox();
+    autoIncome();
     schedule();
   }
 }
@@ -267,7 +277,7 @@ let refreshing = null;
  * The refresh, one function for every control (the top bar, Settings, the sync mark, the pull, Command-R):
  * (a) a newer version is loaded first (the page reloads and comes back here with `updated`); (b) the bank is
  * read through the manual path, within its 15-minute minimum and the day's budget; (c) a sharing round and
- * an inbox reading, when sharing is on. Then one toast. Two controls at once share one run.
+ * an inbox reading and a reading of income/, when sharing is on. Then one toast. Two controls at once share one run.
  * @returns {Promise<{ line: string, short: string }>}
  */
 function refreshAndSay(opts = {}) {
@@ -301,7 +311,8 @@ async function runRefresh({ afterReload = false } = {}) {
   const sh = shareInfo();
   if (sh.available && sh.on) {
     autoInbox();
-    await Promise.race([shareNow().catch(() => {}), new Promise((r) => { setTimeout(r, 8000); })]);
+    // the income another app reported is read in every refresh too (3.7)
+    await Promise.race([Promise.all([shareNow().catch(() => {}), autoIncome()]), new Promise((r) => { setTimeout(r, 8000); })]);
   }
   return bank;
 
@@ -350,6 +361,7 @@ function buildContext() {
     sync: syncInfo(),
     share: shareInfo(),
     inbox: inboxInfo(),
+    income: incomeInfo(),
     wide: typeof matchMedia === 'function' ? matchMedia(WIDE).matches : true,
   };
 }

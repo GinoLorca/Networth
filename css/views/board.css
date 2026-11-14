@@ -27,6 +27,8 @@ button.hero-fig:focus-visible { outline-offset: 2px; }
 /* the one line of composition under the figure */
 .board-compo { max-width: 86ch; }
 .board-compo .fig { font-size: 1.1em; }
+/* on the narrowest phones a long piece of the composition may wrap rather than run past the column */
+@media (max-width: 359px) { .board-compo .nowrap { white-space: normal; } }
 .board-held { display: block; margin-top: 2px; }
 
 .board-split { margin-top: var(--s-3); }

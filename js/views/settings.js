@@ -21,26 +21,31 @@
  *   settings.export        (click)  "Save a copy": downloads the document as JSON (it never holds the bank key)
  *   settings.restore-pick  (change) "Restore a copy": reads the chosen file, checks and migrates it, then asks once
  *   settings.restore       (click)  confirmed: replaces the document with the checked copy
+ *   settings.income-payer  (change) how a payer pays (3.7); the toast says what it did, as on the Board
+ *   settings.income-again  (click)  Ask again about a payment answered "in the bank"; focus goes to the next Ask again
+ *   settings.income-gone-all (click) "Show all": a source's list of payments answered "in the bank", in full
  * The shell's own: app.refresh, app.sheet (an account opens its sheet), app.leave-demo.
  *
  * Ephemeral state (store.ui): settingsConfirm, settingsRestore { name, accounts, moves, savedAt },
- * settingsRestoreError, settingsLinkError.
+ * settingsRestoreError, settingsLinkError, settingsGoneAll (the sources whose "in the bank" list is shown in full).
  */
 
-import { html, cx } from '../ui/dom.js';
+import { html, cx, attrs } from '../ui/dom.js';
 import { store } from '../store.js';
 import { context, toast } from '../runtime.js';
-import { navigate } from '../router.js';
+import { navigate, openSheet } from '../router.js';
 import { linkBank, unlinkBank } from '../sync.js';
 import { startShare, shareNow, forgetShare, shareInfo } from '../share.js';
 import { wipeStorage, listSnapshots } from '../db.js';
 import { ACCOUNT_TYPES, CADENCES, PURPOSES, SCHEMA_VERSION, accountLabel, checkDoc, migrate, defaultState } from '../model/schema.js';
 import { fmt } from '../model/money.js';
-import { gameDay, diffDays, fmtDate, fmtTime } from '../model/dates.js';
+import { gameDay, diffDays, fmtDate, fmtTime, nowMs } from '../model/dates.js';
 import { position } from '../model/ledger.js';
 import { makeDerived } from '../derive.js';
 import { coverText, inlineMoney } from './parts.js';
 import { alertStatus } from '../model/alerts.js';
+import { answerPayer, askAgain, cashAccountOf, isIdleCash, ensureCashAccount, incomeLabel, incomeOf, incomePayments, incomeQuestions, payerAnswer } from '../model/income.js';
+import { againWords, beforeCountWords, countedWords, isCountedCash, listedPayers, payerWords, paymentState } from './income-words.js';
 
 const APP_VERSION = '1.0.0';
 const BRIDGE_URL = 'https://bridge.simplefin.org';
@@ -485,6 +490,105 @@ function alertSection(ctx) {
   </div>`;
 }
 
+/* ------------------------------------------------- income your other apps report */
+
+/**
+ * One source of income/ in a line: its label, when the other app last wrote it (from the file, read leniently:
+ * nothing when it does not say; a writer that stopped shows here, and a quiet week is normal, so no alarm),
+ * when it was read, how many payments count, and any problem.
+ */
+/** How many payments answered "in the bank" a source lists before "Show all" (every answer keeps a reachable Ask again). */
+const GONE_SHOWN = 10;
+
+function incomeSourceLine(ctx, id, src, payments, since, index) {
+  const n = payments.filter((p) => p.source === id && (p.how === 'bank' || p.how === 'ask' || p.how === 'cash')).length;
+  const what = src.what ? html`<b data-cover-keep>${src.what}</b>` : html`<b>${id}.json</b>`;
+  const good = Number.isFinite(src.readAt);
+  const written = Number.isFinite(src.writtenAt) && src.writtenAt > 0 ? 'written ' + whenText(src.writtenAt, ctx) + ', ' : '';
+  // a file read and refused says so in one line: "{file}: read {when}, not used. {problem}"
+  if (!good && src.problem) {
+    const checked = Number.isFinite(src.checkedAt) ? 'read ' + whenText(src.checkedAt, ctx) + ', not used' : 'not used';
+    return html`<li><b>${id}.json</b>: ${checked}. <span class="set-income-problem">${src.problem}</span></li>`;
+  }
+  const read = written + (good ? 'read ' + whenText(src.readAt, ctx) : 'not read yet');
+  const goneList = payments.filter((p) => p.source === id && p.how === 'gone');
+  const gone = goneList.length;
+  const counted = since === null || !good ? '' : html`; ${n === 1 ? '1 payment counts' : n + ' payments count'} since ${fmtDate(gameDay(since, ctx.state.settings.rolloverHour), 'short')}${gone
+    ? html`, and ${gone === 1 ? '1 is' : gone + ' are'} in the bank by your answer` : ''}`;
+  const refused = src.problem ? html` <span class="set-income-problem">The latest file${Number.isFinite(src.checkedAt) ? ', read ' + whenText(src.checkedAt, ctx) + ',' : ''} could not be used: ${lowerFirst(src.problem)}${src.sha ? ' The last good copy is kept.' : ''}</span>` : '';
+  // the payments answered "in the bank", latest first, each with Ask again: the 10 latest, and "Show all" for the rest
+  const all = !!(ctx.ui.settingsGoneAll && ctx.ui.settingsGoneAll[id] === true);
+  const sorted = goneList.slice().sort((a, b) => b.at - a.at || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+  const shown = all ? sorted : sorted.slice(0, GONE_SHOWN);
+  const more = gone - shown.length;
+  const list = shown.length ? html`<ul class="set-income-gone">${shown.map((p, k) => html`<li><span id="inc-gone-${index}-${k + 1}"><span data-cover-keep>${incomeLabel(p)}</span>, ${inlineMoney(p.cents)}, marked ${fmtDate(p.marked, 'short')}: in the bank.</span>
+      <button class="btn-link" type="button" data-action="settings.income-again" aria-describedby="inc-gone-${index}-${k + 1}" data-source="${p.source}" data-item="${p.id}">Ask again</button></li>`)}${more > 0
+    ? html`<li class="cap">and ${more === 1 ? '1 more' : more + ' more'} · <button class="btn-link" type="button" data-action="settings.income-gone-all" data-source="${id}" data-from="${shown.length}" aria-label="Show all ${gone} in-the-bank payments of ${src.what || id + '.json'}">Show all ${gone}</button></li>` : ''}</ul>` : '';
+  return html`<li>${what}: ${read}${counted}.${refused}${list}</li>`;
+}
+
+/** "The file is not…" read after a colon: "the file is not…". */
+function lowerFirst(text) {
+  return text ? text.charAt(0).toLowerCase() + text.slice(1) : text;
+}
+
+/**
+ * Per payer, how they pay: Zelle or transfer | Cash. Payments without their own answer follow it. `called`: the name
+ * the payer goes by here ("Avery · Group class" when another source has an Avery too).
+ */
+function incomePayerRow(p, answer, index, called) {
+  const name = 'inc-payer-' + index; // from an index: two payers never share one radio group
+  return html`<div class="set-income-payer">
+    <span class="set-income-name" data-cover-keep>${called}</span>
+    <div class="seg" role="radiogroup" aria-label="How ${called} pays" data-change="settings.income-payer" data-source="${p.source}" data-payer="${p.payer}">
+      <label class="seg-opt"><input type="radio" name="${name}" value="bank" ${attrs({ checked: answer === 'bank' })}><span>Zelle or transfer</span></label>
+      <label class="seg-opt"><input type="radio" name="${name}" value="cash" ${attrs({ checked: answer === 'cash' })}><span>Cash</span></label>
+    </div>
+  </div>`;
+}
+
+function incomeSection(ctx) {
+  const sh = ctx.share;
+  if (!sh || !sh.available || ctx.demo) return '';
+  const { sources, shared } = incomeOf(ctx.state);
+  const payments = incomePayments(ctx.state, ctx.state.settings.rolloverHour);
+  const labelOf = (id) => (sources[id] && sources[id].what) || id + '.json';
+  const ids = Object.keys(sources).sort((a, b) => labelOf(a).localeCompare(labelOf(b)) || (a < b ? -1 : a > b ? 1 : 0));
+  const info = ctx.income || {};
+  const { payers, names } = listedPayers(ctx.state);
+  const cash = cashAccountOf(ctx.state);
+  // the head label and the status line come from the same branches
+  const readonly = !!(store.status && store.status.readonly);
+  const [head, status] = !sh.on ? ['Needs the key', 'The income needs the same key as sharing: paste it above, and this device reads income/ by itself.']
+    : sh.code === 'key' || info.code === 'key' ? ['Paused', 'Paused: GitHub refused the key. A new key above starts it again.']
+      : sh.retryAt ? ['Paused', 'Paused until ' + fmtTime(sh.retryAt) + '.']
+        : readonly ? ['Read-only', 'This record is open read-only here, so this device does not read income/.']
+          : ['Reading every minute', (info.folder === 'none' ? 'No file in income/.'
+            : info.folder === 'unseen' ? 'Could not see income/: nothing has arrived yet, or the key cannot reach it, so nothing is dropped.'
+              : info.readAt ? 'income/ read ' + whenText(info.readAt, ctx) + '.' : 'income/ has not been read yet on this device.')
+            + (info.code && info.code !== 'rate' ? ' The last reading did not go through; it is tried again within a minute.' : '')];
+  return html`<div class="cols">
+    <section class="col col-7 set-sec" aria-label="Income your other apps report">
+      <div class="sec-head">
+        <h2 class="lab" id="set-income-head" tabindex="-1"><b>Income your other apps report</b><i class="sep"></i>counted the moment it is marked</h2>
+        <span class="lab">${head}</span>
+      </div>
+      <p class="set-lede">Another app of yours writes the payments it records into <code class="set-code">income/</code> in your private repository, and this device reads them with its sharing key. There is nothing to set up here: the other app holds its own key.
+        A payment by Zelle or transfer counts in pencil until the bank’s row takes its place; a payment in cash counts in Cash in hand.</p>
+      <p class="cap" role="status">${status}</p>
+      ${ids.length ? html`<ul class="set-income-sources">${ids.map((id, i) => incomeSourceLine(ctx, id, sources[id], payments, shared.since, i + 1))}</ul>`
+        : html`<p class="cap">Nothing has arrived yet.</p>`}
+    </section>
+    <section class="col col-5 set-sec" aria-label="Payers and cash">
+      <div class="sec-head"><h3 class="lab"><b>How each payer pays</b><i class="sep"></i>asked once, on every device</h3></div>
+      ${payers.length ? html`<div class="set-income-payers">${payers.map((p, i) => incomePayerRow(p, payerAnswer(shared, p.payerKey), i + 1, names.get(p.payerKey)))}</div>`
+        : html`<p class="cap">No payer yet.</p>`}
+      <p><button class="btn-link" type="button" data-action="settings.income-cash">Count your cash</button>${cash && !isIdleCash(ctx.state, cash)
+        ? html` <span class="cap">Cash in hand: ${inlineMoney(ctx.d.valueOf(cash), { est: !isCountedCash(ctx.state, ctx.d.valueOf(cash)) })}, ${countedWords(ctx.state, ctx.today).words}.</span>` : ''}</p>
+    </section>
+  </div>`;
+}
+
 /* ----------------------------------------------------------------- the day */
 
 function payLine(ctx) {
@@ -730,9 +834,9 @@ export function render(ctx) {
       </div>
       <div class="set-top-row">
         <h1 class="title title-l set-title">Settings</h1>
-        <p class="cap set-top-note">The bank link, ${shared ? (ctx.demo ? 'sharing between devices, ' : 'sharing between devices, card purchases within minutes, ') : ''}how a day is counted, appearance, your own rules and the record. ${ctx.demo
+        <p class="cap set-top-note">The bank link, ${shared ? (ctx.demo ? 'sharing between devices, ' : 'sharing between devices, card purchases within minutes, income your other apps report, ') : ''}how a day is counted, appearance, your own rules and the record. ${ctx.demo
           ? 'In the sample game a change lasts until this page is closed or reloaded, and none is kept'
-          : 'Every control saves the moment it changes'}, and none of the ${shared ? (ctx.demo ? 7 : 8) : 6} sections needs a visit: the board is complete as it stands.</p>
+          : 'Every control saves the moment it changes'}, and none of the ${shared ? (ctx.demo ? 7 : 9) : 6} sections needs a visit: the board is complete as it stands.</p>
       </div>
     </section>
     <div class="cols">
@@ -741,6 +845,7 @@ export function render(ctx) {
     </div>
     ${shareSection(ctx)}
     ${alertSection(ctx)}
+    ${incomeSection(ctx)}
     <div class="cols">
       ${appearanceSection(ctx)}
       ${rulesSection(ctx)}
@@ -1034,7 +1139,89 @@ async function restore() {
   }, 250);
 }
 
+/** The keys of the reported payments in Cash in hand now. */
+function inCash(state) {
+  const account = cashAccountOf(state);
+  return new Set(account ? state.txs.filter((tx) => tx && tx.via === 'income' && tx.accountId === account.id && tx.income).map((tx) => tx.income.key) : []);
+}
+
+/** The place of an Ask again button among those of Settings (0 for the first), or 0. */
+function againIndex(el) {
+  const all = typeof document !== 'undefined' ? [...document.querySelectorAll('[data-action="settings.income-again"]')] : [];
+  const at = el ? all.indexOf(el.closest ? el.closest('button') || el : el) : -1;
+  return at < 0 ? 0 : at;
+}
+
+/**
+ * After Ask again in Settings (its line goes): the Ask again that now stands where it stood (the next one), else
+ * the section's heading. `selector` instead names the button to go to (the first one "Show all" brought in).
+ */
+function focusAfterAgain(index, selector) {
+  const go = () => {
+    const all = [...document.querySelectorAll('[data-action="settings.income-again"]')];
+    const target = (selector && document.querySelector(selector)) || all[index] || document.getElementById('set-income-head');
+    if (target) target.focus({ preventScroll: false });
+  };
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => requestAnimationFrame(go)); else setTimeout(go, 0);
+}
+
 export const actions = {
+  /**
+   * How a payer pays (3.7), from the two-way choice: shared with every device through the share round. The toast
+   * says what it did, as the Board's answer does, and a confirmation question it raised on the board.
+   */
+  'settings.income-payer': ({ ev, data }) => {
+    const how = ev && ev.target && ev.target.value === 'cash' ? 'cash' : 'bank';
+    const ctx = context();
+    if (!ctx || ctx.demo) return;
+    const at = nowMs(); // the moment of the answer, not the time of the last render
+    const payer = incomePayments(store.state, ctx.state.settings.rolloverHour).find((p) => p.source === data.source && p.payer === data.payer);
+    const before = inCash(store.state);
+    const asked = new Set(incomeQuestions(store.state, at).confirm.map((c) => c.key));
+    let done = false;
+    const change = (s) => answerPayer(s, data.source, data.payer, how, at);
+    store.update((s) => { done = change(s); }, { past: change });
+    if (!done) return;
+    const raised = incomeQuestions(store.state, at).confirm.find((c) => !asked.has(c.key)) || null;
+    const moved = [...inCash(store.state)].filter((key) => !before.has(key)).length;
+    const account = cashAccountOf(store.state);
+    const cover = !!store.state.settings.cover;
+    const cash = how === 'cash' && account ? beforeCountWords(store.state, before, Math.round(Number(account.balance) || 0), ctx.today, cover, 'payer') : null;
+    const called = payer ? listedPayers(store.state).names.get(payer.payerKey) || payer.payerName : 'The payer';
+    toast(payerWords(called, how, cash, raised ? raised.bank : null, cover, moved, 'settings'));
+  },
+  /** Ask again about a payment answered "in the bank": its own answer is taken back on every device (3.7); the toast says what it does now. */
+  'settings.income-again': ({ el, data }) => {
+    const ctx = context();
+    if (!ctx || ctx.demo || store.status.readonly) return;
+    let done = false;
+    const at = nowMs(); // the moment of the action
+    const key = data.source + '/' + data.item;
+    const before = paymentState(store.state, key);
+    const index = againIndex(el);
+    const change = (s) => askAgain(s, data.source, data.item, at);
+    store.update((s) => { done = change(s); }, { past: change });
+    if (!done) return;
+    toast(againWords(store.state, key, at, before));
+    focusAfterAgain(index);
+  },
+  /** "Show all": the source's whole list of payments answered "in the bank"; focus goes to the first one it brought in. */
+  'settings.income-gone-all': ({ el, data }) => {
+    const all = { ...(store.ui.settingsGoneAll || {}), [data.source]: true };
+    const list = el && el.closest ? el.closest('.set-income-gone') : null;
+    const from = Number(data.from) || 0;
+    const index = list ? [...document.querySelectorAll('[data-action="settings.income-again"]')].indexOf(list.querySelectorAll('[data-action="settings.income-again"]')[from - 1]) + 1 : 0;
+    store.setUi({ settingsGoneAll: all });
+    focusAfterAgain(index);
+  },
+  /** Count your cash: the Cash in hand sheet (the account is made when it is missing). */
+  'settings.income-cash': () => {
+    const ctx = context();
+    if (!ctx || ctx.demo) return;
+    let id = cashAccountOf(ctx.state) ? cashAccountOf(ctx.state).id : null;
+    if (!id) store.update((s) => { id = ensureCashAccount(s).id; }, { undo: 'Cash in hand added' });
+    if (id) openSheet('account', { id });
+  },
   'settings.workday': setWorkday,
   'settings.rollover': setRollover,
   'settings.toggle': setToggle,

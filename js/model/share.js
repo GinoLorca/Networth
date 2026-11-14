@@ -1,6 +1,7 @@
 /**
  * What travels between the owner's devices: the payments they send themselves, their ticks, and the
- * fingerprints that let every device recognise a payment the same way. Nothing the bank reported.
+ * fingerprints that let every device recognise a payment the same way; and the answers about the
+ * income another app of theirs reports (`income`, ARCHITECTURE 3.7). Nothing the bank reported.
  * See ARCHITECTURE.md section 3.5.
  *
  * Pure: no clock, no DOM, no network. A round (`roundShared`) is handed the device and the transport.
@@ -10,6 +11,7 @@
 import { makeByHand } from './byhand.js';
 import { isYmd } from './dates.js';
 import { refresh } from './detect.js';
+import { ensureIncome, exportIncomeShared, incomeOf, isBlankIncome, mergeIncomeShared, readIncomeShared, rebuildIncome } from './income.js';
 
 const VERSION = 1;
 const APP = 'networth';
@@ -27,7 +29,7 @@ const MAX_DEPTH = 12;
 const TOMB_KEEP_MS = 400 * 86400000;
 /** How many times a round starts again when another device wrote the file meanwhile. */
 const RESTARTS = 3;
-const KNOWN = new Set(['v', 'app', 'savedAt', 'byHand']);
+const KNOWN = new Set(['v', 'app', 'savedAt', 'byHand', 'income']);
 const UNSAFE = new Set(['__proto__', 'constructor', 'prototype']);
 const ID = /^[A-Za-z0-9_.:-]{1,80}$/;
 const PAYEE = /^p[0-9a-f]{13}$/;
@@ -66,6 +68,12 @@ function fileOf(raw) {
     byHand[id] = entry;
   }
   const out = { v: VERSION, app: APP, savedAt, byHand };
+  if (raw.income !== undefined) {
+    // the answers about reported income (3.7): checked like the rest; an empty section is left out
+    const income = readIncomeShared(raw.income);
+    if (!income) return null;
+    if (!isBlankIncome(income)) out.income = income;
+  }
   for (const key of Object.keys(raw)) {
     if (!KNOWN.has(key) && !UNSAFE.has(key)) out[key] = plain(raw[key], 0);
   }
@@ -137,7 +145,10 @@ export function exportShared(state, nowMs) {
     if (!isId(id) || Object.hasOwn(byHand, id) || !isStamp(at) || nowMs - at > TOMB_KEEP_MS) continue;
     byHand[id] = { deleted: true, editedAt: at };
   }
-  return { v: VERSION, app: APP, savedAt: isStamp(nowMs) ? nowMs : 0, byHand };
+  const out = { v: VERSION, app: APP, savedAt: isStamp(nowMs) ? nowMs : 0, byHand };
+  const income = exportIncomeShared(doc);
+  if (!isBlankIncome(income)) out.income = income;
+  return out;
 }
 
 /** What the file says of one entry of the document; null when the entry is not fit to travel. */
@@ -171,6 +182,8 @@ export function mergeShared(a, b) {
     const q = own(y.byHand, id);
     out.byHand[id] = !q ? p : !p ? q : mergeEntry(p, q);
   }
+  const income = mergeIncomeShared(x.income, y.income);
+  if (!isBlankIncome(income)) out.income = income;
   for (const key of union(x, y)) {
     if (KNOWN.has(key)) continue;
     const p = own(x, key);
@@ -259,14 +272,20 @@ export function sharedChanges(state, merged) {
  * @returns {{ changed: boolean }}
  */
 export function applyShared(state, merged, nowMs) {
-  void nowMs; // every time written here is the file's own, so that the device then agrees with the file
+  // every time written here is the file's own, so that the device then agrees with the file
   const ops = planOf(state, merged);
   if (!ops.length) return { changed: false };
+  if (ops.some((one) => one.op === 'income')) {
+    // the answers about reported income: the merged ones, and the payments' moves follow them (3.7)
+    ensureIncome(state).shared = mergeIncomeShared(fileOf(merged).income, null);
+    rebuildIncome(state, nowMs);
+  }
   if (!Array.isArray(state.recurring)) state.recurring = [];
   if (!isObject(state.share)) state.share = { tombs: {} };
   if (!isObject(state.share.tombs)) state.share.tombs = {};
   const tombs = state.share.tombs;
   for (const { op, id, want } of ops) {
+    if (op === 'income') continue;
     const at = state.recurring.findIndex((r) => isObject(r) && r.id === id);
     if (op === 'remove') {
       if (at >= 0) state.recurring.splice(at, 1);
@@ -298,6 +317,8 @@ function planOf(state, merged) {
   const list = listOf(state.recurring);
   const tombs = isObject(state.share) && isObject(state.share.tombs) ? state.share.tombs : {};
   const ops = [];
+  const income = mergeIncomeShared(file.income, null);
+  if (JSON.stringify(sortedCopy(incomeOf(state).shared)) !== JSON.stringify(sortedCopy(income))) ops.push({ op: 'income' });
   for (const id of Object.keys(file.byHand)) {
     const want = file.byHand[id];
     const have = list.find((r) => isObject(r) && r.id === id);
@@ -400,7 +421,16 @@ function blank() {
 }
 
 function isBlank(file) {
-  return Object.keys(file).every((key) => KNOWN.has(key)) && Object.keys(file.byHand).length === 0;
+  return Object.keys(file).every((key) => KNOWN.has(key)) && Object.keys(file.byHand).length === 0 && !file.income;
+}
+
+/** A copy with every object's keys in order, so that equal content prints the same. */
+function sortedCopy(x) {
+  if (Array.isArray(x)) return x.map(sortedCopy);
+  if (!isObject(x)) return x;
+  const out = {};
+  for (const key of Object.keys(x).sort()) out[key] = sortedCopy(x[key]);
+  return out;
 }
 
 function isId(id) {

@@ -26,9 +26,10 @@ const MESSAGES = {
   server: 'GitHub answered with an error of its own (a 5xx).',
   rate: 'GitHub asked for a pause; nothing is asked of it for 10 minutes.',
   file: 'The shared file is not one this version of Networth can read. It was left as it is.',
+  large: 'The shared file is larger than 1 MB and GitHub did not give its content. It was left as it is.',
 };
 
-/** A failed call. `code`: 'key' | 'missing' | 'conflict' | 'network' | 'server' | 'rate' | 'file'. */
+/** A failed call. `code`: 'key' | 'missing' | 'conflict' | 'network' | 'server' | 'rate' | 'file' | 'large'. */
 export class ShareError extends Error {
   constructor(code) {
     super(MESSAGES[code] || MESSAGES.network);
@@ -137,7 +138,9 @@ async function call(owner, key, init, doFetch, at = sharedUrl(owner)) {
 }
 
 /**
- * Read the shared file.
+ * Read the shared file. Above 1 MB the Contents API gives the file's sha and no content (`encoding: 'none'`): the
+ * content is then read by that sha from the blob API (up to 100 MB). That answer is never "no file": when the blob
+ * cannot be read either, the read fails, so the round stops and nothing is written over a file this device could not read.
  * @returns {Promise<{ text: string|null, sha: string|null }>} text null when there is no file yet
  *          (GitHub says 404 for that, and also when the key cannot see the repository)
  */
@@ -150,9 +153,24 @@ export async function readSharedText(owner, key, doFetch) {
     if (err instanceof ShareError && err.code === 'missing') return { text: null, sha: null };
     throw err;
   }
+  const sha = body && typeof body.sha === 'string' && SHA.test(body.sha) ? body.sha : null;
+  if (body && body.encoding === 'none' && sha) {
+    // a 404 here is not "no file" either: the file was just listed with this sha
+    const blob = await call(owner, key, { method: 'GET' }, doFetch, blobUrl(owner, sha)).catch((err) => {
+      throw err instanceof ShareError && err.code === 'missing' ? new ShareError('large') : err;
+    });
+    const text = blob && blob.encoding === 'base64' && blob.sha === sha ? fromBase64(blob.content) : null;
+    if (text === null) throw new ShareError('large');
+    return { text, sha };
+  }
   const text = body && body.encoding === 'base64' ? fromBase64(body.content) : null;
-  if (text === null || typeof body.sha !== 'string' || !SHA.test(body.sha)) throw new ShareError('file');
-  return { text, sha: body.sha };
+  if (text === null || !sha) throw new ShareError('file');
+  return { text, sha };
+}
+
+/** The blob API's address for a file's content by its sha (the Contents API gives no content above 1 MB). */
+function blobUrl(owner, sha) {
+  return API + '/repos/' + owner + '/' + REPOSITORY + '/git/blobs/' + sha;
 }
 
 /**
@@ -225,4 +243,52 @@ export async function deleteInboxFile(owner, key, name, sha, doFetch) {
     throw err;
   }
   return true;
+}
+
+/* ------------------------------------------------------- income the owner's other apps report */
+
+const INCOME = 'income';
+/** A file of income/: an id of 1 to 80 letters, digits and `_ . : -`, then `.json`. */
+const INCOME_NAME = /^[A-Za-z0-9_.:-]{1,80}\.json$/;
+
+/** The folder income/, or one file in it (a name of the expected form only). Nothing here writes to it. */
+export function incomeUrl(owner, name) {
+  if (typeof owner !== 'string' || !OWNER.test(owner)) throw new ShareError('missing');
+  if (name !== undefined && !(typeof name === 'string' && INCOME_NAME.test(name))) throw new ShareError('file');
+  return API + '/repos/' + owner + '/' + REPOSITORY + '/contents/' + INCOME + (name === undefined ? '' : '/' + encodeURIComponent(name));
+}
+
+/**
+ * List income/. No folder (GitHub's 404) gives null, not an empty list: nothing has arrived yet, or the key cannot
+ * see the repository any more, so a reading drops nothing on it.
+ * @returns {Promise<{ name: string, sha: string, size: number }[]|null>} the `*.json` files directly inside it
+ */
+export async function listIncome(owner, key, doFetch) {
+  const url = incomeUrl(owner);
+  let body = null;
+  try {
+    body = await call(owner, key, { method: 'GET' }, doFetch, url);
+  } catch (err) {
+    if (err instanceof ShareError && err.code === 'missing') return null;
+    throw err;
+  }
+  if (!Array.isArray(body)) throw new ShareError('file');
+  return body
+    .filter((e) => e && e.type === 'file' && typeof e.name === 'string' && INCOME_NAME.test(e.name)
+      && typeof e.sha === 'string' && SHA.test(e.sha) && Number.isFinite(e.size))
+    .slice(0, 100)
+    .map((e) => ({ name: e.name, sha: e.sha, size: e.size }));
+}
+
+/** Read one file of income/; null when it is gone or is not UTF-8 text. */
+export async function readIncomeText(owner, key, name, doFetch) {
+  const url = incomeUrl(owner, name);
+  let body = null;
+  try {
+    body = await call(owner, key, { method: 'GET' }, doFetch, url);
+  } catch (err) {
+    if (err instanceof ShareError && err.code === 'missing') return null;
+    throw err;
+  }
+  return body && body.encoding === 'base64' ? fromBase64(body.content) : null;
 }

@@ -150,6 +150,8 @@
 .acct-now { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px var(--s-3); padding-bottom: var(--s-3); border-bottom: var(--rule); }
 .acct-now .fig { font-family: var(--f-display); font-size: 2.125rem; line-height: 1.1; white-space: nowrap; }
 .acct-now .cap { flex: 1 1 180px; }
+/* Cash in hand: Remove the latest count, a link under the figure (the actions row keeps Close | Count it) */
+.acct-now .acct-uncount { flex-basis: 100%; }
 
 /* the choice of what to add: six ruled lines */
 .acct-kinds .row { cursor: pointer; align-items: center; }

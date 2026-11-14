@@ -8,8 +8,8 @@
 <meta name="description" content="Networth: a private net-worth board. It reads your bank feed itself; your data stays on your device.">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
-<meta name="networth-build" content="828a23fabec0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-+HJBz+d0AOil7pcXqnYnr0HRhm0rCMpiNgeCV5eeaio='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-rrcgv2y0KMkdT76+jAxvRcNQTlj6UpNB9oKKC0whQNA=' 'sha256-e/tbGNncdNoZz13l4nvoF3bB1VC0tPaMfOMw7T5fyIM=' 'sha256-7SpmrBa4MtNjtfgl0u0TAWs7M0YSAaOyjWIfTMzxNis=' 'sha256-bjsMTiPXO/fV7QJlhFnicz5k0INxLBT0hibL6mxaByc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-jIy2OdEjB9B16sWGikup16E01UhrwE3PFzd2VnlKV3k=' 'sha256-VzoPHmMbD+TfmkRekvrhksYUuT8rj+c4jA1P/9P6/qI=' 'sha256-/xAinrTNYppFAIdG41S3TqyTgXliWkmyzNG9HOP4uBU=' 'sha256-Yq5LqpSuZYrQBiwZV3GIUKl7VztQyUyyTLeHF8RzYfM=' 'sha256-3slL6XKCxBUrVwsIn+pfLSFvsWrg1SlNV1OOfV1jrRE=' 'sha256-1UjHLsDVs0RKTBy5R/d8fnZMgp9m+SJwneuFwTG/A0A=' 'sha256-niQW6BHsFCuf+mNMjOPiKJl0QACazn3cmhTykWBmDew='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://beta-bridge.simplefin.org https://bridge.simplefin.org https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="networth-build" content="344e5aa22c8d">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-AC6tLdNGR7FtqGPVTG4+tbX0yCgjez2AwLPEv4xgEe4='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-rrcgv2y0KMkdT76+jAxvRcNQTlj6UpNB9oKKC0whQNA=' 'sha256-e/tbGNncdNoZz13l4nvoF3bB1VC0tPaMfOMw7T5fyIM=' 'sha256-QZySRq3duz+06TEJEE3OZm9xbivVHzjw2V1w4xyZ4so=' 'sha256-bjsMTiPXO/fV7QJlhFnicz5k0INxLBT0hibL6mxaByc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-Emyu5cw7i4JN3GbUB61EyK9lHxxGx58pdLBCYR43F4c=' 'sha256-VzoPHmMbD+TfmkRekvrhksYUuT8rj+c4jA1P/9P6/qI=' 'sha256-DteyLvNz/HtxRqT86M19HgoZfGS3Vjh7g7Qv8sqoXaE=' 'sha256-Yq5LqpSuZYrQBiwZV3GIUKl7VztQyUyyTLeHF8RzYfM=' 'sha256-3slL6XKCxBUrVwsIn+pfLSFvsWrg1SlNV1OOfV1jrRE=' 'sha256-0Q0aqbibC2pJ+jg+2zSPosbIxN93hLKqymzq/mkX9B0=' 'sha256-niQW6BHsFCuf+mNMjOPiKJl0QACazn3cmhTykWBmDew='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://beta-bridge.simplefin.org https://bridge.simplefin.org https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#F3EDE1" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#15130F" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
@@ -459,6 +459,9 @@ html { scroll-padding-bottom: calc(var(--bottom-bar) + env(safe-area-inset-botto
 .sec-head :is(.btn-link, .linkbtn) { margin-block: -8px; }
 .sec-head-wrap { flex-wrap: wrap; }
 .sec-head-wrap > .lab { white-space: normal; }
+@media (max-width: 359px) {
+  .sec-head :is(.btn-link, .linkbtn) { margin-block: 0; }
+}
 @media (min-width: 1100px) {
   .sec-head { padding-top: 14px; }
 }
@@ -976,6 +979,7 @@ a.row:hover .row-label, button.row:hover .row-label { text-decoration: underline
 .note-text { font-style: italic; font-size: .96875rem; line-height: 1.42; }
 .note-text i, .note-text em { font-style: normal; }
 .note-action { grid-column: 2; justify-self: start; margin-top: 5px; }
+.note-actions { grid-column: 2; display: flex; flex-wrap: wrap; gap: 2px 18px; margin-top: 5px; }
 @media (min-width: 1100px) {
   .note { padding: 11px 0; }
 }
@@ -1773,6 +1777,7 @@ button.hero-fig { cursor: pointer; }
 button.hero-fig:focus-visible { outline-offset: 2px; }
 .board-compo { max-width: 86ch; }
 .board-compo .fig { font-size: 1.1em; }
+@media (max-width: 359px) { .board-compo .nowrap { white-space: normal; } }
 .board-held { display: block; margin-top: 2px; }
 .board-split { margin-top: var(--s-3); }
 @media (max-width: 419px) {
@@ -2209,6 +2214,7 @@ button.pay-box:focus-visible .check-box { outline: 2px solid var(--spot); outlin
 .acct-now { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px var(--s-3); padding-bottom: var(--s-3); border-bottom: var(--rule); }
 .acct-now .fig { font-family: var(--f-display); font-size: 2.125rem; line-height: 1.1; white-space: nowrap; }
 .acct-now .cap { flex: 1 1 180px; }
+.acct-now .acct-uncount { flex-basis: 100%; }
 .acct-kinds .row { cursor: pointer; align-items: center; }
 .acct-kinds .row-label { font-family: var(--f-display); font-size: 1.25rem; line-height: 1.2; }
 .acct-kinds .row-note { font-family: var(--f-text); font-size: .8125rem; margin-top: 3px; }
@@ -2705,6 +2711,16 @@ label.an-set { cursor: text; }
   .step-action .btn-s { min-height: var(--tap); display: inline-flex; align-items: center; }
   .cn-restore-pick { display: inline-flex; align-items: center; min-height: var(--tap); }
 }
+.set-income-sources { list-style: none; padding: 0; margin: 0; }
+.set-income-sources > li { padding: 6px 0; border-bottom: var(--rule-hair); }
+.set-income-sources > li:last-child { border-bottom: 0; }
+.set-income-problem { display: block; font-style: italic; color: var(--ink-2); }
+.set-income-payers > * + * { margin-top: var(--s-2); }
+.set-income-payer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
+.set-income-payer .seg { margin-left: auto; }
+.set-income-gone { list-style: none; margin: 4px 0 0; padding: 0; }
+.set-income-gone li { margin: 2px 0; }
+.set-income-name { min-width: 0; overflow-wrap: anywhere; }
 
 </style>
 <style data-src="css/views/sheets.css">
@@ -4064,6 +4080,7 @@ let saving = null;
 let editedAt = null;
 const undoStack = [];
 let restoreHook = null;
+let updateHook = null;
 
 const status = {
   mode: 'memory',
@@ -4183,6 +4200,9 @@ const store = {
       }
     }
     mutator(doc);
+    if (updateHook) {
+      try { updateHook(doc); } catch (err) { console.error('[store] update hook failed', err); }
+    }
     rev++;
     doc.meta.rev = (doc.meta.rev || 0) + 1;
     editedAt = Date.now();
@@ -4207,6 +4227,9 @@ const store = {
     if (restoreHook) {
       try { restoreHook(before, doc); } catch (err) { console.error('[store] restore hook failed', err); }
     }
+    if (updateHook) {
+      try { updateHook(doc); } catch (err) { console.error('[store] update hook failed', err); }
+    }
     rev++;
     editedAt = Date.now();
     schedulePersist();
@@ -4216,6 +4239,10 @@ const store = {
 
   onRestore(fn) {
     restoreHook = typeof fn === 'function' ? fn : null;
+  },
+
+  onUpdate(fn) {
+    updateHook = typeof fn === 'function' ? fn : null;
   },
 
   subscribe(fn) {
@@ -4373,6 +4400,1004 @@ function startRouter() {
   lastEmitted = readHash();
 }
 return { parseHash, buildHash, currentRoute, navigate, setParams, openSheet, closeSheet, onRoute, startRouter };
+})();
+
+// ---- js/model/income.js
+__mods["js/model/income.js"] = (function () {
+const { ACCOUNT_TYPES, makeAccount, makeTx } = __mods["js/model/schema.js"];
+const { addDays, gameDay, isYmd } = __mods["js/model/dates.js"];
+const DAY_MS = 86400000;
+const HOUR_MS = 3600000;
+
+const INCOME_FORMAT = 'income/1';
+const INCOME_MAX_BYTES = 1000000;
+const MAX_PAYERS = 500;
+const MAX_ITEMS = 5000;
+const MAX_CENTS = 100000000;
+const WHAT_MAX = 40;
+const NAME_MAX = 60;
+const EARLIEST_MS = Date.UTC(2000, 0, 1);
+const AHEAD_MS = 2 * DAY_MS;
+const ID = /^[A-Za-z0-9_.:-]{1,80}$/;
+const ISO = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,9}))?)?(?:(Z)|([+-])(\d{2}):?(\d{2}))$/;
+const UNSAFE = new Set(['__proto__', 'constructor', 'prototype']);
+
+const SINCE_BACK_MS = 7 * DAY_MS;
+const LATE_MS = 96 * HOUR_MS;
+const WAIT_MS = 4 * DAY_MS;
+
+const MATCH_BEFORE_DAYS = 10;
+const SESSION_BEFORE_DAYS = 3;
+const MATCH_AFTER_DAYS = 30;
+const GROUP_SPAN_DAYS = 21;
+const GROUP_MIN = 2;
+const GROUP_MAX = 6;
+const GROUP_STEPS = 20000;
+const ACCOUNT_WINDOW_DAYS = 120;
+
+const MAX_PAYER_ANSWERS = 300;
+const MAX_ITEM_ANSWERS = 1000;
+const MAX_COUNTS = 200;
+const MAX_KEY = 170;
+const MISSED_MS = 24 * HOUR_MS;
+const MAX_STAMP = 1e14;
+const MAX_COUNT = 1e10;
+const COUNT_MAX_CENTS = MAX_COUNT;
+const RECHECK_MS = HOUR_MS;
+
+const CASH_ROLE = 'cash-in-hand';
+const CASH_NAME = 'Cash in hand';
+const CASH_ID = 'acc_cash_in_hand';
+
+const PAYER_HOWS = new Set(['bank', 'cash', 'none']);
+const ITEM_HOWS = new Set(['bank', 'cash', 'gone', 'wait', 'none']);
+
+/* --------------------------------------------------------------- the file */
+
+function readIncomeFile(text, nowMs) {
+  const no = (problem) => ({ ok: false, problem });
+  if (typeof text !== 'string') return no('The file could not be read.');
+  if (utf8Length(text) > INCOME_MAX_BYTES) return no('The file is larger than 1 MB.');
+  let raw;
+  try { raw = JSON.parse(text); } catch { return no('The file is not JSON.'); }
+  if (!isObject(raw)) return no('The file is not a list of payments.');
+  if (raw.format !== INCOME_FORMAT) return no('The file is not in the format ' + INCOME_FORMAT + '.');
+  const what = typeof raw.what === 'string' ? raw.what.trim() : '';
+  if (what.length < 1 || what.length > WHAT_MAX) return no('The label of a payment is missing or longer than 40 characters.');
+  if (!Array.isArray(raw.payers)) return no('The file has no list of payers.');
+  if (raw.payers.length > MAX_PAYERS) return no('The file lists more than 500 payers.');
+  const payers = [];
+  const payerIds = new Set();
+  for (const p of raw.payers) {
+    if (!isObject(p) || !isId(p.id)) return no('A payer has no usable id.');
+    if (payerIds.has(p.id)) return no('Two payers share one id.');
+    const name = typeof p.name === 'string' ? p.name.trim() : '';
+    if (name.length < 1 || name.length > NAME_MAX) return no('A payer\'s name is missing or longer than 60 characters.');
+    payerIds.add(p.id);
+    payers.push({ id: p.id, name });
+  }
+  if (!Array.isArray(raw.items)) return no('The file has no list of payments.');
+  if (raw.items.length > MAX_ITEMS) return no('The file lists more than 5000 payments.');
+  const written = isoMs(raw.writtenAt);
+  const writtenAt = Number.isFinite(written) && written >= 0 && written <= MAX_STAMP ? written : null;
+  // `from` (optional): the other app lists only the payments marked since then; checked like `at`, and never after now
+  let from = null;
+  if (raw.from !== undefined) {
+    from = isoMs(raw.from);
+    if (!Number.isFinite(from)) return no('The time the list starts from is not a time.');
+    if (from < EARLIEST_MS) return no('The list starts before 2000.');
+    if (writtenAt !== null && from > writtenAt) return no('The list starts after the file was written.');
+    if (from > nowMs) return { ...no('The list starts after now.'), timed: true };
+  }
+  const items = [];
+  const itemIds = new Set();
+  for (const it of raw.items) {
+    if (!isObject(it) || !isId(it.id)) return no('A payment has no usable id.');
+    if (itemIds.has(it.id)) return no('Two payments share one id.');
+    if (typeof it.payer !== 'string' || !payerIds.has(it.payer)) return no('A payment names a payer the file does not list.');
+    if (!Number.isInteger(it.cents) || it.cents < 1 || it.cents > MAX_CENTS) return no('A payment\'s amount is not whole cents from $0.01 to $1,000,000.00.');
+    if (typeof it.day !== 'string' || !isYmd(it.day)) return no('A payment\'s date is not a date.');
+    const at = isoMs(it.at);
+    if (!Number.isFinite(at)) return no('A payment\'s time is not a time.');
+    if (at < EARLIEST_MS) return no('A payment is marked before 2000.');
+    if (at > nowMs + AHEAD_MS) return { ...no('A payment is marked more than 2 days ahead.'), timed: true };
+    // a payment below the file's own floor contradicts it
+    if (from !== null && at < from) return no('A payment is marked before the time the list starts from.');
+    itemIds.add(it.id);
+    items.push({ id: it.id, payer: it.payer, cents: it.cents, day: it.day, at });
+  }
+  return { ok: true, what, writtenAt, from, payers, items };
+}
+
+function sourceIdOf(fileName) {
+  if (typeof fileName !== 'string' || !fileName.endsWith('.json')) return null;
+  const id = fileName.slice(0, -5);
+  return isId(id) ? id : null;
+}
+
+/* ------------------------------------------------------------- the record */
+
+function blankShared() {
+  return { since: null, payers: {}, items: {}, counts: [] };
+}
+
+function ensureIncome(state) {
+  if (!isObject(state.income)) state.income = {};
+  const inc = state.income;
+  if (!isObject(inc.sources)) inc.sources = {};
+  if (!(inc.firstReadAt === null || Number.isFinite(inc.firstReadAt))) inc.firstReadAt = null;
+  if (inc.firstReadAt === undefined) inc.firstReadAt = null;
+  if (!isObject(inc.shared)) inc.shared = blankShared();
+  const shared = inc.shared;
+  if (!(shared.since === null || isStamp(shared.since))) shared.since = null;
+  if (!isObject(shared.payers)) shared.payers = {};
+  if (!isObject(shared.items)) shared.items = {};
+  if (!Array.isArray(shared.counts)) shared.counts = [];
+  delete shared.cash;
+  return inc;
+}
+
+function incomeOf(state) {
+  const inc = isObject(state) && isObject(state.income) ? state.income : {};
+  const shared = readIncomeShared(inc.shared) || keptShared(inc.shared);
+  return {
+    sources: isObject(inc.sources) ? inc.sources : {},
+    firstReadAt: Number.isFinite(inc.firstReadAt) ? inc.firstReadAt : null,
+    shared,
+  };
+}
+
+function applyIncomeReading(state, reading, nowMs) {
+  const before = canon(state.income === undefined ? null : state.income) + '|' + canon(listOf(state.txs).filter(isIncomeMove));
+  const inc = ensureIncome(state);
+  const listed = new Map();
+  for (const one of listOf(reading && reading.listed)) {
+    if (isObject(one) && isId(one.source) && typeof one.sha === 'string') listed.set(one.source, one.sha);
+  }
+  for (const source of Object.keys(inc.sources)) {
+    const one = inc.sources[source];
+    if (!isObject(one)) delete inc.sources[source];
+    else if (listed.has(source)) delete one.missedAt;
+    else if (!Number.isFinite(one.missedAt)) one.missedAt = nowMs;
+    else if (nowMs - one.missedAt >= MISSED_MS) delete inc.sources[source];
+  }
+  const files = isObject(reading && reading.files) ? reading.files : {};
+  for (const source of [...listed.keys()].sort()) {
+    const got = Object.hasOwn(files, source) ? files[source] : null;
+    if (!isObject(got)) continue;
+    const sha = listed.get(source);
+    // a reading that brought no text says nothing about the file: it is read again later, like a refusal in time
+    const checked = got.tooLarge ? { ok: false, problem: 'The file is larger than 1 MB.' }
+      : typeof got.text === 'string' ? readIncomeFile(got.text, nowMs) : { ok: false, problem: 'The file could not be read.', timed: true };
+    const had = isObject(inc.sources[source]) ? inc.sources[source] : null;
+    // a refusal of the file itself is remembered by its sha; one that depends on the time only until `recheckAt`
+    const recheckAt = checked.timed ? nowMs + RECHECK_MS : null;
+    if (checked.ok) {
+      // the file is the whole list: a payment it no longer lists, below its floor or not, is forgotten
+      inc.sources[source] = { sha, readAt: nowMs, writtenAt: checked.writtenAt, from: checked.from, what: checked.what, payers: checked.payers, items: checked.items,
+        problem: null, badSha: null, recheckAt: null, checkedAt: nowMs };
+      if (inc.firstReadAt === null) inc.firstReadAt = nowMs;
+    } else if (had) {
+      had.problem = checked.problem;
+      had.badSha = sha;
+      had.recheckAt = recheckAt;
+      had.checkedAt = nowMs;
+    } else {
+      inc.sources[source] = { sha: null, readAt: null, writtenAt: null, what: '', payers: [], items: [], problem: checked.problem, badSha: sha, recheckAt, checkedAt: nowMs };
+    }
+  }
+  if (inc.firstReadAt !== null) {
+    const mine = inc.firstReadAt - SINCE_BACK_MS;
+    if (inc.shared.since === null || mine < inc.shared.since) inc.shared.since = Math.max(0, mine);
+  }
+  rebuildIncome(state, nowMs);
+  const after = canon(state.income) + '|' + canon(listOf(state.txs).filter(isIncomeMove));
+  return { changed: before !== after };
+}
+
+async function roundIncome(device, transport, nowMs) {
+  const stale = () => !!(device.stale && device.stale());
+  if (stale()) return { ok: false, skipped: true };
+  const listing = await transport.list();
+  if (stale()) return { ok: false, skipped: true };
+  const held = incomeOf(device.state()).sources;
+  const folder = listing !== null ? 'listed' : device.access && device.access() ? 'none' : 'unseen';
+  if (folder === 'unseen') return { ok: true, changed: false, sources: Object.keys(held).length, folder };
+  const listed = [];
+  const files = {};
+  for (const entry of listing || []) {
+    const source = sourceIdOf(entry.name);
+    if (!source) continue;
+    listed.push({ source, sha: entry.sha });
+    if (holdsSha(held, source, entry.sha, nowMs)) continue;
+    if (entry.size > INCOME_MAX_BYTES) {
+      files[source] = { sha: entry.sha, text: null, tooLarge: true };
+      continue;
+    }
+    const text = await transport.read(entry.name);
+    if (stale()) return { ok: false, skipped: true };
+    files[source] = { sha: entry.sha, text };
+  }
+  // nothing to store: no file fetched, every listed source held and not missed, every held one listed or missed for less than 24 hours
+  const named = new Set(listed.map((one) => one.source));
+  const missed = (one) => isObject(one) && Number.isFinite(one.missedAt);
+  const same = !Object.keys(files).length && listed.every((one) => Object.hasOwn(held, one.source) && !missed(held[one.source]))
+    && Object.keys(held).every((source) => named.has(source) || (missed(held[source]) && nowMs - held[source].missedAt < MISSED_MS));
+  if (same) return { ok: true, changed: false, sources: listed.length, folder };
+  let changed = false;
+  device.update((s) => { changed = applyIncomeReading(s, { listed, files }, nowMs).changed || changed; });
+  return { ok: true, changed, sources: listed.length, folder };
+}
+
+function knownSha(state, source, sha, nowMs) {
+  return holdsSha(incomeOf(state).sources, source, sha, nowMs);
+}
+
+function holdsSha(sources, source, sha, nowMs) {
+  const one = Object.hasOwn(sources, source) ? sources[source] : null;
+  if (!isObject(one)) return false;
+  if (one.sha === sha) return true;
+  if (one.badSha !== sha) return false;
+  return !(Number.isFinite(one.recheckAt) && !(nowMs < one.recheckAt));
+}
+
+/* ------------------------------------------------------- how it was paid */
+
+function howOf(shared, since, source, item) {
+  if (since === null || since === undefined || !(item.at >= since)) return 'history';
+  const own = ownOf(shared.items, source + '/' + item.id);
+  if (own && own.how === 'wait') return 'bank';
+  if (own && own.how !== 'none') return own.how;
+  const payer = ownOf(shared.payers, source + '/' + item.payer);
+  if (payer && payer.how !== 'none') return payer.how;
+  return 'ask';
+}
+
+function payerAnswer(shared, payerKey) {
+  const a = ownOf(isObject(shared) ? shared.payers : null, payerKey);
+  return a && (a.how === 'bank' || a.how === 'cash') ? a.how : null;
+}
+
+function incomePayments(state, rollover) {
+  const { sources, shared } = incomeOf(state);
+  const out = [];
+  for (const source of Object.keys(sources).sort()) {
+    const src = sources[source];
+    if (!isObject(src) || !Array.isArray(src.items)) continue;
+    const names = new Map(listOf(src.payers).map((p) => [p.id, p.name]));
+    const floor = Number.isFinite(src.from) ? gameDay(src.from, rollover) : null;
+    for (const item of src.items) {
+      out.push({
+        key: source + '/' + item.id, source, id: item.id, payer: item.payer, payerKey: source + '/' + item.payer,
+        payerName: names.get(item.payer) || '', what: src.what, cents: item.cents, day: item.day, at: item.at,
+        marked: gameDay(item.at, rollover), floor, how: howOf(shared, shared.since, source, item),
+      });
+    }
+  }
+  return out.sort((a, b) => a.at - b.at || cmp(a.key, b.key));
+}
+
+function incomeLabel(payment) {
+  return payment.what + ' · ' + payment.payerName;
+}
+
+/* ------------------------------------------------------------- matching */
+
+function ownLowerBound(p, n) {
+  const session = dayNumber(p.day);
+  if (session !== null && session > n) return n - MATCH_BEFORE_DAYS;
+  return Math.max(session === null ? -Infinity : session - SESSION_BEFORE_DAYS, n - MATCH_BEFORE_DAYS);
+}
+
+function floorCuts(p) {
+  const n = dayNumber(p && p.marked);
+  const floor = dayNumber(p && p.floor);
+  return n !== null && floor !== null && ownLowerBound(p, n) < floor;
+}
+
+function matchIncome(rows, payments) {
+  const out = new Map();
+  const pool = [];
+  for (const p of payments) {
+    const n = dayNumber(p.marked);
+    if (n === null) continue;
+    const floor = dayNumber(p.floor);
+    const lo = Math.max(ownLowerBound(p, n), floor === null ? -Infinity : floor);
+    const hi = n + MATCH_AFTER_DAYS;
+    if (lo <= hi) pool.push({ ...p, n, lo, hi });
+  }
+  if (!pool.length) return out;
+  pool.sort((a, b) => a.n - b.n || a.at - b.at || cmp(a.key, b.key));
+  const sortedRows = rows.map((row) => ({ ...row, n: dayNumber(row.day) })).filter((row) => row.n !== null)
+    .sort((a, b) => a.n - b.n || a.amount - b.amount || cmp(a.order || '', b.order || '') || cmp(a.id, b.id));
+  const byCents = new Map();
+  for (const p of pool) {
+    const same = byCents.get(p.cents);
+    if (same) same.push(p); else byCents.set(p.cents, [p]);
+  }
+  const days = pool.map((p) => p.n);
+  const fits = (p, row) => row.n >= p.lo && row.n <= p.hi;
+  for (const row of sortedRows) {
+    let best = null;
+    for (const p of byCents.get(row.amount) || []) {
+      if (out.has(p.key) || !fits(p, row)) continue;
+      if (!best || nearer(p, best, row.n)) best = p;
+    }
+    if (best) {
+      out.set(best.key, row.id);
+      continue;
+    }
+    const lo = lowerBound(days, row.n - MATCH_AFTER_DAYS);
+    const hi = lowerBound(days, row.n + MATCH_BEFORE_DAYS + 1);
+    const fit = pool.slice(lo, hi).filter((p) => !out.has(p.key) && p.cents < row.amount && fits(p, row))
+      .sort((a, b) => a.at - b.at || cmp(a.key, b.key));
+    if (fit.length < GROUP_MIN) continue;
+    const group = bestGroup(fit, row.amount);
+    if (!group) continue;
+    for (const p of group) out.set(p.key, row.id);
+  }
+  return out;
+}
+
+function nearer(a, b, n) {
+  const da = Math.abs(a.n - n);
+  const db = Math.abs(b.n - n);
+  if (da !== db) return da < db;
+  if (a.at !== b.at) return a.at < b.at;
+  return a.key < b.key;
+}
+
+function lowerBound(sorted, value) {
+  let lo = 0;
+  let hi = sorted.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (sorted[mid] < value) lo = mid + 1; else hi = mid;
+  }
+  return lo;
+}
+
+function dayNumber(day) {
+  if (!isYmd(day)) return null;
+  return Math.round(Date.UTC(+day.slice(0, 4), +day.slice(5, 7) - 1, +day.slice(8, 10)) / DAY_MS);
+}
+
+function bestGroup(fits, target) {
+  const byPayer = new Map();
+  for (const p of fits) {
+    const list = byPayer.get(p.payerKey);
+    if (list) list.push(p); else byPayer.set(p.payerKey, [p]);
+  }
+  for (let size = GROUP_MIN; size <= GROUP_MAX; size++) {
+    let best = null;
+    for (const payerKey of [...byPayer.keys()].sort()) {
+      const found = firstGroup(byPayer.get(payerKey), size, target);
+      if (found && (!best || earlier(found, best))) best = found;
+    }
+    if (best) return best;
+  }
+  return null;
+}
+
+function firstGroup(list, size, target) {
+  if (list.length < size) return null;
+  let steps = 0;
+  const pick = [];
+  const walk = (from, sum) => {
+    if (++steps > GROUP_STEPS) return false;
+    if (pick.length === size) return sum === target;
+    for (let i = from; i <= list.length - (size - pick.length); i++) {
+      const p = list[i];
+      if (sum + p.cents > target) continue;
+      if (pick.length && p.n - pick[0].n > GROUP_SPAN_DAYS) break;
+      pick.push(p);
+      if (walk(i + 1, sum + p.cents)) return true;
+      pick.pop();
+      if (steps > GROUP_STEPS) return false;
+    }
+    return false;
+  };
+  return walk(0, 0) ? pick.slice() : null;
+}
+
+function earlier(a, b) {
+  for (let i = 0; i < a.length; i++) {
+    if (a[i].at !== b[i].at) return a[i].at < b[i].at;
+    if (a[i].key !== b[i].key) return a[i].key < b[i].key;
+  }
+  return false;
+}
+
+/* ---------------------------------------------------------- the rebuild */
+
+function isIncomeMove(tx) {
+  return isObject(tx) && tx.source === 'manual' && tx.via === 'income';
+}
+
+function incomeMoveId(source, itemId) {
+  return 'inc_' + source.length + '_' + source + '_' + itemId;
+}
+
+function isIdleCash(state, account) {
+  if (!isObject(account) || account.role !== CASH_ROLE || account.source === 'bank') return false;
+  if (Math.round(Number(account.balance) || 0) !== 0) return false;
+  if (liveCounts(incomeOf(state).shared).length) return false;
+  return !listOf(state && state.txs).some((tx) => isIncomeMove(tx) && tx.accountId === account.id);
+}
+
+function cashAccountOf(state) {
+  return listOf(state && state.accounts).find((a) => isObject(a) && a.role === CASH_ROLE) || null;
+}
+
+function rebuildIncome(state, nowMs) {
+  if (!isObject(state) || !Array.isArray(state.txs)) return { changed: false };
+  const hasIncome = isObject(state.income);
+  const already = state.txs.some(isIncomeMove) || !!cashAccountOf(state);
+  if (!hasIncome && !already) return { changed: false };
+  const rollover = rolloverOf(state);
+  const today = gameDay(nowMs, rollover);
+  const { shared } = incomeOf(state);
+  const every = incomePayments(state, rollover);
+  const payments = every.filter((p) => p.how !== 'history');
+  let changed = false;
+
+  // matching: the claimants against the incoming income rows nobody else claimed, from scratch every time
+  const accounts = new Map(listOf(state.accounts).filter(isObject).map((a) => [a.id, a]));
+  const claimed = new Set();
+  for (const tx of state.txs) if (isObject(tx) && tx.matchId && !isIncomeMove(tx)) claimed.add(tx.matchId);
+  const latest = addDays(today, 2);
+  const countPending = !(isObject(state.settings) && state.settings.countPending === false);
+  const rows = state.txs.filter((tx) => isMatchableRow(tx, accounts, claimed, latest, countPending))
+    .map((tx) => ({ id: tx.id, day: tx.day, amount: Math.round(tx.amount), order: tx.ext && typeof tx.ext.id === 'string' ? tx.ext.id : tx.fp || '' }));
+  const claimants = every.filter((p) => isClaimant(shared, p));
+  const matched = matchIncome(rows, claimants);
+  // the pairs are an output only (the accrual of 3.7 and the questions read them), never an input
+  if (isObject(state.income)) {
+    const pairs = {};
+    for (const key of [...matched.keys()].sort()) pairs[key] = matched.get(key);
+    if (canon(state.income.pairs === undefined ? null : state.income.pairs) !== canon(pairs)) {
+      // other bank rows are claimed: whether a payer's stream accrues is decided again in the same update
+      // (detect.followIncome, the store's update hook), in both directions; until then the flag stays
+      if (canon(rowsOf(state.income.pairs)) !== canon(rowsOf(pairs))) state.income.restream = true;
+      state.income.pairs = pairs;
+      changed = true;
+    }
+  }
+  // counted: by transfer, not answered, or cash; an unmatched one by transfer (or not answered) whose window the floor
+  // cuts is taken as history (floorCuts)
+  const counted = payments.filter((p) => p.how === 'cash'
+    || ((p.how === 'bank' || p.how === 'ask') && (matched.has(p.key) || !floorCuts(p))));
+  const into = receivingAccount(state, accounts, today);
+
+  // the Cash in hand account: made the first time a payment counts as cash, or a count arrives (and kept)
+  let cashAccount = cashAccountOf(state);
+  const counts = liveCounts(shared, rollover);
+  if (!cashAccount && (counted.some((p) => p.how === 'cash' && !matched.has(p.key)) || counts.length)) {
+    cashAccount = makeCashAccount(state);
+    state.accounts.push(cashAccount);
+    changed = true;
+  }
+
+  // the moves wanted
+  const want = new Map();
+  for (const p of counted) want.set(incomeMoveId(p.source, p.id), p);
+  // remove the moves no longer wanted
+  for (let i = state.txs.length - 1; i >= 0; i--) {
+    const tx = state.txs[i];
+    if (isIncomeMove(tx) && !want.has(tx.id)) {
+      state.txs.splice(i, 1);
+      changed = true;
+    }
+  }
+  const have = new Map(state.txs.filter(isIncomeMove).map((tx) => [tx.id, tx]));
+  for (const [id, p] of [...want.entries()].sort((a, b) => cmp(a[0], b[0]))) {
+    const row = matched.get(p.key) || null;
+    // a payment that follows its payer's cash answer and meets a bank row counts once, as that row, and is asked about
+    const guess = p.how === 'cash' && !!row;
+    const cash = p.how === 'cash' && !row;
+    const income = { key: p.key, how: guess ? 'bank' : p.how, payer: p.payerName, what: p.what, sessionDay: p.day };
+    if (guess) income.confirm = true;
+    const fields = {
+      source: 'manual', via: 'income', kind: 'income', flow: 'in', pending: false, postedDay: null,
+      accountId: cash ? (cashAccount ? cashAccount.id : null) : into,
+      day: p.marked, at: p.at, amount: p.cents,
+      matchId: row,
+      income,
+    };
+    const own = { merchant: incomeLabel(p), category: 'income', klass: 'need', purpose: 'coaching' };
+    const tx = have.get(id);
+    if (!tx) {
+      state.txs.push(makeTx({ id, ...fields, ...own, raw: '', mkey: '', loggedAt: p.at, review: false }));
+      changed = true;
+      continue;
+    }
+    for (const [field, value] of Object.entries(fields)) {
+      if (canon(tx[field]) !== canon(value)) { tx[field] = value; changed = true; }
+    }
+    const locks = Array.isArray(tx.locks) ? tx.locks : [];
+    for (const [field, value] of Object.entries(own)) {
+      if (!locks.includes(field) && tx[field] !== value) { tx[field] = value; changed = true; }
+    }
+  }
+
+  // a bank row that a reported payment claims (history ones included) carries its label wherever it is listed or opened
+  const labels = new Map();
+  for (const p of claimants) {
+    const rowId = matched.get(p.key);
+    if (!rowId) continue;
+    const had = labels.get(rowId);
+    labels.set(rowId, had ? (had.endsWith(' · ' + p.payerName) || had.includes(', ' + p.payerName) ? had : had + ', ' + p.payerName) : incomeLabel(p));
+  }
+  for (const tx of state.txs) {
+    if (!isObject(tx) || tx.source !== 'bank') continue;
+    const label = labels.get(tx.id);
+    if (label && tx.reportedAs !== label) { tx.reportedAs = label; changed = true; }
+    else if (!label && tx.reportedAs !== undefined) { delete tx.reportedAs; changed = true; }
+  }
+
+  // Cash in hand: the owner's counts (each sets it from its own day) and the figure now
+  if (cashAccount) {
+    // the mirror lists the counts in the order they rule (the ledger keeps that order within a day)
+    const mirror = counts.map((c) => ({ cents: c.cents, at: c.at }));
+    const ruling = counts.map((c) => ({ id: c.id, cents: c.cents, at: c.at }));
+    if (canon(cashAccount.counts === undefined ? null : cashAccount.counts) !== canon(mirror)) { cashAccount.counts = mirror; changed = true; }
+    if (Object.hasOwn(cashAccount, 'counted')) { delete cashAccount.counted; changed = true; }
+    const figure = cashFigure(state, cashAccount.id, ruling, today, rollover);
+    if (cashAccount.balance !== figure.cents) { cashAccount.balance = figure.cents; changed = true; }
+    if (cashAccount.asOf !== figure.asOf) { cashAccount.asOf = figure.asOf; changed = true; }
+  }
+  return { changed };
+}
+
+function makeCashAccount(state) {
+  const taken = new Set(listOf(state.accounts).filter(isObject).map((a) => a.id));
+  let id = CASH_ID;
+  for (let k = 2; taken.has(id); k++) id = CASH_ID + '_' + k;
+  return makeAccount({
+    id, source: 'manual', type: 'cash', name: CASH_NAME, role: CASH_ROLE, basis: 'estimate',
+    everyday: false, reserve: false, balance: 0, asOf: 0, counts: [], purpose: 'personal',
+  });
+}
+
+function isClaimant(shared, p) {
+  if (p.how === 'gone') return false;
+  return p.how !== 'cash' || !itemAnswer(shared, p.key);
+}
+
+function pairsOf(state) {
+  return isObject(state) && isObject(state.income) && isObject(state.income.pairs) ? state.income.pairs : {};
+}
+
+function rowsOf(pairs) {
+  if (!isObject(pairs)) return [];
+  return [...new Set(Object.keys(pairs).map((key) => pairs[key]).filter((id) => typeof id === 'string'))].sort();
+}
+
+function incomeClaimedRows(state) {
+  const pairs = pairsOf(state);
+  return new Set(Object.keys(pairs).map((key) => pairs[key]).filter((id) => typeof id === 'string'));
+}
+
+function isMatchableRow(tx, accounts, claimed, latest, countPending) {
+  if (!isObject(tx) || tx.source !== 'bank' || typeof tx.id !== 'string') return false;
+  if (tx.flow !== 'in' || tx.kind !== 'income' || tx.matchId || tx.pairId != null || claimed.has(tx.id)) return false;
+  if (tx.pending && !countPending) return false;
+  if (!isYmd(tx.day) || tx.day > latest || !(tx.amount > 0)) return false;
+  const account = accounts.get(tx.accountId);
+  return !!account && account.source === 'bank' && !account.hidden && groupOf(account) === 'cash';
+}
+
+function receivingAccount(state, accounts, today) {
+  const from = addDays(today, -ACCOUNT_WINDOW_DAYS);
+  const counts = new Map();
+  for (const tx of state.txs) {
+    if (!isObject(tx) || tx.source !== 'bank' || tx.flow !== 'in' || tx.kind !== 'income' || tx.pairId != null || tx.matchId) continue;
+    if (!isYmd(tx.day) || tx.day < from || tx.day > today) continue;
+    const account = accounts.get(tx.accountId);
+    if (!account || account.source !== 'bank' || account.hidden || groupOf(account) !== 'cash') continue;
+    counts.set(account.id, (counts.get(account.id) || 0) + 1);
+  }
+  let best = null;
+  for (const [id, n] of counts) {
+    const a = accounts.get(id);
+    if (!best || n > best.n || (n === best.n && (balanceOf(a) > balanceOf(best.a) || (balanceOf(a) === balanceOf(best.a) && id < best.a.id)))) best = { n, a };
+  }
+  return best ? best.a.id : null;
+}
+
+function cashFigure(state, accountId, counts, throughDay, rollover) {
+  let cents = 0;
+  let asOf = 0;
+  let count = null;
+  // the counts come in the order they rule (liveCounts): the last whose day has come is the one
+  for (const c of listOf(counts)) if (gameDay(c.at, rollover) <= throughDay) count = c;
+  const useCount = !!count;
+  if (useCount) { cents = count.cents; asOf = count.at; }
+  for (const tx of listOf(state.txs)) {
+    if (!isIncomeMove(tx) || tx.accountId !== accountId || tx.day > throughDay) continue;
+    if (useCount && !(tx.at > count.at)) continue;
+    cents += Math.round(tx.amount);
+    if (tx.at > asOf) asOf = tx.at;
+  }
+  return { cents, asOf };
+}
+
+/* --------------------------------------------------------- the questions */
+
+function incomeQuestions(state, nowMs) {
+  const out = { payers: [], late: [], confirm: [] };
+  if (!isObject(state) || (isObject(state.meta) && state.meta.origin === 'demo')) return out;
+  const rollover = rolloverOf(state);
+  const { shared } = incomeOf(state);
+  const moves = new Map(listOf(state.txs).filter(isIncomeMove).map((tx) => [tx.id, tx]));
+  const rows = new Map(listOf(state.txs).filter((tx) => isObject(tx) && tx.source === 'bank').map((tx) => [tx.id, tx]));
+  const pairs = pairsOf(state);
+  const byPayer = new Map();
+  const onRow = new Map();
+  for (const p of incomePayments(state, rollover)) {
+    const move = moves.get(incomeMoveId(p.source, p.id));
+    const row = Object.hasOwn(pairs, p.key) ? rows.get(pairs[p.key]) || null : null;
+    const guess = !!row && !!move && isObject(move.income) && move.income.confirm === true;
+    if (row) {
+      const entry = { payment: p, guess };
+      const list = onRow.get(row.id);
+      if (list) list.push(entry); else onRow.set(row.id, [entry]);
+    }
+    if (guess) continue; // asked about with its row
+    if (!row && (p.how === 'ask' || p.how === 'bank') && floorCuts(p)) continue; // taken as history (floorCuts)
+    if (p.how === 'ask') {
+      const list = byPayer.get(p.payerKey);
+      const entry = { payment: p, row };
+      if (list) list.push(entry); else byPayer.set(p.payerKey, [entry]);
+    } else if (p.how === 'bank' && move && !move.matchId && nowMs - p.at >= LATE_MS) {
+      const own = ownOf(shared.items, p.key);
+      if (own && own.how === 'wait' && Number.isFinite(own.until) && own.until > nowMs) continue;
+      out.late.push({ key: p.key, source: p.source, id: p.id, label: incomeLabel(p), cents: p.cents, marked: p.marked, at: p.at });
+    }
+  }
+  for (const payerKey of [...byPayer.keys()].sort()) {
+    const list = byPayer.get(payerKey);
+    const newest = list[list.length - 1].payment;
+    const seen = list.filter((e) => e.row).pop();
+    out.payers.push({
+      key: payerKey, source: newest.source, payer: newest.payer, name: newest.payerName, what: newest.what,
+      cents: newest.cents, marked: newest.marked, count: list.length,
+      bank: seen ? { cents: Math.round(seen.row.amount), day: seen.row.day, same: seen.payment.key === newest.key } : null,
+    });
+  }
+  // a row counted for payments that follow their payer's cash answer: did they come by Zelle? (one question per row)
+  const sum = (list) => list.reduce((n, p) => n + p.cents, 0);
+  for (const [rowId, list] of onRow) {
+    const asked = list.filter((e) => e.guess).map((e) => e.payment);
+    if (!asked.length) continue;
+    const others = list.filter((e) => !e.guess).map((e) => e.payment);
+    const row = rows.get(rowId);
+    const first = asked[0];
+    out.confirm.push({ key: 'row/' + rowId, row: rowId, source: first.source, ids: asked.map((p) => p.id), label: incomeLabel(first),
+      name: first.payerName, what: first.what, n: list.length, cents: sum(list.map((e) => e.payment)), marked: first.marked, at: first.at,
+      asked: { n: asked.length, cents: sum(asked) },
+      others: others.length ? { n: others.length, cents: sum(others), earlier: others.every((p) => p.at < first.at) } : null,
+      bank: { cents: Math.round(row.amount), day: row.day } });
+  }
+  out.late.sort((a, b) => a.at - b.at || cmp(a.key, b.key));
+  out.confirm.sort((a, b) => a.at - b.at || cmp(a.key, b.key));
+  return out;
+}
+
+/* ------------------------------------------------------------ answering */
+
+/*
+ * The owner's answers and counts are made like a change from outside (store.update(change, { past: change })): Undo
+ * never takes them back. Each is changed directly: the payer switch in Settings, Ask again, counting again, or
+ * Remove the latest count.
+ */
+
+function stampAbove(current, nowMs) {
+  return Math.min(MAX_STAMP, Math.max(Math.round(nowMs), isObject(current) && isStamp(current.at) ? current.at + 1 : 0));
+}
+
+function answerPayer(state, source, payerId, how, nowMs) {
+  const key = source + '/' + payerId;
+  if ((how !== 'bank' && how !== 'cash') || key.length > MAX_KEY || !isId(source) || !isId(payerId) || !isStamp(nowMs)) return false;
+  const inc = ensureIncome(state);
+  inc.shared.payers[key] = { how, at: stampAbove(ownOf(inc.shared.payers, key), nowMs) };
+  inc.shared.payers = capped(inc.shared.payers, MAX_PAYER_ANSWERS);
+  rebuildIncome(state, nowMs);
+  return true;
+}
+
+function answerItem(state, source, itemId, how, nowMs) {
+  return answerItems(state, source, [itemId], how, nowMs);
+}
+
+function answerItems(state, source, itemIds, how, nowMs) {
+  const ids = listOf(itemIds);
+  if (!ids.length || !ITEM_HOWS.has(how) || how === 'none' || !isId(source) || !isStamp(nowMs)) return false;
+  if (!ids.every((id) => isId(id) && (source + '/' + id).length <= MAX_KEY)) return false;
+  const inc = ensureIncome(state);
+  for (const id of ids) {
+    const key = source + '/' + id;
+    const at = stampAbove(ownOf(inc.shared.items, key), nowMs);
+    inc.shared.items[key] = how === 'wait' ? { how, at, until: nowMs + WAIT_MS } : { how, at };
+  }
+  inc.shared.items = capped(inc.shared.items, MAX_ITEM_ANSWERS);
+  rebuildIncome(state, nowMs);
+  return true;
+}
+
+function askAgain(state, source, itemId, nowMs) {
+  const key = source + '/' + itemId;
+  if (key.length > MAX_KEY || !isId(source) || !isId(itemId) || !isStamp(nowMs)) return false;
+  const inc = ensureIncome(state);
+  const own = ownOf(inc.shared.items, key);
+  if (!own || own.how === 'none') return false;
+  inc.shared.items[key] = { how: 'none', at: stampAbove(own, nowMs) };
+  rebuildIncome(state, nowMs);
+  return true;
+}
+
+function rowPayments(state, rowId) {
+  const pairs = pairsOf(state);
+  const { shared } = incomeOf(state);
+  return incomePayments(state, rolloverOf(state)).filter((p) => Object.hasOwn(pairs, p.key) && pairs[p.key] === rowId)
+    .map((p) => ({ key: p.key, source: p.source, id: p.id, label: incomeLabel(p), cents: p.cents, marked: p.marked, history: p.how === 'history', own: itemAnswer(shared, p.key) }));
+}
+
+function itemAnswer(shared, key) {
+  const a = ownOf(isObject(shared) ? shared.items : null, key);
+  return a && a.how !== 'none' ? a.how : null;
+}
+
+function ensureCashAccount(state) {
+  if (!Array.isArray(state.accounts)) state.accounts = [];
+  let account = cashAccountOf(state);
+  if (!account) {
+    account = makeCashAccount(state);
+    state.accounts.push(account);
+  }
+  return account;
+}
+
+function countCash(state, cents, nowMs) {
+  if (!Number.isInteger(cents) || cents < 0 || cents > MAX_COUNT || !isStamp(nowMs)) return false;
+  const inc = ensureIncome(state);
+  const entries = listOf(inc.shared.counts).filter(isCountEntry);
+  const at = Math.min(MAX_STAMP, Math.round(nowMs));
+  const editedAt = Math.min(MAX_STAMP, Math.max(at, ...entries.map((c) => c.editedAt + 1)));
+  const taken = new Set(listOf(inc.shared.counts).map((c) => isObject(c) ? c.id : null));
+  let id = 'c' + at.toString(36);
+  for (let k = 2; taken.has(id); k++) id = 'c' + at.toString(36) + '-' + k;
+  inc.shared.counts = cappedCounts([...entries, { id, cents, at, editedAt }]);
+  ensureCashAccount(state);
+  rebuildIncome(state, nowMs);
+  return true;
+}
+
+function removeCount(state, id, nowMs) {
+  if (!isStamp(nowMs)) return false;
+  const inc = ensureIncome(state);
+  const count = listOf(inc.shared.counts).find((c) => isCountEntry(c) && !c.deleted && c.id === id);
+  if (!count) return false;
+  const editedAt = Math.min(MAX_STAMP, Math.max(Math.round(nowMs), count.editedAt + 1));
+  inc.shared.counts = cappedCounts([...inc.shared.counts.filter((c) => isCountEntry(c) && c.id !== id), { id, deleted: true, editedAt }]);
+  rebuildIncome(state, nowMs);
+  return true;
+}
+
+function liveCounts(shared, rollover = 4) {
+  return listOf(shared && shared.counts).filter((c) => isCountEntry(c) && !c.deleted)
+    .map((c) => ({ c, day: gameDay(c.at, rollover) }))
+    .sort((a, b) => cmp(a.day, b.day) || a.c.editedAt - b.c.editedAt || cmp(a.c.id, b.c.id))
+    .map((x) => x.c);
+}
+
+function incomeRowLabels(state) {
+  const out = new Map();
+  for (const tx of listOf(state && state.txs)) {
+    if (isObject(tx) && tx.source === 'bank' && typeof tx.reportedAs === 'string' && tx.reportedAs) out.set(tx.id, tx.reportedAs);
+  }
+  return out;
+}
+
+/* ------------------------------------------------- the shared section (3.5) */
+
+function readIncomeShared(raw) {
+  if (raw === undefined || raw === null) return blankShared();
+  if (!isObject(raw)) return null;
+  const since = raw.since === undefined || raw.since === null ? null : raw.since;
+  if (since !== null && !isStamp(since)) return null;
+  const payers = raw.payers === undefined ? {} : raw.payers;
+  const items = raw.items === undefined ? {} : raw.items;
+  if (!isObject(payers) || !isObject(items)) return null;
+  const pk = Object.keys(payers);
+  const ik = Object.keys(items);
+  if (pk.length > MAX_PAYER_ANSWERS || ik.length > MAX_ITEM_ANSWERS) return null;
+  const out = { since, payers: {}, items: {}, counts: [] };
+  for (const key of pk) {
+    const a = payers[key];
+    if (!isAnswerKey(key) || !isObject(a) || !PAYER_HOWS.has(a.how) || !isStamp(a.at)) return null;
+    out.payers[key] = { how: a.how, at: a.at };
+  }
+  for (const key of ik) {
+    const a = items[key];
+    if (!isAnswerKey(key) || !isObject(a) || !ITEM_HOWS.has(a.how) || !isStamp(a.at)) return null;
+    if (a.until !== undefined && !isStamp(a.until)) return null;
+    out.items[key] = a.until === undefined ? { how: a.how, at: a.at } : { how: a.how, at: a.at, until: a.until };
+  }
+  const counts = raw.counts === undefined ? [] : raw.counts;
+  if (!Array.isArray(counts) || counts.length > MAX_COUNTS) return null;
+  const ids = new Set();
+  for (const c of counts) {
+    if (!isCountEntry(c) || ids.has(c.id)) return null;
+    ids.add(c.id);
+    out.counts.push(countOf(c));
+  }
+  out.counts.sort((a, b) => cmp(a.id, b.id));
+  return out;
+}
+
+function keptShared(raw) {
+  const out = blankShared();
+  if (!isObject(raw)) return out;
+  if (isStamp(raw.since)) out.since = raw.since;
+  for (const [key, a] of Object.entries(isObject(raw.payers) ? raw.payers : {})) {
+    if (isAnswerKey(key) && isObject(a) && PAYER_HOWS.has(a.how) && isStamp(a.at)) out.payers[key] = { how: a.how, at: a.at };
+  }
+  for (const [key, a] of Object.entries(isObject(raw.items) ? raw.items : {})) {
+    if (!isAnswerKey(key) || !isObject(a) || !ITEM_HOWS.has(a.how) || !isStamp(a.at)) continue;
+    out.items[key] = isStamp(a.until) ? { how: a.how, at: a.at, until: a.until } : { how: a.how, at: a.at };
+  }
+  out.payers = capped(out.payers, MAX_PAYER_ANSWERS);
+  out.items = capped(out.items, MAX_ITEM_ANSWERS);
+  const counts = new Map();
+  for (const c of listOf(raw.counts)) if (isCountEntry(c)) counts.set(c.id, later(counts.get(c.id), countOf(c), 'editedAt'));
+  out.counts = cappedCounts([...counts.values()]);
+  return out;
+}
+
+function mergeIncomeShared(a, b) {
+  const x = readIncomeShared(a) || blankShared();
+  const y = readIncomeShared(b) || blankShared();
+  const since = x.since === null ? y.since : y.since === null ? x.since : Math.min(x.since, y.since);
+  const counts = new Map(x.counts.map((c) => [c.id, c]));
+  for (const c of y.counts) counts.set(c.id, later(counts.get(c.id), c, 'editedAt'));
+  return {
+    since,
+    payers: capped(mergeMap(x.payers, y.payers), MAX_PAYER_ANSWERS),
+    items: capped(mergeMap(x.items, y.items), MAX_ITEM_ANSWERS),
+    counts: cappedCounts([...counts.values()]),
+  };
+}
+
+function exportIncomeShared(state) {
+  return incomeOf(state).shared;
+}
+
+function isBlankIncome(section) {
+  const s = readIncomeShared(section);
+  return !!s && s.since === null && !Object.keys(s.payers).length && !Object.keys(s.items).length && !s.counts.length;
+}
+
+function mergeMap(p, q) {
+  const out = {};
+  for (const key of [...new Set([...Object.keys(p), ...Object.keys(q)])].sort()) {
+    out[key] = later(ownOf(p, key), ownOf(q, key));
+  }
+  return out;
+}
+
+function later(p, q, stamp = 'at') {
+  if (!p) return q || null;
+  if (!q) return p;
+  if (p[stamp] !== q[stamp]) return p[stamp] > q[stamp] ? p : q;
+  return canon(p) <= canon(q) ? p : q;
+}
+
+function capped(map, max) {
+  const keys = Object.keys(map);
+  if (keys.length <= max) return map;
+  const keep = keys.sort((a, b) => map[b].at - map[a].at || cmp(a, b)).slice(0, max).sort();
+  const out = {};
+  for (const key of keep) out[key] = map[key];
+  return out;
+}
+
+function cappedCounts(list) {
+  const keep = list.length <= MAX_COUNTS ? list.slice()
+    : list.slice().sort((a, b) => b.editedAt - a.editedAt || cmp(a.id, b.id)).slice(0, MAX_COUNTS);
+  return keep.sort((a, b) => cmp(a.id, b.id));
+}
+
+function isCountEntry(c) {
+  if (!isObject(c) || !isId(c.id) || !isStamp(c.editedAt)) return false;
+  if (c.deleted === true) return true;
+  return c.deleted === undefined && Number.isInteger(c.cents) && c.cents >= 0 && c.cents <= MAX_COUNT && isStamp(c.at);
+}
+
+function countOf(c) {
+  return c.deleted === true ? { id: c.id, deleted: true, editedAt: c.editedAt } : { id: c.id, cents: c.cents, at: c.at, editedAt: c.editedAt };
+}
+
+/* -------------------------------------------------------------- helpers */
+
+function isAnswerKey(key) {
+  if (typeof key !== 'string' || key.length > MAX_KEY) return false;
+  const slash = key.indexOf('/');
+  return slash > 0 && isId(key.slice(0, slash)) && isId(key.slice(slash + 1));
+}
+
+function isId(id) {
+  return typeof id === 'string' && ID.test(id) && !UNSAFE.has(id);
+}
+
+function isStamp(x) {
+  return Number.isFinite(x) && x >= 0 && x <= MAX_STAMP;
+}
+
+function ownOf(obj, key) {
+  return isObject(obj) && Object.hasOwn(obj, key) ? obj[key] : undefined;
+}
+
+function rolloverOf(state) {
+  const hour = isObject(state.settings) ? state.settings.rolloverHour : undefined;
+  return Number.isInteger(hour) && hour >= 0 && hour <= 6 ? hour : 4;
+}
+
+function groupOf(account) {
+  return Object.hasOwn(ACCOUNT_TYPES, account.type) ? ACCOUNT_TYPES[account.type].group : null;
+}
+
+function balanceOf(account) {
+  return Number.isFinite(account && account.balance) ? account.balance : 0;
+}
+
+function isoMs(text) {
+  const m = typeof text === 'string' ? ISO.exec(text) : null;
+  if (!m) return NaN;
+  const [y, mo, d, h, mi] = [m[1], m[2], m[3], m[4], m[5]].map(Number);
+  const s = m[6] === undefined ? 0 : Number(m[6]);
+  const ms = m[7] === undefined ? 0 : Number((m[7] + '00').slice(0, 3));
+  if (!isYmd(m[1] + '-' + m[2] + '-' + m[3]) || h > 23 || mi > 59 || s > 59) return NaN;
+  let offset = 0;
+  if (!m[8]) {
+    const oh = Number(m[10]);
+    const om = Number(m[11]);
+    if (oh > 23 || om > 59) return NaN;
+    offset = (m[9] === '-' ? -1 : 1) * (oh * 60 + om) * 60000;
+  }
+  return Date.UTC(y, mo - 1, d, h, mi, s, ms) - offset;
+}
+
+function utf8Length(text) {
+  let n = 0;
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charCodeAt(i);
+    if (c < 0x80) n += 1;
+    else if (c < 0x800) n += 2;
+    else if (c >= 0xd800 && c <= 0xdbff && i + 1 < text.length) { n += 4; i++; }
+    else n += 3;
+  }
+  return n;
+}
+
+function cmp(a, b) {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+function canon(x) {
+  if (Array.isArray(x)) return '[' + x.map(canon).join(',') + ']';
+  if (isObject(x)) return '{' + Object.keys(x).sort().map((key) => JSON.stringify(key) + ':' + canon(x[key])).join(',') + '}';
+  return x === undefined ? 'null' : JSON.stringify(x);
+}
+
+function isObject(x) {
+  return x !== null && typeof x === 'object' && !Array.isArray(x);
+}
+
+function listOf(x) {
+  return Array.isArray(x) ? x : [];
+}
+return { INCOME_FORMAT, INCOME_MAX_BYTES, SINCE_BACK_MS, LATE_MS, WAIT_MS, MAX_PAYER_ANSWERS, MAX_ITEM_ANSWERS, MAX_COUNTS, COUNT_MAX_CENTS, RECHECK_MS, CASH_ROLE, CASH_NAME, readIncomeFile, sourceIdOf, ensureIncome, incomeOf, applyIncomeReading, roundIncome, knownSha, howOf, payerAnswer, incomePayments, incomeLabel, floorCuts, matchIncome, isIncomeMove, incomeMoveId, isIdleCash, cashAccountOf, rebuildIncome, incomeClaimedRows, cashFigure, incomeQuestions, answerPayer, answerItem, answerItems, askAgain, rowPayments, itemAnswer, ensureCashAccount, countCash, removeCount, liveCounts, incomeRowLabels, readIncomeShared, mergeIncomeShared, exportIncomeShared, isBlankIncome };
 })();
 
 // ---- js/model/money.js
@@ -5269,6 +6294,7 @@ function readAccounts(doc) {
       id: account.id, account, group, bank,
       hidden: !!account.hidden,
       amortised: !bank && group === 'debt' && hasLoanTerms(account),
+      cashInHand: !bank && account.role === 'cash-in-hand',
     });
   }
   return byId;
@@ -5334,6 +6360,7 @@ function buildIndex(core) {
     loanPayments: new Map(),  // amortised loan id -> [{ day, amount }] payments seen in the feed
     loanOfEntry: loansByEntry(core),
     tickResets: new Map(),    // by-hand entry id -> day numbers on which a tick, never met by a bank row, starts its accrual again
+    cashIn: new Map(),        // Cash in hand account id -> [{ n, amount, at }] payments reported paid in cash (3.7)
     countPending: isOn(core.settings.countPending),
   };
   for (const tx of listOf(core.doc.txs)) indexRow(core, index, tx);
@@ -5341,6 +6368,7 @@ function buildIndex(core) {
   index.order = [...index.buckets.keys()].sort(ascending);
   index.effectRunning = runningTotals(index, 'effect');
   index.provisionalRunning = runningTotals(index, 'provisional');
+  index.provisionalInRunning = runningTotals(index, 'provisionalIn');
   index.cashOutRunning = runningTotals(index, 'cashOut');
   return index;
 }
@@ -5355,6 +6383,7 @@ function newBucket() {
     gameSpend: 0, gameRefund: 0, stops: 0,
     cashOut: 0,         // outflows from cash accounts other than transfers
     provisional: 0,     // unmatched provisional moves still counting
+    provisionalIn: 0,   // unmatched provisional income (payments reported by another app, 3.7)
     pending: false,     // the bank has a pending row on this day
     unconfirmed: false, // a provisional move is waiting for its bank row
     loans: null,        // amortised loans paid on this day
@@ -5396,12 +6425,22 @@ function indexRow(core, index, tx) {
     if (shown) bucketFor(index, n).moves.push(tx);
     return;
   }
-  if (tx.matchId) return;
+  // a reported payment counts in pencil again when the row that met it no longer counts (3.7)
+  if (tx.matchId && !(tx.via === 'income' && tx.source === 'manual' && !rowCounts(core, index, tx.matchId))) return;
   if (tx.source === 'manual') {
-    if (shown) indexProvisional(core, index, tx, n);
+    if (shown || (tx.via === 'income' && holder && holder.bank)) indexProvisional(core, index, tx, n);
   } else if (holder && holder.bank) {
     indexBankRow(core, index, tx, n, holder);
   }
+}
+
+function rowCounts(core, index, id) {
+  if (!index.rowsById) index.rowsById = new Map(listOf(core.doc.txs).filter((t) => isObject(t) && t.source === 'bank').map((t) => [t.id, t]));
+  const row = index.rowsById.get(id);
+  if (!row) return false;
+  const holder = row.accountId == null ? null : core.accounts().get(row.accountId) || null;
+  if (!holder || holder.hidden) return false;
+  return !(row.pending && !index.countPending);
 }
 
 const TICK_TRANSIT_DAYS = 4;
@@ -5430,6 +6469,10 @@ function isByHand(entry) {
 }
 
 function indexProvisional(core, index, tx, n) {
+  if (tx.via === 'income') {
+    indexReported(core, index, tx, n);
+    return;
+  }
   if (tx.kind !== 'spend' || tx.flow === 'in') return;
   const amount = Math.round(tx.amount);
   if (tx.inBalance === true) {
@@ -5446,6 +6489,26 @@ function indexProvisional(core, index, tx, n) {
   bucket.unconfirmed = true;
   bucket.moves.push(tx);
   tallySpend(core, index, bucket, tx, n, amount);
+}
+
+function indexReported(core, index, tx, n) {
+  if (tx.kind !== 'income' || tx.flow !== 'in') return;
+  const amount = Math.round(tx.amount);
+  const holder = tx.accountId == null ? null : core.accounts().get(tx.accountId) || null;
+  if (holder && holder.cashInHand) {
+    if (n > core.todayN) return;
+    const bucket = bucketFor(index, n);
+    bucket.income += amount;
+    bucket.moves.push(tx);
+    pushTo(index.cashIn, holder.id, { n, amount, at: Number.isFinite(tx.at) ? tx.at : 0 });
+    return;
+  }
+  if (n > core.todayN) return;
+  const bucket = bucketFor(index, n);
+  bucket.provisionalIn += amount;
+  bucket.income += amount;
+  bucket.unconfirmed = true;
+  bucket.moves.push(tx);
 }
 
 function indexBankRow(core, index, tx, n, holder) {
@@ -5541,12 +6604,17 @@ function provisionalThrough(core, n) {
   return totalThrough(index, index.provisionalRunning, n);
 }
 
+function provisionalInThrough(core, n) {
+  const index = core.index();
+  return totalThrough(index, index.provisionalInRunning, n);
+}
+
 /* ---------------------------------------------------------- manual accounts */
 
 function seriesOf(core, holder) {
   let series = core.series.get(holder.id);
   if (!series) {
-    series = holder.amortised ? loanSeries(core, holder) : historySeries(core, holder);
+    series = holder.amortised ? loanSeries(core, holder) : holder.cashInHand ? cashSeries(core, holder) : historySeries(core, holder);
     core.series.set(holder.id, series);
   }
   return series;
@@ -5798,6 +6866,44 @@ function accruingDays(item, point) {
   return elapsed > item.lapseDays ? null : Math.min(elapsed, item.capDays);
 }
 
+function cashSeries(core, holder) {
+  const payments = (core.index().cashIn.get(holder.id) || []).slice().sort((a, b) => a.n - b.n || a.at - b.at);
+  // the mirror lists the counts in the order they rule: by day, and on one day the one edited last comes last
+  const counts = listOf(holder.account.counts)
+    .filter((c) => isObject(c) && Number.isFinite(c.cents) && Number.isFinite(c.at))
+    .map((c, i) => ({ n: core.cal.num(gameDay(c.at, core.rollover)), cents: Math.round(c.cents), at: c.at, i }))
+    .filter((c) => Number.isFinite(c.n))
+    .sort((a, b) => a.n - b.n || a.i - b.i);
+  // Σ of the cash payments marked at or before a time: what a count already holds
+  const byTime = payments.slice().sort((a, b) => a.at - b.at);
+  const upTo = [0];
+  for (const p of byTime) upTo.push(upTo[upTo.length - 1] + p.amount);
+  const heldBy = (at) => {
+    let lo = 0;
+    let hi = byTime.length;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (byTime[mid].at <= at) lo = mid + 1; else hi = mid; }
+    return upTo[lo];
+  };
+  const series = newSeries(0);
+  const days = [...new Set([...payments.map((p) => p.n), ...counts.map((c) => c.n)])].sort((a, b) => a - b);
+  let value = 0;
+  let total = 0; // every cash payment through the day
+  let pi = 0;
+  let ci = -1;   // the count that rules
+  for (const n of days) {
+    let earned = 0;
+    while (pi < payments.length && payments[pi].n <= n) { earned += payments[pi].amount; pi += 1; }
+    total += earned;
+    let counted = false;
+    while (ci + 1 < counts.length && counts[ci + 1].n <= n) { ci += 1; counted = true; }
+    const next = ci < 0 ? total : counts[ci].cents + total - heldBy(counts[ci].at);
+    if (counted) noteReval(series, n, next - value - earned);
+    value = next;
+    addStep(series, n, value);
+  }
+  return series;
+}
+
 function accruedTotal(items, point) {
   let total = 0;
   for (const item of items) {
@@ -5841,7 +6947,7 @@ function rawClose(core, n) {
     const bank = bankOn(core, n);
     const receivable = roundCents(accruedTotal(accruals.pay, point));
     const payable = roundCents(accruedTotal(accruals.bills, point));
-    raw = { bank, receivable, payable, smooth: bank + receivable - payable - provisionalThrough(core, n) };
+    raw = { bank, receivable, payable, smooth: bank + receivable - payable - provisionalThrough(core, n) + provisionalInThrough(core, n) };
     core.rawCloses.set(n, raw);
   }
   return raw;
@@ -5903,6 +7009,7 @@ function buildPosition(core) {
   const payable = sumOf(bills, (line) => line.amount);
   const smooth = totals.bank + receivable - payable;
   const provisional = provisionalThrough(core, core.todayN);
+  const provisionalIn = provisionalInThrough(core, core.todayN);
   const rising = core.stopPoint === null ? risingDaily(pay) - risingDaily(bills) : 0;
   return {
     at: core.now,
@@ -5921,7 +7028,8 @@ function buildPosition(core) {
     payable,
     smooth,
     provisional,
-    live: smooth - provisional,
+    provisionalIn,
+    live: smooth - provisional + provisionalIn,
     rate: rising / daySecondsOf(core),
     dataAt: core.data().at,
     syncedAt: core.syncedAt,
@@ -10266,7 +11374,7 @@ function recentTransactions(state, today, opts = {}) {
   const limit = Number.isInteger(opts.limit) && opts.limit > 0 ? opts.limit : DEFAULT_LIMIT;
   const seenAt = Number.isFinite(opts.seenAt) ? opts.seenAt : null;
   const only = typeof opts.accountId === 'string' && opts.accountId ? opts.accountId : null;
-  const empty = { rows: [], today: { count: 0, out: 0, in: 0, unsettled: false }, fresh: 0, total: 0, oldest: null };
+  const empty = { rows: [], today: { count: 0, out: 0, in: 0, unsettled: false, unsettledIn: false, unsettledOut: false }, fresh: 0, total: 0, oldest: null };
   if (!state || typeof state !== 'object' || !isYmd(today)) return empty;
 
   const accounts = new Map();
@@ -10286,7 +11394,7 @@ function recentTransactions(state, today, opts = {}) {
   const present = only !== null ? new Set() : new Set(txs.map((tx) => tx.id));
 
   const rows = [];
-  const todayTally = { count: 0, out: 0, in: 0, unsettled: false };
+  const todayTally = { count: 0, out: 0, in: 0, unsettled: false, unsettledIn: false, unsettledOut: false };
   let fresh = 0;
   let oldest = null;
   let ahead = 0; // rows of the one account in view that are dated further ahead: counted, not listed
@@ -10294,7 +11402,8 @@ function recentTransactions(state, today, opts = {}) {
     if (tx.day > latest) { ahead += 1; continue; }
     const paired = tx.pairId != null && present.has(tx.pairId);
     if (paired && tx.flow === 'in') continue;   // the same event as its outgoing leg
-    const provisional = tx.source === 'manual' && tx.inBalance !== true; // an alert the balance took in is settled
+    // an alert the balance took in is settled, and so is a payment reported as paid in cash (3.7)
+    const provisional = tx.source === 'manual' && tx.inBalance !== true && !(tx.via === 'income' && tx.income && tx.income.how === 'cash');
     const isNew = seenAt !== null && Number.isFinite(tx.loggedAt) && tx.loggedAt > seenAt;
     if (isNew) fresh += 1;
     if (tx.day === today) {
@@ -10304,7 +11413,11 @@ function recentTransactions(state, today, opts = {}) {
         if (tx.flow === 'in') todayTally.in += amount;
         else todayTally.out += amount;
       }
-      if (tx.pending || provisional) todayTally.unsettled = true;
+      if (tx.pending || provisional) {
+        // each sum is in pencil only for what is unsettled on its own side (a pencil payment in does not make the out sum pencil)
+        todayTally.unsettled = true;
+        if (!paired) todayTally[tx.flow === 'in' ? 'unsettledIn' : 'unsettledOut'] = true;
+      }
     }
     if (oldest === null || tx.day < oldest) oldest = tx.day;
     rows.push({ tx, account: tx.accountId != null ? accounts.get(tx.accountId) || null : null, isNew, provisional });
@@ -10331,6 +11444,7 @@ const { reclassify } = __mods["js/model/classify.js"];
 const { makeLedger, todayOf } = __mods["js/model/ledger.js"];
 const { runsByHand } = __mods["js/model/book.js"];
 const { claimByHand, payeeKey, unpaidByPayee } = __mods["js/model/byhand.js"];
+const { incomeClaimedRows, rebuildIncome } = __mods["js/model/income.js"];
 /*
  * How the specification is read where it leaves a choice (each is implemented where it is named):
  *  - A charge is money out as a spend, or as a payment from a cash account (a loan payment, a standing
@@ -10474,7 +11588,7 @@ function detectStreams(state, nowMs) {
     const stream = payerOf(known, taken, rows[0]);
     if (stream) taken.add(stream);
     if (stream ? isDismissed(stream) : rows.length < STREAM_MIN_DEPOSITS) continue;
-    const pay = payProfile(rows);
+    const pay = payProfile(rows, ctx.reported);
     if (stream) {
       if (refreshStream(ctx, stream, pay)) report.updated.push(stream.id);
       claim(claims, rows, stream.id);
@@ -10487,6 +11601,8 @@ function detectStreams(state, nowMs) {
     }
   }
   linkDeposits(state, claims);
+  // the streams now follow the bank rows reported payments claim (followIncome)
+  if (isObject(state.income)) delete state.income.restream;
   return report;
 }
 
@@ -10554,13 +11670,22 @@ function detectSweeps(state, nowMs) {
 }
 
 function refresh(state, nowMs) {
+  const reclassified = isObject(state) ? reclassify(state) : 0;
+  // the payments another app reported, matched to the bank rows just classified (ARCHITECTURE 3.7)
+  rebuildIncome(state, nowMs);
   return {
-    reclassified: isObject(state) ? reclassify(state) : 0,
+    reclassified,
     recurring: detectRecurring(state, nowMs),
     streams: detectStreams(state, nowMs),
     matchStarted: startMatch(state, nowMs),
     sweeps: detectSweeps(state, nowMs),
   };
+}
+
+function followIncome(state, nowMs) {
+  const result = rebuildIncome(state, nowMs);
+  if (isObject(state) && isObject(state.income) && state.income.restream === true) detectStreams(state, nowMs);
+  return result;
 }
 
 /* ------------------------------------------------------------- the document */
@@ -10574,7 +11699,9 @@ function readContext(state, nowMs) {
   const today = todayOf(state, nowMs);
   const rows = listOf(state.txs).filter((tx) => isBankRow(tx) && tx.day <= today && isShown(accounts.get(tx.accountId)));
   const swept = new Set(listOf(state.sweeps).filter(isObject).map((sweep) => sweep.txId).filter((id) => id != null));
-  return { today, accounts, rows, byId: new Map(rows.map((tx) => [tx.id, tx])), swept };
+  // bank rows a payment another app reported claims (a history one included): their stream is counted on arrival (3.7)
+  const reported = incomeClaimedRows(state);
+  return { today, accounts, rows, byId: new Map(rows.map((tx) => [tx.id, tx])), swept, reported };
 }
 
 function isBankRow(tx) {
@@ -10981,7 +12108,7 @@ function kindFor(purpose) {
   return purpose === 'studio' ? 'creative' : 'other';
 }
 
-function payProfile(rows) {
+function payProfile(rows, reported) {
   const recent = rows.slice(-FIT_OCCURRENCES);
   const amounts = recent.map((row) => row.amount);
   const usual = median(amounts);
@@ -10991,7 +12118,10 @@ function payProfile(rows) {
   const latest = rows[rows.length - 1];
   const payroll = recent.some(isPayroll);
   const amount = regular ? typicalAmount(rows) : roundCents(usual);
-  const accrue = regular && (payroll || amount >= MIN_ACCRUING_PAY);
+  // a deposit that confirms a payment another app reported is counted when it is marked, so its stream
+  // is counted on arrival and never day by day (unless the owner locked `accrue` on)
+  const confirmed = !!reported && rows.some((row) => reported.has(row.id));
+  const accrue = regular && (payroll || amount >= MIN_ACCRUING_PAY) && !confirmed;
   return {
     name: nameOf(latest),
     kind: accrue || payroll ? 'salary' : kindFor(latest.purpose),
@@ -11144,13 +12274,14 @@ function rolloverOf(state) {
   const hour = isObject(state.settings) ? state.settings.rolloverHour : null;
   return Number.isFinite(hour) && hour >= 0 && hour < 24 ? hour : 0;
 }
-return { MATCH_FROM_DAY, detectRecurring, detectStreams, computeHabit, startMatch, detectSweeps, refresh };
+return { MATCH_FROM_DAY, detectRecurring, detectStreams, computeHabit, startMatch, detectSweeps, refresh, followIncome };
 })();
 
 // ---- js/derive.js
 __mods["js/derive.js"] = (function () {
 const { gameDay, addDays, monthOf } = __mods["js/model/dates.js"];
 const { ACCOUNT_TYPES } = __mods["js/model/schema.js"];
+const { isIdleCash } = __mods["js/model/income.js"];
 const { makeLedger } = __mods["js/model/ledger.js"];
 const { annotateRound } = __mods["js/model/annotate.js"];
 const { assess, coachNotes, monthReview } = __mods["js/model/assess.js"];
@@ -11251,7 +12382,8 @@ function makeDerived(state, now) {
 
     account(id) { return state.accounts.find((a) => a.id === id) || null; },
     accounts(group) {
-      return state.accounts.filter((a) => !a.hidden && ACCOUNT_TYPES[a.type] && ACCOUNT_TYPES[a.type].group === group);
+      // an idle Cash in hand (nothing counted, nothing paid in cash) is not listed (3.7)
+      return state.accounts.filter((a) => !a.hidden && ACCOUNT_TYPES[a.type] && ACCOUNT_TYPES[a.type].group === group && !isIdleCash(state, a));
     },
     valueOf(account) { return once('value:' + account.id, () => led().accountValueOn(account.id, today)); },
 
@@ -11864,6 +12996,7 @@ const { ACCOUNT_TYPES, CATEGORIES, klassOf, makeAccount, makeTx } = __mods["js/m
 const { addDays, diffDays, feedDay, feedHasTime, gameDay, isYmd } = __mods["js/model/dates.js"];
 const { roundCents } = __mods["js/model/money.js"];
 const { classify, inferAccountType, merchantOf, normalizeDescription, reclassify } = __mods["js/model/classify.js"];
+const { rebuildIncome } = __mods["js/model/income.js"];
 const PROVISIONAL_STALE_DAYS = 7;
 
 const SETTLE_AMOUNT_TOLERANCE = 0.25;
@@ -12724,6 +13857,8 @@ function mergeFeed(state, feed, nowMs) {
   takeIntoBalance(state, touched.map((t) => t.account));
   flagStaleProvisional(state, ctx.today);
   updateSync(state, feed, ctx, work.earliestDay);
+  // a bank row that confirms a payment another app reported takes its place at once (3.7); detection runs it again
+  rebuildIncome(state, ctx.nowMs);
   return summary;
 }
 
@@ -13089,6 +14224,7 @@ __mods["js/model/share.js"] = (function () {
 const { makeByHand } = __mods["js/model/byhand.js"];
 const { isYmd } = __mods["js/model/dates.js"];
 const { refresh } = __mods["js/model/detect.js"];
+const { ensureIncome, exportIncomeShared, incomeOf, isBlankIncome, mergeIncomeShared, readIncomeShared, rebuildIncome } = __mods["js/model/income.js"];
 const VERSION = 1;
 const APP = 'networth';
 const MAX_ENTRIES = 200;
@@ -13102,7 +14238,7 @@ const MAX_STAMP = 1e14;
 const MAX_DEPTH = 12;
 const TOMB_KEEP_MS = 400 * 86400000;
 const RESTARTS = 3;
-const KNOWN = new Set(['v', 'app', 'savedAt', 'byHand']);
+const KNOWN = new Set(['v', 'app', 'savedAt', 'byHand', 'income']);
 const UNSAFE = new Set(['__proto__', 'constructor', 'prototype']);
 const ID = /^[A-Za-z0-9_.:-]{1,80}$/;
 const PAYEE = /^p[0-9a-f]{13}$/;
@@ -13135,6 +14271,12 @@ function fileOf(raw) {
     byHand[id] = entry;
   }
   const out = { v: VERSION, app: APP, savedAt, byHand };
+  if (raw.income !== undefined) {
+    // the answers about reported income (3.7): checked like the rest; an empty section is left out
+    const income = readIncomeShared(raw.income);
+    if (!income) return null;
+    if (!isBlankIncome(income)) out.income = income;
+  }
   for (const key of Object.keys(raw)) {
     if (!KNOWN.has(key) && !UNSAFE.has(key)) out[key] = plain(raw[key], 0);
   }
@@ -13198,7 +14340,10 @@ function exportShared(state, nowMs) {
     if (!isId(id) || Object.hasOwn(byHand, id) || !isStamp(at) || nowMs - at > TOMB_KEEP_MS) continue;
     byHand[id] = { deleted: true, editedAt: at };
   }
-  return { v: VERSION, app: APP, savedAt: isStamp(nowMs) ? nowMs : 0, byHand };
+  const out = { v: VERSION, app: APP, savedAt: isStamp(nowMs) ? nowMs : 0, byHand };
+  const income = exportIncomeShared(doc);
+  if (!isBlankIncome(income)) out.income = income;
+  return out;
 }
 
 function projected(r) {
@@ -13220,6 +14365,8 @@ function mergeShared(a, b) {
     const q = own(y.byHand, id);
     out.byHand[id] = !q ? p : !p ? q : mergeEntry(p, q);
   }
+  const income = mergeIncomeShared(x.income, y.income);
+  if (!isBlankIncome(income)) out.income = income;
   for (const key of union(x, y)) {
     if (KNOWN.has(key)) continue;
     const p = own(x, key);
@@ -13290,14 +14437,20 @@ function sharedChanges(state, merged) {
 }
 
 function applyShared(state, merged, nowMs) {
-  void nowMs; // every time written here is the file's own, so that the device then agrees with the file
+  // every time written here is the file's own, so that the device then agrees with the file
   const ops = planOf(state, merged);
   if (!ops.length) return { changed: false };
+  if (ops.some((one) => one.op === 'income')) {
+    // the answers about reported income: the merged ones, and the payments' moves follow them (3.7)
+    ensureIncome(state).shared = mergeIncomeShared(fileOf(merged).income, null);
+    rebuildIncome(state, nowMs);
+  }
   if (!Array.isArray(state.recurring)) state.recurring = [];
   if (!isObject(state.share)) state.share = { tombs: {} };
   if (!isObject(state.share.tombs)) state.share.tombs = {};
   const tombs = state.share.tombs;
   for (const { op, id, want } of ops) {
+    if (op === 'income') continue;
     const at = state.recurring.findIndex((r) => isObject(r) && r.id === id);
     if (op === 'remove') {
       if (at >= 0) state.recurring.splice(at, 1);
@@ -13329,6 +14482,8 @@ function planOf(state, merged) {
   const list = listOf(state.recurring);
   const tombs = isObject(state.share) && isObject(state.share.tombs) ? state.share.tombs : {};
   const ops = [];
+  const income = mergeIncomeShared(file.income, null);
+  if (JSON.stringify(sortedCopy(incomeOf(state).shared)) !== JSON.stringify(sortedCopy(income))) ops.push({ op: 'income' });
   for (const id of Object.keys(file.byHand)) {
     const want = file.byHand[id];
     const have = list.find((r) => isObject(r) && r.id === id);
@@ -13416,7 +14571,15 @@ function blank() {
 }
 
 function isBlank(file) {
-  return Object.keys(file).every((key) => KNOWN.has(key)) && Object.keys(file.byHand).length === 0;
+  return Object.keys(file).every((key) => KNOWN.has(key)) && Object.keys(file.byHand).length === 0 && !file.income;
+}
+
+function sortedCopy(x) {
+  if (Array.isArray(x)) return x.map(sortedCopy);
+  if (!isObject(x)) return x;
+  const out = {};
+  for (const key of Object.keys(x).sort()) out[key] = sortedCopy(x[key]);
+  return out;
 }
 
 function isId(id) {
@@ -13487,6 +14650,7 @@ const MESSAGES = {
   server: 'GitHub answered with an error of its own (a 5xx).',
   rate: 'GitHub asked for a pause; nothing is asked of it for 10 minutes.',
   file: 'The shared file is not one this version of Networth can read. It was left as it is.',
+  large: 'The shared file is larger than 1 MB and GitHub did not give its content. It was left as it is.',
 };
 
 class ShareError extends Error {
@@ -13593,9 +14757,23 @@ async function readSharedText(owner, key, doFetch) {
     if (err instanceof ShareError && err.code === 'missing') return { text: null, sha: null };
     throw err;
   }
+  const sha = body && typeof body.sha === 'string' && SHA.test(body.sha) ? body.sha : null;
+  if (body && body.encoding === 'none' && sha) {
+    // a 404 here is not "no file" either: the file was just listed with this sha
+    const blob = await call(owner, key, { method: 'GET' }, doFetch, blobUrl(owner, sha)).catch((err) => {
+      throw err instanceof ShareError && err.code === 'missing' ? new ShareError('large') : err;
+    });
+    const text = blob && blob.encoding === 'base64' && blob.sha === sha ? fromBase64(blob.content) : null;
+    if (text === null) throw new ShareError('large');
+    return { text, sha };
+  }
   const text = body && body.encoding === 'base64' ? fromBase64(body.content) : null;
-  if (text === null || typeof body.sha !== 'string' || !SHA.test(body.sha)) throw new ShareError('file');
-  return { text, sha: body.sha };
+  if (text === null || !sha) throw new ShareError('file');
+  return { text, sha };
+}
+
+function blobUrl(owner, sha) {
+  return API + '/repos/' + owner + '/' + REPOSITORY + '/git/blobs/' + sha;
 }
 
 async function writeSharedText(owner, key, text, sha, doFetch) {
@@ -13658,7 +14836,47 @@ async function deleteInboxFile(owner, key, name, sha, doFetch) {
   }
   return true;
 }
-return { ShareError, shareMessage, isShareKey, shareOwner, sharedUrl, toBase64, fromBase64, readSharedText, writeSharedText, inboxUrl, listInbox, readInboxFile, deleteInboxFile };
+
+/* ------------------------------------------------------- income the owner's other apps report */
+
+const INCOME = 'income';
+const INCOME_NAME = /^[A-Za-z0-9_.:-]{1,80}\.json$/;
+
+function incomeUrl(owner, name) {
+  if (typeof owner !== 'string' || !OWNER.test(owner)) throw new ShareError('missing');
+  if (name !== undefined && !(typeof name === 'string' && INCOME_NAME.test(name))) throw new ShareError('file');
+  return API + '/repos/' + owner + '/' + REPOSITORY + '/contents/' + INCOME + (name === undefined ? '' : '/' + encodeURIComponent(name));
+}
+
+async function listIncome(owner, key, doFetch) {
+  const url = incomeUrl(owner);
+  let body = null;
+  try {
+    body = await call(owner, key, { method: 'GET' }, doFetch, url);
+  } catch (err) {
+    if (err instanceof ShareError && err.code === 'missing') return null;
+    throw err;
+  }
+  if (!Array.isArray(body)) throw new ShareError('file');
+  return body
+    .filter((e) => e && e.type === 'file' && typeof e.name === 'string' && INCOME_NAME.test(e.name)
+      && typeof e.sha === 'string' && SHA.test(e.sha) && Number.isFinite(e.size))
+    .slice(0, 100)
+    .map((e) => ({ name: e.name, sha: e.sha, size: e.size }));
+}
+
+async function readIncomeText(owner, key, name, doFetch) {
+  const url = incomeUrl(owner, name);
+  let body = null;
+  try {
+    body = await call(owner, key, { method: 'GET' }, doFetch, url);
+  } catch (err) {
+    if (err instanceof ShareError && err.code === 'missing') return null;
+    throw err;
+  }
+  return body && body.encoding === 'base64' ? fromBase64(body.content) : null;
+}
+return { ShareError, shareMessage, isShareKey, shareOwner, sharedUrl, toBase64, fromBase64, readSharedText, writeSharedText, inboxUrl, listInbox, readInboxFile, deleteInboxFile, incomeUrl, listIncome, readIncomeText };
 })();
 
 // ---- js/share.js
@@ -13670,7 +14888,7 @@ const { exportShared, roundShared, sameShared } = __mods["js/model/share.js"];
 const { ShareError, isShareKey, readSharedText, shareMessage, shareOwner, writeSharedText } = __mods["js/github.js"];
 const SPACING_MS = 2000;
 const RATE_PAUSE_MS = 10 * 60 * 1000;
-const CODES = new Set(['key', 'missing', 'conflict', 'network', 'server', 'rate', 'file']);
+const CODES = new Set(['key', 'missing', 'conflict', 'network', 'server', 'rate', 'file', 'large']);
 const OTHER = 'Sharing stopped on this device before anything was sent. Nothing was changed on GitHub.';
 
 const live = {
@@ -13682,6 +14900,7 @@ const live = {
   agreedAt: null,
   count: 0,
   file: true,
+  agreedGen: null,
   pauseUntil: 0,
 };
 
@@ -13787,11 +15006,13 @@ async function round() {
     if (gen === generation) {
       if (code) {
         live.code = code;
+        live.agreedGen = null;
         live.failedAt = nowMs();
         if (code === 'rate') live.pauseUntil = nowMs() + RATE_PAUSE_MS;
       } else if (result && result.ok) {
         live.code = null;
         live.agreedAt = nowMs();
+        live.agreedGen = gen;
         live.count = result.count || 0;
         live.file = result.file !== false;
       }
@@ -13833,6 +15054,10 @@ function shareInfo() {
     retryAt: paused ? live.pauseUntil : null,
     canShare: usable() && !live.busy && !paused,
   };
+}
+
+function shareSawFile(gen) {
+  return live.code === null && live.agreedGen === gen && live.file === true;
 }
 
 async function startShare(pasted) {
@@ -13908,7 +15133,7 @@ async function noteShareAnswer(code, key, gen) {
   }
   poke();
 }
-return { initShare, autoShare, shareInfo, startShare, shareNow, forgetShare, shareGeneration, noteShareAnswer };
+return { initShare, autoShare, shareInfo, shareSawFile, startShare, shareNow, forgetShare, shareGeneration, noteShareAnswer };
 })();
 
 // ---- js/model/alerts.js
@@ -14211,6 +15436,98 @@ function inboxInfo() {
   return { readAt: live.readAt, code: live.code, busy: live.busy, refused: live.refused };
 }
 return { autoInbox, inboxInfo };
+})();
+
+// ---- js/income.js
+__mods["js/income.js"] = (function () {
+const { store } = __mods["js/store.js"];
+const { loadShareKey } = __mods["js/db.js"];
+const { gameDay, nowMs } = __mods["js/model/dates.js"];
+const { rebuildIncome, roundIncome } = __mods["js/model/income.js"];
+const { isShareKey, listIncome, readIncomeText } = __mods["js/github.js"];
+const { noteShareAnswer, shareGeneration, shareInfo, shareSawFile } = __mods["js/share.js"];
+const EVERY_MS = 60000;
+
+const live = { busy: false, readAt: null, code: null, folder: null };
+let timer = null;
+let builtDay = null;
+
+function doFetch(url, init) {
+  return fetch(url, init);
+}
+
+function visible() {
+  return typeof document === 'undefined' || document.visibilityState !== 'hidden';
+}
+
+function usable() {
+  const sh = shareInfo();
+  return sh.available && sh.on && sh.code !== 'key' && !sh.retryAt && !!store.state && !store.status.readonly;
+}
+
+function followDay() {
+  try {
+    const state = store.state;
+    if (!state || store.status.readonly) return;
+    const at = nowMs();
+    const day = gameDay(at, state.settings && Number.isInteger(state.settings.rolloverHour) ? state.settings.rolloverHour : 4);
+    if (day === builtDay) return;
+    builtDay = day; // at the first look too: the record may have been stored on an earlier day
+    const inc = state.income;
+    const any = inc && ((inc.sources && Object.keys(inc.sources).length) || (inc.shared && Array.isArray(inc.shared.counts) && inc.shared.counts.length));
+    if (!any) return;
+    const change = (s) => { rebuildIncome(s, at); };
+    store.update(change, { past: change });
+  } catch { /* the next look tries again */ }
+}
+
+async function read() {
+  if (live.busy || !visible() || !usable()) return;
+  live.busy = true;
+  const gen = shareGeneration();
+  const owner = shareInfo().owner;
+  let key = null;
+  try {
+    key = await loadShareKey();
+    if (!isShareKey(key) || gen !== shareGeneration()) return;
+    const device = {
+      state: () => store.state,
+      stale: () => gen !== shareGeneration() || !store.state || store.status.readonly,
+      // a 404 for income/ is an empty listing only when the latest share round read the shared file with this key
+      access: () => shareSawFile(gen),
+      // what the other app reported is not the owner's change: an Undo does not take it back
+      update: (change) => store.update(change, { past: change }),
+    };
+    const transport = {
+      list: () => listIncome(owner, key, doFetch),
+      read: (name) => readIncomeText(owner, key, name, doFetch),
+    };
+    const result = await roundIncome(device, transport, nowMs());
+    if (result.ok) {
+      live.code = null;
+      live.folder = result.folder;
+      if (result.folder === 'listed') live.readAt = nowMs(); // a 404 is no reading
+    }
+  } catch (err) {
+    // only the code is kept: nothing an error says is shown or logged
+    live.code = err && typeof err.code === 'string' ? err.code : 'other';
+    if (live.code === 'key' || live.code === 'rate') await noteShareAnswer(live.code, key, gen);
+  } finally {
+    key = null;
+    live.busy = false;
+  }
+}
+
+function autoIncome() {
+  if (timer === null && typeof setInterval === 'function') timer = setInterval(() => { followDay(); read().catch(() => {}); }, EVERY_MS);
+  followDay();
+  return read().catch(() => {});
+}
+
+function incomeInfo() {
+  return { readAt: live.readAt, code: live.code, busy: live.busy, folder: live.folder };
+}
+return { autoIncome, incomeInfo };
 })();
 
 // ---- js/model/demo.js
@@ -16270,7 +17587,11 @@ function drawWorth(d, W, H) {
       if (left && ex - 8 - w < l) left = false;
       if (!left && ex + 8 + w > l + pw - (Math.abs(base - ey) < 26 ? lw : 0)) left = true;
       const up = ey - 20 > t;
-      out += txt('nwc-i', left === up ? ex - 7 : ex + 7, up ? ey - 8 : ey + 17, e.label, left === up ? 'end' : 'start');
+      // the side it lies on, kept inside the chart: a count is made today, at the right edge
+      let right = left !== up;
+      if (right && ex + 7 + w > W - 2) right = false;
+      else if (!right && ex - 7 - w < 2) right = true;
+      out += txt('nwc-i', right ? ex + 7 : ex - 7, up ? ey - 8 : ey + 17, e.label, right ? 'start' : 'end');
     }
   }
 
@@ -16843,6 +18164,12 @@ const KINDS = {
   spark: { read: readSpark, sum: sumSpark, draw: drawSpark },
 };
 
+function chartSvg(kind, data, W, H) {
+  const k = KINDS[kind];
+  const drawn = k ? k.draw(k.read(data), W, H) : null;
+  return drawn && typeof drawn.body === 'string' ? drawn.body : null;
+}
+
 function chartSummary(kind, data) {
   const k = KINDS[kind];
   if (!k) return 'Chart: ' + NOTE + '.';
@@ -17016,7 +18343,7 @@ class NwChart extends ElementBase {
 }
 
 if (typeof customElements !== 'undefined') define('nw-chart', NwChart);
-return { niceScale, chartSummary, NwChart };
+return { niceScale, chartSvg, chartSummary, NwChart };
 })();
 
 // ---- js/ui/glyphs.js
@@ -17106,6 +18433,211 @@ function verifiedMark() {
   return raw('<i class="vm" aria-hidden="true"></i>');
 }
 return { evalGlyph, timeTroubleGlyph, moveGlyph, resultMark, verifiedMark };
+})();
+
+// ---- js/views/income-words.js
+__mods["js/views/income-words.js"] = (function () {
+const { fmt } = __mods["js/model/money.js"];
+const { addDays, fmtDate, gameDay, nowMs } = __mods["js/model/dates.js"];
+const { LATE_MS, WAIT_MS, cashAccountOf, incomeLabel, incomeOf, incomePayments, isIncomeMove, liveCounts, payerAnswer } = __mods["js/model/income.js"];
+const CHANGE_PAYER = ' Change it in Settings.';
+const CHANGE_ITEM = ' Ask again from the payment.';
+const CHANGE_EACH = ' Ask again from each payment.';
+const CHANGE_GONE = ' Ask again in Settings.';
+const CHANGE_COUNT = ' Count again to correct it.';
+
+function rolloverOf(state) {
+  return state.settings && Number.isInteger(state.settings.rolloverHour) ? state.settings.rolloverHour : 4;
+}
+
+function latestCount(state) {
+  const rollover = rolloverOf(state);
+  const today = gameDay(nowMs(), rollover);
+  const counts = liveCounts(incomeOf(state).shared, rollover).filter((c) => gameDay(c.at, rollover) <= today);
+  return counts.length ? counts[counts.length - 1] : null;
+}
+
+function countDayWords(day, today) {
+  if (day === today) return 'today’s count';
+  if (day === addDays(today, -1)) return 'yesterday’s count';
+  return 'your count of ' + fmtDate(day, 'short');
+}
+
+function isCountedCash(state, value) {
+  const count = latestCount(state);
+  return !!count && Math.round(Number(value) || 0) === Math.round(count.cents);
+}
+
+function cashNoteWords(state, value) {
+  const cents = Math.round(Number(value) || 0);
+  if (cents <= 0) return '';
+  const count = latestCount(state);
+  if (!count) return fmt(cents) + ' of it from payments marked as cash';
+  if (isCountedCash(state, cents)) return fmt(cents) + ' of it counted by you';
+  return fmt(cents) + ' of it from your count of ' + fmt(count.cents) + ' and payments marked as cash since';
+}
+
+function staysWords(state, value, cover) {
+  if (!cover) return 'stays ' + fmt(value);
+  return isCountedCash(state, value) ? 'stays as counted' : 'does not change';
+}
+
+function rowLineLead(asked) {
+  return asked ? 'The board asks whether this is ' : 'Confirms ';
+}
+
+function othersWords(others, cover) {
+  if (!others || !others.n) return '';
+  if (others.n === 1) return 'with ' + (others.earlier ? 'an earlier payment' : 'another payment') + (cover ? '' : ' of ' + fmt(others.cents));
+  return 'with ' + others.n + (others.earlier ? ' earlier' : ' other') + ' payments' + (cover ? '' : ', ' + fmt(others.cents) + ' in all');
+}
+
+function beforeCountWords(state, had, value, today, cover, kind) {
+  const count = latestCount(state);
+  const account = cashAccountOf(state);
+  if (!count || !account) return null;
+  const moved = state.txs.filter((tx) => isIncomeMove(tx) && tx.accountId === account.id && tx.income && !had.has(tx.income.key) && Number.isFinite(tx.at));
+  if (!moved.length) return null;
+  if (moved.some((tx) => tx.at > count.at)) return { stays: false, text: cover ? '' : 'Cash in hand is now ' + fmt(value) + '.' };
+  const one = moved.length === 1;
+  const day = countDayWords(gameDay(count.at, rolloverOf(state)), today);
+  const stays = staysWords(state, value, cover) + '.';
+  if (kind === 'payer') {
+    const what = !one ? moved.length + ' payments were' : (cover ? 'payment' : fmt(Math.round(moved[0].amount))) + ' was';
+    return { stays: true, text: 'Their ' + what + ' marked before ' + day + ', so Cash in hand ' + stays };
+  }
+  const who = !one ? 'They were' : cover ? 'It was' : 'The ' + fmt(Math.round(moved[0].amount)) + ' was';
+  return { stays: true, text: who + ' marked before ' + day + ', so Cash in hand ' + stays };
+}
+
+function withCash(said, cash, lead) {
+  if (!cash) return said;
+  if (cash.stays) return lead + ' ' + cash.text;
+  return cash.text ? said + ' ' + cash.text : said;
+}
+
+function countedWords(state, today) {
+  const count = latestCount(state);
+  if (!count) return { words: 'never counted', count: null };
+  const day = gameDay(count.at, rolloverOf(state));
+  return { words: 'counted ' + (day === today ? 'today' : day === addDays(today, -1) ? 'yesterday' : fmtDate(day, 'short')), count };
+}
+
+function payerWords(name, how, cash, asks, cover, moved, where) {
+  const said = name + (how === 'cash' ? (moved === 0 ? ' pays in cash.' : ' pays in cash: it counts in Cash in hand.') : ' pays by Zelle or transfer: it counts in pencil until the bank shows it.');
+  const words = cash && cash.stays ? name + ' pays in cash. ' + cash.text : withCash(said, cash);
+  const ask = asks ? ' Networth asks about the ' + (cover ? 'deposit' : fmt(asks.cents)) + ' of ' + fmtDate(asks.day, 'short') + ' on the board.' : '';
+  // in Settings the switch is under the owner's finger: the toast ends at the answer
+  return words + ask + (where === 'settings' ? '' : CHANGE_PAYER);
+}
+
+function payerNames(payers) {
+  const sources = new Map();
+  for (const p of payers) {
+    const set = sources.get(p.payerName) || new Set();
+    set.add(p.sourceLabel);
+    sources.set(p.payerName, set);
+  }
+  return new Map(payers.map((p) => [p.payerKey, sources.get(p.payerName).size > 1 ? p.payerName + ' · ' + p.sourceLabel : p.payerName]));
+}
+
+function listedPayers(state) {
+  const { sources, shared } = incomeOf(state);
+  const payments = incomePayments(state, rolloverOf(state));
+  const payers = [];
+  const seen = new Set();
+  for (const p of payments.slice().reverse()) {
+    if (seen.has(p.payerKey) || (p.how === 'history' && !payerAnswer(shared, p.payerKey))) continue;
+    seen.add(p.payerKey);
+    payers.push(p);
+  }
+  payers.sort((a, b) => a.payerName.localeCompare(b.payerName) || (a.payerKey < b.payerKey ? -1 : 1));
+  const labelOf = (id) => (sources[id] && sources[id].what) || id + '.json';
+  const names = payerNames(payers.map((p) => ({ payerKey: p.payerKey, payerName: p.payerName, sourceLabel: labelOf(p.source) })));
+  return { payers, names };
+}
+
+function recordEstimate(m) {
+  return Boolean(m.estAssets || m.estDebts || m.smoothing || m.provisional > 0 || m.provisionalIn > 0);
+}
+
+function recordLead(m) {
+  const pencil = m.provisional > 0 || m.provisionalIn > 0;
+  const where = bankWhere(m.handCash);
+  return 'Net worth ' + where + ', day by day.' + (pencil ? ' The last step, in pencil, counts the moves not yet at the bank; dotted: ' + where + '.' : '');
+}
+
+function bankWhere(handCash) {
+  return handCash ? 'at the bank and in hand' : 'at the bank';
+}
+
+function cashLineWords(state) {
+  if (!cashAccountOf(state)) return '';
+  const count = latestCount(state);
+  return count ? 'Cash in hand: your count of ' + fmt(count.cents) + ' and payments marked as cash since.' : 'Cash in hand: from payments marked as cash.';
+}
+
+function itemWords(label, how, cash, at, rollover) {
+  const said = how === 'cash' ? ' was cash: it counts in Cash in hand.' : how === 'gone' ? ' is in the bank: it no longer counts on its own.'
+    : how === 'bank' ? ' came by Zelle: the bank’s row counts for it.'
+      : ' is still coming: Networth asks again on ' + fmtDate(gameDay(at + WAIT_MS, rollover), 'short') + '.';
+  return (how === 'cash' ? withCash(label + said, cash, label + ' was cash.') : label + said) + (how === 'gone' ? CHANGE_GONE : CHANGE_ITEM);
+}
+
+function confirmWords(label, n, how, cash) {
+  const change = n > 1 ? CHANGE_EACH : CHANGE_ITEM;
+  if (how === 'cash') {
+    return withCash(label + (n > 1 ? ': ' + n + ' payments were cash; they count in Cash in hand.' : ' was cash: it counts in Cash in hand.'), cash,
+      label + (n > 1 ? ': ' + n + ' payments were cash.' : ' was cash.')) + change;
+  }
+  return label + (n > 1 ? ': ' + n + ' payments came by Zelle; the bank’s row counts for them.' : ' came by Zelle: the bank’s row counts for it.') + change;
+}
+
+function countWords(cents, cover) {
+  return (cover ? 'Cash in hand is counted.' : 'Cash in hand is counted: ' + fmt(cents) + '.') + CHANGE_COUNT;
+}
+
+function removedWords(value, cover) {
+  return (cover ? 'The latest count is removed.' : 'The latest count is removed: Cash in hand is ' + fmt(value) + '.') + CHANGE_COUNT;
+}
+
+function moveOf(state, key) {
+  return (Array.isArray(state.txs) ? state.txs : []).find((tx) => isIncomeMove(tx) && tx.income && tx.income.key === key) || null;
+}
+
+function paymentState(state, key) {
+  const move = moveOf(state, key);
+  if (!move) return 'none';
+  if (move.matchId) return 'row';
+  return move.income.how === 'cash' ? 'cash' : 'pencil';
+}
+
+function againWords(state, key, nowMs, before) {
+  const rollover = rolloverOf(state);
+  const move = moveOf(state, key);
+  const payment = incomePayments(state, rollover).find((p) => p.key === key);
+  const subject = payment ? incomeLabel(payment) : move && move.income.what && move.income.payer ? move.income.what + ' · ' + move.income.payer : '';
+  const lead = subject ? subject + ': ' : '';
+  const says = (text) => lead + (lead ? text : text.charAt(0).toUpperCase() + text.slice(1));
+  if (!move) return says('it no longer counts.');
+  if (move.income.confirm === true) return says('Networth asks about it on the board.');
+  if (move.matchId) return says('the bank’s row counts for it.');
+  if (move.income.how === 'cash') {
+    const count = latestCount(state);
+    if (count && !(move.at > count.at)) {
+      const account = cashAccountOf(state);
+      const value = account ? Math.round(Number(account.balance) || 0) : 0;
+      return says('it was marked before ' + countDayWords(gameDay(count.at, rollover), gameDay(nowMs, rollover)) + ', so Cash in hand '
+        + staysWords(state, value, !!(state.settings && state.settings.cover)) + '.');
+    }
+    return says(before === 'cash' ? 'it still counts in Cash in hand.' : 'it counts in Cash in hand now.');
+  }
+  const pencil = before === 'pencil' ? 'it still counts in pencil' : !before || before === 'none' ? 'it counts in pencil again' : 'it counts in pencil now';
+  const askAt = move.at + LATE_MS;
+  if (move.income.how === 'ask' || askAt <= nowMs) return says(pencil + '; Networth asks about it on the board.');
+  return says(pencil + '; Networth asks on ' + fmtDate(gameDay(askAt, rollover), 'short') + ' if the bank has not shown it.');
+}
+return { isCountedCash, cashNoteWords, rowLineLead, othersWords, beforeCountWords, countedWords, payerWords, payerNames, listedPayers, recordEstimate, recordLead, bankWhere, cashLineWords, itemWords, confirmWords, countWords, removedWords, paymentState, againWords };
 })();
 
 // ---- js/model/cashflow.js
@@ -17390,9 +18922,24 @@ function crosstable(month, opts) {
 
 /* ------------------------------------------------------------------- moves */
 
+function isCashPayment(tx) {
+  return tx.via === 'income' && !!tx.income && tx.income.how === 'cash';
+}
+
+function pencilTag(tx) {
+  if (tx.via === 'alert') return 'Alert';
+  if (tx.via === 'income') return 'In pencil · not at the bank yet';
+  return 'Tapped in';
+}
+
+function txName(tx) {
+  if (typeof tx.reportedAs === 'string' && tx.reportedAs) return tx.reportedAs;
+  return tx.merchant || categoryLabel(tx.category);
+}
+
 function moveState(tx) {
   if (tx.kind === 'decline') return 'is-declined';
-  if (tx.source === 'manual' && !tx.matchId && tx.inBalance !== true) return 'is-provisional';
+  if (tx.source === 'manual' && !tx.matchId && tx.inBalance !== true && !isCashPayment(tx)) return 'is-provisional';
   if (tx.pending) return 'is-pending';
   return '';
 }
@@ -17411,7 +18958,7 @@ function sentence(text) {
 
 function moveName(tx) {
   if (tx.kind === 'decline') return 'Declined: ' + (tx.merchant || 'a purchase');
-  return tx.merchant || categoryLabel(tx.category);
+  return txName(tx);
 }
 
 function movesList(moves, annotations, opts = {}) {
@@ -17432,8 +18979,9 @@ function movesList(moves, annotations, opts = {}) {
     if (tx.note) notes.push(sentence(tx.note));
     const tags = [];
     if (tx.pending) tags.push('Pending');
-    if (state === 'is-provisional') tags.push(tx.via === 'alert' ? 'Alert' : 'Tapped in');
+    if (state === 'is-provisional') tags.push(pencilTag(tx));
     else if (tx.inBalance === true) tags.push('Alert · in the balance');
+    else if (isCashPayment(tx) && opts.detail !== 'full') tags.push('Cash'); // in full detail the account already says Cash in hand
     if (tx.planned) tags.push('Planned');
     const inner = html`<span class="move-n">${start + i}.</span>
       <span class="move-m">${moveName(tx)}${notes.length || tags.length || tx.review ? html` <em class="move-note">${notes.length ? html`<span class="move-why">${figured(notes.join(' '))}</span> ` : ''}${tags.map((t) => html`<span class="move-tag">${t}</span>`)}${tx.review ? html`<span class="move-tag">Needs a look</span>` : ''}</em>` : ''}</span>
@@ -17485,10 +19033,11 @@ function recentList(ctx, rows, opts = {}) {
       const notes = [];
       if (opts.account !== false && account) notes.push(accountShort(account));
       if (tx.pending) notes.push('Pending');
-      if (provisional) notes.push(tx.via === 'alert' ? 'Alert' : 'Tapped in');
+      if (provisional) notes.push(pencilTag(tx));
       else if (tx.inBalance === true) notes.push('Alert · in the balance');
+      else if (isCashPayment(tx) && !(opts.account !== false && account)) notes.push('Cash'); // the account already says Cash in hand
       return html`<li data-key="${tx.id}"><button class="recent-row" type="button" data-action="app.sheet" data-sheet="tx" data-id="${tx.id}">
-        <span class="recent-name">${tx.merchant || categoryLabel(tx.category)}${isNew ? html` <span class="recent-new">New</span>` : ''}${notes.length
+        <span class="recent-name">${txName(tx)}${isNew ? html` <span class="recent-new">New</span>` : ''}${notes.length
           ? html`<em class="recent-note">${notes.join(' · ')}</em>` : ''}</span>
         <span class="lab">${recentDay(ctx, tx.day)}</span>
         ${money(tx.amount, { est: unsettled, signed: incoming && flowClass(tx, accountOf, pairOf) !== 'flow-out', cls: flowClass(tx, accountOf, pairOf) })}
@@ -17496,7 +19045,7 @@ function recentList(ctx, rows, opts = {}) {
     })}
   </ol>`;
 }
-return { money, unbankedWords, inlineMoney, figured, tone, flowClass, payFlowClass, flowLookups, fmtScore, scoreOf, plainSigned, resultText, keptLine, spentUnposted, statusLine, roundTitle, colourOf, worstGlyph, crosstable, movesList, notableMoves, toneStyle, coverText, recentList };
+return { money, unbankedWords, inlineMoney, figured, tone, flowClass, payFlowClass, flowLookups, fmtScore, scoreOf, plainSigned, resultText, keptLine, spentUnposted, statusLine, roundTitle, colourOf, worstGlyph, crosstable, txName, movesList, notableMoves, toneStyle, coverText, recentList };
 })();
 
 // ---- js/views/board.js
@@ -17506,12 +19055,14 @@ const { store } = __mods["js/store.js"];
 const { openSheet } = __mods["js/router.js"];
 const { context, toast } = __mods["js/runtime.js"];
 const { fmt, fmtPct, ratio, toneBand } = __mods["js/model/money.js"];
-const { addDays, diffDays, fmtDate, fmtMonth, fmtTime, isYmd, monthOf, ymd } = __mods["js/model/dates.js"];
+const { addDays, diffDays, fmtDate, fmtMonth, fmtTime, gameDay, isYmd, monthOf, nowMs, ymd } = __mods["js/model/dates.js"];
 const { firstTransactionDay } = __mods["js/model/cards.js"];
 const { nextOccurrence, runsByHand } = __mods["js/model/book.js"];
 const { editByHand, skipRow, tickByHand } = __mods["js/model/byhand.js"];
 const { refresh } = __mods["js/model/detect.js"];
+const { answerItems, answerPayer, cashAccountOf, incomeQuestions, isIdleCash } = __mods["js/model/income.js"];
 const { evalGlyph, timeTroubleGlyph, moveGlyph, resultMark } = __mods["js/ui/glyphs.js"];
+const { bankWhere, beforeCountWords, confirmWords, isCountedCash, itemWords, listedPayers, othersWords, payerWords } = __mods["js/views/income-words.js"];
 const { money, inlineMoney, keptLine, statusLine, roundTitle, colourOf, crosstable, movesList, notableMoves, worstGlyph, spentUnposted, recentList, toneStyle, flowLookups, payFlowClass, unbankedWords } = __mods["js/views/parts.js"];
 const TEN_MINUTES_MS = 10 * 60 * 1000;
 const WORTH_DAYS = 90;
@@ -17598,7 +19149,7 @@ function payOnArrival(ctx) {
 
 function model(ctx) {
   const pos = ctx.d.position;
-  const estimated = pos.smoothing || pos.provisional > 0;
+  const estimated = pos.smoothing || pos.provisional > 0 || pos.provisionalIn > 0;
   const seen = ctx.ui.seen && Number.isFinite(ctx.ui.seen.cents) && Number.isFinite(ctx.ui.seen.at) ? ctx.ui.seen : null;
   const firstDay = firstTransactionDay(ctx.state);
   return {
@@ -17612,7 +19163,7 @@ function model(ctx) {
     // one count of history for every screen: first transaction's day through today, both included
     historyDays: Number.isFinite(ctx.d.historyDays) ? ctx.d.historyDays : 0,
     matchOn: isYmd(ctx.state.meta.matchStart) && ctx.d.todayRound.status !== 'prematch',
-    manualCount: ctx.state.accounts.filter((account) => !account.hidden && account.source === 'manual').length,
+    manualCount: ctx.state.accounts.filter((account) => !account.hidden && account.source === 'manual' && !isIdleCash(ctx.state, account)).length,
     // the figure at the bank still holds the owner's own estimates (equipment, a loan worked down)
     bankEst: ctx.state.accounts.some((account) => ownEstimate(ctx, account)),
     lapsed: (Array.isArray(pos.lapsedPay) ? pos.lapsedPay : []).filter((item) => item && typeof item === 'object'),
@@ -17635,6 +19186,8 @@ function payModel(ctx) {
 
 function heroMain(ctx, v) {
   const { pos, estimated, showLive } = v;
+  // the figure at the bank holds Cash in hand when it is shown, and says so (the caption lists it apart, as the clock does)
+  const bankName = handAccount(ctx) ? 'At the bank and in hand' : 'At the bank';
   // one size for both readings, so a tap changes the figure and not its scale
   const ems = (estimated ? Math.max(figureEms(pos.live, true), figureEms(pos.bank, v.bankEst)) : figureEms(pos.bank, v.bankEst)) * 1.012;
   // a ticker of its own for each reading: a tap sets the other figure at once, with no roll through
@@ -17645,7 +19198,7 @@ function heroMain(ctx, v) {
     rate: showLive ? pos.rate : 0,
     t0: pos.at,
     from: showLive && v.roll && !ctx.ui.heroMode ? v.seen.cents : null,
-    label: showLive ? 'Net worth, live estimate:' : v.bankEst ? 'Net worth at the bank, with your own estimates:' : 'Net worth at the bank:',
+    label: showLive ? 'Net worth, live estimate:' : 'Net worth ' + bankName.toLowerCase() + (v.bankEst ? ', with your own estimates:' : ':'),
   })}></nw-ticker>`;
   const shown = showLive ? pos.live : pos.bank;
   const size = '--hero-ems:' + ems.toFixed(2) + ';' + toneStyle(shown);
@@ -17653,11 +19206,11 @@ function heroMain(ctx, v) {
 
   return html`
     <div class="sec-head">
-      <h2 class="lab" id="b-nw"><b>Net worth</b><i class="sep"></i>${showLive ? html`<span class="spot">Live</span>` : 'At the bank'}</h2>
-      ${estimated ? html`<button class="btn-link" type="button" data-action="board.hero">${showLive ? 'At the bank' : 'Live'}</button>` : ''}
+      <h2 class="lab" id="b-nw"><b>Net worth</b><i class="sep"></i>${showLive ? html`<span class="spot">Live</span>` : bankName}</h2>
+      ${estimated ? html`<button class="btn-link" type="button" data-action="board.hero">${showLive ? bankName : 'Live'}</button>` : ''}
     </div>
     ${estimated
-      ? html`<button class="hero-fig" type="button" data-action="board.hero" data-tone="${tone}" style="${size}">${ticker}<span class="vh">${showLive ? 'Show the figure at the bank' : 'Show the live figure'}</span></button>`
+      ? html`<button class="hero-fig" type="button" data-action="board.hero" data-tone="${tone}" style="${size}">${ticker}<span class="vh">${showLive ? 'Show the figure ' + bankName.toLowerCase() : 'Show the live figure'}</span></button>`
       : html`<p class="hero-fig" data-tone="${tone}" style="${size}">${ticker}</p>`}
     ${heroCaption(ctx, v)}
     ${heroMeta(ctx, v)}`;
@@ -17681,13 +19234,17 @@ function heroCaption(ctx, v) {
   }
   const main = pos.receivables.slice().sort((a, b) => b.daily - a.daily)[0];
   const held = pos.smoothing && pos.rate === 0 && pos.freshness !== 'fresh';
-  const bits = [html`<span class="nowrap">At the bank ${money(pos.bank)}</span>`];
+  // Cash in hand is part of the sum but not at the bank: listed apart whenever it is shown, as the clock says (3.7)
+  const hand = inHand(ctx);
+  const bits = [html`<span class="nowrap">At the bank ${money(pos.bank - hand)}</span>`];
+  if (handAccount(ctx)) bits.push(html`<span class="nowrap">in hand ${money(hand, { est: !isCountedCash(ctx.state, hand) })}</span>`);
   // one live figure: the parts add up to the floored hero, so bills used takes the remainder (as Material)
   const bankC = Math.round(pos.bank);
   const recvC = Math.round(pos.receivable);
   const provC = Math.round(pos.provisional || 0);
+  const provInC = Math.round(pos.provisionalIn || 0);
   const liveC = Number.isFinite(pos.live) ? Math.floor(pos.live) : null;
-  const payC = liveC != null ? bankC + recvC - provC - liveC : Math.round(pos.payable);
+  const payC = liveC != null ? bankC + recvC - provC + provInC - liveC : Math.round(pos.payable);
   if (pos.smoothing) {
     bits.push(html`<span class="nowrap">pay earned${main ? ' since ' + fmtDate(main.since, 'short') : ''} ${money(recvC, { est: true, signed: true })}</span>`);
     bits.push(html`<span class="nowrap">bills used ${money(-payC, { est: true, signed: true })}</span>`);
@@ -17695,8 +19252,26 @@ function heroCaption(ctx, v) {
   if (provC > 0) {
     bits.push(html`<span class="nowrap">${unbankedWords(ctx.state)}, not yet at the bank ${money(-provC, { est: true, signed: true })}</span>`);
   }
+  if (provInC > 0) {
+    bits.push(html`<span class="nowrap">payments marked, not yet at the bank ${money(provInC, { est: true, signed: true })}</span>`);
+  }
   return html`<p class="cap board-compo">${bits.map((bit, i) => html`${i ? DOT : ''}${bit}`)}${held
     ? html`<span class="board-held">The figure holds still: the bank last reported ${reported}.</span>` : ''}</p>${lapsedLines(v)}`;
+}
+
+function handAccount(ctx) {
+  const account = cashAccountOf(ctx.state);
+  return account && !account.hidden && !isIdleCash(ctx.state, account) ? account : null;
+}
+
+function handEst(ctx) {
+  return !!handAccount(ctx) && !isCountedCash(ctx.state, inHand(ctx));
+}
+
+function inHand(ctx) {
+  const account = handAccount(ctx);
+  if (!account) return 0;
+  return Math.round(ctx.d.valueOf(account) || 0);
 }
 
 function countedDayByDay(v, id) {
@@ -17728,12 +19303,12 @@ function heroMeta(ctx, v) {
   </div>`);
   items.push(html`<div class="tally-item">
     <span class="lab">This month</span>
-    ${money(ret.kept, { est: !!pos.smoothing || pos.provisional > 0, signed: true, tint: true, rim: true })}
+    ${money(ret.kept, { est: !!pos.smoothing || pos.provisional > 0 || pos.provisionalIn > 0, signed: true, tint: true, rim: true })}
     <span class="cap">${ret.rate == null
       ? 'nothing counted as earned yet this month'
       : ret.kept >= 0
-        ? html`kept of ${inlineMoney(ret.earned, { est: pos.smoothing })} earned`
-        : html`more went out than the ${inlineMoney(ret.earned, { est: pos.smoothing })} earned`}</span>
+        ? html`kept of ${inlineMoney(ret.earned, { est: pos.smoothing || pos.provisionalIn > 0 })} earned`
+        : html`more went out than the ${inlineMoney(ret.earned, { est: pos.smoothing || pos.provisionalIn > 0 })} earned`}</span>
   </div>`);
   if (v.seen) {
     items.push(html`<div class="tally-item">
@@ -17804,8 +19379,8 @@ function clockMain(ctx, v) {
     </div>
     <div class="clock-body">
       <div>
-        <p class="${cx('clock-cash', Math.abs(c.cash) >= LONG_CASH && 'is-long', Math.abs(c.cash) >= HUGE_CASH && 'is-huge')}">${fmt(c.cash)}</p>
-        <p class="cap"><i class="bank-mark"></i>at the bank · from ${whenText(ctx, c.asOf)}</p>
+        <p class="${cx('clock-cash', Math.abs(c.cash) >= LONG_CASH && 'is-long', Math.abs(c.cash) >= HUGE_CASH && 'is-huge', handEst(ctx) && 'est')}">${handEst(ctx) ? html`<span class="approx">≈</span>` : ''}${fmt(c.cash)}</p>
+        <p class="cap"><i class="bank-mark"></i>${handAccount(ctx) ? 'at the bank and in hand' : 'at the bank'} · from ${whenText(ctx, c.asOf)}</p>
       </div>
       <div class="clock-run">
         ${days == null
@@ -18163,6 +19738,51 @@ function noteAction(cta) {
   return '';
 }
 
+function incomeRows(ctx) {
+  if (ctx.demo) return [];
+  const q = incomeQuestions(ctx.state, ctx.now);
+  const rows = [];
+  // one format for every line: "{what} · {payer}, {amount}, marked {day}", then what is asked
+  const head = (label, cents, marked) => html`${label}, ${inlineMoney(cents)}, marked ${fmtDate(marked, 'short')}`;
+  for (const c of q.confirm) {
+    const shows = html`the bank shows ${inlineMoney(c.bank.cents)} on ${fmtDate(c.bank.day, 'short')}`;
+    // the payments asked about, then the row's other members (history ones, or ones already answered)
+    const one = c.asked.n === 1;
+    const asked = one ? head(c.label, c.asked.cents, c.marked) : html`${c.label}, ${c.asked.n} payments, ${inlineMoney(c.asked.cents)}`;
+    const others = c.others ? html`, ${figText(othersWords(c.others, !!ctx.state.settings.cover))}` : '';
+    rows.push({ key: 'income-confirm-' + c.key, text: html`${asked}${others}: ${shows}. ${one ? 'Did this one come by Zelle?' : 'Did these come by Zelle?'}`,
+    buttons: [['It came by Zelle', 'board.income-confirm', { source: c.source, items: c.ids.join(' '), how: 'bank', row: c.row }],
+      ['It was cash', 'board.income-confirm', { source: c.source, items: c.ids.join(' '), how: 'cash', row: c.row }]] });
+  }
+  for (const p of q.payers) {
+    const bank = !p.bank ? ''
+      : p.bank.same ? html` The bank shows ${inlineMoney(p.bank.cents)} on ${fmtDate(p.bank.day, 'short')}.`
+        : html` An earlier one reached the bank: ${inlineMoney(p.bank.cents)} on ${fmtDate(p.bank.day, 'short')}.`;
+    rows.push({ key: 'income-payer-' + p.key, text: html`${head(p.what + ' · ' + p.name, p.cents, p.marked)}. How do they pay?${bank}`,
+      buttons: [['Zelle or transfer', 'board.income-payer', { source: p.source, payer: p.payer, how: 'bank' }],
+        ['Cash', 'board.income-payer', { source: p.source, payer: p.payer, how: 'cash' }]] });
+  }
+  for (const l of q.late) {
+    rows.push({ key: 'income-late-' + l.key, text: html`${head(l.label, l.cents, l.marked)}: it has not reached the bank.`,
+      buttons: [['It was cash', 'board.income-item', { source: l.source, item: l.id, how: 'cash' }],
+        ['It’s in the bank', 'board.income-item', { source: l.source, item: l.id, how: 'gone' }],
+        ['Still coming', 'board.income-item', { source: l.source, item: l.id, how: 'wait' }]] });
+  }
+  return rows;
+}
+
+function askBand(ctx) {
+  const asked = incomeRows(ctx);
+  if (!asked.length) return '';
+  return html`<section class="band board-ask" aria-labelledby="b-ask">
+    <div class="sec-head"><h2 class="lab" id="b-ask"><b>To answer</b><i class="sep"></i>reported income</h2><span class="lab">${plural(asked.length, 'question', 'questions')}</span></div>
+    <ol class="notes">${asked.map((q, i) => html`<li class="note" data-key="${q.key}">
+      <b class="note-n">${i + 1}</b><span class="note-text" id="b-ask-${i + 1}">${q.text}</span>
+      <span class="note-actions">${q.buttons.map(([label, action, data]) => html`<button class="btn-link" type="button" data-action="${action}" aria-describedby="b-ask-${i + 1}"${dataAttrs(data)}>${label}</button>`)}</span>
+    </li>`)}</ol>
+  </section>`;
+}
+
 function notesBlock(ctx) {
   const notes = ctx.d.notes.filter((n) => n && n.text);
   const sweep = ctx.d.edge.sweep;
@@ -18194,9 +19814,13 @@ function principlesBlock(ctx) {
 
 function worthData(ctx, v) {
   const closes = ctx.d.recent(WORTH_DAYS).filter((c) => !v.firstDay || c.day >= v.firstDay);
+  const cash = cashAccountOf(ctx.state);
+  const countDays = new Set((cash && Array.isArray(cash.counts) ? cash.counts : [])
+    .filter((c) => c && Number.isFinite(c.at)).map((c) => gameDay(c.at, ctx.state.settings.rolloverHour)));
   const data = {
     days: closes.map((c) => ({ day: c.day, smooth: c.smooth, bank: c.bank, partial: c.partial })),
-    events: closes.filter((c) => c.reval !== 0).map((c) => ({ day: c.day, label: 'revalued' })),
+    // a day on which the owner counted Cash in hand says "counted", as the sheet and the toasts do
+    events: closes.filter((c) => c.reval !== 0).map((c) => ({ day: c.day, label: countDays.has(c.day) ? 'counted' : 'revalued' })),
   };
   // the hero shows cents it has reached (floored), so the figure's last point is cut the same way
   if (v.estimated) data.live = Math.floor(v.pos.live);
@@ -18236,8 +19860,8 @@ function figuresBlock(ctx, v) {
         <nw-chart data-island kind="worth" data="${JSON.stringify(worth.data)}"></nw-chart>
         <figcaption class="cap"><span class="lab"><b>Fig. 1</b></span>
           ${v.pos.smoothing
-            ? html`Net worth, the last ${plural(worth.count, 'day', 'days')}. Ink: with pay earned and bills used. Dotted: at the bank. The tail in pencil is not final.`
-            : html`Net worth at the bank, the last ${plural(worth.count, 'day', 'days')}${worth.count < WORTH_DAYS ? html`: the record begins ${fmtDate(worth.from, 'short')}` : ''}. The tail in pencil is not final.`}
+            ? html`Net worth, the last ${plural(worth.count, 'day', 'days')}. Ink: with pay earned and bills used. Dotted: ${bankWhere(!!handAccount(ctx))}. The tail in pencil is not final.`
+            : html`Net worth ${bankWhere(!!handAccount(ctx))}, the last ${plural(worth.count, 'day', 'days')}${worth.count < WORTH_DAYS ? html`: the record begins ${fmtDate(worth.from, 'short')}` : ''}. The tail in pencil is not final.`}
         </figcaption>
       </figure>
       <figure class="${cx('board-fig', !edge.from && 'is-empty')}">
@@ -18262,7 +19886,7 @@ function recentBlock(ctx, v) {
   const sample = ctx.state.meta.origin === 'demo';
   const read = Number.isFinite(ctx.state.sync.lastOk) ? ctx.state.sync.lastOk : null;
   const head = html`<div class="sec-head">
-    <h2 class="lab" id="b-recent"><b>Recent transactions</b><i class="sep"></i>every account</h2>
+    <h2 class="lab" id="b-recent" tabindex="-1"><b>Recent transactions</b><i class="sep"></i>every account</h2>
     <a class="btn-link" href="#/scoresheet">All, by day</a>
   </div>`;
   const source = sample ? 'Sample transactions.'
@@ -18273,7 +19897,7 @@ function recentBlock(ctx, v) {
   }
   const t = r.today;
   const todayLine = t.count
-    ? html`Today: ${plural(t.count, 'transaction', 'transactions')}${t.out ? html`, ${inlineMoney(t.out, { est: t.unsettled })} out` : ''}${t.in ? html`, ${inlineMoney(t.in, { est: t.unsettled })} in` : ''}.`
+    ? html`Today: ${plural(t.count, 'transaction', 'transactions')}${t.out ? html`, ${inlineMoney(t.out, { est: t.unsettledOut })} out` : ''}${t.in ? html`, ${inlineMoney(t.in, { est: t.unsettledIn })} in` : ''}.`
     : 'Today: 0 transactions on the record.';
   return html`${head}
     <p class="board-recent-today">${todayLine}${r.fresh ? html` <span class="recent-new">${r.fresh} new</span> since the last look.` : ''}</p>
@@ -18407,6 +20031,7 @@ function wideBoard(ctx, v) {
         <section class="band" aria-labelledby="b-princ">${principlesBlock(ctx)}</section>
       </div>
     </div>
+    ${askBand(ctx)}
     <section class="band" aria-labelledby="b-recent">${recentBlock(ctx, v)}</section>
     <div class="band">${crosstableBlock(ctx, v)}</div>
     <div class="cols">
@@ -18429,6 +20054,7 @@ function narrowBoard(ctx, v) {
     <section class="band clock board-top" aria-labelledby="b-clock">${clockMain(ctx, v)}</section>
     ${v.pay ? html`<section class="band board-pay-band" aria-labelledby="b-pay">${payBlock(ctx, v)}</section>` : ''}
     <section class="band" aria-labelledby="b-today">${v.matchOn ? todayBlock(ctx, v) : prematchBlock(ctx, v)}</section>
+    ${askBand(ctx)}
     <section class="band" aria-labelledby="b-recent">${recentBlock(ctx, v)}</section>
     ${last ? html`<section class="band" aria-labelledby="b-last">${last}</section>` : ''}
     <section class="band" aria-labelledby="b-material">
@@ -18453,6 +20079,33 @@ function narrowBoard(ctx, v) {
 function render(ctx) {
   const v = model(ctx);
   return ctx.wide ? wideBoard(ctx, v) : narrowBoard(ctx, v);
+}
+
+function inCash(state) {
+  const account = cashAccountOf(state);
+  return new Set(account ? state.txs.filter((tx) => tx && tx.via === 'income' && tx.accountId === account.id && tx.income).map((tx) => tx.income.key) : []);
+}
+
+function cashAfter(ctx, had, kind) {
+  const account = cashAccountOf(store.state);
+  return account ? beforeCountWords(store.state, had, Math.round(Number(account.balance) || 0), ctx.today, !!store.state.settings.cover, kind) : null;
+}
+
+function questionIndex(el) {
+  const li = el && typeof el.closest === 'function' ? el.closest('.board-ask .note') : null;
+  return li && li.parentNode ? [...li.parentNode.children].indexOf(li) : 0;
+}
+
+function focusAfterAnswer(index, key) {
+  const go = () => {
+    const notes = [...document.querySelectorAll('.board-ask .note')];
+    const raised = key ? notes.find((li) => li.getAttribute('data-key') === key) : null;
+    const at = raised || notes[index];
+    const next = at ? at.querySelector('.note-actions button') : null;
+    const target = next || document.getElementById('b-recent');
+    if (target) target.focus({ preventScroll: !next });
+  };
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => requestAnimationFrame(go)); else setTimeout(go, 0);
 }
 
 function offerUndo(message, label, undone) {
@@ -18523,6 +20176,57 @@ const actions = {
     const after = payRowOf(context(), data.id, null);
     offerUndo(name + (ctx.state.settings.cover ? ' takes the bank’s amount' : ' is now ' + fmt(amount)) + (after ? ', from ' + fmtMonth(monthOf(after.day), 'name') + '.' : '.'),
       undoLabel, name + ' is at its earlier amount again.');
+  },
+
+  'board.income-payer': ({ el, data }) => {
+    const index = questionIndex(el);
+    const ctx = context();
+    const q = incomeQuestions(ctx.state, ctx.now).payers.find((p) => p.source === data.source && p.payer === data.payer);
+    // the name Settings lists the payer by ("Avery · Group class" when another source has an Avery too)
+    const name = q ? listedPayers(ctx.state).names.get(data.source + '/' + data.payer) || q.name : 'The payer';
+    let done = false;
+    const at = nowMs(); // the moment of the answer, not the time of the last render
+    const before = inCash(ctx.state);
+    const asked = new Set(incomeQuestions(store.state, at).confirm.map((c) => c.key));
+    const change = (s) => answerPayer(s, data.source, data.payer, data.how, at);
+    store.update((s) => { done = change(s); }, { past: change });
+    if (!done) return;
+    // a payment of theirs that a bank row holds now asks to be confirmed: say so, and go to that question
+    const raised = incomeQuestions(store.state, at).confirm.find((c) => !asked.has(c.key)) || null;
+    const moved = [...inCash(store.state)].filter((key) => !before.has(key)).length;
+    toast(payerWords(name, data.how, data.how === 'cash' ? cashAfter(ctx, before, 'payer') : null, raised ? raised.bank : null, !!store.state.settings.cover, moved));
+    focusAfterAnswer(index, raised ? 'income-confirm-' + raised.key : null);
+  },
+
+  'board.income-item': ({ el, data }) => {
+    const index = questionIndex(el);
+    const ctx = context();
+    const q = incomeQuestions(ctx.state, ctx.now).late.find((l) => l.source === data.source && l.id === data.item);
+    const label = q ? q.label : 'The payment';
+    const had = inCash(ctx.state);
+    let done = false;
+    const at = nowMs(); // the moment of the answer, not the time of the last render
+    const change = (s) => answerItems(s, data.source, [data.item], data.how, at);
+    store.update((s) => { done = change(s); }, { past: change });
+    if (!done) return;
+    toast(itemWords(label, data.how, data.how === 'cash' ? cashAfter(ctx, had) : null, at, ctx.state.settings.rolloverHour));
+    focusAfterAnswer(index);
+  },
+
+  'board.income-confirm': ({ el, data }) => {
+    const index = questionIndex(el);
+    const ctx = context();
+    const ids = String(data.items || '').split(' ').filter(Boolean);
+    const q = incomeQuestions(ctx.state, ctx.now).confirm.find((c) => c.row === data.row);
+    const label = q ? q.label : 'The payment';
+    const had = inCash(ctx.state);
+    let done = false;
+    const at = nowMs(); // the moment of the answer, not the time of the last render
+    const change = (s) => answerItems(s, data.source, ids, data.how, at);
+    store.update((s) => { done = change(s); }, { past: change });
+    if (!done) return;
+    toast(confirmWords(label, ids.length, data.how, data.how === 'cash' ? cashAfter(ctx, had) : null));
+    focusAfterAnswer(index);
   },
 
   'board.pay-add': () => {
@@ -18660,7 +20364,7 @@ function inFilter(tx, filter) {
 
 function matchesQuery(tx, needle) {
   if (!needle) return true;
-  return [tx.merchant, tx.raw, tx.note].some((s) => typeof s === 'string' && s.toLowerCase().includes(needle));
+  return [tx.merchant, tx.raw, tx.note, tx.reportedAs].some((s) => typeof s === 'string' && s.toLowerCase().includes(needle));
 }
 
 function href(ym, params) {
@@ -18794,7 +20498,7 @@ function worthLine(ctx, review, ym) {
   const current = ym === monthOf(ctx.today);
   const byHand = ctx.state.accounts.some((account) => account && !account.hidden && account.source === 'manual');
   // R4b: a month in progress made only of posted rows and reported balances is roman, as the Board's "This month" is
-  const est = (!current && !review.complete) || !!pos.smoothing || pos.provisional > 0 || byHand;
+  const est = (!current && !review.complete) || !!pos.smoothing || pos.provisional > 0 || pos.provisionalIn > 0 || byHand;
   if (!est) return figured(text);
   const found = [...text.matchAll(AMOUNT_IN_SENTENCE)];
   const live = current && found.length > 1 && Number.isFinite(pos.live) ? fmt(Math.floor(pos.live)) : null;
@@ -19084,7 +20788,9 @@ const { fmt, fmtSigned, fmtPct, toneBand } = __mods["js/model/money.js"];
 const { fmtDate, fmtMonth, fmtTime, gameDay, diffDays, isYmd, monthOf, parts: ymdParts } = __mods["js/model/dates.js"];
 const { ACCOUNT_TYPES, accountLabel } = __mods["js/model/schema.js"];
 const { largestCharges, firstTransactionDay } = __mods["js/model/cards.js"];
-const { money, movesList, inlineMoney, toneStyle, flowLookups, unbankedWords } = __mods["js/views/parts.js"];
+const { CASH_ROLE, cashAccountOf, isIdleCash } = __mods["js/model/income.js"];
+const { bankWhere, cashLineWords, cashNoteWords, countedWords, isCountedCash, recordEstimate, recordLead } = __mods["js/views/income-words.js"];
+const { figured, money, movesList, inlineMoney, toneStyle, flowLookups, unbankedWords } = __mods["js/views/parts.js"];
 const CARD_MONTHS = 6;
 const LARGEST = 3;
 const STALE_DAYS = 3;
@@ -19107,6 +20813,8 @@ function isAmortised(account) {
 
 function isEstimate(ctx, account) {
   if (account.source === 'bank') return false;
+  // Cash in hand (3.7): roman right after a count, while the figure is the count itself
+  if (account.role === CASH_ROLE) return !isCountedCash(ctx.state, ctx.d.valueOf(account));
   return account.basis !== 'statement' || isWorkedDown(ctx, account);
 }
 
@@ -19162,6 +20870,13 @@ function count(n, one, many) {
   return (n < NUMBER_WORDS.length ? NUMBER_WORDS[n] : String(n)) + ' ' + (n === 1 ? one : many);
 }
 
+function handIncluded(m) {
+  const parts = [];
+  if (m.handCash) parts.push('Cash in hand');
+  if (m.handOther) parts.push(countLower(m.handOther, 'figure', 'figures') + ' entered by hand');
+  return parts.length ? ', ' + parts.join(' and ') + ' included' : '';
+}
+
 function countLower(n, one, many) {
   const text = count(n, one, many);
   return text.charAt(0).toLowerCase() + text.slice(1);
@@ -19192,11 +20907,12 @@ function read(ctx) {
   const cash = d.accounts('cash');
   const receivable = Math.round(position.receivable);
   const provisionalCents = Math.round(position.provisional || 0);
+  const provisionalInCents = Math.round(position.provisionalIn || 0);
   // one live figure on every screen: floored to the cent it has reached, as the Board's ticking hero shows it
   const liveCents = Number.isFinite(position.live) ? Math.floor(position.live) : null;
   // the statement has to add up to that cent, so what is used and not yet charged takes the remainder
   const payable = position.smoothing && liveCents != null
-    ? Math.round(position.bank) + receivable - provisionalCents - liveCents
+    ? Math.round(position.bank) + receivable - provisionalCents + provisionalInCents - liveCents
     : Math.round(position.payable);
   const months = cards.length ? d.cardMonths(CARD_MONTHS) : [];
   const provisional = provisionalCents;
@@ -19213,7 +20929,9 @@ function read(ctx) {
     credits: cards.concat(debts).filter((a) => d.valueOf(a) > 0),
     overdrawn: cash.concat(assets).filter((a) => d.valueOf(a) < 0),
     hidden: ctx.state.accounts.filter((a) => a.hidden),
-    manualCount: ctx.state.accounts.filter((a) => a.source !== 'bank').length,
+    // Cash in hand is named in the sum's caption (the Board shows it apart, "in hand"), counted or not
+    handCash: ctx.state.accounts.some((a) => a.role === CASH_ROLE && !a.hidden && !isIdleCash(ctx.state, a) && Math.round(d.valueOf(a)) !== 0),
+    handOther: ctx.state.accounts.filter((a) => a.source !== 'bank' && a.role !== CASH_ROLE && !isIdleCash(ctx.state, a)).length,
     haircut,
     shared,
     quickNet: position.bank - haircut,
@@ -19221,13 +20939,14 @@ function read(ctx) {
     receivable,
     payable,
     provisional,
+    provisionalIn: provisionalInCents,
     estAssets: cash.concat(assets, cards, debts).some((a) => d.valueOf(a) > 0 && isEstimate(ctx, a)),
     estDebts: cash.concat(assets, cards, debts).some((a) => d.valueOf(a) < 0 && isEstimate(ctx, a)),
     // the engine carries fractions of a cent; a statement has to add up, so the smoothed figure printed
     // here is the bank figure plus and minus the two accruals as printed
     smooth,
     // the Board's live figure: the smoothed one less what was tapped in and is not yet at the bank
-    live: smooth - provisional,
+    live: smooth - provisional + provisionalInCents,
   };
 }
 
@@ -19241,8 +20960,10 @@ function head(ctx, m) {
   // ledger: an accruing stream with no deposit for more than 1.6 periods has lapsed and is no longer counted
   const lapsed = (Array.isArray(p.lapsedPay) ? p.lapsedPay : []).filter((item) => item && typeof item === 'object');
   const bankEst = m.estAssets || m.estDebts;
-  const liveEst = bankEst || p.smoothing || m.provisional > 0;
-  const tapped = m.provisional > 0 ? html`<span data-fig>${fmtSigned(-m.provisional)}</span> ${unbankedWords(ctx.state)}, not yet at the bank` : null;
+  const liveEst = bankEst || p.smoothing || m.provisional > 0 || m.provisionalIn > 0;
+  const tappedOut = m.provisional > 0 ? html`<span data-fig>${fmtSigned(-m.provisional)}</span> ${unbankedWords(ctx.state)}, not yet at the bank` : null;
+  const markedIn = m.provisionalIn > 0 ? html`<span data-fig>${fmtSigned(m.provisionalIn)}</span> of payments marked, not yet at the bank` : null;
+  const tapped = tappedOut && markedIn ? html`${tappedOut} and ${markedIn}` : tappedOut || markedIn;
   const same = tapped ? html`this is the bank figure with ${tapped}.` : 'this equals the bank figure.';
   const smoothNote = p.smoothing
     ? html`the bank figure, with pay earned ${inlineMoney(m.receivable, { est: true, signed: true })}${tapped ? ',' : ' and'} bills used ${inlineMoney(-m.payable, { est: true, signed: true })}${tapped ? html` and ${tapped}` : ''}`
@@ -19270,9 +20991,9 @@ function head(ctx, m) {
       </div>
       <div class="mat-worth">
         <p class="mat-worth-item">
-          <span class="lab"><i class="bank-mark"></i><b>At the bank</b></span>
+          <span class="lab"><i class="bank-mark"></i><b>${m.handCash ? 'At the bank and in hand' : 'At the bank'}</b></span>
           ${figure(p.bank, bankEst)}
-          <span class="cap">the plain sum of every balance${m.manualCount ? ', ' + countLower(m.manualCount, 'figure', 'figures') + ' entered by hand included' : ''}${age ? html` · bank data ${age}` : ''}</span>
+          <span class="cap">the plain sum of every balance${handIncluded(m)}${age ? html` · bank data ${age}` : ''}</span>
         </p>
         <p class="mat-worth-item">
           <span class="lab"><b>Smoothed</b></span>
@@ -19315,6 +21036,10 @@ function accountRow(ctx, account, opts = {}) {
 
 function provenance(ctx, account) {
   if (account.source === 'bank') return [account.institution, ageNote(ctx, account.asOf)];
+  if (account.role === CASH_ROLE) {
+    const { words, count } = countedWords(ctx.state, ctx.today);
+    return [account.institution, count ? words : 'from payments marked as cash'];
+  }
   const day = shortDay(ctx, valuedOn(ctx, account));
   if (isWorkedDown(ctx, account)) {
     return [account.institution, html`worked down from the ${day} ${account.basis === 'statement' ? 'statement' : 'figure'} at ${trimPct(account.apr)}%`];
@@ -19401,9 +21126,11 @@ function subtotal(ctx, label, cents, accounts) {
 }
 
 function byHandNote(ctx, accounts, owed) {
-  const part = accounts.filter((a) => isEstimate(ctx, a)).reduce((n, a) => n + Math.max(0, owed ? -ctx.d.valueOf(a) : ctx.d.valueOf(a)), 0);
-  if (!part) return 'every figure from the bank or a statement';
-  if (!owed) return html`<span data-fig>${fmt(part)}</span> of it at your own estimate`;
+  const hand = owed ? null : accounts.find((a) => a.role === CASH_ROLE) || null;
+  const handNote = hand ? cashNoteWords(ctx.state, ctx.d.valueOf(hand)) : '';
+  const part = accounts.filter((a) => a !== hand && isEstimate(ctx, a)).reduce((n, a) => n + Math.max(0, owed ? -ctx.d.valueOf(a) : ctx.d.valueOf(a)), 0);
+  if (!part && !handNote) return 'every figure from the bank or a statement';
+  if (!owed) return html`${part ? html`<span data-fig>${fmt(part)}</span> of it at your own estimate` : ''}${part && handNote ? '; ' : ''}${handNote ? figured(handNote) : ''}`;
   const worked = accounts.filter((a) => isWorkedDown(ctx, a)).length;
   const guessed = accounts.filter((a) => isEstimate(ctx, a) && !isWorkedDown(ctx, a)).length;
   return html`<span data-fig>${fmt(part)}</span> of it ${worked && guessed ? 'worked down by Networth or at your estimate' : worked ? 'worked down by Networth' : 'at your own estimate'}`;
@@ -19489,9 +21216,11 @@ function liabilitiesColumn(ctx, m) {
 function reckoning(ctx, m) {
   const p = m.position;
   const bankEst = m.estAssets || m.estDebts;
-  const tappedRow = m.provisional > 0
+  const tappedRow = html`${m.provisional > 0
     ? html`<li class="row"><span class="row-label"><span class="est">${unbankedWords(ctx.state).replace(/^./, (c) => c.toUpperCase())}, not yet at the bank</span></span>${money(-m.provisional, { est: true, signed: true, cls: 'row-value' })}</li>`
-    : '';
+    : ''}${m.provisionalIn > 0
+    ? html`<li class="row"><span class="row-label"><span class="est">Payments marked, not yet at the bank</span></span>${money(m.provisionalIn, { est: true, signed: true, cls: 'row-value' })}</li>`
+    : ''}`;
   const names = m.shared.map((a) => accountLabel(a) + ' at ' + fmtPct(a.quickSale, 0)).join(', ');
   const unshared = m.slow.filter((a) => !m.shared.includes(a) && ctx.d.valueOf(a) > 0);
   let quick;
@@ -19513,18 +21242,18 @@ function reckoning(ctx, m) {
         <li class="row"><span class="row-label">Assets</span>${money(p.assets, { est: m.estAssets, cls: 'row-value' })}</li>
         <li class="row"><span class="row-label">Liabilities</span>${money(-p.liabilities, { est: m.estDebts, cls: 'row-value' })}</li>
       </ul>
-      <p class="row row-total"><span class="row-label lab"><i class="bank-mark"></i><b>Net worth at the bank</b></span>${money(p.bank, { est: bankEst, cls: 'row-value' })}</p>
+      <p class="row row-total"><span class="row-label lab"><i class="bank-mark"></i><b>${m.handCash ? 'Net worth at the bank and in hand' : 'Net worth at the bank'}</b></span>${money(p.bank, { est: bankEst, cls: 'row-value' })}</p>
       ${p.smoothing ? html`<ul class="rows rows-plain mat-sum">
         <li class="row"><span class="row-label"><span class="est">Pay earned, not yet received</span></span>${money(m.receivable, { est: true, signed: true, cls: 'row-value' })}</li>
         <li class="row"><span class="row-label"><span class="est">Bills used, not yet charged</span></span>${money(-m.payable, { est: true, signed: true, cls: 'row-value' })}</li>
         ${tappedRow}
       </ul>
-      <p class="row row-total"><span class="row-label lab"><b>Smoothed net worth</b></span>${money(m.live, { est: true, cls: 'row-value' })}</p>` : html`${m.provisional > 0 ? html`<ul class="rows rows-plain mat-sum">${tappedRow}</ul>
-      <p class="row row-total"><span class="row-label lab"><b>Net worth, tapped-in moves counted</b></span>${money(m.live, { est: true, cls: 'row-value' })}</p>` : ''}
+      <p class="row row-total"><span class="row-label lab"><b>Smoothed net worth</b></span>${money(m.live, { est: true, cls: 'row-value' })}</p>` : html`${m.provisional > 0 || m.provisionalIn > 0 ? html`<ul class="rows rows-plain mat-sum">${tappedRow}</ul>
+      <p class="row row-total"><span class="row-label lab"><b>Net worth, moves not yet at the bank counted</b></span>${money(m.live, { est: true, cls: 'row-value' })}</p>` : ''}
       <p class="cap mat-none">${
         payCounting(ctx) === 'off'
-          ? html`Pay is counted when it arrives, so nothing accrues${m.provisional > 0 ? '' : html` and the smoothed figure is the same, ${money(m.live, { est: bankEst })}`}. Day-by-day counting is switched in Settings or on a stream’s own sheet.`
-          : html`The smoothed figure is the same for now${m.provisional > 0 ? ' but for what was tapped in' : html`, ${money(m.live, { est: bankEst })}`}: pay is counted as it is earned once a regular deposit has been seen 3 times.`}</p>`}
+          ? html`Pay is counted when it arrives, so nothing accrues${m.provisional > 0 || m.provisionalIn > 0 ? '' : html` and the smoothed figure is the same, ${money(m.live, { est: bankEst })}`}. Day-by-day counting is switched in Settings or on a stream’s own sheet.`
+          : html`The smoothed figure is the same for now${m.provisional > 0 || m.provisionalIn > 0 ? ' but for the moves not yet at the bank' : html`, ${money(m.live, { est: bankEst })}`}: pay is counted as it is earned once a regular deposit has been seen 3 times.`}</p>`}
     </section>
     <section class="col col-5">
       <div class="sec-head">
@@ -19532,9 +21261,10 @@ function reckoning(ctx, m) {
       </div>
       ${quick}
       <div class="mat-add">
-        <p class="cap">${m.manualCount
-          ? countPhrase(m.manualCount) + ' entered by hand. Equipment, a vehicle, money owed to you, a loan: each is counted at the figure you give.'
-          : 'Equipment, a vehicle, money owed to you, a loan the feed does not carry: each can be counted at the figure you give. Nothing here needs it.'}</p>
+        <p class="cap">${m.handOther
+          ? countPhrase(m.handOther) + ' entered by hand. Equipment, a vehicle, money owed to you, a loan: each is counted at the figure you give.'
+          : 'Equipment, a vehicle, money owed to you, a loan the feed does not carry: each can be counted at the figure you give. Nothing here needs it.'}${
+          m.handCash ? ' ' + cashLineWords(ctx.state) : ''}</p>
         <p><button class="btn btn-fill" type="button" data-action="app.sheet" data-sheet="account"><span class="plus">+</span> Add what the bank cannot see</button></p>
       </div>
       ${m.hidden.length ? html`<p class="cap mat-left">Left out of everything: ${m.hidden.map((a, i) => html`${i ? ', ' : ''}<button class="mat-inline" type="button" data-action="app.sheet" data-sheet="account" data-id="${a.id}">${accountLabel(a)}</button>`)}.</p>` : ''}
@@ -19675,9 +21405,13 @@ function cardCycle(ctx, m, figNo) {
 /* -------------------------------------------------------------- the record */
 
 function revaluations(ctx, days) {
+  const cash = cashAccountOf(ctx.state);
+  const countDays = new Set((cash && Array.isArray(cash.counts) ? cash.counts : [])
+    .filter((c) => c && Number.isFinite(c.at)).map((c) => gameDay(c.at, ctx.state.settings.rolloverHour)));
   const names = new Map();
   for (const account of ctx.state.accounts) {
-    if (account.source === 'bank' || account.hidden) continue;
+    // Cash in hand's days are its counts (above), never a revaluation
+    if (account.source === 'bank' || account.hidden || account.role === CASH_ROLE) continue;
     (account.history || []).forEach((entry, i) => {
       if (i === 0 || !entry) return;
       const list = names.get(entry.day) || [];
@@ -19686,33 +21420,42 @@ function revaluations(ctx, days) {
     });
   }
   const events = [];
+  let counted = 0;
+  let revalued = 0;
   for (const close of days) {
     if (!close.reval) continue;
     const list = names.get(close.day);
-    events.push({ day: close.day, label: list && list.length ? list.join(', ') + ' revalued' : 'Revalued' });
+    const count = countDays.has(close.day);
+    if (count) counted += 1;
+    if ((list && list.length) || !count) revalued += 1;
+    const label = list && list.length ? list.join(', ') + ' revalued' + (count ? ', counted' : '') : count ? 'Counted' : 'Revalued';
+    events.push({ day: close.day, label });
   }
-  return events;
+  return { events, counted, revalued };
 }
 
 function record(ctx, m, figNo) {
   const first = firstTransactionDay(ctx.state);
   const from = first && first < ctx.today ? first : ctx.today;
   const days = ctx.d.closes(from, ctx.today);
-  const events = revaluations(ctx, days);
+  const { events, counted, revalued } = revaluations(ctx, days);
+  const pencil = m.provisional > 0 || m.provisionalIn > 0;
   const data = {
     days: days.map((c) => ({ day: c.day, smooth: c.smooth, bank: c.bank, partial: c.partial })),
     events,
-    live: m.position.smoothing ? m.live : undefined,
+    // the line ends on the live figure while it is smoothed or holds moves in pencil, as the Board's does
+    live: m.position.smoothing || pencil ? m.live : undefined,
     // the end label is an estimate only when the figure holds one (R4): roman for a record of bank rows alone
-    est: Boolean(m.estAssets || m.estDebts || m.position.smoothing || m.provisional > 0),
+    est: recordEstimate({ estAssets: m.estAssets, estDebts: m.estDebts, smoothing: m.position.smoothing, provisional: m.provisional, provisionalIn: m.provisionalIn }),
   };
+  const what = counted && revalued ? 'revalued or counted' : counted ? 'counted' : 'revalued';
   const span = days.length;
   // one count of history (R6): the first transaction's day through today, both included
   const onRecord = Number.isFinite(ctx.d.historyDays) ? ctx.d.historyDays : span;
   const caption = span < 2
     ? 'One day is on the record. The line grows a day at a time from here.'
-    : html`${m.position.smoothing ? 'Solid: smoothed net worth. Dotted: at the bank, rising on payday and falling when rent is charged.' : 'Net worth at the bank, day by day.'} ${
-      events.length ? count(events.length, 'open square marks', 'open squares mark') + ' a figure you revalued.' : 'An open square will mark any figure you revalue.'} ${
+    : html`${m.position.smoothing ? 'Solid: smoothed net worth. Dotted: ' + bankWhere(m.handCash) + ', rising on payday and falling when rent is charged.' : recordLead(m)} ${
+      events.length ? count(events.length, 'open square marks', 'open squares mark') + ' a figure you ' + what + '.' : 'An open square will mark any figure you revalue.'} ${
       onRecord < 30 ? count(onRecord, 'day is', 'days are') + ' on record so far, ' + fmtDate(from, 'short') + ' through ' + fmtDate(ctx.today, 'short') + '.' : ''}`;
   return html`<section class="band mat-record">
     <div class="sec-head">
@@ -20520,7 +22263,7 @@ function chart(kind, data) {
 function heroEst(ctx) {
   const d = ctx.d;
   const pos = d.position;
-  return !!(pos.smoothing || pos.provisional > 0 || ctx.state.accounts.some((a) => isEstimated(ctx, a) && d.valueOf(a) !== 0));
+  return !!(pos.smoothing || pos.provisional > 0 || pos.provisionalIn > 0 || ctx.state.accounts.some((a) => isEstimated(ctx, a) && d.valueOf(a) !== 0));
 }
 
 function abstract(ctx) {
@@ -21283,20 +23026,22 @@ return { render, actions };
 
 // ---- js/views/settings.js
 __mods["js/views/settings.js"] = (function () {
-const { html, cx } = __mods["js/ui/dom.js"];
+const { html, cx, attrs } = __mods["js/ui/dom.js"];
 const { store } = __mods["js/store.js"];
 const { context, toast } = __mods["js/runtime.js"];
-const { navigate } = __mods["js/router.js"];
+const { navigate, openSheet } = __mods["js/router.js"];
 const { linkBank, unlinkBank } = __mods["js/sync.js"];
 const { startShare, shareNow, forgetShare, shareInfo } = __mods["js/share.js"];
 const { wipeStorage, listSnapshots } = __mods["js/db.js"];
 const { ACCOUNT_TYPES, CADENCES, PURPOSES, SCHEMA_VERSION, accountLabel, checkDoc, migrate, defaultState } = __mods["js/model/schema.js"];
 const { fmt } = __mods["js/model/money.js"];
-const { gameDay, diffDays, fmtDate, fmtTime } = __mods["js/model/dates.js"];
+const { gameDay, diffDays, fmtDate, fmtTime, nowMs } = __mods["js/model/dates.js"];
 const { position } = __mods["js/model/ledger.js"];
 const { makeDerived } = __mods["js/derive.js"];
 const { coverText, inlineMoney } = __mods["js/views/parts.js"];
 const { alertStatus } = __mods["js/model/alerts.js"];
+const { answerPayer, askAgain, cashAccountOf, isIdleCash, ensureCashAccount, incomeLabel, incomeOf, incomePayments, incomeQuestions, payerAnswer } = __mods["js/model/income.js"];
+const { againWords, beforeCountWords, countedWords, isCountedCash, listedPayers, payerWords, paymentState } = __mods["js/views/income-words.js"];
 const APP_VERSION = '1.0.0';
 const BRIDGE_URL = 'https://bridge.simplefin.org';
 const TOKEN_URL = 'https://github.com/settings/personal-access-tokens/new';
@@ -21733,6 +23478,94 @@ function alertSection(ctx) {
   </div>`;
 }
 
+/* ------------------------------------------------- income your other apps report */
+
+const GONE_SHOWN = 10;
+
+function incomeSourceLine(ctx, id, src, payments, since, index) {
+  const n = payments.filter((p) => p.source === id && (p.how === 'bank' || p.how === 'ask' || p.how === 'cash')).length;
+  const what = src.what ? html`<b data-cover-keep>${src.what}</b>` : html`<b>${id}.json</b>`;
+  const good = Number.isFinite(src.readAt);
+  const written = Number.isFinite(src.writtenAt) && src.writtenAt > 0 ? 'written ' + whenText(src.writtenAt, ctx) + ', ' : '';
+  // a file read and refused says so in one line: "{file}: read {when}, not used. {problem}"
+  if (!good && src.problem) {
+    const checked = Number.isFinite(src.checkedAt) ? 'read ' + whenText(src.checkedAt, ctx) + ', not used' : 'not used';
+    return html`<li><b>${id}.json</b>: ${checked}. <span class="set-income-problem">${src.problem}</span></li>`;
+  }
+  const read = written + (good ? 'read ' + whenText(src.readAt, ctx) : 'not read yet');
+  const goneList = payments.filter((p) => p.source === id && p.how === 'gone');
+  const gone = goneList.length;
+  const counted = since === null || !good ? '' : html`; ${n === 1 ? '1 payment counts' : n + ' payments count'} since ${fmtDate(gameDay(since, ctx.state.settings.rolloverHour), 'short')}${gone
+    ? html`, and ${gone === 1 ? '1 is' : gone + ' are'} in the bank by your answer` : ''}`;
+  const refused = src.problem ? html` <span class="set-income-problem">The latest file${Number.isFinite(src.checkedAt) ? ', read ' + whenText(src.checkedAt, ctx) + ',' : ''} could not be used: ${lowerFirst(src.problem)}${src.sha ? ' The last good copy is kept.' : ''}</span>` : '';
+  // the payments answered "in the bank", latest first, each with Ask again: the 10 latest, and "Show all" for the rest
+  const all = !!(ctx.ui.settingsGoneAll && ctx.ui.settingsGoneAll[id] === true);
+  const sorted = goneList.slice().sort((a, b) => b.at - a.at || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+  const shown = all ? sorted : sorted.slice(0, GONE_SHOWN);
+  const more = gone - shown.length;
+  const list = shown.length ? html`<ul class="set-income-gone">${shown.map((p, k) => html`<li><span id="inc-gone-${index}-${k + 1}"><span data-cover-keep>${incomeLabel(p)}</span>, ${inlineMoney(p.cents)}, marked ${fmtDate(p.marked, 'short')}: in the bank.</span>
+      <button class="btn-link" type="button" data-action="settings.income-again" aria-describedby="inc-gone-${index}-${k + 1}" data-source="${p.source}" data-item="${p.id}">Ask again</button></li>`)}${more > 0
+    ? html`<li class="cap">and ${more === 1 ? '1 more' : more + ' more'} · <button class="btn-link" type="button" data-action="settings.income-gone-all" data-source="${id}" data-from="${shown.length}" aria-label="Show all ${gone} in-the-bank payments of ${src.what || id + '.json'}">Show all ${gone}</button></li>` : ''}</ul>` : '';
+  return html`<li>${what}: ${read}${counted}.${refused}${list}</li>`;
+}
+
+function lowerFirst(text) {
+  return text ? text.charAt(0).toLowerCase() + text.slice(1) : text;
+}
+
+function incomePayerRow(p, answer, index, called) {
+  const name = 'inc-payer-' + index; // from an index: two payers never share one radio group
+  return html`<div class="set-income-payer">
+    <span class="set-income-name" data-cover-keep>${called}</span>
+    <div class="seg" role="radiogroup" aria-label="How ${called} pays" data-change="settings.income-payer" data-source="${p.source}" data-payer="${p.payer}">
+      <label class="seg-opt"><input type="radio" name="${name}" value="bank" ${attrs({ checked: answer === 'bank' })}><span>Zelle or transfer</span></label>
+      <label class="seg-opt"><input type="radio" name="${name}" value="cash" ${attrs({ checked: answer === 'cash' })}><span>Cash</span></label>
+    </div>
+  </div>`;
+}
+
+function incomeSection(ctx) {
+  const sh = ctx.share;
+  if (!sh || !sh.available || ctx.demo) return '';
+  const { sources, shared } = incomeOf(ctx.state);
+  const payments = incomePayments(ctx.state, ctx.state.settings.rolloverHour);
+  const labelOf = (id) => (sources[id] && sources[id].what) || id + '.json';
+  const ids = Object.keys(sources).sort((a, b) => labelOf(a).localeCompare(labelOf(b)) || (a < b ? -1 : a > b ? 1 : 0));
+  const info = ctx.income || {};
+  const { payers, names } = listedPayers(ctx.state);
+  const cash = cashAccountOf(ctx.state);
+  // the head label and the status line come from the same branches
+  const readonly = !!(store.status && store.status.readonly);
+  const [head, status] = !sh.on ? ['Needs the key', 'The income needs the same key as sharing: paste it above, and this device reads income/ by itself.']
+    : sh.code === 'key' || info.code === 'key' ? ['Paused', 'Paused: GitHub refused the key. A new key above starts it again.']
+      : sh.retryAt ? ['Paused', 'Paused until ' + fmtTime(sh.retryAt) + '.']
+        : readonly ? ['Read-only', 'This record is open read-only here, so this device does not read income/.']
+          : ['Reading every minute', (info.folder === 'none' ? 'No file in income/.'
+            : info.folder === 'unseen' ? 'Could not see income/: nothing has arrived yet, or the key cannot reach it, so nothing is dropped.'
+              : info.readAt ? 'income/ read ' + whenText(info.readAt, ctx) + '.' : 'income/ has not been read yet on this device.')
+            + (info.code && info.code !== 'rate' ? ' The last reading did not go through; it is tried again within a minute.' : '')];
+  return html`<div class="cols">
+    <section class="col col-7 set-sec" aria-label="Income your other apps report">
+      <div class="sec-head">
+        <h2 class="lab" id="set-income-head" tabindex="-1"><b>Income your other apps report</b><i class="sep"></i>counted the moment it is marked</h2>
+        <span class="lab">${head}</span>
+      </div>
+      <p class="set-lede">Another app of yours writes the payments it records into <code class="set-code">income/</code> in your private repository, and this device reads them with its sharing key. There is nothing to set up here: the other app holds its own key.
+        A payment by Zelle or transfer counts in pencil until the bank’s row takes its place; a payment in cash counts in Cash in hand.</p>
+      <p class="cap" role="status">${status}</p>
+      ${ids.length ? html`<ul class="set-income-sources">${ids.map((id, i) => incomeSourceLine(ctx, id, sources[id], payments, shared.since, i + 1))}</ul>`
+        : html`<p class="cap">Nothing has arrived yet.</p>`}
+    </section>
+    <section class="col col-5 set-sec" aria-label="Payers and cash">
+      <div class="sec-head"><h3 class="lab"><b>How each payer pays</b><i class="sep"></i>asked once, on every device</h3></div>
+      ${payers.length ? html`<div class="set-income-payers">${payers.map((p, i) => incomePayerRow(p, payerAnswer(shared, p.payerKey), i + 1, names.get(p.payerKey)))}</div>`
+        : html`<p class="cap">No payer yet.</p>`}
+      <p><button class="btn-link" type="button" data-action="settings.income-cash">Count your cash</button>${cash && !isIdleCash(ctx.state, cash)
+        ? html` <span class="cap">Cash in hand: ${inlineMoney(ctx.d.valueOf(cash), { est: !isCountedCash(ctx.state, ctx.d.valueOf(cash)) })}, ${countedWords(ctx.state, ctx.today).words}.</span>` : ''}</p>
+    </section>
+  </div>`;
+}
+
 /* ----------------------------------------------------------------- the day */
 
 function payLine(ctx) {
@@ -21976,9 +23809,9 @@ function render(ctx) {
       </div>
       <div class="set-top-row">
         <h1 class="title title-l set-title">Settings</h1>
-        <p class="cap set-top-note">The bank link, ${shared ? (ctx.demo ? 'sharing between devices, ' : 'sharing between devices, card purchases within minutes, ') : ''}how a day is counted, appearance, your own rules and the record. ${ctx.demo
+        <p class="cap set-top-note">The bank link, ${shared ? (ctx.demo ? 'sharing between devices, ' : 'sharing between devices, card purchases within minutes, income your other apps report, ') : ''}how a day is counted, appearance, your own rules and the record. ${ctx.demo
           ? 'In the sample game a change lasts until this page is closed or reloaded, and none is kept'
-          : 'Every control saves the moment it changes'}, and none of the ${shared ? (ctx.demo ? 7 : 8) : 6} sections needs a visit: the board is complete as it stands.</p>
+          : 'Every control saves the moment it changes'}, and none of the ${shared ? (ctx.demo ? 7 : 9) : 6} sections needs a visit: the board is complete as it stands.</p>
       </div>
     </section>
     <div class="cols">
@@ -21987,6 +23820,7 @@ function render(ctx) {
     </div>
     ${shareSection(ctx)}
     ${alertSection(ctx)}
+    ${incomeSection(ctx)}
     <div class="cols">
       ${appearanceSection(ctx)}
       ${rulesSection(ctx)}
@@ -22279,7 +24113,76 @@ async function restore() {
   }, 250);
 }
 
+function inCash(state) {
+  const account = cashAccountOf(state);
+  return new Set(account ? state.txs.filter((tx) => tx && tx.via === 'income' && tx.accountId === account.id && tx.income).map((tx) => tx.income.key) : []);
+}
+
+function againIndex(el) {
+  const all = typeof document !== 'undefined' ? [...document.querySelectorAll('[data-action="settings.income-again"]')] : [];
+  const at = el ? all.indexOf(el.closest ? el.closest('button') || el : el) : -1;
+  return at < 0 ? 0 : at;
+}
+
+function focusAfterAgain(index, selector) {
+  const go = () => {
+    const all = [...document.querySelectorAll('[data-action="settings.income-again"]')];
+    const target = (selector && document.querySelector(selector)) || all[index] || document.getElementById('set-income-head');
+    if (target) target.focus({ preventScroll: false });
+  };
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => requestAnimationFrame(go)); else setTimeout(go, 0);
+}
+
 const actions = {
+  'settings.income-payer': ({ ev, data }) => {
+    const how = ev && ev.target && ev.target.value === 'cash' ? 'cash' : 'bank';
+    const ctx = context();
+    if (!ctx || ctx.demo) return;
+    const at = nowMs(); // the moment of the answer, not the time of the last render
+    const payer = incomePayments(store.state, ctx.state.settings.rolloverHour).find((p) => p.source === data.source && p.payer === data.payer);
+    const before = inCash(store.state);
+    const asked = new Set(incomeQuestions(store.state, at).confirm.map((c) => c.key));
+    let done = false;
+    const change = (s) => answerPayer(s, data.source, data.payer, how, at);
+    store.update((s) => { done = change(s); }, { past: change });
+    if (!done) return;
+    const raised = incomeQuestions(store.state, at).confirm.find((c) => !asked.has(c.key)) || null;
+    const moved = [...inCash(store.state)].filter((key) => !before.has(key)).length;
+    const account = cashAccountOf(store.state);
+    const cover = !!store.state.settings.cover;
+    const cash = how === 'cash' && account ? beforeCountWords(store.state, before, Math.round(Number(account.balance) || 0), ctx.today, cover, 'payer') : null;
+    const called = payer ? listedPayers(store.state).names.get(payer.payerKey) || payer.payerName : 'The payer';
+    toast(payerWords(called, how, cash, raised ? raised.bank : null, cover, moved, 'settings'));
+  },
+  'settings.income-again': ({ el, data }) => {
+    const ctx = context();
+    if (!ctx || ctx.demo || store.status.readonly) return;
+    let done = false;
+    const at = nowMs(); // the moment of the action
+    const key = data.source + '/' + data.item;
+    const before = paymentState(store.state, key);
+    const index = againIndex(el);
+    const change = (s) => askAgain(s, data.source, data.item, at);
+    store.update((s) => { done = change(s); }, { past: change });
+    if (!done) return;
+    toast(againWords(store.state, key, at, before));
+    focusAfterAgain(index);
+  },
+  'settings.income-gone-all': ({ el, data }) => {
+    const all = { ...(store.ui.settingsGoneAll || {}), [data.source]: true };
+    const list = el && el.closest ? el.closest('.set-income-gone') : null;
+    const from = Number(data.from) || 0;
+    const index = list ? [...document.querySelectorAll('[data-action="settings.income-again"]')].indexOf(list.querySelectorAll('[data-action="settings.income-again"]')[from - 1]) + 1 : 0;
+    store.setUi({ settingsGoneAll: all });
+    focusAfterAgain(index);
+  },
+  'settings.income-cash': () => {
+    const ctx = context();
+    if (!ctx || ctx.demo) return;
+    let id = cashAccountOf(ctx.state) ? cashAccountOf(ctx.state).id : null;
+    if (!id) store.update((s) => { id = ensureCashAccount(s).id; }, { undo: 'Cash in hand added' });
+    if (id) openSheet('account', { id });
+  },
   'settings.workday': setWorkday,
   'settings.rollover': setRollover,
   'settings.toggle': setToggle,
@@ -23420,8 +25323,10 @@ const { learnRule, confirmMove } = __mods["js/model/classify.js"];
 const { refresh } = __mods["js/model/detect.js"];
 const { removeManual } = __mods["js/model/merge.js"];
 const { skipRow } = __mods["js/model/byhand.js"];
+const { askAgain, incomeOf, incomeQuestions, itemAnswer, rowPayments } = __mods["js/model/income.js"];
+const { againWords, paymentState, rowLineLead } = __mods["js/views/income-words.js"];
 const { moveGlyph } = __mods["js/ui/glyphs.js"];
-const { flowClass, flowLookups } = __mods["js/views/parts.js"];
+const { flowClass, flowLookups, inlineMoney, txName } = __mods["js/views/parts.js"];
 const { store } = __mods["js/store.js"];
 const { closeSheet } = __mods["js/router.js"];
 const { context, toast } = __mods["js/runtime.js"];
@@ -23454,7 +25359,12 @@ function findTx(state, id) {
 }
 
 function nameOf(tx) {
-  return tx.merchant || categoryLabel(tx.category);
+  return txName(tx);
+}
+
+function merchantOf(tx) {
+  if (typeof tx.reportedAs === 'string' && tx.reportedAs) return tx.merchant || categoryLabel(tx.category);
+  return nameOf(tx);
 }
 
 function isSpendish(tx) {
@@ -23509,7 +25419,7 @@ function render(ctx, params) {
     return html`<div class="sheet-body" data-key="${'tx-' + tx.id}" ${coverAttr(ctx)}>
       ${head}
       ${facts(ctx, tx)}
-      <p class="cap">The bank has reported this move; its own row replaced the one ${tx.via === 'alert' ? 'from the card’s alert' : 'tapped in'}, which no longer counts.</p>
+      <p class="cap">The bank has reported this move; its own row replaced the one ${tx.via === 'alert' ? 'from the card’s alert' : tx.via === 'income' ? 'your other app reported' : 'tapped in'}, which no longer counts.</p>
       <div class="sheet-actions">
         ${bank ? html`<button class="btn" type="button" data-action="app.sheet" data-sheet="tx" data-id="${bank.id}">The bank’s row</button>` : ''}
         <button class="btn btn-solid" type="button" data-action="app.sheet-close">Close</button>
@@ -23534,7 +25444,7 @@ function render(ctx, params) {
       <textarea class="textarea tx-note" name="note" rows="2" maxlength="${NOTE_MAX}" placeholder="Printed under the move">${tx.note || ''}</textarea>
     </label>
     <div class="sheet-actions">
-      ${manual ? html`<button class="btn" type="button" data-action="tx.remove" data-id="${tx.id}">Remove</button>` : ''}
+      ${manual && tx.via !== 'income' ? html`<button class="btn" type="button" data-action="tx.remove" data-id="${tx.id}">Remove</button>` : ''}
       <button class="btn btn-solid" type="submit">Save</button>
     </div>
   </form>`;
@@ -23546,9 +25456,35 @@ function statusNote(tx) {
   if (tx.kind === 'decline') return 'not paid: a declined purchase moves no money';
   if (tx.source === 'manual' && tx.via === 'alert' && tx.inBalance === true) return 'from the card’s text alert' + (Number.isFinite(tx.at) ? ' at ' + fmtTime(tx.at) : '') + '; the bank’s balance has taken it in';
   if (tx.source === 'manual' && tx.via === 'alert') return 'from the card’s text alert' + (Number.isFinite(tx.at) ? ' at ' + fmtTime(tx.at) : '') + '; the bank has not reported it yet';
+  if (tx.source === 'manual' && tx.via === 'income') {
+    // a payment another app of the owner reported (3.7); un-marked there, it leaves here too
+    const marked = 'marked paid in your other app' + (Number.isFinite(tx.at) ? ' at ' + fmtTime(tx.at) : '');
+    if (tx.matchId) return marked + '; the bank’s row has taken its place';
+    return tx.income && tx.income.how === 'cash' ? marked + '; paid in cash, it counts in Cash in hand' : marked + '; the bank has not reported it yet';
+  }
   if (tx.source === 'manual') return 'tapped in' + (tx.loggedAt ? ' at ' + fmtTime(tx.loggedAt) : '') + '; the bank has not reported it yet';
   if (tx.pending) return 'pending at the bank: the amount can still change';
   return tx.postedDay ? 'posted ' + fmtDate(tx.postedDay, 'dowshort') : 'posted';
+}
+
+function againRow(ctx, key, confirms, n) {
+  if (typeof key !== 'string' || ctx.demo) return '';
+  const own = itemAnswer(incomeOf(ctx.state).shared, key);
+  if (!own && !confirms) return '';
+  const said = own === 'cash' ? 'You said it was cash' : own === 'wait' ? 'You said it is still coming' : own === 'gone' ? 'You said it is in the bank' : 'You said it came by Zelle or transfer';
+  const slash = key.indexOf('/');
+  const id = 'tx-again-' + n;
+  return html`<li class="row" data-key="${'again-' + key}">
+      <span class="row-label" id="${id}">${confirms ? html`${confirms}${own ? html` <em class="row-note">${said}</em>` : ''}` : said}</span>
+      ${own ? html`<button class="btn-link" type="button" data-action="tx.income-again" aria-describedby="${id}" data-source="${key.slice(0, slash)}" data-item="${key.slice(slash + 1)}">Ask again</button>` : ''}
+    </li>`;
+}
+
+function confirmsRows(ctx, tx) {
+  if (tx.source !== 'bank' || typeof tx.reportedAs !== 'string' || !tx.reportedAs || ctx.demo) return '';
+  const asked = incomeQuestions(ctx.state, ctx.now).confirm.some((c) => c.row === tx.id);
+  return rowPayments(ctx.state, tx.id).map((p, i) => againRow(ctx, p.key,
+    html`${rowLineLead(asked)}<span data-cover-keep>${p.label}</span>, ${inlineMoney(p.cents)}, marked ${fmtDate(p.marked, 'short')}`, i + 1));
 }
 
 function paysOf(state, tx) {
@@ -23560,7 +25496,8 @@ function facts(ctx, tx) {
   const account = tx.accountId ? ctx.d.account(tx.accountId) : null;
   const pays = paysOf(ctx.state, tx);
   // a card alert's move the balance has taken in is settled: in roman, with no approximately sign
-  const pencil = tx.pending || (tx.source === 'manual' && tx.inBalance !== true);
+  const cash = tx.via === 'income' && !!tx.income && tx.income.how === 'cash';
+  const pencil = tx.pending || (tx.source === 'manual' && tx.inBalance !== true && !cash);
   const sign = tx.kind === 'income' || tx.kind === 'refund' ? '+' : '';
   const { accountOf, pairOf } = flowLookups(ctx);
   const flow = flowClass(tx, accountOf, pairOf); // red when money left, green when it arrived, else ink
@@ -23580,6 +25517,7 @@ function facts(ctx, tx) {
       <span class="row-label">Account</span>
       <span class="tx-v">${accountLabel(account)}${account.institution ? html` <em class="row-note">${account.institution}</em>` : ''}</span>
     </li>` : ''}
+    ${tx.via === 'income' && tx.income ? againRow(ctx, tx.income.key, null, 0) : confirmsRows(ctx, tx)}
     ${pays ? html`<li class="row tx-pays" data-key="pays">
       <span class="row-label">Pays ${pays.name || 'an unnamed payment'}, a payment you send</span>
       <button class="btn-link" type="button" data-action="tx.pay-skip" data-id="${tx.id}">Not this payment</button>
@@ -23616,6 +25554,8 @@ function classification(ctx, tx) {
   // a paired leg is a movement between the owner's own accounts: it has no purpose to set and nothing to learn
   const moved = !!tx.pairId || tx.kind === 'transfer' || tx.kind === 'payment';
   const canLearn = !!tx.mkey && !decline && !(moved && frozen);
+  // a bank row that carries a reported payment's label: a correction defaults to this move only (3.7)
+  const labelled = typeof tx.reportedAs === 'string' && !!tx.reportedAs;
   const stream = tx.streamId ? ctx.state.streams.find((s) => s.id === tx.streamId) : null;
 
   return html`<fieldset class="tx-class">
@@ -23643,12 +25583,12 @@ function classification(ctx, tx) {
     ${canLearn ? html`<fieldset class="field">
       <legend class="field-label lab">A correction applies to</legend>
       <div class="seg seg-block" role="radiogroup" aria-label="A correction applies to">
-        <label class="seg-opt"><input type="radio" name="scope" value="all" checked><span>All from this merchant</span></label>
-        <label class="seg-opt"><input type="radio" name="scope" value="one"><span>This move only</span></label>
+        <label class="seg-opt"><input type="radio" name="scope" value="all" ${labelled ? '' : html`checked`}><span>All from this merchant</span></label>
+        <label class="seg-opt"><input type="radio" name="scope" value="one" ${labelled ? html`checked` : ''}><span>This move only</span></label>
       </div>
       <p class="field-help cap">${sameMerchant > 1
-        ? html`All: the <i data-cover-keep>${sameMerchant}</i> moves from ${nameOf(tx)} on record, and every later one, follow. A move corrected on its own keeps its correction.`
-        : html`All: later moves from ${nameOf(tx)} follow. This is the only one on record so far.`}</p>
+        ? html`All: the <i data-cover-keep>${sameMerchant}</i> moves from ${merchantOf(tx)} on record, and every later one, follow. A move corrected on its own keeps its correction.`
+        : html`All: later moves from ${merchantOf(tx)} follow. This is the only one on record so far.`}</p>
     </fieldset>` : ''}
   </fieldset>`;
 }
@@ -23888,7 +25828,7 @@ function save({ values, data }) {
   }, { undo: corrected ? 'Move corrected' : 'Move updated' });
 
   closeSheet();
-  const what = result.changed > 1 ? result.changed + ' moves from ' + nameOf(tx) + ' corrected.' : corrected ? 'Move corrected.' : 'Move updated.';
+  const what = result.changed > 1 ? result.changed + ' moves from ' + merchantOf(tx) + ' corrected.' : corrected ? 'Move corrected.' : 'Move updated.';
   let split = '';
   if (touched.includes('capital')) {
     split = next.capital
@@ -23921,6 +25861,19 @@ const actions = {
       action: 'Undo',
       onAction: () => { if (store.undoLabel === words && store.undo()) toast('The row of ' + fmtDate(tx.day, 'short') + ' pays ' + (pays.name || 'the payment') + ' again.'); },
     });
+  },
+  'tx.income-again': ({ data }) => {
+    const ctx = context();
+    if (!ctx || ctx.demo || store.status.readonly) return;
+    let done = false;
+    const at = nowMs(); // the moment of the action
+    const key = data.source + '/' + data.item;
+    const before = paymentState(store.state, key);
+    const change = (s) => askAgain(s, data.source, data.item, at);
+    store.update((s) => { done = change(s); }, { past: change });
+    if (!done) return;
+    closeSheet();
+    toast(againWords(store.state, key, at, before));
   },
   'tx.remove': ({ data }) => {
     const ctx = context();
@@ -24230,10 +26183,12 @@ const { store } = __mods["js/store.js"];
 const { context, toast } = __mods["js/runtime.js"];
 const { openSheet, closeSheet } = __mods["js/router.js"];
 const { fmt, fmtPlain, toCents } = __mods["js/model/money.js"];
-const { fmtDate, fmtTime, gameDay, diffDays, parts: ymdParts } = __mods["js/model/dates.js"];
+const { fmtDate, fmtTime, gameDay, diffDays, nowMs, parts: ymdParts } = __mods["js/model/dates.js"];
 const { ACCOUNT_TYPES, accountLabel, makeAccount } = __mods["js/model/schema.js"];
 const { lacksHistory } = __mods["js/model/feed.js"];
 const { refresh } = __mods["js/model/detect.js"];
+const { CASH_ROLE, COUNT_MAX_CENTS, countCash, removeCount } = __mods["js/model/income.js"];
+const { countWords, countedWords, isCountedCash, removedWords } = __mods["js/views/income-words.js"];
 const { icon } = __mods["js/ui/icons.js"];
 const { coverText, money, recentList } = __mods["js/views/parts.js"];
 const KINDS = [
@@ -24515,6 +26470,44 @@ function manualForm(ctx, account, type) {
   </form>`;
 }
 
+/* ------------------------------------------------------------ Cash in hand */
+
+function cashForm(ctx, account) {
+  const errors = errorsFor(ctx, account.id);
+  const value = ctx.d.valueOf(account);
+  // the latest of the owner's counts (each one sets the figure from its own day), and when it was made
+  const { words, count } = countedWords(ctx.state, ctx.today);
+  // right after a count the figure is the count itself: roman, as counted; a cash payment marked since makes it pencil
+  const exact = isCountedCash(ctx.state, value);
+  return html`<form class="sheet-body" data-submit="account.count" data-input="account.touch" data-id="${account.id}" novalidate autocomplete="off"${coverAttr(ctx)}>
+    <p class="sheet-head lab"><b>By hand</b><i class="sep"></i>${ACCOUNT_TYPES.cash.label}</p>
+    <h2 class="sheet-title">${accountLabel(account)}</h2>
+    <p class="acct-now">
+      ${money(value, { est: !exact })}
+      <span class="cap">in hand today · ${count
+        ? exact ? html`<span data-fig>${fmt(count.cents)}</span>, ${words}` : html`<span data-fig>${fmt(count.cents)}</span>, ${words}, with the cash payments marked since`
+        : html`the payments marked as paid in cash; ${words}`}</span>
+      ${count ? html`<span class="acct-uncount"><button class="btn-link" type="button" data-action="account.uncount" data-id="${account.id}" data-count="${count.id}">Remove the latest count</button></span>` : ''}
+    </p>
+    <div class="acct-set acct-set-first">
+      <div class="${cx('field', errors.value && 'is-invalid')}">
+        <span class="field-label lab" id="acct-cash-label">I have this much in cash now</span>
+        <label class="money">
+          <span class="vh">I have this much in cash now, in dollars</span>
+          <span class="money-cur" aria-hidden="true">$</span>
+          <input ${attrs({ class: 'money-input', type: 'text', inputmode: 'decimal', name: 'value', autocomplete: 'off', placeholder: '0.00', 'aria-invalid': errors.value ? 'true' : null, 'aria-describedby': errors.value ? 'acct-cash-error' : null })}>
+        </label>
+        ${errors.value ? html`<span class="field-error" id="acct-cash-error">${errors.value}</span>` : ''}
+        <span class="field-help cap">Networth cannot see cash being spent, so this figure falls only when you count. The count reaches all your devices; a payment marked in cash after it adds to it.</span>
+      </div>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn" type="button" data-action="app.sheet-close">Close</button>
+      <button class="btn btn-solid" type="submit">Count it</button>
+    </div>
+  </form>`;
+}
+
 /* -------------------------------------------------------------- bank account */
 
 const SHEET_MOVES = 6;
@@ -24678,6 +26671,7 @@ function render(ctx, params = {}) {
   if (params.id) {
     const account = findAccount(ctx.state, params.id);
     if (!account) return gone();
+    if (account.role === CASH_ROLE && account.source !== 'bank') return cashForm(ctx, account);
     const type = shownType(account, params);
     return account.source === 'bank' ? bankForm(ctx, account, type) : manualForm(ctx, account, type);
   }
@@ -24882,6 +26876,16 @@ function undoIf(label) {
 
 /* ----------------------------------------------------------------- actions */
 
+function focusCountField() {
+  const go = () => {
+    const label = document.getElementById('acct-cash-label');
+    const field = label ? label.closest('.field') : null;
+    const input = field ? field.querySelector('input') : null;
+    if (input) input.focus();
+  };
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => requestAnimationFrame(go)); else setTimeout(go, 0);
+}
+
 const actions = {
   'account.type': ({ el }) => {
     const ctx = context();
@@ -24903,10 +26907,43 @@ const actions = {
     else saveManual(ctx, account, values);
   },
 
+  'account.count': ({ values, data }) => {
+    const ctx = context();
+    const account = ctx && values ? findAccount(ctx.state, data.id) : null;
+    if (!account || account.role !== CASH_ROLE) return;
+    const cents = parseAmount(values.value);
+    if (cents == null) { fail(account.id, { value: 'Type the cash you have now, for example 120.00.' }); return; }
+    if (cents > COUNT_MAX_CENTS) { fail(account.id, { value: 'A count can be at most ' + fmt(COUNT_MAX_CENTS) + '.' }); return; }
+    let done = false;
+    const at = nowMs(); // the moment of the count, not the time of the last render: it decides which payments come after it
+    // a count is made like a change from outside: no Undo takes it back; counting again corrects it
+    const change = (s) => countCash(s, cents, at);
+    store.update((s) => { done = change(s); }, { past: change });
+    if (!done) { fail(account.id, { value: 'This count could not be kept. Type the cash you have now, for example 120.00.' }); return; }
+    clearErrors();
+    closeSheet();
+    toast(countWords(cents, !!ctx.state.settings.cover));
+  },
+
+  'account.uncount': ({ data }) => {
+    const ctx = context();
+    const account = ctx ? findAccount(ctx.state, data.id) : null;
+    if (!account || account.role !== CASH_ROLE || ctx.demo || store.status.readonly) return;
+    let done = false;
+    const at = nowMs();
+    const change = (s) => removeCount(s, data.count, at);
+    store.update((s) => { done = change(s); }, { past: change });
+    if (!done) return;
+    // the figure now, as the rebuild stored it (the last render's context still holds the count just removed)
+    const after = findAccount(store.state, account.id);
+    toast(removedWords(after ? Math.round(Number(after.balance) || 0) : 0, !!ctx.state.settings.cover));
+    focusCountField(); // the link is gone: the count field is the next place to act
+  },
+
   'account.remove': ({ data }) => {
     const ctx = context();
     const account = ctx ? findAccount(ctx.state, data.id) : null;
-    if (!account || account.source === 'bank') return;
+    if (!account || account.source === 'bank' || account.role === CASH_ROLE) return;
     const id = account.id;
     const undoLabel = accountLabel(account) + ' removed';
     const wasDebt = groupOf(account.type) === 'debt';
@@ -25910,10 +27947,11 @@ const { makeDerived } = __mods["js/derive.js"];
 const { initSync, syncInfo, autoSync, syncNow } = __mods["js/sync.js"];
 const { initShare, shareInfo, autoShare, shareNow } = __mods["js/share.js"];
 const { autoInbox, inboxInfo } = __mods["js/inbox.js"];
+const { autoIncome, incomeInfo } = __mods["js/income.js"];
 const { restampByHand } = __mods["js/model/byhand.js"];
 const { buildDemoState, demoFeed } = __mods["js/model/demo.js"];
 const { mergeFeed } = __mods["js/model/merge.js"];
-const { refresh } = __mods["js/model/detect.js"];
+const { followIncome, refresh } = __mods["js/model/detect.js"];
 const { mountSheet, showSheet, hideSheet, isSheetOpen } = __mods["js/ui/sheet.js"];
 const { installPull } = __mods["js/ui/pull.js"];
 const { initUpdate, checkVersion, reloadTo, reloadNow, pendingBuild, takeRefreshFlag, reachedAttempt } = __mods["js/update.js"];
@@ -25998,6 +28036,11 @@ async function boot() {
   await initSync();
   // an Undo makes what it put back the newest, so that the other devices take the Undo and do not bring the change back
   store.onRestore((before, after) => { restampByHand(before, after, nowMs()); });
+  // whatever a change (or an Undo) touched that the matching of reported payments reads (the pending switch, an account
+  // left out or retyped, the rollover hour, a row reclassified, paired or claimed, an answer), the payments follow in the
+  // same update (3.7); the rebuild changes nothing when its inputs did not change. When the bank rows reported payments
+  // claim changed, a payer's stream is decided again in the same update (accrual off, or back on)
+  store.onUpdate((s) => { followIncome(s, nowMs()); });
   await initShare(location);
 
   registerActions({ ...appActions, ...boardActions, ...scoresheetActions, ...materialActions, ...bookActions, ...analysisActions,
@@ -26012,6 +28055,8 @@ async function boot() {
 
   startRouter();
   onRoute(schedule);
+  // a hand-kept account's field errors belong to the sheet they were made on: they go whenever a sheet opens or closes
+  onRoute(() => { if (store.ui.accountErrors) store.setUi({ accountErrors: null }); });
   store.subscribe(schedule);
   if (typeof matchMedia === 'function') matchMedia(WIDE).addEventListener('change', schedule);
   setInterval(schedule, 30000);
@@ -26022,6 +28067,7 @@ async function boot() {
   autoSync();
   autoShare();
   autoInbox();
+  autoIncome();
   registerWorker();
   initUpdate({ isIdle, save: async () => { store.mirror(); await store.flush(); }, poke: schedule });
   // in a browser tab no touch listener is added at all: the page scrolls and bounces exactly as before
@@ -26049,7 +28095,7 @@ function isIdle() {
   if (refreshing || isSheetOpen() || currentRoute().sheet) return false;
   const a = document.activeElement;
   if (a && a !== document.body && a.matches('input, textarea, select, [contenteditable], [contenteditable] *')) return false;
-  return !syncInfo().busy && !shareInfo().busy && !inboxInfo().busy;
+  return !syncInfo().busy && !shareInfo().busy && !inboxInfo().busy && !incomeInfo().busy;
 }
 
 function applyTheme(choice) {
@@ -26077,6 +28123,7 @@ function onVisibility() {
     autoSync();
     autoShare();
     autoInbox();
+    autoIncome();
     schedule();
   }
 }
@@ -26169,7 +28216,8 @@ async function runRefresh({ afterReload = false } = {}) {
   const sh = shareInfo();
   if (sh.available && sh.on) {
     autoInbox();
-    await Promise.race([shareNow().catch(() => {}), new Promise((r) => { setTimeout(r, 8000); })]);
+    // the income another app reported is read in every refresh too (3.7)
+    await Promise.race([Promise.all([shareNow().catch(() => {}), autoIncome()]), new Promise((r) => { setTimeout(r, 8000); })]);
   }
   return bank;
 
@@ -26218,6 +28266,7 @@ function buildContext() {
     sync: syncInfo(),
     share: shareInfo(),
     inbox: inboxInfo(),
+    income: incomeInfo(),
     wide: typeof matchMedia === 'function' ? matchMedia(WIDE).matches : true,
   };
 }

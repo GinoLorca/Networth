@@ -315,9 +315,30 @@ export function crosstable(month, opts) {
 
 /* ------------------------------------------------------------------- moves */
 
+/** A payment another app reported as paid in cash (3.7): income on its day, not a pencil move. */
+function isCashPayment(tx) {
+  return tx.via === 'income' && !!tx.income && tx.income.how === 'cash';
+}
+
+/** The tag of a move not yet at the bank: an alert, a payment another app reported, or one tapped in. */
+function pencilTag(tx) {
+  if (tx.via === 'alert') return 'Alert';
+  if (tx.via === 'income') return 'In pencil · not at the bank yet';
+  return 'Tapped in';
+}
+
+/**
+ * A transaction's name in a list: a bank row that confirms payments another app reported carries their
+ * label ("{what} · {payer}", 3.7); otherwise the merchant, else the category.
+ */
+export function txName(tx) {
+  if (typeof tx.reportedAs === 'string' && tx.reportedAs) return tx.reportedAs;
+  return tx.merchant || categoryLabel(tx.category);
+}
+
 function moveState(tx) {
   if (tx.kind === 'decline') return 'is-declined';
-  if (tx.source === 'manual' && !tx.matchId && tx.inBalance !== true) return 'is-provisional';
+  if (tx.source === 'manual' && !tx.matchId && tx.inBalance !== true && !isCashPayment(tx)) return 'is-provisional';
   if (tx.pending) return 'is-pending';
   return '';
 }
@@ -337,7 +358,7 @@ function sentence(text) {
 
 function moveName(tx) {
   if (tx.kind === 'decline') return 'Declined: ' + (tx.merchant || 'a purchase');
-  return tx.merchant || categoryLabel(tx.category);
+  return txName(tx);
 }
 
 /**
@@ -373,8 +394,9 @@ export function movesList(moves, annotations, opts = {}) {
     if (tx.note) notes.push(sentence(tx.note));
     const tags = [];
     if (tx.pending) tags.push('Pending');
-    if (state === 'is-provisional') tags.push(tx.via === 'alert' ? 'Alert' : 'Tapped in');
+    if (state === 'is-provisional') tags.push(pencilTag(tx));
     else if (tx.inBalance === true) tags.push('Alert · in the balance');
+    else if (isCashPayment(tx) && opts.detail !== 'full') tags.push('Cash'); // in full detail the account already says Cash in hand
     if (tx.planned) tags.push('Planned');
     const inner = html`<span class="move-n">${start + i}.</span>
       <span class="move-m">${moveName(tx)}${notes.length || tags.length || tx.review ? html` <em class="move-note">${notes.length ? html`<span class="move-why">${figured(notes.join(' '))}</span> ` : ''}${tags.map((t) => html`<span class="move-tag">${t}</span>`)}${tx.review ? html`<span class="move-tag">Needs a look</span>` : ''}</em>` : ''}</span>
@@ -451,10 +473,11 @@ export function recentList(ctx, rows, opts = {}) {
       const notes = [];
       if (opts.account !== false && account) notes.push(accountShort(account));
       if (tx.pending) notes.push('Pending');
-      if (provisional) notes.push(tx.via === 'alert' ? 'Alert' : 'Tapped in');
+      if (provisional) notes.push(pencilTag(tx));
       else if (tx.inBalance === true) notes.push('Alert · in the balance');
+      else if (isCashPayment(tx) && !(opts.account !== false && account)) notes.push('Cash'); // the account already says Cash in hand
       return html`<li data-key="${tx.id}"><button class="recent-row" type="button" data-action="app.sheet" data-sheet="tx" data-id="${tx.id}">
-        <span class="recent-name">${tx.merchant || categoryLabel(tx.category)}${isNew ? html` <span class="recent-new">New</span>` : ''}${notes.length
+        <span class="recent-name">${txName(tx)}${isNew ? html` <span class="recent-new">New</span>` : ''}${notes.length
           ? html`<em class="recent-note">${notes.join(' · ')}</em>` : ''}</span>
         <span class="lab">${recentDay(ctx, tx.day)}</span>
         ${money(tx.amount, { est: unsettled, signed: incoming && flowClass(tx, accountOf, pairOf) !== 'flow-out', cls: flowClass(tx, accountOf, pairOf) })}

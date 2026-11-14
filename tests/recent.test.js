@@ -96,9 +96,10 @@ test('recentTransactions: today is counted, with what went out and came in; own 
     row('pay-in', TODAY, 46000, { kind: 'payment', flow: 'in', pairId: 'pay-out' }),
     row('yesterday', '2026-06-09', 999),
   );
-  assert.deepEqual(recentTransactions(state, TODAY).today, { count: 4, out: 6775, in: 1200, unsettled: true });
+  // a pending row out makes the out sum pencil, not the in sum
+  assert.deepEqual(recentTransactions(state, TODAY).today, { count: 4, out: 6775, in: 1200, unsettled: true, unsettledIn: false, unsettledOut: true });
   state.txs = state.txs.filter((tx) => tx.day !== TODAY);
-  assert.deepEqual(recentTransactions(state, TODAY).today, { count: 0, out: 0, in: 0, unsettled: false });
+  assert.deepEqual(recentTransactions(state, TODAY).today, { count: 0, out: 0, in: 0, unsettled: false, unsettledIn: false, unsettledOut: false });
 });
 
 test('recentTransactions: a row that arrived after the last look is new; nothing is new on a first look', () => {
@@ -118,7 +119,7 @@ test('recentTransactions: a row that arrived after the last look is new; nothing
 
 test('recentTransactions: odd input gives an empty list, never an error', () => {
   for (const state of [null, undefined, 7, {}, { txs: 'many', accounts: null }]) {
-    assert.deepEqual(recentTransactions(state, TODAY), { rows: [], today: { count: 0, out: 0, in: 0, unsettled: false }, fresh: 0, total: 0, oldest: null });
+    assert.deepEqual(recentTransactions(state, TODAY), { rows: [], today: { count: 0, out: 0, in: 0, unsettled: false, unsettledIn: false, unsettledOut: false }, fresh: 0, total: 0, oldest: null });
   }
   assert.equal(recentTransactions(record(), 'someday').rows.length, 0);
 });

@@ -26,8 +26,10 @@ import { learnRule, confirmMove } from '../model/classify.js';
 import { refresh } from '../model/detect.js';
 import { removeManual } from '../model/merge.js';
 import { skipRow } from '../model/byhand.js';
+import { askAgain, incomeOf, incomeQuestions, itemAnswer, rowPayments } from '../model/income.js';
+import { againWords, paymentState, rowLineLead } from './income-words.js';
 import { moveGlyph } from '../ui/glyphs.js';
-import { flowClass, flowLookups } from './parts.js';
+import { flowClass, flowLookups, inlineMoney, txName } from './parts.js';
 import { store } from '../store.js';
 import { closeSheet } from '../router.js';
 import { context, toast } from '../runtime.js';
@@ -62,7 +64,16 @@ function findTx(state, id) {
 }
 
 function nameOf(tx) {
-  return tx.merchant || categoryLabel(tx.category);
+  return txName(tx);
+}
+
+/**
+ * Whom a merchant-wide correction covers: the merchant itself (or the category), never the label of a reported
+ * payment that a bank row carries (3.7): the correction follows every row from that merchant, whoever paid.
+ */
+function merchantOf(tx) {
+  if (typeof tx.reportedAs === 'string' && tx.reportedAs) return tx.merchant || categoryLabel(tx.category);
+  return nameOf(tx);
 }
 
 function isSpendish(tx) {
@@ -120,7 +131,7 @@ export function render(ctx, params) {
     return html`<div class="sheet-body" data-key="${'tx-' + tx.id}" ${coverAttr(ctx)}>
       ${head}
       ${facts(ctx, tx)}
-      <p class="cap">The bank has reported this move; its own row replaced the one ${tx.via === 'alert' ? 'from the card’s alert' : 'tapped in'}, which no longer counts.</p>
+      <p class="cap">The bank has reported this move; its own row replaced the one ${tx.via === 'alert' ? 'from the card’s alert' : tx.via === 'income' ? 'your other app reported' : 'tapped in'}, which no longer counts.</p>
       <div class="sheet-actions">
         ${bank ? html`<button class="btn" type="button" data-action="app.sheet" data-sheet="tx" data-id="${bank.id}">The bank’s row</button>` : ''}
         <button class="btn btn-solid" type="button" data-action="app.sheet-close">Close</button>
@@ -145,7 +156,7 @@ export function render(ctx, params) {
       <textarea class="textarea tx-note" name="note" rows="2" maxlength="${NOTE_MAX}" placeholder="Printed under the move">${tx.note || ''}</textarea>
     </label>
     <div class="sheet-actions">
-      ${manual ? html`<button class="btn" type="button" data-action="tx.remove" data-id="${tx.id}">Remove</button>` : ''}
+      ${manual && tx.via !== 'income' ? html`<button class="btn" type="button" data-action="tx.remove" data-id="${tx.id}">Remove</button>` : ''}
       <button class="btn btn-solid" type="submit">Save</button>
     </div>
   </form>`;
@@ -157,9 +168,45 @@ function statusNote(tx) {
   if (tx.kind === 'decline') return 'not paid: a declined purchase moves no money';
   if (tx.source === 'manual' && tx.via === 'alert' && tx.inBalance === true) return 'from the card’s text alert' + (Number.isFinite(tx.at) ? ' at ' + fmtTime(tx.at) : '') + '; the bank’s balance has taken it in';
   if (tx.source === 'manual' && tx.via === 'alert') return 'from the card’s text alert' + (Number.isFinite(tx.at) ? ' at ' + fmtTime(tx.at) : '') + '; the bank has not reported it yet';
+  if (tx.source === 'manual' && tx.via === 'income') {
+    // a payment another app of the owner reported (3.7); un-marked there, it leaves here too
+    const marked = 'marked paid in your other app' + (Number.isFinite(tx.at) ? ' at ' + fmtTime(tx.at) : '');
+    if (tx.matchId) return marked + '; the bank’s row has taken its place';
+    return tx.income && tx.income.how === 'cash' ? marked + '; paid in cash, it counts in Cash in hand' : marked + '; the bank has not reported it yet';
+  }
   if (tx.source === 'manual') return 'tapped in' + (tx.loggedAt ? ' at ' + fmtTime(tx.loggedAt) : '') + '; the bank has not reported it yet';
   if (tx.pending) return 'pending at the bank: the amount can still change';
   return tx.postedDay ? 'posted ' + fmtDate(tx.postedDay, 'dowshort') : 'posted';
+}
+
+/**
+ * A reported payment (`key`: "{source}/{item}"), with its own answer if it has one (it was cash, it is in the bank, it
+ * is still coming, or it came by Zelle when asked to confirm) and "Ask again", which takes that answer back on every
+ * device (3.7). `confirms`: the line of a bank row's sheet for a payment the row confirms, shown with or without an
+ * answer; `n` numbers the lines of one sheet, so each button is described by its own label.
+ */
+function againRow(ctx, key, confirms, n) {
+  if (typeof key !== 'string' || ctx.demo) return '';
+  const own = itemAnswer(incomeOf(ctx.state).shared, key);
+  if (!own && !confirms) return '';
+  const said = own === 'cash' ? 'You said it was cash' : own === 'wait' ? 'You said it is still coming' : own === 'gone' ? 'You said it is in the bank' : 'You said it came by Zelle or transfer';
+  const slash = key.indexOf('/');
+  const id = 'tx-again-' + n;
+  return html`<li class="row" data-key="${'again-' + key}">
+      <span class="row-label" id="${id}">${confirms ? html`${confirms}${own ? html` <em class="row-note">${said}</em>` : ''}` : said}</span>
+      ${own ? html`<button class="btn-link" type="button" data-action="tx.income-again" aria-describedby="${id}" data-source="${key.slice(0, slash)}" data-item="${key.slice(slash + 1)}">Ask again</button>` : ''}
+    </li>`;
+}
+
+/**
+ * A bank row that holds reported payments: one line for each, with Ask again for an answer of its own (3.7). It says
+ * "Confirms" only with no question open for the row; while the board asks to confirm it, the lines say so.
+ */
+function confirmsRows(ctx, tx) {
+  if (tx.source !== 'bank' || typeof tx.reportedAs !== 'string' || !tx.reportedAs || ctx.demo) return '';
+  const asked = incomeQuestions(ctx.state, ctx.now).confirm.some((c) => c.row === tx.id);
+  return rowPayments(ctx.state, tx.id).map((p, i) => againRow(ctx, p.key,
+    html`${rowLineLead(asked)}<span data-cover-keep>${p.label}</span>, ${inlineMoney(p.cents)}, marked ${fmtDate(p.marked, 'short')}`, i + 1));
 }
 
 /** The payment the owner sends that this bank row pays, or null. */
@@ -172,7 +219,8 @@ function facts(ctx, tx) {
   const account = tx.accountId ? ctx.d.account(tx.accountId) : null;
   const pays = paysOf(ctx.state, tx);
   // a card alert's move the balance has taken in is settled: in roman, with no approximately sign
-  const pencil = tx.pending || (tx.source === 'manual' && tx.inBalance !== true);
+  const cash = tx.via === 'income' && !!tx.income && tx.income.how === 'cash';
+  const pencil = tx.pending || (tx.source === 'manual' && tx.inBalance !== true && !cash);
   const sign = tx.kind === 'income' || tx.kind === 'refund' ? '+' : '';
   const { accountOf, pairOf } = flowLookups(ctx);
   const flow = flowClass(tx, accountOf, pairOf); // red when money left, green when it arrived, else ink
@@ -192,6 +240,7 @@ function facts(ctx, tx) {
       <span class="row-label">Account</span>
       <span class="tx-v">${accountLabel(account)}${account.institution ? html` <em class="row-note">${account.institution}</em>` : ''}</span>
     </li>` : ''}
+    ${tx.via === 'income' && tx.income ? againRow(ctx, tx.income.key, null, 0) : confirmsRows(ctx, tx)}
     ${pays ? html`<li class="row tx-pays" data-key="pays">
       <span class="row-label">Pays ${pays.name || 'an unnamed payment'}, a payment you send</span>
       <button class="btn-link" type="button" data-action="tx.pay-skip" data-id="${tx.id}">Not this payment</button>
@@ -228,6 +277,8 @@ function classification(ctx, tx) {
   // a paired leg is a movement between the owner's own accounts: it has no purpose to set and nothing to learn
   const moved = !!tx.pairId || tx.kind === 'transfer' || tx.kind === 'payment';
   const canLearn = !!tx.mkey && !decline && !(moved && frozen);
+  // a bank row that carries a reported payment's label: a correction defaults to this move only (3.7)
+  const labelled = typeof tx.reportedAs === 'string' && !!tx.reportedAs;
   const stream = tx.streamId ? ctx.state.streams.find((s) => s.id === tx.streamId) : null;
 
   return html`<fieldset class="tx-class">
@@ -255,12 +306,12 @@ function classification(ctx, tx) {
     ${canLearn ? html`<fieldset class="field">
       <legend class="field-label lab">A correction applies to</legend>
       <div class="seg seg-block" role="radiogroup" aria-label="A correction applies to">
-        <label class="seg-opt"><input type="radio" name="scope" value="all" checked><span>All from this merchant</span></label>
-        <label class="seg-opt"><input type="radio" name="scope" value="one"><span>This move only</span></label>
+        <label class="seg-opt"><input type="radio" name="scope" value="all" ${labelled ? '' : html`checked`}><span>All from this merchant</span></label>
+        <label class="seg-opt"><input type="radio" name="scope" value="one" ${labelled ? html`checked` : ''}><span>This move only</span></label>
       </div>
       <p class="field-help cap">${sameMerchant > 1
-        ? html`All: the <i data-cover-keep>${sameMerchant}</i> moves from ${nameOf(tx)} on record, and every later one, follow. A move corrected on its own keeps its correction.`
-        : html`All: later moves from ${nameOf(tx)} follow. This is the only one on record so far.`}</p>
+        ? html`All: the <i data-cover-keep>${sameMerchant}</i> moves from ${merchantOf(tx)} on record, and every later one, follow. A move corrected on its own keeps its correction.`
+        : html`All: later moves from ${merchantOf(tx)} follow. This is the only one on record so far.`}</p>
     </fieldset>` : ''}
   </fieldset>`;
 }
@@ -508,7 +559,7 @@ function save({ values, data }) {
   }, { undo: corrected ? 'Move corrected' : 'Move updated' });
 
   closeSheet();
-  const what = result.changed > 1 ? result.changed + ' moves from ' + nameOf(tx) + ' corrected.' : corrected ? 'Move corrected.' : 'Move updated.';
+  const what = result.changed > 1 ? result.changed + ' moves from ' + merchantOf(tx) + ' corrected.' : corrected ? 'Move corrected.' : 'Move updated.';
   let split = '';
   if (touched.includes('capital')) {
     split = next.capital
@@ -544,6 +595,20 @@ export const actions = {
       action: 'Undo',
       onAction: () => { if (store.undoLabel === words && store.undo()) toast('The row of ' + fmtDate(tx.day, 'short') + ' pays ' + (pays.name || 'the payment') + ' again.'); },
     });
+  },
+  /** Ask again about a reported payment: its own answer is taken back on every device (3.7); the toast says what it does now. */
+  'tx.income-again': ({ data }) => {
+    const ctx = context();
+    if (!ctx || ctx.demo || store.status.readonly) return;
+    let done = false;
+    const at = nowMs(); // the moment of the action
+    const key = data.source + '/' + data.item;
+    const before = paymentState(store.state, key);
+    const change = (s) => askAgain(s, data.source, data.item, at);
+    store.update((s) => { done = change(s); }, { past: change });
+    if (!done) return;
+    closeSheet();
+    toast(againWords(store.state, key, at, before));
   },
   /** Remove a tapped-in move or a declined purchase (bank rows cannot be removed). */
   'tx.remove': ({ data }) => {
