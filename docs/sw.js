@@ -17,6 +17,8 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
+  // which build is deployed is asked of the network alone (js/update.js): never answered from, or kept in, the cache
+  if (url.pathname.endsWith('/version.json')) return;
   event.respondWith((async () => {
     const cache = await caches.open(CACHE);
     try {

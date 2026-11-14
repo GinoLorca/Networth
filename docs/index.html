@@ -1,14 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- Networth single-file build 2026-11-13 -->
+<!-- Networth single-file build 2026-11-14 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Networth</title>
 <meta name="description" content="Networth: a private net-worth board. It reads your bank feed itself; your data stays on your device.">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-jbK/km3VY6PjXEOyTDwHwQkl1v4TmsGiLrgDJI+IX4w='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-rrcgv2y0KMkdT76+jAxvRcNQTlj6UpNB9oKKC0whQNA=' 'sha256-e/tbGNncdNoZz13l4nvoF3bB1VC0tPaMfOMw7T5fyIM=' 'sha256-qKXjVIMLim/aWMsgDb5V+LpBiQ7fH4X4CHRe0ZHIHxs=' 'sha256-fW8Rb031pEL3z6SKg0UIoHj0lq9v89/SdbWzftltFMc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-jIy2OdEjB9B16sWGikup16E01UhrwE3PFzd2VnlKV3k=' 'sha256-VzoPHmMbD+TfmkRekvrhksYUuT8rj+c4jA1P/9P6/qI=' 'sha256-/xAinrTNYppFAIdG41S3TqyTgXliWkmyzNG9HOP4uBU=' 'sha256-Yq5LqpSuZYrQBiwZV3GIUKl7VztQyUyyTLeHF8RzYfM=' 'sha256-3slL6XKCxBUrVwsIn+pfLSFvsWrg1SlNV1OOfV1jrRE=' 'sha256-1UjHLsDVs0RKTBy5R/d8fnZMgp9m+SJwneuFwTG/A0A=' 'sha256-niQW6BHsFCuf+mNMjOPiKJl0QACazn3cmhTykWBmDew='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src https://beta-bridge.simplefin.org https://bridge.simplefin.org https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="networth-build" content="828a23fabec0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-+HJBz+d0AOil7pcXqnYnr0HRhm0rCMpiNgeCV5eeaio='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-rrcgv2y0KMkdT76+jAxvRcNQTlj6UpNB9oKKC0whQNA=' 'sha256-e/tbGNncdNoZz13l4nvoF3bB1VC0tPaMfOMw7T5fyIM=' 'sha256-7SpmrBa4MtNjtfgl0u0TAWs7M0YSAaOyjWIfTMzxNis=' 'sha256-bjsMTiPXO/fV7QJlhFnicz5k0INxLBT0hibL6mxaByc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-jIy2OdEjB9B16sWGikup16E01UhrwE3PFzd2VnlKV3k=' 'sha256-VzoPHmMbD+TfmkRekvrhksYUuT8rj+c4jA1P/9P6/qI=' 'sha256-/xAinrTNYppFAIdG41S3TqyTgXliWkmyzNG9HOP4uBU=' 'sha256-Yq5LqpSuZYrQBiwZV3GIUKl7VztQyUyyTLeHF8RzYfM=' 'sha256-3slL6XKCxBUrVwsIn+pfLSFvsWrg1SlNV1OOfV1jrRE=' 'sha256-1UjHLsDVs0RKTBy5R/d8fnZMgp9m+SJwneuFwTG/A0A=' 'sha256-niQW6BHsFCuf+mNMjOPiKJl0QACazn3cmhTykWBmDew='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://beta-bridge.simplefin.org https://bridge.simplefin.org https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#F3EDE1" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#15130F" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1161,6 +1162,7 @@ a.row:hover .row-label, button.row:hover .row-label { text-decoration: underline
 .notice > .notice-mark { align-self: baseline; }
 .btn-link { align-items: baseline; }
 .btn-link > .ic { align-self: center; }
+@media (max-width: 719px) { .mast-ear-tools .btn-link { min-height: var(--tap, 44px); margin-block: calc((var(--tap, 44px) - 28px) / -2); } }
 
 </style>
 <style data-src="css/ui.css">
@@ -1597,6 +1599,24 @@ dialog > .toast-region[data-at="top"] { top: calc(env(safe-area-inset-top) + var
   .toast { animation: none; }
   .toast.is-leaving { transition: none; }
 }
+html.pull-ready, html.pull-ready body { overscroll-behavior-y: none; }
+.pull {
+  position: fixed; left: 0; right: 0; top: 0; z-index: 30; pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; gap: 7px;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 6px);
+  transform: translateY(calc(var(--pull-y, 0px) - 6px));
+  opacity: 0; visibility: hidden;
+  transition: transform .34s var(--ease), opacity .2s linear, visibility 0s linear .34s;
+}
+.pull:not([data-state="idle"]) { opacity: 1; visibility: visible; transition: opacity .12s linear; }
+.pull[data-state="pulling"] { transition: none; }
+.pull-line { display: block; width: 120px; height: 1px; background-color: var(--ink); transform: scaleX(var(--pull-p, 0)); transform-origin: center; }
+.pull[data-state="refreshing"] .pull-line { animation: pull-breathe 1.4s ease-in-out infinite; }
+.pull-label { padding: 2px 8px; background-color: var(--paper); color: var(--ink-2); white-space: nowrap; }
+.pull:is([data-state="refreshing"], [data-state="done"]) .pull-label { color: var(--ink); }
+@keyframes pull-breathe { 50% { transform: scaleX(.35); } }
+.pull[data-still], .pull[data-still] .pull-line { transition: none; animation: none; transform: none; }
+@media (prefers-reduced-motion: reduce) { .pull, .pull .pull-line { transition: none; animation: none; } }
 
 </style>
 <style data-src="css/charts.css">
@@ -15151,6 +15171,273 @@ function isSheetOpen() {
 return { mountSheet, showSheet, hideSheet, isSheetOpen };
 })();
 
+// ---- js/ui/pull.js
+__mods["js/ui/pull.js"] = (function () {
+const TRIGGER_PX = 72;
+const DECIDE_PX = 10;
+const MAX_SHOW_PX = 64;
+const RESULT_MS = 1800;
+
+let el = null;
+let label = null;
+let line = null;
+
+function reducedMotion() {
+  return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function atTop() {
+  const se = document.scrollingElement || document.documentElement;
+  return (se.scrollTop || 0) <= 0 && (window.scrollY || 0) <= 0;
+}
+
+function excluded(target) {
+  if (!(target instanceof Element)) return true;
+  if (target.closest('dialog, [role="dialog"], input, textarea, select, [contenteditable], nw-chart, nw-split, [data-no-pull], .toast-region')) return true;
+  for (let n = target; n && n !== document.body; n = n.parentElement) {
+    if (n.scrollWidth > n.clientWidth + 1) {
+      const ox = getComputedStyle(n).overflowX;
+      if (ox === 'auto' || ox === 'scroll') return true;
+    }
+  }
+  return false;
+}
+
+function mount() {
+  if (el) return;
+  el = document.createElement('div');
+  el.className = 'pull';
+  el.setAttribute('aria-hidden', 'true');
+  el.innerHTML = '<i class="pull-line"></i><span class="pull-label lab"></span>';
+  line = el.querySelector('.pull-line');
+  label = el.querySelector('.pull-label');
+  document.body.appendChild(el);
+}
+
+function shown(dy) {
+  return MAX_SHOW_PX * (1 - Math.exp(-Math.max(0, dy) / 90));
+}
+
+function draw(state, dy, text) {
+  mount();
+  el.setAttribute('data-state', state);
+  const still = reducedMotion();
+  el.toggleAttribute('data-still', still);
+  const progress = Math.min(1, Math.max(0, dy) / TRIGGER_PX);
+  el.style.setProperty('--pull-y', (still ? 0 : shown(dy)).toFixed(1) + 'px');
+  el.style.setProperty('--pull-p', String(state === 'idle' ? 0 : state === 'pulling' ? progress : 1));
+  label.textContent = text;
+}
+
+function installPull(opts) {
+  // the installed app's own rubber-band bounce is turned off, so only the indicator moves under the finger (the
+  // first 10px of a touch are not ours to prevent yet); ordinary scrolling is unchanged
+  document.documentElement.classList.add('pull-ready');
+  let start = null; // { x, y, id }
+  let mode = 'none'; // none | undecided | pulling | refreshing
+  let dy = 0;
+
+  const reset = () => {
+    start = null;
+    if (mode !== 'refreshing') { mode = 'none'; dy = 0; draw('idle', 0, ''); }
+  };
+
+  document.addEventListener('touchstart', (ev) => {
+    if (mode === 'refreshing') return;
+    // a second finger landing mid-pull ends the pull: the indicator goes back, nothing refreshes
+    if (mode === 'pulling') draw('idle', 0, '');
+    start = null;
+    mode = 'none';
+    dy = 0;
+    if (ev.touches.length !== 1 || !opts.enabled() || !atTop() || excluded(ev.target)) return;
+    const t = ev.touches[0];
+    start = { x: t.clientX, y: t.clientY, id: t.identifier };
+    mode = 'undecided';
+    dy = 0;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (ev) => {
+    if (!start || (mode !== 'undecided' && mode !== 'pulling')) return;
+    if (ev.touches.length !== 1) { reset(); return; }
+    const t = ev.touches[0];
+    const dx = t.clientX - start.x;
+    const y = t.clientY - start.y;
+    if (mode === 'undecided') {
+      if (Math.abs(dx) < DECIDE_PX && Math.abs(y) < DECIDE_PX) return;
+      if (y <= 0 || Math.abs(dx) >= Math.abs(y) || !atTop()) { start = null; mode = 'none'; return; }
+      mode = 'pulling';
+    }
+    dy = Math.max(0, y);
+    if (ev.cancelable) ev.preventDefault(); // the pull is ours: no bounce, no scroll under it
+    draw('pulling', dy, dy >= TRIGGER_PX ? 'Release to refresh' : 'Pull to refresh');
+  }, { passive: false });
+
+  const end = async (ev) => {
+    if (mode !== 'pulling') { if (mode === 'undecided') { start = null; mode = 'none'; } return; }
+    const go = ev.type === 'touchend' && dy >= TRIGGER_PX;
+    start = null;
+    if (!go) { mode = 'none'; draw('idle', 0, ''); return; }
+    mode = 'refreshing';
+    draw('refreshing', TRIGGER_PX, 'Refreshing…');
+    let result = '';
+    try { result = await opts.onRefresh(); } catch { result = ''; }
+    if (result) {
+      draw('done', TRIGGER_PX, result);
+      await new Promise((r) => { setTimeout(r, RESULT_MS); });
+    }
+    mode = 'none';
+    dy = 0;
+    draw('idle', 0, label ? label.textContent : '');
+  };
+  document.addEventListener('touchend', end, { passive: true });
+  document.addEventListener('touchcancel', end, { passive: true });
+}
+return { TRIGGER_PX, installPull };
+})();
+
+// ---- js/update.js
+__mods["js/update.js"] = (function () {
+const VISIBLE_GAP_MS = 5 * 60 * 1000;
+const CHECK_EVERY_MS = 30 * 60 * 1000;
+const LOOP_GUARD_MS = 30 * 60 * 1000;
+const ATTEMPT_KEY = 'networth.reload-attempt';
+const AFTER_KEY = 'networth.refresh-after-reload';
+
+function compareBuild(running, deployed) {
+  if (!running || !deployed) return 'unknown';
+  return running === deployed ? 'same' : 'newer';
+}
+
+function parseVersion(text) {
+  try {
+    const v = JSON.parse(text);
+    return v && typeof v.build === 'string' && /^[0-9a-f]{6,64}$/.test(v.build) ? v.build : '';
+  } catch {
+    return '';
+  }
+}
+
+function mayReload(last, deployed, now) {
+  if (!deployed) return false;
+  if (!last || last.build !== deployed || !Number.isFinite(last.at)) return true;
+  return now - last.at >= LOOP_GUARD_MS || now < last.at;
+}
+
+/* ------------------------------------------------------------- browser */
+
+const live = { pending: '', lastCheck: 0, timer: null, checking: null, isIdle: () => false, save: async () => {}, poke: () => {} };
+
+function session(get, key, value) {
+  try {
+    if (typeof sessionStorage === 'undefined') return null;
+    if (get) return sessionStorage.getItem(key);
+    if (value == null) sessionStorage.removeItem(key);
+    else sessionStorage.setItem(key, value);
+  } catch { /* a private window may refuse; the guard is then only this page's memory */ }
+  return null;
+}
+
+let memoryAttempt = null;
+function lastAttempt() {
+  const raw = session(true, ATTEMPT_KEY);
+  if (raw) {
+    try { const v = JSON.parse(raw); if (v && typeof v.build === 'string') return v; } catch { /* ignored */ }
+  }
+  return memoryAttempt;
+}
+
+function runningBuild() {
+  if (typeof document === 'undefined') return '';
+  const meta = document.querySelector('meta[name="networth-build"]');
+  return meta ? String(meta.getAttribute('content') || '') : '';
+}
+
+async function deployedBuild() {
+  if (typeof fetch !== 'function') return '';
+  try {
+    const url = new URL('version.json', location.href);
+    url.search = '?t=' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    const res = await fetch(url.href, { cache: 'no-store', credentials: 'omit' });
+    if (!res.ok) return '';
+    return parseVersion(await res.text());
+  } catch {
+    return '';
+  }
+}
+
+function checkVersion() {
+  if (live.checking) return live.checking;
+  const running = runningBuild();
+  if (!running) return Promise.resolve({ status: 'unknown', build: '' });
+  live.lastCheck = Date.now();
+  const run = deployedBuild().then((build) => {
+    const status = compareBuild(running, build);
+    live.pending = status === 'newer' ? build : '';
+    live.poke();
+    return { status, build };
+  }).finally(() => { live.checking = null; });
+  live.checking = run;
+  return run;
+}
+
+async function reloadTo(build, opts = {}) {
+  if (!mayReload(lastAttempt(), build, Date.now())) return false;
+  const attempt = { build, at: Date.now() };
+  memoryAttempt = attempt;
+  session(false, ATTEMPT_KEY, JSON.stringify(attempt));
+  if (opts.afterwards) session(false, AFTER_KEY, '1');
+  try { await live.save(); } catch { /* the mirror copy was written first; a reload never waits on a failed save */ }
+  location.reload();
+  return true;
+}
+
+function pendingBuild() {
+  return live.pending;
+}
+
+function takeRefreshFlag() {
+  const was = session(true, AFTER_KEY) === '1';
+  if (was) session(false, AFTER_KEY, null);
+  return was;
+}
+
+function reachedAttempt() {
+  const last = lastAttempt();
+  return !!last && !!runningBuild() && last.build === runningBuild();
+}
+
+async function reloadNow() {
+  const build = live.pending;
+  memoryAttempt = null;
+  session(false, ATTEMPT_KEY, null);
+  if (build) await reloadTo(build);
+  else location.reload();
+}
+
+async function checkAndApply() {
+  const { status, build } = await checkVersion();
+  if (status === 'newer' && live.isIdle()) await reloadTo(build);
+}
+
+function visibleCheck() {
+  if (document.visibilityState !== 'visible') return;
+  if (Date.now() - live.lastCheck < VISIBLE_GAP_MS) return;
+  checkAndApply().catch(() => {});
+}
+
+function initUpdate(hooks) {
+  live.isIdle = hooks.isIdle;
+  live.save = hooks.save;
+  live.poke = hooks.poke;
+  if (!runningBuild() || live.timer) return;
+  document.addEventListener('visibilitychange', visibleCheck);
+  live.timer = setInterval(() => { if (document.visibilityState === 'visible') checkAndApply().catch(() => {}); }, CHECK_EVERY_MS);
+  // a page that came from the cache (offline at its load, or a CDN copy) is checked at once
+  visibleCheck();
+}
+return { VISIBLE_GAP_MS, CHECK_EVERY_MS, LOOP_GUARD_MS, compareBuild, parseVersion, mayReload, runningBuild, checkVersion, reloadTo, pendingBuild, takeRefreshFlag, reachedAttempt, reloadNow, initUpdate };
+})();
+
 // ---- js/ui/toast.js
 __mods["js/ui/toast.js"] = (function () {
 const { prefersReducedMotion } = __mods["js/ui/dom.js"];
@@ -25621,13 +25908,16 @@ const { startRouter, onRoute, currentRoute, navigate, openSheet, closeSheet } = 
 const { setContext, setServices } = __mods["js/runtime.js"];
 const { makeDerived } = __mods["js/derive.js"];
 const { initSync, syncInfo, autoSync, syncNow } = __mods["js/sync.js"];
-const { initShare, shareInfo, autoShare } = __mods["js/share.js"];
+const { initShare, shareInfo, autoShare, shareNow } = __mods["js/share.js"];
 const { autoInbox, inboxInfo } = __mods["js/inbox.js"];
 const { restampByHand } = __mods["js/model/byhand.js"];
 const { buildDemoState, demoFeed } = __mods["js/model/demo.js"];
 const { mergeFeed } = __mods["js/model/merge.js"];
 const { refresh } = __mods["js/model/detect.js"];
-const { mountSheet, showSheet, hideSheet } = __mods["js/ui/sheet.js"];
+const { mountSheet, showSheet, hideSheet, isSheetOpen } = __mods["js/ui/sheet.js"];
+const { installPull } = __mods["js/ui/pull.js"];
+const { initUpdate, checkVersion, reloadTo, reloadNow, pendingBuild, takeRefreshFlag, reachedAttempt } = __mods["js/update.js"];
+const { QUOTA } = __mods["js/model/feed.js"];
 const { toast } = __mods["js/ui/toast.js"];
 const { render: boardView, actions: boardActions } = __mods["js/views/board.js"];
 const { render: scoresheetView, actions: scoresheetActions } = __mods["js/views/scoresheet.js"];
@@ -25733,6 +26023,33 @@ async function boot() {
   autoShare();
   autoInbox();
   registerWorker();
+  initUpdate({ isIdle, save: async () => { store.mirror(); await store.flush(); }, poke: schedule });
+  // in a browser tab no touch listener is added at all: the page scrolls and bounces exactly as before
+  if (standalone()) installPull({ enabled: () => !isSheetOpen() && !currentRoute().sheet, onRefresh: async () => (await refreshAndSay()).short });
+  document.addEventListener('keydown', onRefreshKey);
+  // a refresh that reloaded the page for a newer version goes on here with the bank and the other devices
+  if (takeRefreshFlag()) refreshAndSay({ afterReload: true });
+}
+
+function standalone() {
+  if (new URLSearchParams(location.search).get('standalone') === '1') return true;
+  if (typeof navigator !== 'undefined' && navigator.standalone === true) return true;
+  return typeof matchMedia === 'function' && matchMedia('(display-mode: standalone)').matches;
+}
+
+function onRefreshKey(ev) {
+  if (ev.shiftKey || ev.altKey || !(ev.metaKey || ev.ctrlKey) || String(ev.key).toLowerCase() !== 'r' || !standalone()) return;
+  ev.preventDefault();
+  refreshAndSay();
+}
+
+function isIdle() {
+  // the sample game is never saved: a reload would end it, so a newer version waits behind the Reload line
+  if (store.status.readonly) return false;
+  if (refreshing || isSheetOpen() || currentRoute().sheet) return false;
+  const a = document.activeElement;
+  if (a && a !== document.body && a.matches('input, textarea, select, [contenteditable], [contenteditable] *')) return false;
+  return !syncInfo().busy && !shareInfo().busy && !inboxInfo().busy;
 }
 
 function applyTheme(choice) {
@@ -25802,17 +26119,8 @@ function leaveDemo() {
 const appActions = {
   'app.move': () => openSheet('move'),
   'app.cover': () => store.update((s) => { s.settings.cover = !s.settings.cover; }),
-  'app.refresh': async () => {
-    const res = await syncNow({ manual: true });
-    const info = syncInfo();
-    const at = fmtTime(nowMs());
-    if (res.skipped) {
-      toast(res.code === 'quota' && info.waitMs > 0
-        ? 'The day\u2019s checks are used; the next opens at ' + fmtTime(nowMs() + info.waitMs) + '.'
-        : 'Checked at ' + fmtTime(Number.isFinite(info.lastOk) ? info.lastOk : nowMs()) + '. The bank feed refreshes about once a day.');
-    } else if (!res.ok) toast(res.message || 'The bank feed could not be read at ' + at + '.');
-    else toast(res.added ? res.added + (res.added === 1 ? ' new move from the bank, read at ' : ' new moves from the bank, read at ') + at + '.' : 'Nothing new from the bank at ' + at + '.');
-  },
+  'app.refresh': () => { refreshAndSay(); },
+  'app.reload': () => { reloadNow(); },
   'app.demo': () => { enterDemo(); navigate('#/board'); },
   'app.leave-demo': () => { leaveDemo(); navigate('#/connect', { replace: true }); },
   'app.undo': () => { const label = store.undo(); if (label) toast('Undone: ' + String(label).replace(/[.]+$/, '') + '.'); },
@@ -25825,6 +26133,68 @@ const appActions = {
   'app.sheet-close': () => closeSheet(),
   'app.go': ({ data }) => { if (data.to) navigate(data.to); },
 };
+
+/* --------------------------------------------------------------- refresh */
+
+let refreshing = null;
+
+function refreshAndSay(opts = {}) {
+  if (!refreshing) {
+    refreshing = runRefresh(opts).finally(() => { refreshing = null; });
+    refreshing.then((r) => { if (r && r.line) toast(r.line); }, () => {});
+  }
+  return refreshing;
+}
+
+async function runRefresh({ afterReload = false } = {}) {
+  // after the reload the page says it is updated only when the reload brought the new build; if it brought the
+  // old page back, the version is not asked again (the loop guard) and the "Reload" line stays offered
+  let version = afterReload && reachedAttempt() ? 'updated' : 'unknown';
+  if (!afterReload) {
+    const v = await checkVersion();
+    version = v.status;
+    // the page is going away; the refresh goes on after the reload
+    if (v.status === 'newer' && !store.status.readonly && await reloadTo(v.build, { afterwards: true })) return new Promise(() => {});
+  }
+  const lead = version === 'updated' ? 'Networth is updated to its newest version.' : '';
+  const say = (line, short) => ({ line: (lead ? lead + (line ? ' ' + line : '') : line), short });
+  const at = fmtTime(nowMs());
+  if (store.status.readonly) {
+    if (lead) return say('', 'Updated \u00b7 ' + at);
+    return say(version === 'same' ? 'Sample game: Networth is the newest version, checked at ' + at + '.' : 'Sample game: checked at ' + at + '.', 'Sample game \u00b7 ' + at);
+  }
+  let bank;
+  if (!syncInfo().linked) bank = say('Checked at ' + at + '; no bank is linked on this device.', 'Checked \u00b7 ' + at);
+  else bank = await readBank();
+  const sh = shareInfo();
+  if (sh.available && sh.on) {
+    autoInbox();
+    await Promise.race([shareNow().catch(() => {}), new Promise((r) => { setTimeout(r, 8000); })]);
+  }
+  return bank;
+
+  async function readBank() {
+    const res = await syncNow({ manual: true });
+    const info = syncInfo();
+    const now = nowMs();
+    const t = fmtTime(now);
+    if (res.skipped) {
+      if (res.code === 'quota' && info.waitMs > 0) {
+        return say('The day\u2019s ' + QUOTA.perDay + ' readings are used; the next opens at ' + fmtTime(now + info.waitMs) + '.', 'Next reading ' + fmtTime(now + info.waitMs));
+      }
+      if (res.code === 'cooldown' && info.waitMs > 0) {
+        const reqs = (store.state.sync.requests || []).filter(Number.isFinite);
+        const last = reqs.length ? Math.max(...reqs) : info.lastOk;
+        const lastAt = Number.isFinite(last) ? last : now;
+        return say('Up to date. The bank was read at ' + fmtTime(lastAt) + '; the next reading opens at ' + fmtTime(now + info.waitMs) + '.', 'Up to date \u00b7 ' + fmtTime(lastAt));
+      }
+      return say('Checked at ' + t + '.', 'Checked \u00b7 ' + t);
+    }
+    if (!res.ok) return say(res.message ? String(res.message).replace(/\.?$/, '') + ' (' + t + ').' : 'The bank could not be read at ' + t + '.', 'Not read \u00b7 ' + t);
+    const n = res.added || 0;
+    return say('Read the bank at ' + t + ': ' + (n ? n + (n === 1 ? ' new transaction.' : ' new transactions.') : 'nothing new.'), (n ? n + ' new' : 'Up to date') + ' \u00b7 ' + t);
+  }
+}
 
 /* ---------------------------------------------------------------- render */
 
@@ -25868,7 +26238,7 @@ function render() {
     else el.removeAttribute('data-cover');
   }
 
-  morph(els.banner, framed ? banner(ctx) : unsavedBanner());
+  morph(els.banner, html`${updateLine()}${framed ? banner(ctx) : unsavedBanner()}`);
   morph(els.mast, framed ? masthead(ctx, viewId) : '');
   const redrawn = viewChanged(ctx, viewId);
   if (redrawn) morph(els.view, guarded(() => view.render(ctx), view.title));
@@ -25991,6 +26361,14 @@ function unsavedBanner() {
   </div>`;
 }
 
+function updateLine() {
+  if (!pendingBuild()) return '';
+  return html`<div class="shell-banner" role="status">
+    <span class="lab"><b>A newer version of Networth</b><i class="sep"></i>ready to load</span>
+    <button class="btn-link" type="button" data-action="app.reload">Reload</button>
+  </div>`;
+}
+
 function banner(ctx) {
   if (!ctx.demo) return unsavedBanner();
   return html`<div class="shell-banner" role="note">
@@ -26003,6 +26381,7 @@ function masthead(ctx, viewId) {
   const rounds = roundLine(ctx);
   const covered = ctx.state.settings.cover;
   const coverButton = html`<button class="btn-link" type="button" data-action="app.cover" aria-pressed="${covered ? 'true' : 'false'}">${covered ? 'Uncover' : 'Cover'}</button>`;
+  const refreshButton = html`<button class="btn-link" type="button" data-action="app.refresh" title="Load a newer version, read the bank and share">Refresh</button>`;
   return html`<header class="mast">
     <div class="mast-top">
       <p class="mast-ear mast-ear-l">
@@ -26018,7 +26397,7 @@ function masthead(ctx, viewId) {
       <div class="mast-ear mast-ear-r">
         ${syncMark(ctx)}
         <span class="cap only-wide">Italic figures marked ≈ are computed.</span>
-        <span class="mast-ear-tools only-narrow">${coverButton}<a class="btn-link" href="#/settings" ${viewId === 'settings' ? html`aria-current="page"` : ''}>Settings</a></span>
+        <span class="mast-ear-tools only-narrow">${refreshButton}${coverButton}<a class="btn-link" href="#/settings" ${viewId === 'settings' ? html`aria-current="page"` : ''}>Settings</a></span>
       </div>
     </div>
     <div class="mast-nav">
@@ -26027,6 +26406,7 @@ function masthead(ctx, viewId) {
         <a href="#/settings" ${viewId === 'settings' ? html`aria-current="page"` : ''}>Settings</a>
       </nav>
       <div class="mast-tools">
+        ${refreshButton}
         ${coverButton}
         <button class="btn btn-solid btn-s" type="button" data-action="app.move"><span class="plus">+</span> Move</button>
       </div>

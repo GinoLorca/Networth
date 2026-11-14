@@ -121,6 +121,15 @@ async function inlineAssets(htmlText, sheets) {
   return htmlOut;
 }
 
+const BUILD_META_RE = /<meta name="networth-build" content="">/;
+
+/** 12 hex characters of a SHA-256 over the page and the static files, in a fixed order. */
+async function buildId(page) {
+  const h = createHash('sha256').update(page, 'utf8');
+  for (const name of STATIC) h.update('\0' + name + '\0').update(await readFile(join(root, name)));
+  return h.digest('hex').slice(0, 12);
+}
+
 function sha256(text) {
   return "'sha256-" + createHash('sha256').update(text, 'utf8').digest('base64') + "'";
 }
@@ -158,14 +167,21 @@ async function main() {
   if (!/style-src-elem 'self'/.test(page)) throw new Error("index.html: expected style-src-elem 'self' in the Content-Security-Policy");
   if (!inlineSheets.length) throw new Error('index.html: no local stylesheet was inlined');
   page = page.replace("style-src-elem 'self'", 'style-src-elem ' + inlineSheets.map(sha256).join(' '));
+  // The build id: a hash of what is served (the page before its date stamp, and the files beside it), so the
+  // same source always gives the same id and a change anywhere gives a new one. The page carries it in
+  // <meta name="networth-build"> and version.json beside it says which build is deployed (js/update.js).
+  if (!BUILD_META_RE.test(page)) throw new Error('index.html: expected <meta name="networth-build" content="">');
+  const id = await buildId(page);
+  page = page.replace(BUILD_META_RE, () => '<meta name="networth-build" content="' + id + '">');
   const stamp = new Date().toISOString().slice(0, 10);
   page = page.replace('<!--build-stamp-->', '<!-- Networth single-file build ' + stamp + ' -->');
   await mkdir(outDir, { recursive: true });
   await writeFile(outFile, page);
   for (const name of STATIC) await copyFile(join(root, name), join(outDir, name));
+  await writeFile(join(outDir, 'version.json'), JSON.stringify({ build: id }) + '\n');
   await writeFile(join(outDir, '.nojekyll'), '');
   const kb = (Buffer.byteLength(page) / 1024).toFixed(0);
-  console.log('built ' + posix.normalize(relative(root, outFile)) + '  (' + modules.size + ' modules, ' + kb + ' KB)');
+  console.log('built ' + posix.normalize(relative(root, outFile)) + '  (' + modules.size + ' modules, ' + kb + ' KB, build ' + id + ')');
 }
 
 main().catch((err) => { console.error('BUILD FAILED: ' + err.message); process.exit(1); });

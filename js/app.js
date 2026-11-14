@@ -9,6 +9,7 @@
  *   ?theme=paper|night      force a theme for this visit
  *   ?ns=name                use a separate saved document (tests)
  *   ?share=owner            on a development host: share through that GitHub account's networth-data (off without it)
+ *   ?standalone=1           behave as the installed app (pull to refresh, Command-R) in a browser tab (tests)
  */
 
 import { html, morph, bindActions, registerActions } from './ui/dom.js';
@@ -20,13 +21,16 @@ import { startRouter, onRoute, currentRoute, navigate, openSheet, closeSheet } f
 import { setContext, setServices } from './runtime.js';
 import { makeDerived } from './derive.js';
 import { initSync, syncInfo, autoSync, syncNow } from './sync.js';
-import { initShare, shareInfo, autoShare } from './share.js';
+import { initShare, shareInfo, autoShare, shareNow } from './share.js';
 import { autoInbox, inboxInfo } from './inbox.js';
 import { restampByHand } from './model/byhand.js';
 import { buildDemoState, demoFeed } from './model/demo.js';
 import { mergeFeed } from './model/merge.js';
 import { refresh } from './model/detect.js';
-import { mountSheet, showSheet, hideSheet } from './ui/sheet.js';
+import { mountSheet, showSheet, hideSheet, isSheetOpen } from './ui/sheet.js';
+import { installPull } from './ui/pull.js';
+import { initUpdate, checkVersion, reloadTo, reloadNow, pendingBuild, takeRefreshFlag, reachedAttempt } from './update.js';
+import { QUOTA } from './model/feed.js';
 import { toast } from './ui/toast.js';
 import './ui/ticker.js';
 import './ui/split.js';
@@ -138,6 +142,36 @@ async function boot() {
   autoShare();
   autoInbox();
   registerWorker();
+  initUpdate({ isIdle, save: async () => { store.mirror(); await store.flush(); }, poke: schedule });
+  // in a browser tab no touch listener is added at all: the page scrolls and bounces exactly as before
+  if (standalone()) installPull({ enabled: () => !isSheetOpen() && !currentRoute().sheet, onRefresh: async () => (await refreshAndSay()).short });
+  document.addEventListener('keydown', onRefreshKey);
+  // a refresh that reloaded the page for a newer version goes on here with the bank and the other devices
+  if (takeRefreshFlag()) refreshAndSay({ afterReload: true });
+}
+
+/** The installed app (Home Screen, Dock): no address bar, no reload button, no browser pull-to-refresh. */
+function standalone() {
+  if (new URLSearchParams(location.search).get('standalone') === '1') return true;
+  if (typeof navigator !== 'undefined' && navigator.standalone === true) return true;
+  return typeof matchMedia === 'function' && matchMedia('(display-mode: standalone)').matches;
+}
+
+/** Command-R / Ctrl-R in the installed app runs the app's refresh; in a browser tab the browser's reload is left alone. */
+function onRefreshKey(ev) {
+  if (ev.shiftKey || ev.altKey || !(ev.metaKey || ev.ctrlKey) || String(ev.key).toLowerCase() !== 'r' || !standalone()) return;
+  ev.preventDefault();
+  refreshAndSay();
+}
+
+/** Nothing the owner is doing would be lost or interrupted by a reload. */
+function isIdle() {
+  // the sample game is never saved: a reload would end it, so a newer version waits behind the Reload line
+  if (store.status.readonly) return false;
+  if (refreshing || isSheetOpen() || currentRoute().sheet) return false;
+  const a = document.activeElement;
+  if (a && a !== document.body && a.matches('input, textarea, select, [contenteditable], [contenteditable] *')) return false;
+  return !syncInfo().busy && !shareInfo().busy && !inboxInfo().busy;
 }
 
 /** Make the page and the next load's bootstrap agree with the theme saved in the record. */
@@ -210,17 +244,8 @@ function leaveDemo() {
 const appActions = {
   'app.move': () => openSheet('move'),
   'app.cover': () => store.update((s) => { s.settings.cover = !s.settings.cover; }),
-  'app.refresh': async () => {
-    const res = await syncNow({ manual: true });
-    const info = syncInfo();
-    const at = fmtTime(nowMs());
-    if (res.skipped) {
-      toast(res.code === 'quota' && info.waitMs > 0
-        ? 'The day\u2019s checks are used; the next opens at ' + fmtTime(nowMs() + info.waitMs) + '.'
-        : 'Checked at ' + fmtTime(Number.isFinite(info.lastOk) ? info.lastOk : nowMs()) + '. The bank feed refreshes about once a day.');
-    } else if (!res.ok) toast(res.message || 'The bank feed could not be read at ' + at + '.');
-    else toast(res.added ? res.added + (res.added === 1 ? ' new move from the bank, read at ' : ' new moves from the bank, read at ') + at + '.' : 'Nothing new from the bank at ' + at + '.');
-  },
+  'app.refresh': () => { refreshAndSay(); },
+  'app.reload': () => { reloadNow(); },
   'app.demo': () => { enterDemo(); navigate('#/board'); },
   'app.leave-demo': () => { leaveDemo(); navigate('#/connect', { replace: true }); },
   'app.undo': () => { const label = store.undo(); if (label) toast('Undone: ' + String(label).replace(/[.]+$/, '') + '.'); },
@@ -233,6 +258,75 @@ const appActions = {
   'app.sheet-close': () => closeSheet(),
   'app.go': ({ data }) => { if (data.to) navigate(data.to); },
 };
+
+/* --------------------------------------------------------------- refresh */
+
+let refreshing = null;
+
+/**
+ * The refresh, one function for every control (the top bar, Settings, the sync mark, the pull, Command-R):
+ * (a) a newer version is loaded first (the page reloads and comes back here with `updated`); (b) the bank is
+ * read through the manual path, within its 15-minute minimum and the day's budget; (c) a sharing round and
+ * an inbox reading, when sharing is on. Then one toast. Two controls at once share one run.
+ * @returns {Promise<{ line: string, short: string }>}
+ */
+function refreshAndSay(opts = {}) {
+  if (!refreshing) {
+    refreshing = runRefresh(opts).finally(() => { refreshing = null; });
+    refreshing.then((r) => { if (r && r.line) toast(r.line); }, () => {});
+  }
+  return refreshing;
+}
+
+async function runRefresh({ afterReload = false } = {}) {
+  // after the reload the page says it is updated only when the reload brought the new build; if it brought the
+  // old page back, the version is not asked again (the loop guard) and the "Reload" line stays offered
+  let version = afterReload && reachedAttempt() ? 'updated' : 'unknown';
+  if (!afterReload) {
+    const v = await checkVersion();
+    version = v.status;
+    // the page is going away; the refresh goes on after the reload
+    if (v.status === 'newer' && !store.status.readonly && await reloadTo(v.build, { afterwards: true })) return new Promise(() => {});
+  }
+  const lead = version === 'updated' ? 'Networth is updated to its newest version.' : '';
+  const say = (line, short) => ({ line: (lead ? lead + (line ? ' ' + line : '') : line), short });
+  const at = fmtTime(nowMs());
+  if (store.status.readonly) {
+    if (lead) return say('', 'Updated \u00b7 ' + at);
+    return say(version === 'same' ? 'Sample game: Networth is the newest version, checked at ' + at + '.' : 'Sample game: checked at ' + at + '.', 'Sample game \u00b7 ' + at);
+  }
+  let bank;
+  if (!syncInfo().linked) bank = say('Checked at ' + at + '; no bank is linked on this device.', 'Checked \u00b7 ' + at);
+  else bank = await readBank();
+  const sh = shareInfo();
+  if (sh.available && sh.on) {
+    autoInbox();
+    await Promise.race([shareNow().catch(() => {}), new Promise((r) => { setTimeout(r, 8000); })]);
+  }
+  return bank;
+
+  async function readBank() {
+    const res = await syncNow({ manual: true });
+    const info = syncInfo();
+    const now = nowMs();
+    const t = fmtTime(now);
+    if (res.skipped) {
+      if (res.code === 'quota' && info.waitMs > 0) {
+        return say('The day\u2019s ' + QUOTA.perDay + ' readings are used; the next opens at ' + fmtTime(now + info.waitMs) + '.', 'Next reading ' + fmtTime(now + info.waitMs));
+      }
+      if (res.code === 'cooldown' && info.waitMs > 0) {
+        const reqs = (store.state.sync.requests || []).filter(Number.isFinite);
+        const last = reqs.length ? Math.max(...reqs) : info.lastOk;
+        const lastAt = Number.isFinite(last) ? last : now;
+        return say('Up to date. The bank was read at ' + fmtTime(lastAt) + '; the next reading opens at ' + fmtTime(now + info.waitMs) + '.', 'Up to date \u00b7 ' + fmtTime(lastAt));
+      }
+      return say('Checked at ' + t + '.', 'Checked \u00b7 ' + t);
+    }
+    if (!res.ok) return say(res.message ? String(res.message).replace(/\.?$/, '') + ' (' + t + ').' : 'The bank could not be read at ' + t + '.', 'Not read \u00b7 ' + t);
+    const n = res.added || 0;
+    return say('Read the bank at ' + t + ': ' + (n ? n + (n === 1 ? ' new transaction.' : ' new transactions.') : 'nothing new.'), (n ? n + ' new' : 'Up to date') + ' \u00b7 ' + t);
+  }
+}
 
 /* ---------------------------------------------------------------- render */
 
@@ -276,7 +370,7 @@ function render() {
     else el.removeAttribute('data-cover');
   }
 
-  morph(els.banner, framed ? banner(ctx) : unsavedBanner());
+  morph(els.banner, html`${updateLine()}${framed ? banner(ctx) : unsavedBanner()}`);
   morph(els.mast, framed ? masthead(ctx, viewId) : '');
   const redrawn = viewChanged(ctx, viewId);
   if (redrawn) morph(els.view, guarded(() => view.render(ctx), view.title));
@@ -403,6 +497,15 @@ function unsavedBanner() {
   </div>`;
 }
 
+/** A newer version is deployed but was not loaded (the app was busy, or a reload brought the old page back). */
+function updateLine() {
+  if (!pendingBuild()) return '';
+  return html`<div class="shell-banner" role="status">
+    <span class="lab"><b>A newer version of Networth</b><i class="sep"></i>ready to load</span>
+    <button class="btn-link" type="button" data-action="app.reload">Reload</button>
+  </div>`;
+}
+
 function banner(ctx) {
   if (!ctx.demo) return unsavedBanner();
   return html`<div class="shell-banner" role="note">
@@ -415,6 +518,7 @@ function masthead(ctx, viewId) {
   const rounds = roundLine(ctx);
   const covered = ctx.state.settings.cover;
   const coverButton = html`<button class="btn-link" type="button" data-action="app.cover" aria-pressed="${covered ? 'true' : 'false'}">${covered ? 'Uncover' : 'Cover'}</button>`;
+  const refreshButton = html`<button class="btn-link" type="button" data-action="app.refresh" title="Load a newer version, read the bank and share">Refresh</button>`;
   return html`<header class="mast">
     <div class="mast-top">
       <p class="mast-ear mast-ear-l">
@@ -430,7 +534,7 @@ function masthead(ctx, viewId) {
       <div class="mast-ear mast-ear-r">
         ${syncMark(ctx)}
         <span class="cap only-wide">Italic figures marked ≈ are computed.</span>
-        <span class="mast-ear-tools only-narrow">${coverButton}<a class="btn-link" href="#/settings" ${viewId === 'settings' ? html`aria-current="page"` : ''}>Settings</a></span>
+        <span class="mast-ear-tools only-narrow">${refreshButton}${coverButton}<a class="btn-link" href="#/settings" ${viewId === 'settings' ? html`aria-current="page"` : ''}>Settings</a></span>
       </div>
     </div>
     <div class="mast-nav">
@@ -439,6 +543,7 @@ function masthead(ctx, viewId) {
         <a href="#/settings" ${viewId === 'settings' ? html`aria-current="page"` : ''}>Settings</a>
       </nav>
       <div class="mast-tools">
+        ${refreshButton}
         ${coverButton}
         <button class="btn btn-solid btn-s" type="button" data-action="app.move"><span class="plus">+</span> Move</button>
       </div>

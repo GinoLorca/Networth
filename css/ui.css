@@ -504,3 +504,27 @@ dialog > .toast-region[data-at="top"] { top: calc(env(safe-area-inset-top) + var
   .toast { animation: none; }
   .toast.is-leaving { transition: none; }
 }
+
+/* -------------------------------------------------------------------------
+   Pull to refresh (js/ui/pull.js): a hairline and a small-caps label over the top of the page.
+   It is fixed, so nothing below it moves; it follows the finger through --pull-y and fills with --pull-p.
+   ------------------------------------------------------------------------- */
+/* the installed app with pull to refresh: no native rubber-band bounce for the page to move with */
+html.pull-ready, html.pull-ready body { overscroll-behavior-y: none; }
+.pull {
+  position: fixed; left: 0; right: 0; top: 0; z-index: 30; pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; gap: 7px;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 6px);
+  transform: translateY(calc(var(--pull-y, 0px) - 6px));
+  opacity: 0; visibility: hidden;
+  transition: transform .34s var(--ease), opacity .2s linear, visibility 0s linear .34s;
+}
+.pull:not([data-state="idle"]) { opacity: 1; visibility: visible; transition: opacity .12s linear; }
+.pull[data-state="pulling"] { transition: none; }
+.pull-line { display: block; width: 120px; height: 1px; background-color: var(--ink); transform: scaleX(var(--pull-p, 0)); transform-origin: center; }
+.pull[data-state="refreshing"] .pull-line { animation: pull-breathe 1.4s ease-in-out infinite; }
+.pull-label { padding: 2px 8px; background-color: var(--paper); color: var(--ink-2); white-space: nowrap; }
+.pull:is([data-state="refreshing"], [data-state="done"]) .pull-label { color: var(--ink); }
+@keyframes pull-breathe { 50% { transform: scaleX(.35); } }
+.pull[data-still], .pull[data-still] .pull-line { transition: none; animation: none; transform: none; }
+@media (prefers-reduced-motion: reduce) { .pull, .pull .pull-line { transition: none; animation: none; } }

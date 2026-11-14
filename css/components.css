@@ -1425,3 +1425,6 @@ a.row:hover .row-label, button.row:hover .row-label { text-decoration: underline
 /* a link-style button keeps the text baseline whether its icon comes first or last */
 .btn-link { align-items: baseline; }
 .btn-link > .ic { align-self: center; }
+
+/* Refresh in the top bar: on phones the place to press is 44px tall, taken back by the margin so nothing moves */
+@media (max-width: 719px) { .mast-ear-tools .btn-link { min-height: var(--tap, 44px); margin-block: calc((var(--tap, 44px) - 28px) / -2); } }
