@@ -17,6 +17,7 @@ import { phrase } from '../model/words.js';
 import { fmt } from '../model/money.js';
 import { fmtDate, nowMs, relDay } from '../model/dates.js';
 import { CADENCES, STREAM_KINDS, accountLabel } from '../model/schema.js';
+import { emptiedStreams } from '../model/ledger.js';
 import { refresh } from '../model/detect.js';
 import { noteStream } from '../model/corrections.js';
 
@@ -90,8 +91,10 @@ export function render(ctx, params) {
   const isRegular = regular(stream);
   const account = stream.accountId ? ctx.d.account(stream.accountId) : null;
   const deposits = depositsOf(ctx.state, stream.id);
+  // every deposit it held was let go (an Undo, a rule taken back): none on record, and no pay from it (ledger)
+  const emptied = emptiedStreams(ctx.state).has(stream.id);
   // the day its deposits usually land, the one the Board's payday countdown uses (book.usualSchedule)
-  const next = isRegular && stream.anchor && stream.active ? ctx.d.nextPayOf(stream.id) : null;
+  const next = isRegular && stream.anchor && stream.active && !emptied ? ctx.d.nextPayOf(stream.id) : null;
   const fed = Object.keys(FED_FIELDS).filter((field) => hasLock(stream, field));
 
   return html`<form class="sheet-body" data-submit="stream.save" data-id="${stream.id}" novalidate ${attrs({ 'data-cover': !!ctx.state.settings.cover })}>
@@ -99,7 +102,7 @@ export function render(ctx, params) {
     <h2 class="sheet-title">${stream.name || 'Unnamed stream'}</h2>
     <ul class="rows bks-facts">
       <li class="row"><span class="row-label">Typical deposit</span><span class="row-value fig est"><span class="approx">≈</span>${fmt(stream.amount)}</span></li>
-      <li class="row"><span class="row-label">Last deposit</span><span class="row-value" data-cover-keep>${stream.anchor ? fmtDate(stream.anchor, 'dowshort') + ' · ' + relDay(stream.anchor, ctx.today) : 'not known'}</span></li>
+      <li class="row"><span class="row-label">Last deposit</span><span class="row-value" data-cover-keep>${emptied ? 'none on record' : stream.anchor ? fmtDate(stream.anchor, 'dowshort') + ' · ' + relDay(stream.anchor, ctx.today) : 'not known'}</span></li>
       ${next ? html`<li class="row"><span class="row-label">Next expected</span><span class="row-value" data-cover-keep>${fmtDate(next, 'dowshort')} · ${next < ctx.today ? 'not on the bank’s record yet' : relDay(next, ctx.today)}</span></li>` : ''}
       <li class="row"><span class="row-label">Deposits seen</span><span class="row-value" data-cover-keep>${deposits}${account ? ', into ' + accountLabel(account, ctx.words) : ''}${stream.active ? '' : ' · not seen lately'}</span></li>
     </ul>
@@ -129,6 +132,7 @@ export function render(ctx, params) {
       <input type="checkbox" role="switch" name="accrue" ${attrs({ checked: !!stream.accrue })}>
       <span class="switch-track" aria-hidden="true"></span>
     </label>
+    ${emptied ? html`<p class="cap">Nothing is counted until a deposit is on record.</p>` : ''}
     ${explanation(ctx, stream)}
 
     <label class="field">

@@ -371,6 +371,7 @@ function makeCore(state, nowMs) {
   core.manual = once(() => buildManual(core));
   core.accruals = once(() => buildAccruals(core));
   core.position = once(() => buildPosition(core));
+  core.emptied = once(() => emptiedStreams(doc));
   return core;
 }
 
@@ -1005,10 +1006,46 @@ function buildAccruals(core) {
   return { on: true, pay, bills };
 }
 
-/** An active stream with a schedule and an amount, paid into an account that is not hidden. */
+/**
+ * An active stream with a schedule and an amount, paid into an account that is not hidden, and not emptied
+ * (emptiedStreams): a stream whose deposits all went (an Undo, a rule taken back) gives no payday, no pay awaited and
+ * no accrued pay, whatever its settings, on every device alike (ARCHITECTURE 3.8). Derived, never stored.
+ */
 function isScheduled(core, stream) {
   return isObject(stream) && !!stream.active && hasCadence(stream) && isYmd(stream.anchor)
-    && positive(stream.amount) && !heldHidden(core, stream.accountId);
+    && positive(stream.amount) && !heldHidden(core, stream.accountId) && !core.emptied().has(stream.id);
+}
+
+/**
+ * The ids of the income streams that hold no linked deposit (no row whose `streamId` names them, a by-hand entry
+ * matched to a bank row aside, as the stream sheet counts them) while deposits from their payer are on record on an
+ * account that is shown: every deposit it held was let go (an Undo, a rule taken back). The ledger takes no pay from
+ * such a stream (isScheduled); the stream sheet and the Book show it with no deposit on record; Settings, the Board and
+ * the assessment do not call it regular pay. As detection reads the record (detect.js readContext), the deposits on a
+ * hidden account are not counted, and a stream paid into a hidden account is left as it is (detection lets go of its
+ * deposits; the ledger leaves it out already). Derived from the rows, the same on every device.
+ * @param {object} state
+ * @returns {Set<string>}
+ */
+export function emptiedStreams(state) {
+  const accounts = new Map();
+  for (const account of listOf(isObject(state) ? state.accounts : null)) {
+    if (isObject(account) && typeof account.id === 'string' && Object.hasOwn(ACCOUNT_TYPES, account.type) && !accounts.has(account.id)) accounts.set(account.id, account);
+  }
+  const hidden = (accountId) => { const account = accounts.get(accountId); return !!account && !!account.hidden; };
+  const held = new Set();
+  const payers = new Set();
+  for (const tx of listOf(isObject(state) ? state.txs : null)) {
+    if (!isObject(tx) || tx.matchId) continue;
+    if (tx.streamId != null) held.add(tx.streamId);
+    if (tx.flow === 'in' && typeof tx.mkey === 'string' && tx.mkey && accounts.has(tx.accountId) && !hidden(tx.accountId)) payers.add(tx.mkey);
+  }
+  const out = new Set();
+  for (const stream of listOf(isObject(state) ? state.streams : null)) {
+    if (!isObject(stream) || held.has(stream.id) || typeof stream.mkey !== 'string' || !payers.has(stream.mkey) || hidden(stream.accountId)) continue;
+    out.add(stream.id);
+  }
+  return out;
 }
 
 function hasCadence(item) {
@@ -1643,7 +1680,7 @@ function cashAsOf(core) {
  */
 function nextPayOf(core, streamId) {
   const stream = listOf(core.doc.streams).find((s) => s && s.id === streamId);
-  if (!stream) return null;
+  if (!stream || core.emptied().has(stream.id)) return null; // no deposit on record: no next pay (isScheduled)
   // the main pay stream: the clock's own day, the one the Board counts down to (awaited: the day it was due)
   const pay = paydayOf(core);
   if (pay.mainId === stream.id) return pay.payAwaited || pay.nextPayday;

@@ -11,8 +11,8 @@ test('sayHtml writes a phrase as markup: its text as written, values filled as h
     'Habit plays <span data-fig>$4.75</span> on a workday.');
   assert.equal(String(sayHtml('board.premise.habit', 'finance', { habit: amount, kind: 'workday' })),
     'The baseline is <span data-fig>$4.75</span> on a workday.');
-  assert.equal(String(sayHtml('tx.scope.later', 'chess', { merchant: 'Joe & <Sons>' })),
-    'All: later moves from Joe &amp; &lt;Sons&gt; follow. This is the only one on record so far.');
+  assert.equal(String(sayHtml('tx.scope.later.out', 'chess', { merchant: 'Joe & <Sons>' })),
+    'All money out: later moves out to Joe &amp; &lt;Sons&gt; follow. This is the only one on record so far.');
   // the phrase's own markup goes in as written
   assert.equal(String(sayHtml('board.vs', 'finance')), 'Spending <i>vs.</i> baseline');
 });

@@ -43,7 +43,7 @@ import { wipeStorage, listSnapshots } from '../db.js';
 import { ACCOUNT_TYPES, CADENCES, PURPOSES, SCHEMA_VERSION, accountLabel, accountTypeLabel, checkDoc, migrate, defaultState } from '../model/schema.js';
 import { fmt } from '../model/money.js';
 import { gameDay, diffDays, fmtDate, fmtTime, nowMs } from '../model/dates.js';
-import { position } from '../model/ledger.js';
+import { emptiedStreams, position } from '../model/ledger.js';
 import { makeDerived } from '../derive.js';
 import { coverText, inlineMoney } from './parts.js';
 import { alertStatus } from '../model/alerts.js';
@@ -603,7 +603,9 @@ function incomeSection(ctx) {
 /* ----------------------------------------------------------------- the day */
 
 function payLine(ctx) {
-  const stream = listOf(ctx.state.streams).find((x) => x && x.active && x.accrue);
+  // a stream that holds no deposit while its payer's are on record gives no pay (ledger emptiedStreams): not regular pay
+  const emptied = emptiedStreams(ctx.state);
+  const stream = listOf(ctx.state.streams).find((x) => x && x.active && x.accrue && !emptied.has(x.id));
   const on = !!ctx.state.settings.smoothing;
   if (!stream) {
     return html`No regular pay has been found in the feed yet, so nothing accrues. It starts by itself once a salary shows its rhythm, usually after 2 or 3 paydays.`;

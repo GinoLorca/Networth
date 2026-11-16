@@ -430,7 +430,8 @@ export function defaultState(now) {
       /** labels for the purpose tags */
       purposes: { personal: 'Personal', work: 'Work', coaching: 'Coaching', studio: 'Studio' },
       /** merchant rules learned from the owner's corrections, applied before the built-in ones:
-       *  { id, mkey, category, klass, purpose, merchant } — any of the last four may be absent */
+       *  { id, mkey, flow, category, klass, purpose, merchant } — any of the last four may be absent; `flow` ('out' or
+       *  'in') is the direction the rule covers, absent on a rule made before rules had one (it covers both) */
       rules: [],
     },
     /** @type {HabitSegment[]} sorted by `from` */

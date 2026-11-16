@@ -15,8 +15,8 @@ import { isYmd } from './dates.js';
 import { refresh } from './detect.js';
 import { ensureIncome, exportIncomeShared, incomeOf, isBlankIncome, mergeIncomeShared, readIncomeShared, rebuildIncome } from './income.js';
 import {
-  applyCorrections, arrivedCorrections, exportCorrections, isBlankCorrections, mergeCorrections, pruneCorrections, readCorrections,
-  storeCorrections, storedCorrections,
+  applyCorrections, arrivedCorrections, exportCorrections, isBlankCorrections, mergeCorrections, pruneCorrections, readSharedCorrections,
+  sharedSections, storeCorrections, storedCorrections,
 } from './corrections.js';
 import { applyPrefs, exportPrefs, isBlankPrefs, mergePrefs, noteSeenPrefs, prefsDiffer, prefsUnseen, readPrefs } from './prefs.js';
 
@@ -36,7 +36,7 @@ const MAX_DEPTH = 12;
 const TOMB_KEEP_MS = 400 * 86400000;
 /** How many times a round starts again when another device wrote the file meanwhile. */
 const RESTARTS = 3;
-const KNOWN = new Set(['v', 'app', 'savedAt', 'byHand', 'income', 'corrections', 'prefs']);
+const KNOWN = new Set(['v', 'app', 'savedAt', 'byHand', 'income', 'corrections', 'flowRules', 'prefs']);
 const UNSAFE = new Set(['__proto__', 'constructor', 'prototype']);
 const ID = /^[A-Za-z0-9_.:-]{1,80}$/;
 const PAYEE = /^p[0-9a-f]{13}$/;
@@ -81,9 +81,10 @@ function fileOf(raw) {
     if (!income) return null;
     if (!isBlankIncome(income)) out.income = income;
   }
-  if (raw.corrections !== undefined) {
-    // the owner's corrections (3.8): checked like the rest; an empty section is left out
-    const corrections = readCorrections(raw.corrections);
+  if (raw.corrections !== undefined || raw.flowRules !== undefined) {
+    // the owner's corrections (3.8), and the rules of one direction in a section of their own, which an older version
+    // keeps whole and never applies (3.3): checked like the rest, read as one section; an empty section is left out
+    const corrections = readSharedCorrections(raw.corrections, raw.flowRules);
     if (!corrections) return null;
     if (!isBlankCorrections(corrections)) out.corrections = corrections;
   }
@@ -436,7 +437,7 @@ export async function roundShared(device, transport, clock) {
     const count = Object.keys(merged.byHand).filter((id) => !merged.byHand[id].deleted).length;
     const none = got.text == null;
     if (none ? isBlank(merged) : sameShared(merged, file)) return { ok: true, changed, wrote: false, file: !none, count };
-    const text = JSON.stringify({ ...merged, savedAt: now }, null, 1);
+    const text = fileText({ ...merged, savedAt: now });
     if (!readSharedFile(text)) throw unreadable();
     if (stale()) return { ok: false, skipped: true };
     try {
@@ -446,6 +447,22 @@ export async function roundShared(device, transport, clock) {
       if (!err || err.code !== 'conflict' || turn >= RESTARTS) throw err;
     }
   }
+}
+
+/**
+ * A file as it is written: the corrections in their two sections, `corrections` (what every version reads, its rules
+ * covering both directions) and `flowRules` (the rules of one direction, 3.3), an empty one left out.
+ */
+export function fileText(file) {
+  const out = { ...file };
+  delete out.corrections;
+  delete out.flowRules;
+  if (file.corrections) {
+    const { corrections, flowRules } = sharedSections(file.corrections);
+    if (corrections) out.corrections = corrections;
+    if (flowRules) out.flowRules = flowRules;
+  }
+  return JSON.stringify(out, null, 1);
 }
 
 /** The file without the row corrections 400 days older than its newest one (by their days alone, never a clock: 3.8). */

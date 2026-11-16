@@ -20,6 +20,7 @@ import { fmtDate, fmtMonth, fmtTime, gameDay, diffDays, isYmd, monthOf, parts as
 import { ACCOUNT_TYPES, accountLabel } from '../model/schema.js';
 import { largestCharges, firstTransactionDay } from '../model/cards.js';
 import { CASH_ROLE, cashAccountOf, isIdleCash } from '../model/income.js';
+import { emptiedStreams } from '../model/ledger.js';
 import { bankWhere, cashLineWords, cashNoteWords, countedWords, isCountedCash, recordEstimate, recordLead } from './income-words.js';
 import { figured, money, movesList, inlineMoney, toneStyle, flowLookups, unbankedWords } from './parts.js';
 import { sayHtml } from '../ui/say.js';
@@ -71,7 +72,9 @@ function isWorkedDown(ctx, account) {
 /** 'on' when pay accrues; 'off' when regular pay exists but is counted when it arrives; 'none' when no regular pay is known. */
 function payCounting(ctx) {
   if (ctx.d.position.smoothing) return 'on';
-  return ctx.state.streams.some((s) => s.active !== false && !!s.cadence && (s.kind === 'salary' || s.accrue || (s.locks || []).includes('accrue'))) ? 'off' : 'none';
+  // a stream that holds no deposit while its payer's are on record gives no pay (ledger emptiedStreams): not regular pay
+  const emptied = emptiedStreams(ctx.state);
+  return ctx.state.streams.some((s) => s.active !== false && !!s.cadence && !emptied.has(s.id) && (s.kind === 'salary' || s.accrue || (s.locks || []).includes('accrue'))) ? 'off' : 'none';
 }
 
 /** How old a bank figure is, in words: "from 6:12 AM", "from yesterday, 9:40 PM", "3 days old". */

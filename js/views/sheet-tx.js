@@ -4,7 +4,7 @@
  *
  * Read-only: merchant, amount, day, account, posted or pending, the bank's own description.
  * Editable (one form, saved together with one undo step):
- *   category · class · purpose, for "all from this merchant" (classify.learnRule) or "this move only";
+ *   category · class · purpose, for all money out to (or in from) this merchant (classify.learnRule) or "this move only";
  *   "it was planned"; the annotation override; a note; and for a business purchase (purpose not
  *   personal, class one-off) the return check and "it is equipment".
  * A tapped-in move or a declined purchase can be removed (with undo). Bank rows cannot.
@@ -22,7 +22,7 @@ import { html, cx, attrs } from '../ui/dom.js';
 import { fmt, fmtPlain, toCents } from '../model/money.js';
 import { fmtDate, fmtTime, isYmd, nowMs } from '../model/dates.js';
 import { CATEGORIES, KLASSES, PURPOSES, GLYPHS, ACCOUNT_TYPES, accountLabel, categoryLabel, klassLabel, klassOf, makeAccount } from '../model/schema.js';
-import { learnRule, confirmMove } from '../model/classify.js';
+import { correctionReach, learnRule, confirmMove } from '../model/classify.js';
 import { noteMove } from '../model/corrections.js';
 import { refresh } from '../model/detect.js';
 import { removeManual } from '../model/merge.js';
@@ -282,7 +282,12 @@ function classification(ctx, tx) {
   const purposes = ctx.state.settings.purposes || {};
   const frozen = isFrozen(tx);
   const decline = tx.kind === 'decline';
-  const sameMerchant = tx.mkey ? ctx.state.txs.filter((t) => t.mkey === tx.mkey && !t.matchId).length : 1;
+  // a correction for the whole merchant covers the direction of this move: money out, or money in; for money out, the
+  // refunds that follow it, or money in that keeps a correction of its own (3.3)
+  const reach = correctionReach(ctx.state, tx);
+  const direction = reach.direction;
+  const sameMerchant = reach.count;
+  const kept = reach.kept ? '.kept' : '';
   // a paired leg is a movement between the owner's own accounts: it has no purpose to set and nothing to learn
   const moved = !!tx.pairId || tx.kind === 'transfer' || tx.kind === 'payment';
   const canLearn = !!tx.mkey && !decline && !(moved && frozen);
@@ -315,12 +320,14 @@ function classification(ctx, tx) {
     ${canLearn ? html`<fieldset class="field">
       <legend class="field-label lab">A correction applies to</legend>
       <div class="seg seg-block" role="radiogroup" aria-label="A correction applies to">
-        <label class="seg-opt"><input type="radio" name="scope" value="all" ${labelled ? '' : html`checked`}><span>All from this merchant</span></label>
+        <label class="seg-opt"><input type="radio" name="scope" value="all" ${labelled ? '' : html`checked`}><span>${direction === 'in' ? 'All money in' : 'All money out'}</span></label>
         <label class="seg-opt"><input type="radio" name="scope" value="one" ${labelled ? html`checked` : ''}><span>${sayHtml('tx.scope.one', ctx.words)}</span></label>
       </div>
       <p class="field-help cap">${sameMerchant > 1
-        ? sayHtml('tx.scope.all', ctx.words, { count: html`<i data-cover-keep>${sameMerchant}</i>`, merchant: merchantOf(tx) })
-        : sayHtml('tx.scope.later', ctx.words, { merchant: merchantOf(tx) })}</p>
+        ? sayHtml('tx.scope.all.' + direction + kept, ctx.words, { count: html`<i data-cover-keep>${sameMerchant}</i>`, merchant: merchantOf(tx) })
+        : reach.refunds && !kept
+          ? sayHtml('tx.scope.later.out.refund', ctx.words, { merchant: merchantOf(tx), refunds: html`<i data-cover-keep>${reach.refunds}</i>` })
+          : sayHtml('tx.scope.later.' + direction + kept, ctx.words, { merchant: merchantOf(tx) })}</p>
     </fieldset>` : ''}
   </fieldset>`;
 }
@@ -573,7 +580,17 @@ function save({ values, data }) {
   }, { undo: phrase(corrected ? 'tx.toast.corrected' : 'tx.toast.updated', ctx.words) });
 
   closeSheet();
-  const what = result.changed > 1 ? say('tx.toast.many', ctx.words, { count: result.changed, merchant: merchantOf(tx) }) : phrase(corrected ? 'tx.toast.corrected' : 'tx.toast.updated', ctx.words) + '.';
+  // the moves of the direction corrected and the refunds that followed them, counted apart (3.3)
+  const refunds = result.refunds || 0;
+  const moves = result.changed - refunds;
+  const direction = tx.flow === 'in' ? 'in' : 'out';
+  const what = refunds > 0
+    ? say('tx.toast.refunds', ctx.words, {
+      moves: moves === 1 ? phrase('tx.toast.movesOut.one', ctx.words) : say('tx.toast.movesOut.many', ctx.words, { count: moves }),
+      refunds: refunds === 1 ? phrase('tx.toast.refundCount.one', ctx.words) : say('tx.toast.refundCount.many', ctx.words, { count: refunds }),
+      merchant: merchantOf(tx),
+    })
+    : result.changed > 1 ? say('tx.toast.many.' + direction, ctx.words, { count: result.changed, merchant: merchantOf(tx) }) : phrase(corrected ? 'tx.toast.corrected' : 'tx.toast.updated', ctx.words) + '.';
   let split = '';
   if (touched.includes('capital')) {
     split = next.capital

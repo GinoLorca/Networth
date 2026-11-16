@@ -438,9 +438,54 @@ function hasUsableField(rule) {
   return isCategory(rule.category) || isKlass(rule.klass) || isPurpose(rule.purpose) || !!cleanName(rule.merchant);
 }
 
-function findLearned(rules, mkey) {
-  if (!mkey || !Array.isArray(rules)) return null;
-  return rules.find((rule) => rule && typeof rule === 'object' && rule.mkey === mkey && hasUsableField(rule)) || null;
+/** The direction a learned rule covers for money moving `flow`: 'out' or 'in'. */
+function directionOf(flow) {
+  return flow === 'in' ? 'in' : 'out';
+}
+
+/**
+ * The owner's rules for a merchant: the one taught on money out (`flow: 'out'`), the one taught on money in
+ * (`flow: 'in'`), and one made before rules had a direction (`both`), which covers both. The first usable of each.
+ */
+function learnedSet(rules, mkey) {
+  const set = { both: null, out: null, in: null };
+  if (!mkey || !Array.isArray(rules)) return set;
+  for (const rule of rules) {
+    if (!rule || typeof rule !== 'object' || rule.mkey !== mkey || !hasUsableField(rule)) continue;
+    const slot = rule.flow === 'out' || rule.flow === 'in' ? rule.flow : 'both';
+    if (!set[slot]) set[slot] = rule;
+  }
+  return set;
+}
+
+/**
+ * Whether money in from a merchant keeps a correction of its own, which a money-out rule leaves alone: a rule taught
+ * on money in, or a rule made before rules had a direction whose category changes the kind of money in (income, a
+ * transfer and so on: one that would no longer file a deposit as a refund).
+ */
+function keepsMoneyIn(set) {
+  return !!set.in || (!!set.both && isCategory(set.both.category) && !isSpendCategory(set.both.category));
+}
+
+/**
+ * The learned rule a row moving `flow` follows, given the kind classification found for it (null for none):
+ * - the rule of its direction, laid field by field over a rule made before rules had a direction (that rule alone
+ *   when there is no rule of its direction): a rule covers the direction it was taught on;
+ * - money in that classification files as a refund takes the money-out rule (laid over a rule made before rules had a
+ *   direction in the same way), as a refund always took the rule of its purchase, unless money in keeps a correction
+ *   of its own (keepsMoneyIn): a money-out rule never makes a deposit a refund by itself.
+ * The id it carries is the one of the rule that gives the category (what a row's `ruleId` names).
+ */
+function findLearned(rules, mkey, flow, kind) {
+  const set = learnedSet(rules, mkey);
+  const direction = directionOf(flow);
+  const own = set[direction] || (direction === 'in' && kind === 'refund' && !keepsMoneyIn(set) ? set.out : null);
+  if (own && set.both) {
+    const out = { ...set.both, id: isCategory(own.category) || !isCategory(set.both.category) ? own.id : set.both.id, flow: own.flow };
+    for (const field of LOCKABLE) if (own[field] != null && own[field] !== '') out[field] = own[field];
+    return out;
+  }
+  return own || set.both;
 }
 
 function learnedRuleId(rule) {
@@ -482,14 +527,22 @@ function readInput(input) {
  * @param {object} input        a ClassifyInput (anything malformed is read as empty)
  * @param {object[]} rules      settings.rules
  * @param {(mkey: string) => object[]} spendsOf   recent spends at a merchant, for refund recognition
+ * @param {(mkey: string) => object[]} [filedOf]  recent purchases at a merchant that a learned rule filed as other than
+ *   a spend (filedByMerchant): money in that would mirror one of them, with no spend to mirror and no learned category
+ *   of its own, reads as it does because of that rule, so it names the rule (`ruleId`, with `indirect` set, 3.3)
  */
-function classifyCore(input, rules, spendsOf) {
+function classifyCore(input, rules, spendsOf, filedOf) {
   const tx = readInput(input);
   const id = identify(tx);
   const mirror = tx.flow === 'in' ? findMirror(spendsOf(id.mkey), id.mkey, tx.amount) : null;
   const base = classifyBuiltin(tx, id, mirror);
-  const learned = findLearned(rules, id.mkey);
-  return learned ? applyLearned(base, learned, tx.flow) : base;
+  const learned = findLearned(rules, id.mkey, tx.flow, base.kind);
+  const out = learned ? applyLearned(base, learned, tx.flow) : base;
+  if (tx.flow === 'in' && !mirror && filedOf && !(learned && isCategory(learned.category))) {
+    const filed = findMirror(filedOf(id.mkey), id.mkey, tx.amount);
+    if (filed && typeof filed.ruleId === 'string') return { ...out, ruleId: filed.ruleId, indirect: true };
+  }
+  return out;
 }
 
 /**
@@ -552,6 +605,21 @@ function spendsByMerchant(txs) {
   return index;
 }
 
+/**
+ * Live money out that a learned rule filed as other than a spend (a purchase filed as a transfer, say), grouped by
+ * merchant key: what money in would mirror as a refund but for that rule (classifyCore's `filedOf`).
+ */
+function filedByMerchant(txs) {
+  const index = new Map();
+  for (const tx of txs) {
+    if (!tx || tx.kind === 'spend' || tx.flow !== 'out' || !tx.mkey || !isLive(tx) || !isYmd(tx.day)) continue;
+    if (typeof tx.ruleId !== 'string' || !tx.ruleId.startsWith(LEARNED_PREFIX)) continue;
+    if (!index.has(tx.mkey)) index.set(tx.mkey, []);
+    index.get(tx.mkey).push(tx);
+  }
+  return index;
+}
+
 function recentSpendsFor(index, tx) {
   return (mkey) => {
     const spends = index.get(mkey);
@@ -573,8 +641,20 @@ function categoryFit(tx, locks, category) {
   return { fits, kind: kindFree ? kind : tx.kind };
 }
 
+/**
+ * Whether a frozen row (paired, or linked to a stream: it keeps its kind and category) goes on naming in `ruleId` the
+ * learned rule that filed it: one of its merchant that still covers its direction. A rule that leaves such a row as it
+ * is never takes it over (3.3), so that taking a rule back (corrections.js release, refile) touches only the rows that
+ * rule filed.
+ */
+function keepsRule(tx, rules) {
+  if (!isFlowFrozen(tx) || typeof tx.ruleId !== 'string' || !tx.ruleId.startsWith(LEARNED_PREFIX) || !Array.isArray(rules)) return false;
+  return rules.some((rule) => rule && typeof rule === 'object' && rule.mkey === tx.mkey && hasUsableField(rule)
+    && learnedRuleId(rule) === tx.ruleId && (rule.flow !== 'out' && rule.flow !== 'in' ? true : rule.flow === directionOf(tx.flow)));
+}
+
 /** Lay a learned rule over a stored row, field by field, leaving locked fields alone. */
-function applyRuleToRow(tx, rule, { ruleId, clearReview }) {
+function applyRuleToRow(tx, rule, { ruleId, clearReview, rules = null }) {
   const locks = lockSet(tx);
   const next = {};
   const name = cleanName(rule.merchant);
@@ -592,16 +672,19 @@ function applyRuleToRow(tx, rule, { ruleId, clearReview }) {
     }
   }
   if (isKlass(rule.klass) && klassFree) next.klass = rule.klass;
-  if (ruleId) next.ruleId = ruleId;
+  const filed = next.category !== undefined && next.category !== tx.category;
+  if (ruleId && (filed || !keepsRule(tx, rules))) next.ruleId = ruleId;
   if (clearReview) next.review = false;
   return assignChanged(tx, next);
 }
 
 /** Re-read one stored bank row. Locked fields, paired legs, stream deposits and Book charges keep what they have. */
-function reclassifyRow(tx, cls) {
+function reclassifyRow(tx, cls, rules) {
   const locks = lockSet(tx);
   const frozen = isFlowFrozen(tx);
-  const next = { mkey: cls.mkey, ruleId: cls.ruleId };
+  // a frozen row keeps the rule it names when classification would name one only indirectly (classifyCore): a deposit
+  // linked before a rule filed the purchase it would mirror is not that rule's, so taking the rule back leaves it be
+  const next = { mkey: cls.mkey, ruleId: keepsRule(tx, rules) || (frozen && cls.indirect) ? tx.ruleId : cls.ruleId };
   if (!locks.has('merchant')) next.merchant = cls.merchant;
   if (!locks.has('purpose')) next.purpose = cls.purpose;
 
@@ -649,20 +732,21 @@ export function reclassify(state, txIds) {
   const rules = learnedRules(state);
   const accountTypes = new Map((Array.isArray(state && state.accounts) ? state.accounts : []).filter(Boolean).map((a) => [a.id, a.type]));
   const rows = txs.filter((tx) => tx && typeof tx === 'object' && tx.kind !== 'decline' && !tx.matchId && (!only || only.has(tx.id)));
-  const reread = (tx, spendsOf) => {
+  const reread = (tx, spendsOf, filedOf) => {
     if (typeof tx.raw === 'string' && tx.raw.trim()) {
       const input = { description: tx.raw, mcc: tx.mcc, amount: tx.amount, flow: tx.flow, accountType: accountTypes.get(tx.accountId) };
-      return reclassifyRow(tx, classifyCore(input, rules, spendsOf));
+      return reclassifyRow(tx, classifyCore(input, rules, spendsOf, filedOf), rules);
     }
-    const rule = findLearned(rules, tx.mkey);
-    return !!rule && applyRuleToRow(tx, rule, { ruleId: learnedRuleId(rule), clearReview: false });
+    const rule = findLearned(rules, tx.mkey, tx.flow, tx.kind);
+    return !!rule && applyRuleToRow(tx, rule, { ruleId: learnedRuleId(rule), clearReview: false, rules });
   };
   // Money out first: a refund is recognised by the spend it mirrors, which has to be classified before it.
   const moneyOut = rows.filter((tx) => tx.flow !== 'in');
   let changed = moneyOut.filter((tx) => reread(tx, () => [])).length;
   const spends = spendsByMerchant(txs);
+  const filed = filedByMerchant(txs);
   for (const tx of rows) {
-    if (tx.flow === 'in' && reread(tx, recentSpendsFor(spends, tx))) changed++;
+    if (tx.flow === 'in' && reread(tx, recentSpendsFor(spends, tx), recentSpendsFor(filed, tx))) changed++;
   }
   return changed;
 }
@@ -713,13 +797,14 @@ function applyCorrection(tx, given) {
   return { accepted, changed };
 }
 
-function upsertRule(state, mkey, given) {
+/** The owner's rule of a merchant for one direction ('out' or 'in'), made when there is none; a rule made before rules had a direction is left as it is. */
+function upsertRule(state, mkey, direction, given) {
   if (!state.settings || typeof state.settings !== 'object') state.settings = {};
   if (!Array.isArray(state.settings.rules)) state.settings.rules = [];
   const rules = state.settings.rules;
-  let rule = rules.find((r) => r && typeof r === 'object' && r.mkey === mkey);
+  let rule = rules.find((r) => r && typeof r === 'object' && r.mkey === mkey && r.flow === direction);
   if (!rule) {
-    rule = { id: LEARNED_PREFIX + newId('r').slice(2), mkey };
+    rule = { id: LEARNED_PREFIX + newId('r').slice(2), mkey, flow: direction };
     rules.push(rule);
   } else if (typeof rule.id !== 'string' || !rule.id) {
     rule.id = LEARNED_PREFIX + newId('r').slice(2);
@@ -741,8 +826,10 @@ function upsertRule(state, mkey, given) {
  * @param {string} txId
  * @param {{ category?: string, klass?: string, purpose?: string, merchant?: string }} fields
  * @param {{ onlyThis?: boolean }} [opts] onlyThis = change this move alone; learn nothing
- * @returns {{ changed: number, ruleId: string|null }}  changed = rows changed, this one included;
- *   ruleId = the id of the rule in settings.rules, which is also what `ruleId` holds on the rows it classified
+ * @returns {{ changed: number, ruleId: string|null, refunds?: number }}  changed = rows whose kind, category, class,
+ *   purpose or merchant changed, this one included (a rule id that alone moved is not counted); refunds = how many
+ *   of them are refunds that followed a money-out rule; ruleId = the id of the rule in settings.rules, which is also
+ *   what `ruleId` holds on the rows it classified
  */
 export function learnRule(state, txId, fields, opts) {
   const txs = state && Array.isArray(state.txs) ? state.txs : [];
@@ -754,17 +841,92 @@ export function learnRule(state, txId, fields, opts) {
   let changed = correction.changed ? 1 : 0;
   if ((opts && opts.onlyThis) || typeof tx.mkey !== 'string' || !tx.mkey) return { changed, ruleId: null };
 
-  const rule = upsertRule(state, tx.mkey, correction.accepted);
+  // the rule covers the direction of the move corrected: money out, or money in (3.3)
+  const direction = directionOf(tx.flow);
+  upsertRule(state, tx.mkey, direction, correction.accepted);
+  const rules = learnedRules(state);
+  const rule = findLearned(rules, tx.mkey, tx.flow, tx.kind);
   const ruleId = learnedRuleId(rule);
-  if (tx.ruleId !== ruleId) {
-    tx.ruleId = ruleId;
-    changed = Math.max(changed, 1);
+  tx.ruleId = ruleId;
+  // what the toast counts: the rows whose kind, category, class, purpose or merchant changed (a row whose rule id alone
+  // moved is not one the owner sees corrected)
+  const before = new Map(txs.filter((t) => t && typeof t === 'object' && t !== tx && t.mkey === tx.mkey).map((t) => [t, faceOf(t)]));
+  const moneyIn = [];
+  for (const other of before.keys()) {
+    if (directionOf(other.flow) === direction) applyRuleToRow(other, rule, { ruleId, clearReview: true, rules });
+    else if (direction === 'out') moneyIn.push(other.id); // money in with no correction of its own takes the money-out rule when it is a refund
   }
-  for (const other of txs) {
-    if (!other || typeof other !== 'object' || other === tx || other.mkey !== tx.mkey) continue;
-    if (applyRuleToRow(other, rule, { ruleId, clearReview: true })) changed++;
+  if (moneyIn.length && !keepsMoneyIn(learnedSet(rules, tx.mkey))) reclassify(state, moneyIn);
+  let refunds = 0;
+  for (const [other, face] of before) {
+    if (faceOf(other) === face) continue;
+    if (directionOf(other.flow) === direction) changed++;
+    else refunds++;
   }
-  return { changed, ruleId };
+  return { changed: changed + refunds, ruleId, refunds };
+}
+
+/** What the owner sees of a row's classification: its kind, category, class, purpose and merchant. */
+function faceOf(tx) {
+  return JSON.stringify([tx.kind, tx.category, tx.klass, tx.purpose, tx.merchant]);
+}
+
+/**
+ * What a correction of `tx` for the whole merchant reaches (3.3), for the sheet's words: the direction it covers, the
+ * moves of that direction on record (`count`, this one included); for money out, the refunds on record that follow
+ * the money-out rule (money in that classification files as a refund, not linked, and not corrected on its own), or
+ * that money in keeps a correction of its own (`kept`: a rule taught on money in, or a rule made before rules had a
+ * direction whose category changes the kind of money in, keepsMoneyIn).
+ * @param {object} state
+ * @param {object} tx
+ * @returns {{ direction: 'out'|'in', count: number, refunds: number, kept: boolean }}
+ */
+export function correctionReach(state, tx) {
+  const direction = directionOf(tx && tx.flow);
+  const out = { direction, count: 1, refunds: 0, kept: false };
+  if (!tx || typeof tx !== 'object' || typeof tx.mkey !== 'string' || !tx.mkey) return out;
+  const txs = Array.isArray(state && state.txs) ? state.txs : [];
+  const mine = txs.filter((t) => t && typeof t === 'object' && t.mkey === tx.mkey && !t.matchId);
+  out.count = Math.max(1, mine.filter((t) => directionOf(t.flow) === direction).length);
+  if (direction !== 'out') return out;
+  out.kept = keepsMoneyIn(learnedSet(learnedRules(state), tx.mkey));
+  if (out.kept) return out;
+  const index = spendsByMerchant(txs);
+  // (a refund corrected on its own keeps its correction, as the help says)
+  out.refunds = mine.filter((t) => t.flow === 'in' && t.kind !== 'decline' && !isFlowFrozen(t) && !lockSet(t).has('category')
+    && builtinKindOf(state, t, index) === 'refund').length;
+  return out;
+}
+
+/** The kind classification without the owner's rules finds for a stored row (its own when it has no bank text). */
+function builtinKindOf(state, tx, index) {
+  if (typeof tx.raw !== 'string' || !tx.raw.trim()) return tx.kind;
+  const accounts = Array.isArray(state && state.accounts) ? state.accounts : [];
+  const account = accounts.find((a) => a && a.id === tx.accountId);
+  const input = readInput({ description: tx.raw, mcc: tx.mcc, amount: tx.amount, flow: tx.flow, accountType: account ? account.type : undefined });
+  const id = identify(input);
+  const spendsOf = recentSpendsFor(index, tx);
+  return classifyBuiltin(input, id, findMirror(spendsOf(id.mkey), id.mkey, input.amount)).kind;
+}
+
+/**
+ * The learned rule a stored row follows (laid over a rule made before rules had a direction), or null: what
+ * classification reads for it, with the kind it finds for the row's own text (a refund with no rule for money in takes
+ * the money-out rule). For the paths that file rows again (model/corrections.js).
+ * @param {object} state
+ * @param {object} tx
+ * @returns {object|null}  a view of the rule: its fields, and the `id` of the rule that gives the category
+ */
+export function ruleOfRow(state, tx) {
+  if (!tx || typeof tx !== 'object' || typeof tx.mkey !== 'string' || !tx.mkey) return null;
+  const rules = learnedRules(state);
+  const kind = directionOf(tx.flow) === 'in' ? builtinKindOf(state, tx, spendsByMerchant(Array.isArray(state.txs) ? state.txs : [])) : tx.kind;
+  return findLearned(rules, tx.mkey, tx.flow, kind);
+}
+
+/** Whether a learned rule covers money moving `flow`: one taught on that direction, or one made before rules had one. */
+export function ruleCovers(rule, flow) {
+  return !!rule && typeof rule === 'object' && (rule.flow !== 'out' && rule.flow !== 'in' ? true : rule.flow === directionOf(flow));
 }
 
 /**

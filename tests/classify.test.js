@@ -922,7 +922,7 @@ test('learnRule: locks the correction, learns a rule and applies it to the merch
 
   assert.equal(outcome.changed, 3);
   assert.match(outcome.ruleId, /^learned:/);
-  assert.deepEqual(state.settings.rules, [{ id: outcome.ruleId, mkey: 'starbucks', category: 'supplies', purpose: 'work' }]);
+  assert.deepEqual(state.settings.rules, [{ id: outcome.ruleId, mkey: first.mkey, flow: 'out', category: 'supplies', purpose: 'work' }]);
 
   assert.deepEqual(pick(first, ['kind', 'category', 'klass', 'purpose', 'review', 'ruleId']),
     { kind: 'spend', category: 'supplies', klass: 'need', purpose: 'work', review: false, ruleId: outcome.ruleId });
@@ -955,7 +955,7 @@ test('learnRule: a second correction updates the same rule instead of adding one
   const b = learnRule(state, second.id, { klass: 'want', purpose: 'coaching' });
   assert.equal(state.settings.rules.length, 1);
   assert.equal(b.ruleId, a.ruleId);
-  assert.deepEqual(state.settings.rules[0], { id: a.ruleId, mkey: 'starbucks', category: 'supplies', klass: 'want', purpose: 'coaching' });
+  assert.deepEqual(state.settings.rules[0], { id: a.ruleId, mkey: first.mkey, flow: 'out', category: 'supplies', klass: 'want', purpose: 'coaching' });
   assert.deepEqual(pick(first, ['category', 'klass', 'purpose']), { category: 'supplies', klass: 'want', purpose: 'coaching' }, 'the earlier move locked only its category');
   assert.deepEqual(pick(second, ['category', 'klass', 'purpose']), { category: 'supplies', klass: 'want', purpose: 'coaching' });
   assert.deepEqual([...second.locks].sort(), ['klass', 'purpose']);
@@ -1028,7 +1028,7 @@ test('learnRule: a move with no merchant key is changed alone; missing settings 
   const bare = { txs: [coffee] };
   const outcome = learnRule(bare, coffee.id, { purpose: 'work' });
   assert.equal(outcome.changed, 1);
-  assert.deepEqual(bare.settings.rules, [{ id: outcome.ruleId, mkey: 'starbucks', purpose: 'work' }]);
+  assert.deepEqual(bare.settings.rules, [{ id: outcome.ruleId, mkey: coffee.mkey, flow: 'out', purpose: 'work' }]);
 });
 
 test('learnRule: an owner-typed merchant name is stored as plain bounded text', () => {

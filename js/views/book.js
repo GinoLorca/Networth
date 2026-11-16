@@ -24,6 +24,7 @@ import { fmt } from '../model/money.js';
 import { addDays, diffDays, fmtDate, isYmd, monthOf, relDay } from '../model/dates.js';
 import { ACCOUNT_TYPES, CADENCES, STREAM_KINDS, accountLabel, categoryLabel } from '../model/schema.js';
 import { annualCost, dailyCost, nextOccurrence } from '../model/book.js';
+import { emptiedStreams } from '../model/ledger.js';
 import { moveGlyph, timeTroubleGlyph } from '../ui/glyphs.js';
 import { sayHtml } from '../ui/say.js';
 import { say } from '../model/words.js';
@@ -529,18 +530,21 @@ function accrues(stream) {
   return !!stream.accrue && !!stream.active && !!CADENCES[stream.cadence];
 }
 
-function streamRow(ctx, m, stream) {
+function streamRow(ctx, m, stream, emptied) {
   const kind = STREAM_KINDS[stream.kind] ? STREAM_KINDS[stream.kind].label : 'Other income';
   const regular = !!CADENCES[stream.cadence];
   const account = accountName(ctx, stream.accountId);
   const daily = regular ? Math.round(stream.amount / CADENCES[stream.cadence].days) : 0;
-  const counted = ctx.d.position.smoothing && accrues(stream);
+  // a stream that holds no linked deposit gives no pay (ledger isScheduled): none on record, nothing counted
+  const held = !emptied.has(stream.id);
+  const counted = ctx.d.position.smoothing && accrues(stream) && held;
+  const last = !held ? ' · no deposit on record' : stream.anchor ? ' · last deposit ' + fmtDate(stream.anchor, 'dowshort') : '';
   return html`<li data-key="${stream.id}"><button class="row" type="button" data-action="book.open" data-sheet="stream" data-id="${stream.id}">
     <span class="row-label">${stream.name || 'Unnamed stream'}
-      <em class="row-note">${kind} · ${regular ? cadenceText(stream.cadence) : 'irregular'}${stream.anchor ? ' · last deposit ' + fmtDate(stream.anchor, 'dowshort') : ''}${account ? ' · ' + account : ''}${stream.active ? '' : ' · not seen lately'}</em>
+      <em class="row-note">${kind} · ${regular ? cadenceText(stream.cadence) : 'irregular'}${last}${account ? ' · ' + account : ''}${stream.active ? '' : ' · not seen lately'}</em>
       <em class="row-note bk-counted">${counted
         ? sayHtml('book.stream.counted', ctx.words, { amount: inFig(daily, true) })
-        : accrues(stream)
+        : accrues(stream) && held
           ? sayHtml('book.stream.set', ctx.words)
           : sayHtml('book.stream.arrives', ctx.words)}</em>
     </span>
@@ -551,7 +555,10 @@ function streamRow(ctx, m, stream) {
 function countingPassage(ctx, m) {
   const w = ctx.words;
   const position = ctx.d.position;
-  const streams = ctx.state.streams;
+  // a stream that holds no deposit while its payer's are on record gives no pay (ledger emptiedStreams): the passage
+  // leaves it out, as the ledger does
+  const emptied = emptiedStreams(ctx.state);
+  const streams = ctx.state.streams.filter((stream) => !emptied.has(stream.id));
   const settingOn = !!ctx.state.settings.smoothing;
   if (position.smoothing && position.receivables.length) {
     const main = position.receivables[0];
@@ -593,13 +600,14 @@ function countingPassage(ctx, m) {
 function incomeBands(ctx, m) {
   const streams = ctx.state.streams.slice().sort((a, b) => Number(accrues(b)) - Number(accrues(a)) || Number(b.active) - Number(a.active) || b.amount - a.amount);
   const lapsed = (Array.isArray(ctx.d.position.lapsedPay) ? ctx.d.position.lapsedPay : []).filter((item) => item && typeof item === 'object');
+  const emptied = emptiedStreams(ctx.state);
   return html`<section class="band">
       <div class="sec-head">
         <h2 class="lab"><b>Income</b><i class="sep"></i>${streams.length ? plural(streams.length, 'stream') : 'streams'}</h2>
         <span class="lab">typical deposit</span>
       </div>
       ${streams.length
-        ? html`<ul class="rows bk-streams">${streams.map((stream) => streamRow(ctx, m, stream))}</ul>
+        ? html`<ul class="rows bk-streams">${streams.map((stream) => streamRow(ctx, m, stream, emptied))}</ul>
           ${lapsed.map((item) => html`<p class="cap bk-foot" data-key="${'lapsed-' + item.id}">No deposit from ${item.name || 'a regular payer'} since ${isYmd(item.since) ? fmtDate(item.since, 'short') : 'a day not on record'}; ${(streams.find((s) => s && s.id === item.id) || {}).accrue === false ? 'it no longer sets the payday' : say('book.lapsed.earned', ctx.words)}.</p>`)}
           <p class="cap bk-foot">A stream is a payer seen at least twice. Each deposit shown is the typical amount, in italics: not a figure the bank has reported for the next one.</p>`
         : html`<p class="cap bk-quiet">No pay has been found in ${historyPhrase(ctx)}. A payer is listed after its second deposit, and a paycheck is recognized after its third.</p>`}

@@ -31,6 +31,7 @@ import { fmt, fmtPct, ratio, toneBand } from '../model/money.js';
 import { addDays, diffDays, fmtDate, fmtMonth, fmtTime, gameDay, isYmd, monthOf, nowMs, ymd } from '../model/dates.js';
 import { firstTransactionDay } from '../model/cards.js';
 import { nextOccurrence, runsByHand } from '../model/book.js';
+import { emptiedStreams } from '../model/ledger.js';
 import { editByHand, skipRow, tickByHand } from '../model/byhand.js';
 import { refresh } from '../model/detect.js';
 import { answerItems, answerPayer, cashAccountOf, incomeQuestions, isIdleCash } from '../model/income.js';
@@ -145,11 +146,13 @@ function scoresheetDay(day) {
 
 /**
  * The name of a regular pay stream the owner chose to count on arrival (accrue off, and locked so),
- * or '' when there is none.
+ * or '' when there is none. A stream that holds no deposit while its payer's are on record is not one
+ * (ledger emptiedStreams: it gives no pay).
  */
 function payOnArrival(ctx) {
   const streams = Array.isArray(ctx.state.streams) ? ctx.state.streams : [];
-  const held = streams.find((s) => s && s.active !== false && s.accrue === false && Array.isArray(s.locks) && s.locks.includes('accrue'));
+  const emptied = emptiedStreams(ctx.state);
+  const held = streams.find((s) => s && s.active !== false && s.accrue === false && Array.isArray(s.locks) && s.locks.includes('accrue') && !emptied.has(s.id));
   return held ? held.name || 'regular pay' : '';
 }
 

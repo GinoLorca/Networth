@@ -20,7 +20,7 @@ import { context, toast } from '../runtime.js';
 import { fmt, fmtSigned, fmtPlain, fmtPct, toCents } from '../model/money.js';
 import { addDays, addMonthsYm, diffDays, endOfMonth, fmtDate, fmtMonth, fmtTime, gameDay, monthOf } from '../model/dates.js';
 import { CATEGORIES, KLASSES, STREAM_KINDS, accountLabel, categoryLabel, klassLabel } from '../model/schema.js';
-import { retention } from '../model/ledger.js';
+import { emptiedStreams, retention } from '../model/ledger.js';
 import { purchaseImpact } from '../model/forecast.js';
 import { payoff } from '../model/loans.js';
 import { firstTransactionDay } from '../model/cards.js';
@@ -140,7 +140,9 @@ function awaitedLine(clock, today) {
 /** 'on' when pay accrues; 'off' when regular pay exists but is counted when it arrives; 'none' when no regular pay is known. */
 function payCounting(ctx) {
   if (ctx.d.position.smoothing) return 'on';
-  return ctx.state.streams.some((s) => s.active !== false && !!s.cadence && (s.kind === 'salary' || s.accrue || (s.locks || []).includes('accrue'))) ? 'off' : 'none';
+  // a stream that holds no deposit while its payer's are on record gives no pay (ledger emptiedStreams): not regular pay
+  const emptied = emptiedStreams(ctx.state);
+  return ctx.state.streams.some((s) => s.active !== false && !!s.cadence && !emptied.has(s.id) && (s.kind === 'salary' || s.accrue || (s.locks || []).includes('accrue'))) ? 'off' : 'none';
 }
 
 /** Days on record, the first transaction's day through today, both included (R6); 0 when there is none. */

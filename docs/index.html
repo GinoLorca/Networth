@@ -8,8 +8,8 @@
 <meta name="description" content="Networth: a private net-worth board. It reads your bank feed itself; your data stays on your device.">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
-<meta name="networth-build" content="5422a8ee87ff">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-OHDzZK3Vhydt+AyfwwTBBXDMQqMycP+FMpt9f9ENFrg='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-rrcgv2y0KMkdT76+jAxvRcNQTlj6UpNB9oKKC0whQNA=' 'sha256-e/tbGNncdNoZz13l4nvoF3bB1VC0tPaMfOMw7T5fyIM=' 'sha256-vtvTQgOF8REo4/7OrXt7r27xnMQOfrRm0glwTaEf6mQ=' 'sha256-bjsMTiPXO/fV7QJlhFnicz5k0INxLBT0hibL6mxaByc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-KJiTeF/M4lGFKztBQaJXk0LHMtyiPjUf0BfwznxqC/I=' 'sha256-+ElYrGma4N+3tSxwcOSe/XcF2qrL5kwmS0kdm0bwZb0=' 'sha256-DteyLvNz/HtxRqT86M19HgoZfGS3Vjh7g7Qv8sqoXaE=' 'sha256-Yq5LqpSuZYrQBiwZV3GIUKl7VztQyUyyTLeHF8RzYfM=' 'sha256-QXrKt++6Wq3yvYcbzGuV1ppzsGlag9M5t4FO07674+s=' 'sha256-m7CkRXzuhIuYxbQgavmrerKe1DYy85zXr0vO0/u7PNM=' 'sha256-AGcpoa0ZYLgE02mpnLEjsFszHyvUV1/tw2UnNfpPQks='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://beta-bridge.simplefin.org https://bridge.simplefin.org https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="networth-build" content="b4a868568b6d">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-j5/8H0zlJrcIQ1uAy4M8Hbf9V9WAnS+3yMKDef4myf0='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-rrcgv2y0KMkdT76+jAxvRcNQTlj6UpNB9oKKC0whQNA=' 'sha256-e/tbGNncdNoZz13l4nvoF3bB1VC0tPaMfOMw7T5fyIM=' 'sha256-vtvTQgOF8REo4/7OrXt7r27xnMQOfrRm0glwTaEf6mQ=' 'sha256-bjsMTiPXO/fV7QJlhFnicz5k0INxLBT0hibL6mxaByc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-KJiTeF/M4lGFKztBQaJXk0LHMtyiPjUf0BfwznxqC/I=' 'sha256-+ElYrGma4N+3tSxwcOSe/XcF2qrL5kwmS0kdm0bwZb0=' 'sha256-DteyLvNz/HtxRqT86M19HgoZfGS3Vjh7g7Qv8sqoXaE=' 'sha256-Yq5LqpSuZYrQBiwZV3GIUKl7VztQyUyyTLeHF8RzYfM=' 'sha256-QXrKt++6Wq3yvYcbzGuV1ppzsGlag9M5t4FO07674+s=' 'sha256-m7CkRXzuhIuYxbQgavmrerKe1DYy85zXr0vO0/u7PNM=' 'sha256-AGcpoa0ZYLgE02mpnLEjsFszHyvUV1/tw2UnNfpPQks='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://beta-bridge.simplefin.org https://bridge.simplefin.org https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#F3EDE1" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#15130F" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
@@ -4182,15 +4182,26 @@ const PHRASES = Object.freeze({
   'tx.stream.book': { chess: "The stream itself is edited in the Book.", finance: "The stream itself is edited in Recurring." },
   'tx.class.help': { chess: "Only Convenience is played against Habit in the daily round.", finance: "Only Convenience counts against the baseline in the daily budget." },
   'tx.scope.one': { chess: "This move only", finance: "This transaction only" },
-  'tx.scope.all': { chess: "All: the {count} moves from {merchant} on record, and every later one, follow. A move corrected on its own keeps its correction.", finance: "All: the {count} transactions from {merchant} on record, and every later one, follow. A transaction corrected on its own keeps its correction." },
-  'tx.scope.later': { chess: "All: later moves from {merchant} follow. This is the only one on record so far.", finance: "All: later transactions from {merchant} follow. This is the only one on record so far." },
+  'tx.scope.all.out': { chess: "All money out: the {count} moves out to {merchant} on record, and every later one, follow. Money in from them is left alone, but for a refund. A move corrected on its own keeps its correction.", finance: "All money out: the {count} transactions out to {merchant} on record, and every later one, follow. Money in from them is left alone, but for a refund. A transaction corrected on its own keeps its correction." },
+  'tx.scope.all.in': { chess: "All money in: the {count} moves in from {merchant} on record, and every later one, follow. Money out to them is left alone. A move corrected on its own keeps its correction.", finance: "All money in: the {count} transactions in from {merchant} on record, and every later one, follow. Money out to them is left alone. A transaction corrected on its own keeps its correction." },
+  'tx.scope.later.out': { chess: "All money out: later moves out to {merchant} follow. This is the only one on record so far.", finance: "All money out: later transactions out to {merchant} follow. This is the only one on record so far." },
+  'tx.scope.all.out.kept': { chess: "All money out: the {count} moves out to {merchant} on record, and every later one, follow. Money in from them keeps its own correction. A move corrected on its own keeps its correction.", finance: "All money out: the {count} transactions out to {merchant} on record, and every later one, follow. Money in from them keeps its own correction. A transaction corrected on its own keeps its correction." },
+  'tx.scope.later.out.kept': { chess: "All money out: later moves out to {merchant} follow. This is the only one on record so far. Money in from them keeps its own correction.", finance: "All money out: later transactions out to {merchant} follow. This is the only one on record so far. Money in from them keeps its own correction." },
+  'tx.scope.later.out.refund': { chess: "All money out: later moves out to {merchant} follow, and so do refunds from them ({refunds} on record). This is the only move out on record so far.", finance: "All money out: later transactions out to {merchant} follow, and so do refunds from them ({refunds} on record). This is the only transaction out on record so far." },
+  'tx.scope.later.in': { chess: "All money in: later moves in from {merchant} follow. This is the only one on record so far.", finance: "All money in: later transactions in from {merchant} follow. This is the only one on record so far." },
   'tx.glyph': { chess: "Annotation", finance: "Mark" },
   'tx.glyph.auto': { chess: "The annotator’s", finance: "Automatic" },
   'tx.glyph.help': { chess: "A mark of your own replaces the annotator’s on this move. Most moves carry none.", finance: "A mark of your own replaces the automatic one on this transaction. Most transactions carry none." },
   'tx.asset': { chess: "That part of the {amount} becomes an asset on Material from {date}; the rest is spending. Half the price is the starting estimate.", finance: "That part of the {amount} becomes an asset on the Balance sheet from {date}; the rest is spending. Half the price is the starting estimate." },
   'tx.toast.corrected': { chess: "Move corrected", finance: "Transaction corrected" },
   'tx.toast.updated': { chess: "Move updated", finance: "Transaction updated" },
-  'tx.toast.many': { chess: "{count} moves from {merchant} corrected.", finance: "{count} transactions from {merchant} corrected." },
+  'tx.toast.many.out': { chess: "{count} moves out to {merchant} corrected.", finance: "{count} transactions out to {merchant} corrected." },
+  'tx.toast.many.in': { chess: "{count} moves in from {merchant} corrected.", finance: "{count} transactions in from {merchant} corrected." },
+  'tx.toast.refunds': { chess: "{moves} and {refunds} from {merchant} corrected.", finance: "{moves} and {refunds} from {merchant} corrected." },
+  'tx.toast.movesOut.one': { chess: "1 move out", finance: "1 transaction out" },
+  'tx.toast.movesOut.many': { chess: "{count} moves out", finance: "{count} transactions out" },
+  'tx.toast.refundCount.one': { chess: "1 refund", finance: "1 refund" },
+  'tx.toast.refundCount.many': { chess: "{count} refunds", finance: "{count} refunds" },
   'tx.toast.removed': { chess: "Move removed", finance: "Transaction removed" },
   'tx.toast.declinedRemoved': { chess: "Declined purchase removed", finance: "Skipped purchase removed" },
 
@@ -7464,6 +7475,7 @@ function makeCore(state, nowMs) {
   core.manual = once(() => buildManual(core));
   core.accruals = once(() => buildAccruals(core));
   core.position = once(() => buildPosition(core));
+  core.emptied = once(() => emptiedStreams(doc));
   return core;
 }
 
@@ -8017,7 +8029,28 @@ function buildAccruals(core) {
 
 function isScheduled(core, stream) {
   return isObject(stream) && !!stream.active && hasCadence(stream) && isYmd(stream.anchor)
-    && positive(stream.amount) && !heldHidden(core, stream.accountId);
+    && positive(stream.amount) && !heldHidden(core, stream.accountId) && !core.emptied().has(stream.id);
+}
+
+function emptiedStreams(state) {
+  const accounts = new Map();
+  for (const account of listOf(isObject(state) ? state.accounts : null)) {
+    if (isObject(account) && typeof account.id === 'string' && Object.hasOwn(ACCOUNT_TYPES, account.type) && !accounts.has(account.id)) accounts.set(account.id, account);
+  }
+  const hidden = (accountId) => { const account = accounts.get(accountId); return !!account && !!account.hidden; };
+  const held = new Set();
+  const payers = new Set();
+  for (const tx of listOf(isObject(state) ? state.txs : null)) {
+    if (!isObject(tx) || tx.matchId) continue;
+    if (tx.streamId != null) held.add(tx.streamId);
+    if (tx.flow === 'in' && typeof tx.mkey === 'string' && tx.mkey && accounts.has(tx.accountId) && !hidden(tx.accountId)) payers.add(tx.mkey);
+  }
+  const out = new Set();
+  for (const stream of listOf(isObject(state) ? state.streams : null)) {
+    if (!isObject(stream) || held.has(stream.id) || typeof stream.mkey !== 'string' || !payers.has(stream.mkey) || hidden(stream.accountId)) continue;
+    out.add(stream.id);
+  }
+  return out;
 }
 
 function hasCadence(item) {
@@ -8579,7 +8612,7 @@ function cashAsOf(core) {
 
 function nextPayOf(core, streamId) {
   const stream = listOf(core.doc.streams).find((s) => s && s.id === streamId);
-  if (!stream) return null;
+  if (!stream || core.emptied().has(stream.id)) return null; // no deposit on record: no next pay (isScheduled)
   // the main pay stream: the clock's own day, the one the Board counts down to (awaited: the day it was due)
   const pay = paydayOf(core);
   if (pay.mainId === stream.id) return pay.payAwaited || pay.nextPayday;
@@ -8922,7 +8955,7 @@ function pushTo(map, key, item) {
   if (list) list.push(item);
   else map.set(key, [item]);
 }
-return { PAY_GRACE_DAYS, makeLedger, todayOf, dayType, habitFor, convOn, accountValueOn, position, closes, round, monthTable, edge, clock, retention, payStreams, spendingByCategory };
+return { PAY_GRACE_DAYS, makeLedger, todayOf, dayType, habitFor, convOn, accountValueOn, position, closes, round, monthTable, edge, clock, retention, payStreams, spendingByCategory, emptiedStreams };
 })();
 
 // ---- js/model/annotate.js
@@ -9612,7 +9645,7 @@ __mods["js/model/assess.js"] = (function () {
 const { ACCOUNT_TYPES, CADENCES, categoryLabel } = __mods["js/model/schema.js"];
 const { addDays, addMonthsYm, diffDays, endOfMonth, fmtDate, fmtMonth, gameDay, isYmd, minYmd, monthOf, parts, startOfMonth } = __mods["js/model/dates.js"];
 const { MINUS, fmt, fmtSigned, roundCents } = __mods["js/model/money.js"];
-const { makeLedger } = __mods["js/model/ledger.js"];
+const { emptiedStreams, makeLedger } = __mods["js/model/ledger.js"];
 const { PACE_FROM_DAY, allCardsMonths, cardsNow, firstTransactionDay, historyDays: daysOnRecord } = __mods["js/model/cards.js"];
 const { annualCost, bookTotals, renewals } = __mods["js/model/book.js"];
 const { reviewRounds } = __mods["js/model/annotate.js"];
@@ -9823,7 +9856,8 @@ function monthlyPay(view) {
 }
 
 function hasRegularPay(doc) {
-  return listOf(doc.streams).some((stream) => isObject(stream) && stream.active && hasCadence(stream)
+  const emptied = emptiedStreams(doc);
+  return listOf(doc.streams).some((stream) => isObject(stream) && stream.active && hasCadence(stream) && !emptied.has(stream.id)
     && (stream.accrue || (Array.isArray(stream.locks) && stream.locks.includes('accrue'))));
 }
 
@@ -12339,9 +12373,35 @@ function hasUsableField(rule) {
   return isCategory(rule.category) || isKlass(rule.klass) || isPurpose(rule.purpose) || !!cleanName(rule.merchant);
 }
 
-function findLearned(rules, mkey) {
-  if (!mkey || !Array.isArray(rules)) return null;
-  return rules.find((rule) => rule && typeof rule === 'object' && rule.mkey === mkey && hasUsableField(rule)) || null;
+function directionOf(flow) {
+  return flow === 'in' ? 'in' : 'out';
+}
+
+function learnedSet(rules, mkey) {
+  const set = { both: null, out: null, in: null };
+  if (!mkey || !Array.isArray(rules)) return set;
+  for (const rule of rules) {
+    if (!rule || typeof rule !== 'object' || rule.mkey !== mkey || !hasUsableField(rule)) continue;
+    const slot = rule.flow === 'out' || rule.flow === 'in' ? rule.flow : 'both';
+    if (!set[slot]) set[slot] = rule;
+  }
+  return set;
+}
+
+function keepsMoneyIn(set) {
+  return !!set.in || (!!set.both && isCategory(set.both.category) && !isSpendCategory(set.both.category));
+}
+
+function findLearned(rules, mkey, flow, kind) {
+  const set = learnedSet(rules, mkey);
+  const direction = directionOf(flow);
+  const own = set[direction] || (direction === 'in' && kind === 'refund' && !keepsMoneyIn(set) ? set.out : null);
+  if (own && set.both) {
+    const out = { ...set.both, id: isCategory(own.category) || !isCategory(set.both.category) ? own.id : set.both.id, flow: own.flow };
+    for (const field of LOCKABLE) if (own[field] != null && own[field] !== '') out[field] = own[field];
+    return out;
+  }
+  return own || set.both;
 }
 
 function learnedRuleId(rule) {
@@ -12378,13 +12438,18 @@ function readInput(input) {
   };
 }
 
-function classifyCore(input, rules, spendsOf) {
+function classifyCore(input, rules, spendsOf, filedOf) {
   const tx = readInput(input);
   const id = identify(tx);
   const mirror = tx.flow === 'in' ? findMirror(spendsOf(id.mkey), id.mkey, tx.amount) : null;
   const base = classifyBuiltin(tx, id, mirror);
-  const learned = findLearned(rules, id.mkey);
-  return learned ? applyLearned(base, learned, tx.flow) : base;
+  const learned = findLearned(rules, id.mkey, tx.flow, base.kind);
+  const out = learned ? applyLearned(base, learned, tx.flow) : base;
+  if (tx.flow === 'in' && !mirror && filedOf && !(learned && isCategory(learned.category))) {
+    const filed = findMirror(filedOf(id.mkey), id.mkey, tx.amount);
+    if (filed && typeof filed.ruleId === 'string') return { ...out, ruleId: filed.ruleId, indirect: true };
+  }
+  return out;
 }
 
 function classify(input, ctx) {
@@ -12434,6 +12499,17 @@ function spendsByMerchant(txs) {
   return index;
 }
 
+function filedByMerchant(txs) {
+  const index = new Map();
+  for (const tx of txs) {
+    if (!tx || tx.kind === 'spend' || tx.flow !== 'out' || !tx.mkey || !isLive(tx) || !isYmd(tx.day)) continue;
+    if (typeof tx.ruleId !== 'string' || !tx.ruleId.startsWith(LEARNED_PREFIX)) continue;
+    if (!index.has(tx.mkey)) index.set(tx.mkey, []);
+    index.get(tx.mkey).push(tx);
+  }
+  return index;
+}
+
 function recentSpendsFor(index, tx) {
   return (mkey) => {
     const spends = index.get(mkey);
@@ -12450,7 +12526,13 @@ function categoryFit(tx, locks, category) {
   return { fits, kind: kindFree ? kind : tx.kind };
 }
 
-function applyRuleToRow(tx, rule, { ruleId, clearReview }) {
+function keepsRule(tx, rules) {
+  if (!isFlowFrozen(tx) || typeof tx.ruleId !== 'string' || !tx.ruleId.startsWith(LEARNED_PREFIX) || !Array.isArray(rules)) return false;
+  return rules.some((rule) => rule && typeof rule === 'object' && rule.mkey === tx.mkey && hasUsableField(rule)
+    && learnedRuleId(rule) === tx.ruleId && (rule.flow !== 'out' && rule.flow !== 'in' ? true : rule.flow === directionOf(tx.flow)));
+}
+
+function applyRuleToRow(tx, rule, { ruleId, clearReview, rules = null }) {
   const locks = lockSet(tx);
   const next = {};
   const name = cleanName(rule.merchant);
@@ -12468,15 +12550,18 @@ function applyRuleToRow(tx, rule, { ruleId, clearReview }) {
     }
   }
   if (isKlass(rule.klass) && klassFree) next.klass = rule.klass;
-  if (ruleId) next.ruleId = ruleId;
+  const filed = next.category !== undefined && next.category !== tx.category;
+  if (ruleId && (filed || !keepsRule(tx, rules))) next.ruleId = ruleId;
   if (clearReview) next.review = false;
   return assignChanged(tx, next);
 }
 
-function reclassifyRow(tx, cls) {
+function reclassifyRow(tx, cls, rules) {
   const locks = lockSet(tx);
   const frozen = isFlowFrozen(tx);
-  const next = { mkey: cls.mkey, ruleId: cls.ruleId };
+  // a frozen row keeps the rule it names when classification would name one only indirectly (classifyCore): a deposit
+  // linked before a rule filed the purchase it would mirror is not that rule's, so taking the rule back leaves it be
+  const next = { mkey: cls.mkey, ruleId: keepsRule(tx, rules) || (frozen && cls.indirect) ? tx.ruleId : cls.ruleId };
   if (!locks.has('merchant')) next.merchant = cls.merchant;
   if (!locks.has('purpose')) next.purpose = cls.purpose;
 
@@ -12512,20 +12597,21 @@ function reclassify(state, txIds) {
   const rules = learnedRules(state);
   const accountTypes = new Map((Array.isArray(state && state.accounts) ? state.accounts : []).filter(Boolean).map((a) => [a.id, a.type]));
   const rows = txs.filter((tx) => tx && typeof tx === 'object' && tx.kind !== 'decline' && !tx.matchId && (!only || only.has(tx.id)));
-  const reread = (tx, spendsOf) => {
+  const reread = (tx, spendsOf, filedOf) => {
     if (typeof tx.raw === 'string' && tx.raw.trim()) {
       const input = { description: tx.raw, mcc: tx.mcc, amount: tx.amount, flow: tx.flow, accountType: accountTypes.get(tx.accountId) };
-      return reclassifyRow(tx, classifyCore(input, rules, spendsOf));
+      return reclassifyRow(tx, classifyCore(input, rules, spendsOf, filedOf), rules);
     }
-    const rule = findLearned(rules, tx.mkey);
-    return !!rule && applyRuleToRow(tx, rule, { ruleId: learnedRuleId(rule), clearReview: false });
+    const rule = findLearned(rules, tx.mkey, tx.flow, tx.kind);
+    return !!rule && applyRuleToRow(tx, rule, { ruleId: learnedRuleId(rule), clearReview: false, rules });
   };
   // Money out first: a refund is recognised by the spend it mirrors, which has to be classified before it.
   const moneyOut = rows.filter((tx) => tx.flow !== 'in');
   let changed = moneyOut.filter((tx) => reread(tx, () => [])).length;
   const spends = spendsByMerchant(txs);
+  const filed = filedByMerchant(txs);
   for (const tx of rows) {
-    if (tx.flow === 'in' && reread(tx, recentSpendsFor(spends, tx))) changed++;
+    if (tx.flow === 'in' && reread(tx, recentSpendsFor(spends, tx), recentSpendsFor(filed, tx))) changed++;
   }
   return changed;
 }
@@ -12571,13 +12657,13 @@ function applyCorrection(tx, given) {
   return { accepted, changed };
 }
 
-function upsertRule(state, mkey, given) {
+function upsertRule(state, mkey, direction, given) {
   if (!state.settings || typeof state.settings !== 'object') state.settings = {};
   if (!Array.isArray(state.settings.rules)) state.settings.rules = [];
   const rules = state.settings.rules;
-  let rule = rules.find((r) => r && typeof r === 'object' && r.mkey === mkey);
+  let rule = rules.find((r) => r && typeof r === 'object' && r.mkey === mkey && r.flow === direction);
   if (!rule) {
-    rule = { id: LEARNED_PREFIX + newId('r').slice(2), mkey };
+    rule = { id: LEARNED_PREFIX + newId('r').slice(2), mkey, flow: direction };
     rules.push(rule);
   } else if (typeof rule.id !== 'string' || !rule.id) {
     rule.id = LEARNED_PREFIX + newId('r').slice(2);
@@ -12596,17 +12682,71 @@ function learnRule(state, txId, fields, opts) {
   let changed = correction.changed ? 1 : 0;
   if ((opts && opts.onlyThis) || typeof tx.mkey !== 'string' || !tx.mkey) return { changed, ruleId: null };
 
-  const rule = upsertRule(state, tx.mkey, correction.accepted);
+  // the rule covers the direction of the move corrected: money out, or money in (3.3)
+  const direction = directionOf(tx.flow);
+  upsertRule(state, tx.mkey, direction, correction.accepted);
+  const rules = learnedRules(state);
+  const rule = findLearned(rules, tx.mkey, tx.flow, tx.kind);
   const ruleId = learnedRuleId(rule);
-  if (tx.ruleId !== ruleId) {
-    tx.ruleId = ruleId;
-    changed = Math.max(changed, 1);
+  tx.ruleId = ruleId;
+  // what the toast counts: the rows whose kind, category, class, purpose or merchant changed (a row whose rule id alone
+  // moved is not one the owner sees corrected)
+  const before = new Map(txs.filter((t) => t && typeof t === 'object' && t !== tx && t.mkey === tx.mkey).map((t) => [t, faceOf(t)]));
+  const moneyIn = [];
+  for (const other of before.keys()) {
+    if (directionOf(other.flow) === direction) applyRuleToRow(other, rule, { ruleId, clearReview: true, rules });
+    else if (direction === 'out') moneyIn.push(other.id); // money in with no correction of its own takes the money-out rule when it is a refund
   }
-  for (const other of txs) {
-    if (!other || typeof other !== 'object' || other === tx || other.mkey !== tx.mkey) continue;
-    if (applyRuleToRow(other, rule, { ruleId, clearReview: true })) changed++;
+  if (moneyIn.length && !keepsMoneyIn(learnedSet(rules, tx.mkey))) reclassify(state, moneyIn);
+  let refunds = 0;
+  for (const [other, face] of before) {
+    if (faceOf(other) === face) continue;
+    if (directionOf(other.flow) === direction) changed++;
+    else refunds++;
   }
-  return { changed, ruleId };
+  return { changed: changed + refunds, ruleId, refunds };
+}
+
+function faceOf(tx) {
+  return JSON.stringify([tx.kind, tx.category, tx.klass, tx.purpose, tx.merchant]);
+}
+
+function correctionReach(state, tx) {
+  const direction = directionOf(tx && tx.flow);
+  const out = { direction, count: 1, refunds: 0, kept: false };
+  if (!tx || typeof tx !== 'object' || typeof tx.mkey !== 'string' || !tx.mkey) return out;
+  const txs = Array.isArray(state && state.txs) ? state.txs : [];
+  const mine = txs.filter((t) => t && typeof t === 'object' && t.mkey === tx.mkey && !t.matchId);
+  out.count = Math.max(1, mine.filter((t) => directionOf(t.flow) === direction).length);
+  if (direction !== 'out') return out;
+  out.kept = keepsMoneyIn(learnedSet(learnedRules(state), tx.mkey));
+  if (out.kept) return out;
+  const index = spendsByMerchant(txs);
+  // (a refund corrected on its own keeps its correction, as the help says)
+  out.refunds = mine.filter((t) => t.flow === 'in' && t.kind !== 'decline' && !isFlowFrozen(t) && !lockSet(t).has('category')
+    && builtinKindOf(state, t, index) === 'refund').length;
+  return out;
+}
+
+function builtinKindOf(state, tx, index) {
+  if (typeof tx.raw !== 'string' || !tx.raw.trim()) return tx.kind;
+  const accounts = Array.isArray(state && state.accounts) ? state.accounts : [];
+  const account = accounts.find((a) => a && a.id === tx.accountId);
+  const input = readInput({ description: tx.raw, mcc: tx.mcc, amount: tx.amount, flow: tx.flow, accountType: account ? account.type : undefined });
+  const id = identify(input);
+  const spendsOf = recentSpendsFor(index, tx);
+  return classifyBuiltin(input, id, findMirror(spendsOf(id.mkey), id.mkey, input.amount)).kind;
+}
+
+function ruleOfRow(state, tx) {
+  if (!tx || typeof tx !== 'object' || typeof tx.mkey !== 'string' || !tx.mkey) return null;
+  const rules = learnedRules(state);
+  const kind = directionOf(tx.flow) === 'in' ? builtinKindOf(state, tx, spendsByMerchant(Array.isArray(state.txs) ? state.txs : [])) : tx.kind;
+  return findLearned(rules, tx.mkey, tx.flow, kind);
+}
+
+function ruleCovers(rule, flow) {
+  return !!rule && typeof rule === 'object' && (rule.flow !== 'out' && rule.flow !== 'in' ? true : rule.flow === directionOf(flow));
 }
 
 function confirmMove(state, txId) {
@@ -12669,7 +12809,7 @@ function inferAccountType(account) {
   if (hint) return hint.type;
   return account && Number.isFinite(account.balance) && account.balance < 0 ? 'credit_card' : 'checking';
 }
-return { normalizeDescription, merchantOf, classify, reclassify, learnRule, confirmMove, topMerchants, inferAccountType };
+return { normalizeDescription, merchantOf, classify, reclassify, learnRule, correctionReach, ruleOfRow, ruleCovers, confirmMove, topMerchants, inferAccountType };
 })();
 
 // ---- js/model/recent.js
@@ -12749,7 +12889,7 @@ return { AHEAD_DAYS, recentTransactions };
 __mods["js/model/corrections.js"] = (function () {
 const { CADENCES, CATEGORIES, FLOW_CATEGORIES, KLASSES, PURPOSES, STREAM_KINDS } = __mods["js/model/schema.js"];
 const { isYmd } = __mods["js/model/dates.js"];
-const { learnRule, reclassify } = __mods["js/model/classify.js"];
+const { learnRule, reclassify, ruleCovers, ruleOfRow } = __mods["js/model/classify.js"];
 const { payeeKey } = __mods["js/model/byhand.js"];
 const MAX_RULES = 1000;
 const MAX_MOVES = 1000;
@@ -12767,6 +12907,8 @@ const UNSAFE = new Set(['__proto__', 'constructor', 'prototype']);
 const ROW_KEY = /^[if][0-9a-f]{13}$/;
 const FP_KEY = /^f[0-9a-f]{13}$/;
 const MERCHANT_KEY = /^p[0-9a-f]{13}$/;
+const RULE_KEY = /^p[0-9a-f]{13}(?::(?:out|in))?$/;
+const DIRECTIONS = ['out', 'in'];
 const STREAM_KEY = /^p[0-9a-f]{13}\|a[0-9a-f]{13}$/;
 const LEARNED_SHARED = 'learned:s';
 
@@ -12774,6 +12916,53 @@ const LEARNED_SHARED = 'learned:s';
 
 function readCorrections(raw) {
   return sectionOf(raw, true);
+}
+
+function readSharedCorrections(corrections, flowRules) {
+  if (corrections !== undefined && corrections !== null && !isObject(corrections)) return null;
+  const joined = isObject(corrections) ? { ...corrections } : {};
+  if (isObject(joined.rules)) {
+    const keys = Object.keys(joined.rules);
+    // (what a round holds in memory keeps the rules of one direction here too: never written so, see sharedSections)
+    if (keys.length > MAX_RULES || keys.some((key) => !isRuleKey(key))) return null;
+    joined.rules = { ...joined.rules };
+  }
+  if (flowRules !== undefined) {
+    if (!isObject(flowRules)) return null;
+    for (const flow of Object.keys(flowRules)) {
+      const map = flowRules[flow];
+      if (!DIRECTIONS.includes(flow) || !isObject(map) || Object.keys(map).length > MAX_RULES) return null;
+      if (joined.rules === undefined || joined.rules === null) joined.rules = {};
+      if (!isObject(joined.rules)) return null;
+      for (const key of Object.keys(map)) {
+        if (!isMerchantKey(key)) return null;
+        const at = ruleKeyOf(key, flow);
+        if (!Object.hasOwn(joined.rules, at)) { joined.rules[at] = map[key]; continue; }
+        // the same rule in both places (no writer puts it so): the two copies merge field by field, the later stamp winning
+        const p = ruleOf(joined.rules[at]);
+        const q = ruleOf(map[key]);
+        if (!p || !q) return null;
+        joined.rules[at] = mergeEntry(p, q, RULE_FIELDS, false);
+      }
+    }
+  }
+  return readCorrections(joined);
+}
+
+function sharedSections(section) {
+  const s = readCorrections(section) || blank();
+  const corrections = { rules: {}, moves: s.moves, streams: s.streams };
+  const flows = { out: {}, in: {} };
+  for (const key of Object.keys(s.rules)) {
+    const { merchant, flow } = ruleKeyParts(key);
+    if (flow) flows[flow][merchant] = s.rules[key]; else corrections.rules[key] = s.rules[key];
+  }
+  const flowRules = {};
+  for (const flow of DIRECTIONS) if (Object.keys(flows[flow]).length) flowRules[flow] = flows[flow];
+  return {
+    corrections: Object.keys(corrections.rules).length || Object.keys(corrections.moves).length || Object.keys(corrections.streams).length ? corrections : null,
+    flowRules: Object.keys(flowRules).length ? flowRules : null,
+  };
 }
 
 function keptCorrections(raw) {
@@ -12784,12 +12973,12 @@ function sectionOf(raw, strict) {
   if (raw === undefined || raw === null) return blank();
   if (!isObject(raw)) return strict ? null : blank();
   const out = blank();
-  const parts = [['rules', isMerchantKey, ruleOf, MAX_RULES], ['moves', isRowKey, moveOf, MAX_MOVES], ['streams', isStreamKey, streamOf, MAX_STREAM_SETTINGS]];
+  const parts = [['rules', isRuleKey, ruleOf, MAX_RULES], ['moves', isRowKey, moveOf, MAX_MOVES], ['streams', isStreamKey, streamOf, MAX_STREAM_SETTINGS]];
   for (const [name, keyOk, valueOf, max] of parts) {
     const map = raw[name] === undefined ? {} : raw[name];
     if (!isObject(map)) { if (strict) return null; continue; }
     const keys = Object.keys(map);
-    if (strict && keys.length > max) return null;
+    if (strict && keys.length > (name === 'rules' ? max * (DIRECTIONS.length + 1) : max)) return null;
     for (const key of keys) {
       const value = keyOk(key) ? valueOf(map[key], key) : null;
       if (!value) { if (strict) return null; continue; }
@@ -13060,7 +13249,8 @@ function recordValues(state) {
   const out = { rules: {}, moves: {}, streams: {}, heldMerchants: new Set(), heldMoves: new Map(), heldStreams: new Set() };
   const settings = isObject(state.settings) ? state.settings : {};
   for (const rule of listOf(settings.rules)) {
-    const key = isObject(rule) ? merchantKeyOf(rule.mkey) : null;
+    const merchant = isObject(rule) ? merchantKeyOf(rule.mkey) : null;
+    const key = merchant ? ruleKeyOf(merchant, rule.flow) : null;
     if (!key || Object.hasOwn(out.rules, key)) continue;
     const fields = pick(rule, RULE_FIELDS, (field) => rule[field] != null && rule[field] !== '');
     if (fields) out.rules[key] = fields;
@@ -13147,7 +13337,10 @@ function noteMove(state, txId, nowMs) {
   const where = tx ? rowWhere(tx, accountKeys(state)) : null;
   const merchant = tx ? merchantKeyOf(tx.mkey) : null;
   if (!where && !merchant) return false;
-  const section = ensureSection(state, [['moves', where && where.key], ['rules', merchant]]);
+  // the owner's rule covers the direction of the row corrected (3.3)
+  const direction = tx.flow === 'in' ? 'in' : 'out';
+  const ruleKey = merchant ? ruleKeyOf(merchant, direction) : null;
+  const section = ensureSection(state, [['moves', where && where.key], ['rules', ruleKey]]);
   const values = recordValues(state);
   let wrote = false;
   if (where && values.moves[where.key]) {
@@ -13155,23 +13348,27 @@ function noteMove(state, txId, nowMs) {
     section.moves = capped(section.moves, MAX_MOVES);
     remember(state, tx.id, where.key);
   }
-  if (merchant && values.rules[merchant]) {
-    const was = own(own(section.rules, merchant), 'category');
-    wrote = write(section.rules, merchant, values.rules[merchant], nowMs, true) || wrote;
+  if (ruleKey && values.rules[ruleKey]) {
+    const was = own(own(section.rules, ruleKey), 'category');
+    wrote = write(section.rules, ruleKey, values.rules[ruleKey], nowMs, true) || wrote;
     section.rules = capped(section.rules, MAX_RULES);
-    const now = own(own(section.rules, merchant), 'category');
-    if (isObject(now) && !now.deleted && canon(now) !== canon(was)) wrote = keepHeld(state, section, tx.mkey, now.v, nowMs) || wrote;
+    const now = own(own(section.rules, ruleKey), 'category');
+    if (isObject(now) && !now.deleted && canon(now) !== canon(was)) wrote = keepHeld(state, section, tx.mkey, direction, nowMs) || wrote;
   }
   return wrote;
 }
 
-function keepHeld(state, section, mkey, category, nowMs) {
+function keepHeld(state, section, mkey, direction, nowMs) {
   if (typeof mkey !== 'string' || !mkey) return false;
   const accounts = accountKeys(state);
   const held = [];
   for (const tx of listOf(state.txs)) {
     if (!isObject(tx) || tx.mkey !== mkey || (tx.streamId == null && tx.pairId == null) || tx.kind === 'decline') continue;
-    if (locksOf(tx).has('category') || tx.category === category || kindOf(category, tx.flow) === null || !valueOk('category', tx.category)) continue;
+    // the rows the edited rule files: of its direction (and a refund the money-out rule files, with no rule for money in)
+    const rule = ruleOfRow(state, tx);
+    if (!rule || rule.flow !== direction) continue;
+    const category = rule.category;
+    if (locksOf(tx).has('category') || category == null || tx.category === category || kindOf(category, tx.flow) === null || !valueOk('category', tx.category)) continue;
     const where = rowWhere(tx, accounts);
     if (!where) continue;
     tx.locks = [...(Array.isArray(tx.locks) ? tx.locks : []), 'category'];
@@ -13281,7 +13478,8 @@ function restampCorrections(before, after) {
     wrote = true;
   };
   for (const key of union(was.rules, now.rules)) {
-    if (!was.heldMerchants.has(key) || !now.heldMerchants.has(key)) continue;
+    const { merchant } = ruleKeyParts(key);
+    if (!was.heldMerchants.has(merchant) || !now.heldMerchants.has(merchant)) continue;
     restamp('rules', key);
   }
   for (const key of union(was.moves, now.moves)) {
@@ -13426,16 +13624,19 @@ function applyRules(state, entries, concurrent = new Set()) {
   }
   let changed = false;
   for (const key of keys) {
-    const mkey = mkeys.get(key);
+    const { merchant, flow } = ruleKeyParts(key);
+    const mkey = mkeys.get(merchant);
     if (mkey === undefined) continue; // no row of this merchant yet: the rule waits for the reading that brings one
     const live = liveOf(entries[key]);
     const dead = deadOf(entries[key]);
     const undone = own(own(entries[key], 'category'), 'undo') === true;
-    const at = list.findIndex((rule) => isObject(rule) && rule.mkey === mkey);
+    // the rule of that merchant and direction (a rule made before rules had a direction has none)
+    const same = (one) => isObject(one) && one.mkey === mkey && (flow ? one.flow === flow : one.flow !== 'out' && one.flow !== 'in');
+    const at = list.findIndex(same);
     const rule = at >= 0 ? list[at] : null;
     if (!rule) {
       if (!Object.keys(live).length) continue;
-      list.push({ id: LEARNED_SHARED + key.slice(1), mkey, ...live });
+      list.push({ id: LEARNED_SHARED + merchant.slice(1) + (flow ? '.' + flow : ''), mkey, ...(flow ? { flow } : {}), ...live });
       changed = true;
       continue;
     }
@@ -13452,7 +13653,7 @@ function applyRules(state, entries, concurrent = new Set()) {
     if (rule.category != null && next.category == null) release(state, mkey, rule);
     else if (rule.category != null && (undone || concurrent.has(key)) && next.category !== rule.category) refile(state, mkey, rule);
     if (RULE_FIELDS.every((field) => next[field] == null)) {
-      for (let i = list.length - 1; i >= 0; i--) if (isObject(list[i]) && list[i].mkey === mkey) list.splice(i, 1);
+      for (let i = list.length - 1; i >= 0; i--) if (same(list[i])) list.splice(i, 1);
     } else {
       for (const field of RULE_FIELDS) {
         if (next[field] == null) delete rule[field];
@@ -13492,12 +13693,26 @@ function refile(state, mkey, rule) {
 function refileRows(state, rows, rule) {
   if (!rows.length) return;
   const links = new Map(rows.map((tx) => [tx, tx.streamId]));
+  const ids = new Map(rows.map((tx) => [tx, tx.ruleId]));
   for (const tx of rows) tx.streamId = null;
-  const category = rule ? rule.category : undefined;
-  if (rule) delete rule.category; // read without the rule's category, its other fields kept
+  // read without the merchant's learned categories, their other fields kept: the rule's, and those of the other rules
+  // of that merchant (a rule of one direction is laid over one made before rules had a direction, 3.3), as a device
+  // that held neither reads them
+  const mkeys = new Set([...(rule ? [rule.mkey] : []), ...rows.map((tx) => tx.mkey)]);
+  const held = listOf(isObject(state.settings) ? state.settings.rules : null).filter((one) => isObject(one) && mkeys.has(one.mkey) && one.category !== undefined);
+  const categories = held.map((one) => one.category);
+  for (const one of held) delete one.category;
   reclassify(state, rows.map((tx) => tx.id));
-  if (rule && category !== undefined) rule.category = category;
-  for (const tx of rows) if (tx.kind === 'income') tx.streamId = links.get(tx);
+  held.forEach((one, i) => { one.category = categories[i]; });
+  // a row linked again keeps naming the rule that filed it, while that rule still covers it (as classify's keepsRule
+  // keeps it on a frozen row): taking that rule back later (release) then reaches the same rows on every device
+  const all = listOf(isObject(state.settings) ? state.settings.rules : null);
+  for (const tx of rows) {
+    if (tx.kind !== 'income') continue;
+    tx.streamId = links.get(tx);
+    const id = ids.get(tx);
+    if (typeof id === 'string' && all.some((one) => isObject(one) && one.mkey === tx.mkey && learnedIdOf(one) === id && ruleCovers(one, tx.flow))) tx.ruleId = id;
+  }
 }
 
 function learnedIdOf(rule) {
@@ -13549,7 +13764,10 @@ function applyMoves(state, entries) {
       // a deposit whose category goes back to the rules is read again as a device that never held the correction
       // reads it: it keeps its link when classification without the merchant rule's category files it as income
       if (dead.includes('category') && tx.streamId != null) {
-        const rule = listOf(isObject(state.settings) ? state.settings.rules : null).find((one) => isObject(one) && one.mkey === tx.mkey && one.category != null);
+        // the rule that files this row's category (of its direction, 3.3)
+        const view = ruleOfRow(state, tx);
+        const id = view && view.category != null ? learnedIdOf(view) : null;
+        const rule = id ? listOf(isObject(state.settings) ? state.settings.rules : null).find((one) => isObject(one) && learnedIdOf(one) === id) : null;
         refileRows(state, [tx], rule || null);
       }
       changed = true;
@@ -13624,6 +13842,19 @@ function isMerchantKey(key) {
   return MERCHANT_KEY.test(key);
 }
 
+function isRuleKey(key) {
+  return RULE_KEY.test(key);
+}
+
+function ruleKeyOf(merchant, flow) {
+  return flow === 'out' || flow === 'in' ? merchant + ':' + flow : merchant;
+}
+
+function ruleKeyParts(key) {
+  const at = key.indexOf(':');
+  return at < 0 ? { merchant: key, flow: null } : { merchant: key.slice(0, at), flow: key.slice(at + 1) };
+}
+
 function isRowKey(key) {
   return ROW_KEY.test(key);
 }
@@ -13666,7 +13897,7 @@ function isObject(x) {
 function listOf(x) {
   return Array.isArray(x) ? x : [];
 }
-return { MAX_RULES, MAX_MOVES, MAX_STREAM_SETTINGS, MOVE_KEEP_DAYS, readCorrections, mergeCorrections, isBlankCorrections, pruneCorrections, arrivedCorrections, exportCorrections, storedCorrections, storeCorrections, seedCorrections, noteMove, noteStream, restampCorrections, applyCorrections };
+return { MAX_RULES, MAX_MOVES, MAX_STREAM_SETTINGS, MOVE_KEEP_DAYS, readCorrections, readSharedCorrections, sharedSections, mergeCorrections, isBlankCorrections, pruneCorrections, arrivedCorrections, exportCorrections, storedCorrections, storeCorrections, seedCorrections, noteMove, noteStream, restampCorrections, applyCorrections };
 })();
 
 // ---- js/model/detect.js
@@ -16614,7 +16845,7 @@ const { makeByHand } = __mods["js/model/byhand.js"];
 const { isYmd } = __mods["js/model/dates.js"];
 const { refresh } = __mods["js/model/detect.js"];
 const { ensureIncome, exportIncomeShared, incomeOf, isBlankIncome, mergeIncomeShared, readIncomeShared, rebuildIncome } = __mods["js/model/income.js"];
-const { applyCorrections, arrivedCorrections, exportCorrections, isBlankCorrections, mergeCorrections, pruneCorrections, readCorrections, storeCorrections, storedCorrections } = __mods["js/model/corrections.js"];
+const { applyCorrections, arrivedCorrections, exportCorrections, isBlankCorrections, mergeCorrections, pruneCorrections, readSharedCorrections, sharedSections, storeCorrections, storedCorrections } = __mods["js/model/corrections.js"];
 const { applyPrefs, exportPrefs, isBlankPrefs, mergePrefs, noteSeenPrefs, prefsDiffer, prefsUnseen, readPrefs } = __mods["js/model/prefs.js"];
 const VERSION = 1;
 const APP = 'networth';
@@ -16629,7 +16860,7 @@ const MAX_STAMP = 1e14;
 const MAX_DEPTH = 12;
 const TOMB_KEEP_MS = 400 * 86400000;
 const RESTARTS = 3;
-const KNOWN = new Set(['v', 'app', 'savedAt', 'byHand', 'income', 'corrections', 'prefs']);
+const KNOWN = new Set(['v', 'app', 'savedAt', 'byHand', 'income', 'corrections', 'flowRules', 'prefs']);
 const UNSAFE = new Set(['__proto__', 'constructor', 'prototype']);
 const ID = /^[A-Za-z0-9_.:-]{1,80}$/;
 const PAYEE = /^p[0-9a-f]{13}$/;
@@ -16668,9 +16899,10 @@ function fileOf(raw) {
     if (!income) return null;
     if (!isBlankIncome(income)) out.income = income;
   }
-  if (raw.corrections !== undefined) {
-    // the owner's corrections (3.8): checked like the rest; an empty section is left out
-    const corrections = readCorrections(raw.corrections);
+  if (raw.corrections !== undefined || raw.flowRules !== undefined) {
+    // the owner's corrections (3.8), and the rules of one direction in a section of their own, which an older version
+    // keeps whole and never applies (3.3): checked like the rest, read as one section; an empty section is left out
+    const corrections = readSharedCorrections(raw.corrections, raw.flowRules);
     if (!corrections) return null;
     if (!isBlankCorrections(corrections)) out.corrections = corrections;
   }
@@ -16971,7 +17203,7 @@ async function roundShared(device, transport, clock) {
     const count = Object.keys(merged.byHand).filter((id) => !merged.byHand[id].deleted).length;
     const none = got.text == null;
     if (none ? isBlank(merged) : sameShared(merged, file)) return { ok: true, changed, wrote: false, file: !none, count };
-    const text = JSON.stringify({ ...merged, savedAt: now }, null, 1);
+    const text = fileText({ ...merged, savedAt: now });
     if (!readSharedFile(text)) throw unreadable();
     if (stale()) return { ok: false, skipped: true };
     try {
@@ -16981,6 +17213,18 @@ async function roundShared(device, transport, clock) {
       if (!err || err.code !== 'conflict' || turn >= RESTARTS) throw err;
     }
   }
+}
+
+function fileText(file) {
+  const out = { ...file };
+  delete out.corrections;
+  delete out.flowRules;
+  if (file.corrections) {
+    const { corrections, flowRules } = sharedSections(file.corrections);
+    if (corrections) out.corrections = corrections;
+    if (flowRules) out.flowRules = flowRules;
+  }
+  return JSON.stringify(out, null, 1);
 }
 
 function withoutOldCorrections(file) {
@@ -17069,7 +17313,7 @@ function isObject(x) {
 function listOf(x) {
   return Array.isArray(x) ? x : [];
 }
-return { readSharedFile, exportShared, mergeShared, sameShared, sharedChanges, applyShared, roundShared };
+return { readSharedFile, exportShared, mergeShared, sameShared, sharedChanges, applyShared, roundShared, fileText };
 })();
 
 // ---- js/github.js
@@ -21569,6 +21813,7 @@ const { fmt, fmtPct, ratio, toneBand } = __mods["js/model/money.js"];
 const { addDays, diffDays, fmtDate, fmtMonth, fmtTime, gameDay, isYmd, monthOf, nowMs, ymd } = __mods["js/model/dates.js"];
 const { firstTransactionDay } = __mods["js/model/cards.js"];
 const { nextOccurrence, runsByHand } = __mods["js/model/book.js"];
+const { emptiedStreams } = __mods["js/model/ledger.js"];
 const { editByHand, skipRow, tickByHand } = __mods["js/model/byhand.js"];
 const { refresh } = __mods["js/model/detect.js"];
 const { answerItems, answerPayer, cashAccountOf, incomeQuestions, isIdleCash } = __mods["js/model/income.js"];
@@ -21657,7 +21902,8 @@ function scoresheetDay(day) {
 
 function payOnArrival(ctx) {
   const streams = Array.isArray(ctx.state.streams) ? ctx.state.streams : [];
-  const held = streams.find((s) => s && s.active !== false && s.accrue === false && Array.isArray(s.locks) && s.locks.includes('accrue'));
+  const emptied = emptiedStreams(ctx.state);
+  const held = streams.find((s) => s && s.active !== false && s.accrue === false && Array.isArray(s.locks) && s.locks.includes('accrue') && !emptied.has(s.id));
   return held ? held.name || 'regular pay' : '';
 }
 
@@ -23318,6 +23564,7 @@ const { fmtDate, fmtMonth, fmtTime, gameDay, diffDays, isYmd, monthOf, parts: ym
 const { ACCOUNT_TYPES, accountLabel } = __mods["js/model/schema.js"];
 const { largestCharges, firstTransactionDay } = __mods["js/model/cards.js"];
 const { CASH_ROLE, cashAccountOf, isIdleCash } = __mods["js/model/income.js"];
+const { emptiedStreams } = __mods["js/model/ledger.js"];
 const { bankWhere, cashLineWords, cashNoteWords, countedWords, isCountedCash, recordEstimate, recordLead } = __mods["js/views/income-words.js"];
 const { figured, money, movesList, inlineMoney, toneStyle, flowLookups, unbankedWords } = __mods["js/views/parts.js"];
 const { sayHtml } = __mods["js/ui/say.js"];
@@ -23361,7 +23608,9 @@ function isWorkedDown(ctx, account) {
 
 function payCounting(ctx) {
   if (ctx.d.position.smoothing) return 'on';
-  return ctx.state.streams.some((s) => s.active !== false && !!s.cadence && (s.kind === 'salary' || s.accrue || (s.locks || []).includes('accrue'))) ? 'off' : 'none';
+  // a stream that holds no deposit while its payer's are on record gives no pay (ledger emptiedStreams): not regular pay
+  const emptied = emptiedStreams(ctx.state);
+  return ctx.state.streams.some((s) => s.active !== false && !!s.cadence && !emptied.has(s.id) && (s.kind === 'salary' || s.accrue || (s.locks || []).includes('accrue'))) ? 'off' : 'none';
 }
 
 function ageOf(ctx, at) {
@@ -24029,6 +24278,7 @@ const { fmt } = __mods["js/model/money.js"];
 const { addDays, diffDays, fmtDate, isYmd, monthOf, relDay } = __mods["js/model/dates.js"];
 const { ACCOUNT_TYPES, CADENCES, STREAM_KINDS, accountLabel, categoryLabel } = __mods["js/model/schema.js"];
 const { annualCost, dailyCost, nextOccurrence } = __mods["js/model/book.js"];
+const { emptiedStreams } = __mods["js/model/ledger.js"];
 const { moveGlyph, timeTroubleGlyph } = __mods["js/ui/glyphs.js"];
 const { sayHtml } = __mods["js/ui/say.js"];
 const { say } = __mods["js/model/words.js"];
@@ -24514,18 +24764,21 @@ function accrues(stream) {
   return !!stream.accrue && !!stream.active && !!CADENCES[stream.cadence];
 }
 
-function streamRow(ctx, m, stream) {
+function streamRow(ctx, m, stream, emptied) {
   const kind = STREAM_KINDS[stream.kind] ? STREAM_KINDS[stream.kind].label : 'Other income';
   const regular = !!CADENCES[stream.cadence];
   const account = accountName(ctx, stream.accountId);
   const daily = regular ? Math.round(stream.amount / CADENCES[stream.cadence].days) : 0;
-  const counted = ctx.d.position.smoothing && accrues(stream);
+  // a stream that holds no linked deposit gives no pay (ledger isScheduled): none on record, nothing counted
+  const held = !emptied.has(stream.id);
+  const counted = ctx.d.position.smoothing && accrues(stream) && held;
+  const last = !held ? ' · no deposit on record' : stream.anchor ? ' · last deposit ' + fmtDate(stream.anchor, 'dowshort') : '';
   return html`<li data-key="${stream.id}"><button class="row" type="button" data-action="book.open" data-sheet="stream" data-id="${stream.id}">
     <span class="row-label">${stream.name || 'Unnamed stream'}
-      <em class="row-note">${kind} · ${regular ? cadenceText(stream.cadence) : 'irregular'}${stream.anchor ? ' · last deposit ' + fmtDate(stream.anchor, 'dowshort') : ''}${account ? ' · ' + account : ''}${stream.active ? '' : ' · not seen lately'}</em>
+      <em class="row-note">${kind} · ${regular ? cadenceText(stream.cadence) : 'irregular'}${last}${account ? ' · ' + account : ''}${stream.active ? '' : ' · not seen lately'}</em>
       <em class="row-note bk-counted">${counted
         ? sayHtml('book.stream.counted', ctx.words, { amount: inFig(daily, true) })
-        : accrues(stream)
+        : accrues(stream) && held
           ? sayHtml('book.stream.set', ctx.words)
           : sayHtml('book.stream.arrives', ctx.words)}</em>
     </span>
@@ -24536,7 +24789,10 @@ function streamRow(ctx, m, stream) {
 function countingPassage(ctx, m) {
   const w = ctx.words;
   const position = ctx.d.position;
-  const streams = ctx.state.streams;
+  // a stream that holds no deposit while its payer's are on record gives no pay (ledger emptiedStreams): the passage
+  // leaves it out, as the ledger does
+  const emptied = emptiedStreams(ctx.state);
+  const streams = ctx.state.streams.filter((stream) => !emptied.has(stream.id));
   const settingOn = !!ctx.state.settings.smoothing;
   if (position.smoothing && position.receivables.length) {
     const main = position.receivables[0];
@@ -24578,13 +24834,14 @@ function countingPassage(ctx, m) {
 function incomeBands(ctx, m) {
   const streams = ctx.state.streams.slice().sort((a, b) => Number(accrues(b)) - Number(accrues(a)) || Number(b.active) - Number(a.active) || b.amount - a.amount);
   const lapsed = (Array.isArray(ctx.d.position.lapsedPay) ? ctx.d.position.lapsedPay : []).filter((item) => item && typeof item === 'object');
+  const emptied = emptiedStreams(ctx.state);
   return html`<section class="band">
       <div class="sec-head">
         <h2 class="lab"><b>Income</b><i class="sep"></i>${streams.length ? plural(streams.length, 'stream') : 'streams'}</h2>
         <span class="lab">typical deposit</span>
       </div>
       ${streams.length
-        ? html`<ul class="rows bk-streams">${streams.map((stream) => streamRow(ctx, m, stream))}</ul>
+        ? html`<ul class="rows bk-streams">${streams.map((stream) => streamRow(ctx, m, stream, emptied))}</ul>
           ${lapsed.map((item) => html`<p class="cap bk-foot" data-key="${'lapsed-' + item.id}">No deposit from ${item.name || 'a regular payer'} since ${isYmd(item.since) ? fmtDate(item.since, 'short') : 'a day not on record'}; ${(streams.find((s) => s && s.id === item.id) || {}).accrue === false ? 'it no longer sets the payday' : say('book.lapsed.earned', ctx.words)}.</p>`)}
           <p class="cap bk-foot">A stream is a payer seen at least twice. Each deposit shown is the typical amount, in italics: not a figure the bank has reported for the next one.</p>`
         : html`<p class="cap bk-quiet">No pay has been found in ${historyPhrase(ctx)}. A payer is listed after its second deposit, and a paycheck is recognized after its third.</p>`}
@@ -24661,7 +24918,7 @@ const { context, toast } = __mods["js/runtime.js"];
 const { fmt, fmtSigned, fmtPlain, fmtPct, toCents } = __mods["js/model/money.js"];
 const { addDays, addMonthsYm, diffDays, endOfMonth, fmtDate, fmtMonth, fmtTime, gameDay, monthOf } = __mods["js/model/dates.js"];
 const { CATEGORIES, KLASSES, STREAM_KINDS, accountLabel, categoryLabel, klassLabel } = __mods["js/model/schema.js"];
-const { retention } = __mods["js/model/ledger.js"];
+const { emptiedStreams, retention } = __mods["js/model/ledger.js"];
 const { purchaseImpact } = __mods["js/model/forecast.js"];
 const { payoff } = __mods["js/model/loans.js"];
 const { firstTransactionDay } = __mods["js/model/cards.js"];
@@ -24763,7 +25020,9 @@ function awaitedLine(clock, today) {
 
 function payCounting(ctx) {
   if (ctx.d.position.smoothing) return 'on';
-  return ctx.state.streams.some((s) => s.active !== false && !!s.cadence && (s.kind === 'salary' || s.accrue || (s.locks || []).includes('accrue'))) ? 'off' : 'none';
+  // a stream that holds no deposit while its payer's are on record gives no pay (ledger emptiedStreams): not regular pay
+  const emptied = emptiedStreams(ctx.state);
+  return ctx.state.streams.some((s) => s.active !== false && !!s.cadence && !emptied.has(s.id) && (s.kind === 'salary' || s.accrue || (s.locks || []).includes('accrue'))) ? 'off' : 'none';
 }
 
 function matchFromDay(ctx) {
@@ -25580,7 +25839,7 @@ const { wipeStorage, listSnapshots } = __mods["js/db.js"];
 const { ACCOUNT_TYPES, CADENCES, PURPOSES, SCHEMA_VERSION, accountLabel, accountTypeLabel, checkDoc, migrate, defaultState } = __mods["js/model/schema.js"];
 const { fmt } = __mods["js/model/money.js"];
 const { gameDay, diffDays, fmtDate, fmtTime, nowMs } = __mods["js/model/dates.js"];
-const { position } = __mods["js/model/ledger.js"];
+const { emptiedStreams, position } = __mods["js/model/ledger.js"];
 const { makeDerived } = __mods["js/derive.js"];
 const { coverText, inlineMoney } = __mods["js/views/parts.js"];
 const { alertStatus } = __mods["js/model/alerts.js"];
@@ -26120,7 +26379,9 @@ function incomeSection(ctx) {
 /* ----------------------------------------------------------------- the day */
 
 function payLine(ctx) {
-  const stream = listOf(ctx.state.streams).find((x) => x && x.active && x.accrue);
+  // a stream that holds no deposit while its payer's are on record gives no pay (ledger emptiedStreams): not regular pay
+  const emptied = emptiedStreams(ctx.state);
+  const stream = listOf(ctx.state.streams).find((x) => x && x.active && x.accrue && !emptied.has(x.id));
   const on = !!ctx.state.settings.smoothing;
   if (!stream) {
     return html`No regular pay has been found in the feed yet, so nothing accrues. It starts by itself once a salary shows its rhythm, usually after 2 or 3 paydays.`;
@@ -27910,7 +28171,7 @@ const { html, cx, attrs } = __mods["js/ui/dom.js"];
 const { fmt, fmtPlain, toCents } = __mods["js/model/money.js"];
 const { fmtDate, fmtTime, isYmd, nowMs } = __mods["js/model/dates.js"];
 const { CATEGORIES, KLASSES, PURPOSES, GLYPHS, ACCOUNT_TYPES, accountLabel, categoryLabel, klassLabel, klassOf, makeAccount } = __mods["js/model/schema.js"];
-const { learnRule, confirmMove } = __mods["js/model/classify.js"];
+const { correctionReach, learnRule, confirmMove } = __mods["js/model/classify.js"];
 const { noteMove } = __mods["js/model/corrections.js"];
 const { refresh } = __mods["js/model/detect.js"];
 const { removeManual } = __mods["js/model/merge.js"];
@@ -28149,7 +28410,12 @@ function classification(ctx, tx) {
   const purposes = ctx.state.settings.purposes || {};
   const frozen = isFrozen(tx);
   const decline = tx.kind === 'decline';
-  const sameMerchant = tx.mkey ? ctx.state.txs.filter((t) => t.mkey === tx.mkey && !t.matchId).length : 1;
+  // a correction for the whole merchant covers the direction of this move: money out, or money in; for money out, the
+  // refunds that follow it, or money in that keeps a correction of its own (3.3)
+  const reach = correctionReach(ctx.state, tx);
+  const direction = reach.direction;
+  const sameMerchant = reach.count;
+  const kept = reach.kept ? '.kept' : '';
   // a paired leg is a movement between the owner's own accounts: it has no purpose to set and nothing to learn
   const moved = !!tx.pairId || tx.kind === 'transfer' || tx.kind === 'payment';
   const canLearn = !!tx.mkey && !decline && !(moved && frozen);
@@ -28182,12 +28448,14 @@ function classification(ctx, tx) {
     ${canLearn ? html`<fieldset class="field">
       <legend class="field-label lab">A correction applies to</legend>
       <div class="seg seg-block" role="radiogroup" aria-label="A correction applies to">
-        <label class="seg-opt"><input type="radio" name="scope" value="all" ${labelled ? '' : html`checked`}><span>All from this merchant</span></label>
+        <label class="seg-opt"><input type="radio" name="scope" value="all" ${labelled ? '' : html`checked`}><span>${direction === 'in' ? 'All money in' : 'All money out'}</span></label>
         <label class="seg-opt"><input type="radio" name="scope" value="one" ${labelled ? html`checked` : ''}><span>${sayHtml('tx.scope.one', ctx.words)}</span></label>
       </div>
       <p class="field-help cap">${sameMerchant > 1
-        ? sayHtml('tx.scope.all', ctx.words, { count: html`<i data-cover-keep>${sameMerchant}</i>`, merchant: merchantOf(tx) })
-        : sayHtml('tx.scope.later', ctx.words, { merchant: merchantOf(tx) })}</p>
+        ? sayHtml('tx.scope.all.' + direction + kept, ctx.words, { count: html`<i data-cover-keep>${sameMerchant}</i>`, merchant: merchantOf(tx) })
+        : reach.refunds && !kept
+          ? sayHtml('tx.scope.later.out.refund', ctx.words, { merchant: merchantOf(tx), refunds: html`<i data-cover-keep>${reach.refunds}</i>` })
+          : sayHtml('tx.scope.later.' + direction + kept, ctx.words, { merchant: merchantOf(tx) })}</p>
     </fieldset>` : ''}
   </fieldset>`;
 }
@@ -28432,7 +28700,17 @@ function save({ values, data }) {
   }, { undo: phrase(corrected ? 'tx.toast.corrected' : 'tx.toast.updated', ctx.words) });
 
   closeSheet();
-  const what = result.changed > 1 ? say('tx.toast.many', ctx.words, { count: result.changed, merchant: merchantOf(tx) }) : phrase(corrected ? 'tx.toast.corrected' : 'tx.toast.updated', ctx.words) + '.';
+  // the moves of the direction corrected and the refunds that followed them, counted apart (3.3)
+  const refunds = result.refunds || 0;
+  const moves = result.changed - refunds;
+  const direction = tx.flow === 'in' ? 'in' : 'out';
+  const what = refunds > 0
+    ? say('tx.toast.refunds', ctx.words, {
+      moves: moves === 1 ? phrase('tx.toast.movesOut.one', ctx.words) : say('tx.toast.movesOut.many', ctx.words, { count: moves }),
+      refunds: refunds === 1 ? phrase('tx.toast.refundCount.one', ctx.words) : say('tx.toast.refundCount.many', ctx.words, { count: refunds }),
+      merchant: merchantOf(tx),
+    })
+    : result.changed > 1 ? say('tx.toast.many.' + direction, ctx.words, { count: result.changed, merchant: merchantOf(tx) }) : phrase(corrected ? 'tx.toast.corrected' : 'tx.toast.updated', ctx.words) + '.';
   let split = '';
   if (touched.includes('capital')) {
     split = next.capital
@@ -30164,6 +30442,7 @@ const { phrase } = __mods["js/model/words.js"];
 const { fmt } = __mods["js/model/money.js"];
 const { fmtDate, nowMs, relDay } = __mods["js/model/dates.js"];
 const { CADENCES, STREAM_KINDS, accountLabel } = __mods["js/model/schema.js"];
+const { emptiedStreams } = __mods["js/model/ledger.js"];
 const { refresh } = __mods["js/model/detect.js"];
 const { noteStream } = __mods["js/model/corrections.js"];
 const NAME_MAX = 80;
@@ -30235,8 +30514,10 @@ function render(ctx, params) {
   const isRegular = regular(stream);
   const account = stream.accountId ? ctx.d.account(stream.accountId) : null;
   const deposits = depositsOf(ctx.state, stream.id);
+  // every deposit it held was let go (an Undo, a rule taken back): none on record, and no pay from it (ledger)
+  const emptied = emptiedStreams(ctx.state).has(stream.id);
   // the day its deposits usually land, the one the Board's payday countdown uses (book.usualSchedule)
-  const next = isRegular && stream.anchor && stream.active ? ctx.d.nextPayOf(stream.id) : null;
+  const next = isRegular && stream.anchor && stream.active && !emptied ? ctx.d.nextPayOf(stream.id) : null;
   const fed = Object.keys(FED_FIELDS).filter((field) => hasLock(stream, field));
 
   return html`<form class="sheet-body" data-submit="stream.save" data-id="${stream.id}" novalidate ${attrs({ 'data-cover': !!ctx.state.settings.cover })}>
@@ -30244,7 +30525,7 @@ function render(ctx, params) {
     <h2 class="sheet-title">${stream.name || 'Unnamed stream'}</h2>
     <ul class="rows bks-facts">
       <li class="row"><span class="row-label">Typical deposit</span><span class="row-value fig est"><span class="approx">≈</span>${fmt(stream.amount)}</span></li>
-      <li class="row"><span class="row-label">Last deposit</span><span class="row-value" data-cover-keep>${stream.anchor ? fmtDate(stream.anchor, 'dowshort') + ' · ' + relDay(stream.anchor, ctx.today) : 'not known'}</span></li>
+      <li class="row"><span class="row-label">Last deposit</span><span class="row-value" data-cover-keep>${emptied ? 'none on record' : stream.anchor ? fmtDate(stream.anchor, 'dowshort') + ' · ' + relDay(stream.anchor, ctx.today) : 'not known'}</span></li>
       ${next ? html`<li class="row"><span class="row-label">Next expected</span><span class="row-value" data-cover-keep>${fmtDate(next, 'dowshort')} · ${next < ctx.today ? 'not on the bank’s record yet' : relDay(next, ctx.today)}</span></li>` : ''}
       <li class="row"><span class="row-label">Deposits seen</span><span class="row-value" data-cover-keep>${deposits}${account ? ', into ' + accountLabel(account, ctx.words) : ''}${stream.active ? '' : ' · not seen lately'}</span></li>
     </ul>
@@ -30274,6 +30555,7 @@ function render(ctx, params) {
       <input type="checkbox" role="switch" name="accrue" ${attrs({ checked: !!stream.accrue })}>
       <span class="switch-track" aria-hidden="true"></span>
     </label>
+    ${emptied ? html`<p class="cap">Nothing is counted until a deposit is on record.</p>` : ''}
     ${explanation(ctx, stream)}
 
     <label class="field">

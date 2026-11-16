@@ -8,7 +8,7 @@
 import { ACCOUNT_TYPES, CADENCES, categoryLabel } from './schema.js';
 import { addDays, addMonthsYm, diffDays, endOfMonth, fmtDate, fmtMonth, gameDay, isYmd, minYmd, monthOf, parts, startOfMonth } from './dates.js';
 import { MINUS, fmt, fmtSigned, roundCents } from './money.js';
-import { makeLedger } from './ledger.js';
+import { emptiedStreams, makeLedger } from './ledger.js';
 import { PACE_FROM_DAY, allCardsMonths, cardsNow, firstTransactionDay, historyDays as daysOnRecord } from './cards.js';
 import { annualCost, bookTotals, renewals } from './book.js';
 import { reviewRounds } from './annotate.js';
@@ -336,9 +336,13 @@ function monthlyPay(view) {
   return roundCents(perYear / 12);
 }
 
-/** True when the document holds a salary-like stream: one that accrues, or one the owner set to count on arrival. */
+/**
+ * True when the document holds a salary-like stream: one that accrues, or one the owner set to count on arrival. A
+ * stream that holds no deposit while its payer's are on record is not one (ledger emptiedStreams: it gives no pay).
+ */
 function hasRegularPay(doc) {
-  return listOf(doc.streams).some((stream) => isObject(stream) && stream.active && hasCadence(stream)
+  const emptied = emptiedStreams(doc);
+  return listOf(doc.streams).some((stream) => isObject(stream) && stream.active && hasCadence(stream) && !emptied.has(stream.id)
     && (stream.accrue || (Array.isArray(stream.locks) && stream.locks.includes('accrue'))));
 }
 

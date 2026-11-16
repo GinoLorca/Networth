@@ -1,13 +1,17 @@
 /**
  * The owner's corrections, the same on every device (ARCHITECTURE 3.8): the merchant rules they taught
- * ("All from this merchant"), the fields they set and locked on one bank row, and the settings they locked
- * on an income stream. They travel in the shared file's `corrections` section, merged field by field by stamp.
+ * ("All money out" / "All money in": a rule covers the direction it was taught on, 3.3; one made before rules had a
+ * direction covers both), the fields they set and locked on one bank row, and the settings they locked on an income
+ * stream. They travel in the shared file's `corrections` section, merged field by field by stamp; the rules of one
+ * direction in the `flowRules` section beside it, which an older version keeps whole and never applies.
  *
  *   corrections: {
- *     rules:   { "<merchant>": { category?: F, klass?: F, purpose?: F, merchant?: F } },
+ *     rules:   { "<merchant>": { category?: F, klass?: F, purpose?: F, merchant?: F } },   (covering both directions)
  *     moves:   { "<row>": { category?: F, klass?: F, purpose?: F, merchant?: F, day, fp?, from? } },
  *     streams: { "<payer>|<account>": { name?: F, kind?: F, cadence?: F, accrue?: F } },
  *   }
+ *   flowRules: { out?: { "<merchant>": rule }, in?: { "<merchant>": rule } }   (a rule of one direction)
+ *   This device's copy keeps every rule in one map: a rule of one direction under "<merchant>:out" or "<merchant>:in".
  *   F = { v, at } | { deleted: true, at }   (a field taken back is a removal of that field alone)
  *       an Undo's cells also say so: `undo: true` (content like the rest: the merge keeps it); an edit of a rule's
  *       category names the stamp of the cell it replaced on the device that made it: `over` (see applyCorrections)
@@ -29,7 +33,7 @@
 
 import { CADENCES, CATEGORIES, FLOW_CATEGORIES, KLASSES, PURPOSES, STREAM_KINDS } from './schema.js';
 import { isYmd } from './dates.js';
-import { learnRule, reclassify } from './classify.js';
+import { learnRule, reclassify, ruleCovers, ruleOfRow } from './classify.js';
 import { payeeKey } from './byhand.js';
 
 /** At most this many entries of each kind travel, the newest by stamp kept (then by key), the same on every device. */
@@ -52,6 +56,13 @@ const UNSAFE = new Set(['__proto__', 'constructor', 'prototype']);
 const ROW_KEY = /^[if][0-9a-f]{13}$/;
 const FP_KEY = /^f[0-9a-f]{13}$/;
 const MERCHANT_KEY = /^p[0-9a-f]{13}$/;
+/**
+ * A rule's key in this device's copy: its merchant's, and for a rule that covers one direction (3.3) `:out` or `:in`.
+ * The file keeps the rules of one direction in a section of their own (`flowRules`, keyed by merchant), which an
+ * older version keeps whole and never applies (it would apply a rule of the `corrections` section both ways).
+ */
+const RULE_KEY = /^p[0-9a-f]{13}(?::(?:out|in))?$/;
+const DIRECTIONS = ['out', 'in'];
 const STREAM_KEY = /^p[0-9a-f]{13}\|a[0-9a-f]{13}$/;
 const LEARNED_SHARED = 'learned:s';
 
@@ -68,6 +79,63 @@ export function readCorrections(raw) {
   return sectionOf(raw, true);
 }
 
+/**
+ * The owner's corrections as the shared file holds them: the `corrections` section, whose rules cover both directions
+ * (as every version reads them), and the `flowRules` section, `{ out: { <merchant>: rule }, in: { <merchant>: rule } }`,
+ * the rules that cover one direction (3.3). Null when either is not one this version can read. The result is this
+ * device's form of the section: one map of rules, a rule of one direction keyed `<merchant>:out` or `<merchant>:in`.
+ */
+export function readSharedCorrections(corrections, flowRules) {
+  if (corrections !== undefined && corrections !== null && !isObject(corrections)) return null;
+  const joined = isObject(corrections) ? { ...corrections } : {};
+  if (isObject(joined.rules)) {
+    const keys = Object.keys(joined.rules);
+    // (what a round holds in memory keeps the rules of one direction here too: never written so, see sharedSections)
+    if (keys.length > MAX_RULES || keys.some((key) => !isRuleKey(key))) return null;
+    joined.rules = { ...joined.rules };
+  }
+  if (flowRules !== undefined) {
+    if (!isObject(flowRules)) return null;
+    for (const flow of Object.keys(flowRules)) {
+      const map = flowRules[flow];
+      if (!DIRECTIONS.includes(flow) || !isObject(map) || Object.keys(map).length > MAX_RULES) return null;
+      if (joined.rules === undefined || joined.rules === null) joined.rules = {};
+      if (!isObject(joined.rules)) return null;
+      for (const key of Object.keys(map)) {
+        if (!isMerchantKey(key)) return null;
+        const at = ruleKeyOf(key, flow);
+        if (!Object.hasOwn(joined.rules, at)) { joined.rules[at] = map[key]; continue; }
+        // the same rule in both places (no writer puts it so): the two copies merge field by field, the later stamp winning
+        const p = ruleOf(joined.rules[at]);
+        const q = ruleOf(map[key]);
+        if (!p || !q) return null;
+        joined.rules[at] = mergeEntry(p, q, RULE_FIELDS, false);
+      }
+    }
+  }
+  return readCorrections(joined);
+}
+
+/**
+ * This device's form of the section as the file writes it: `corrections` (the rules that cover both directions, the
+ * rows, the streams) and `flowRules` (the rules of one direction, by direction then merchant); an empty part is null.
+ */
+export function sharedSections(section) {
+  const s = readCorrections(section) || blank();
+  const corrections = { rules: {}, moves: s.moves, streams: s.streams };
+  const flows = { out: {}, in: {} };
+  for (const key of Object.keys(s.rules)) {
+    const { merchant, flow } = ruleKeyParts(key);
+    if (flow) flows[flow][merchant] = s.rules[key]; else corrections.rules[key] = s.rules[key];
+  }
+  const flowRules = {};
+  for (const flow of DIRECTIONS) if (Object.keys(flows[flow]).length) flowRules[flow] = flows[flow];
+  return {
+    corrections: Object.keys(corrections.rules).length || Object.keys(corrections.moves).length || Object.keys(corrections.streams).length ? corrections : null,
+    flowRules: Object.keys(flowRules).length ? flowRules : null,
+  };
+}
+
 /** The document's own copy, read leniently: an entry that is not one is left out, the rest kept within the limits. */
 function keptCorrections(raw) {
   return sectionOf(raw, false) || blank();
@@ -77,12 +145,12 @@ function sectionOf(raw, strict) {
   if (raw === undefined || raw === null) return blank();
   if (!isObject(raw)) return strict ? null : blank();
   const out = blank();
-  const parts = [['rules', isMerchantKey, ruleOf, MAX_RULES], ['moves', isRowKey, moveOf, MAX_MOVES], ['streams', isStreamKey, streamOf, MAX_STREAM_SETTINGS]];
+  const parts = [['rules', isRuleKey, ruleOf, MAX_RULES], ['moves', isRowKey, moveOf, MAX_MOVES], ['streams', isStreamKey, streamOf, MAX_STREAM_SETTINGS]];
   for (const [name, keyOk, valueOf, max] of parts) {
     const map = raw[name] === undefined ? {} : raw[name];
     if (!isObject(map)) { if (strict) return null; continue; }
     const keys = Object.keys(map);
-    if (strict && keys.length > max) return null;
+    if (strict && keys.length > (name === 'rules' ? max * (DIRECTIONS.length + 1) : max)) return null;
     for (const key of keys) {
       const value = keyOk(key) ? valueOf(map[key], key) : null;
       if (!value) { if (strict) return null; continue; }
@@ -407,7 +475,8 @@ function recordValues(state) {
   const out = { rules: {}, moves: {}, streams: {}, heldMerchants: new Set(), heldMoves: new Map(), heldStreams: new Set() };
   const settings = isObject(state.settings) ? state.settings : {};
   for (const rule of listOf(settings.rules)) {
-    const key = isObject(rule) ? merchantKeyOf(rule.mkey) : null;
+    const merchant = isObject(rule) ? merchantKeyOf(rule.mkey) : null;
+    const key = merchant ? ruleKeyOf(merchant, rule.flow) : null;
     if (!key || Object.hasOwn(out.rules, key)) continue;
     const fields = pick(rule, RULE_FIELDS, (field) => rule[field] != null && rule[field] !== '');
     if (fields) out.rules[key] = fields;
@@ -508,7 +577,10 @@ export function noteMove(state, txId, nowMs) {
   const where = tx ? rowWhere(tx, accountKeys(state)) : null;
   const merchant = tx ? merchantKeyOf(tx.mkey) : null;
   if (!where && !merchant) return false;
-  const section = ensureSection(state, [['moves', where && where.key], ['rules', merchant]]);
+  // the owner's rule covers the direction of the row corrected (3.3)
+  const direction = tx.flow === 'in' ? 'in' : 'out';
+  const ruleKey = merchant ? ruleKeyOf(merchant, direction) : null;
+  const section = ensureSection(state, [['moves', where && where.key], ['rules', ruleKey]]);
   const values = recordValues(state);
   let wrote = false;
   if (where && values.moves[where.key]) {
@@ -516,12 +588,12 @@ export function noteMove(state, txId, nowMs) {
     section.moves = capped(section.moves, MAX_MOVES);
     remember(state, tx.id, where.key);
   }
-  if (merchant && values.rules[merchant]) {
-    const was = own(own(section.rules, merchant), 'category');
-    wrote = write(section.rules, merchant, values.rules[merchant], nowMs, true) || wrote;
+  if (ruleKey && values.rules[ruleKey]) {
+    const was = own(own(section.rules, ruleKey), 'category');
+    wrote = write(section.rules, ruleKey, values.rules[ruleKey], nowMs, true) || wrote;
     section.rules = capped(section.rules, MAX_RULES);
-    const now = own(own(section.rules, merchant), 'category');
-    if (isObject(now) && !now.deleted && canon(now) !== canon(was)) wrote = keepHeld(state, section, tx.mkey, now.v, nowMs) || wrote;
+    const now = own(own(section.rules, ruleKey), 'category');
+    if (isObject(now) && !now.deleted && canon(now) !== canon(was)) wrote = keepHeld(state, section, tx.mkey, direction, nowMs) || wrote;
   }
   return wrote;
 }
@@ -535,13 +607,17 @@ export function noteMove(state, txId, nowMs) {
  * edit does this, never what arrives; it is part of the edit, so one Undo takes it back with the rule (3.8).
  * @returns {boolean} true when anything was written
  */
-function keepHeld(state, section, mkey, category, nowMs) {
+function keepHeld(state, section, mkey, direction, nowMs) {
   if (typeof mkey !== 'string' || !mkey) return false;
   const accounts = accountKeys(state);
   const held = [];
   for (const tx of listOf(state.txs)) {
     if (!isObject(tx) || tx.mkey !== mkey || (tx.streamId == null && tx.pairId == null) || tx.kind === 'decline') continue;
-    if (locksOf(tx).has('category') || tx.category === category || kindOf(category, tx.flow) === null || !valueOk('category', tx.category)) continue;
+    // the rows the edited rule files: of its direction (and a refund the money-out rule files, with no rule for money in)
+    const rule = ruleOfRow(state, tx);
+    if (!rule || rule.flow !== direction) continue;
+    const category = rule.category;
+    if (locksOf(tx).has('category') || category == null || tx.category === category || kindOf(category, tx.flow) === null || !valueOk('category', tx.category)) continue;
     const where = rowWhere(tx, accounts);
     if (!where) continue;
     tx.locks = [...(Array.isArray(tx.locks) ? tx.locks : []), 'category'];
@@ -675,7 +751,8 @@ export function restampCorrections(before, after) {
     wrote = true;
   };
   for (const key of union(was.rules, now.rules)) {
-    if (!was.heldMerchants.has(key) || !now.heldMerchants.has(key)) continue;
+    const { merchant } = ruleKeyParts(key);
+    if (!was.heldMerchants.has(merchant) || !now.heldMerchants.has(merchant)) continue;
     restamp('rules', key);
   }
   for (const key of union(was.moves, now.moves)) {
@@ -853,16 +930,19 @@ function applyRules(state, entries, concurrent = new Set()) {
   }
   let changed = false;
   for (const key of keys) {
-    const mkey = mkeys.get(key);
+    const { merchant, flow } = ruleKeyParts(key);
+    const mkey = mkeys.get(merchant);
     if (mkey === undefined) continue; // no row of this merchant yet: the rule waits for the reading that brings one
     const live = liveOf(entries[key]);
     const dead = deadOf(entries[key]);
     const undone = own(own(entries[key], 'category'), 'undo') === true;
-    const at = list.findIndex((rule) => isObject(rule) && rule.mkey === mkey);
+    // the rule of that merchant and direction (a rule made before rules had a direction has none)
+    const same = (one) => isObject(one) && one.mkey === mkey && (flow ? one.flow === flow : one.flow !== 'out' && one.flow !== 'in');
+    const at = list.findIndex(same);
     const rule = at >= 0 ? list[at] : null;
     if (!rule) {
       if (!Object.keys(live).length) continue;
-      list.push({ id: LEARNED_SHARED + key.slice(1), mkey, ...live });
+      list.push({ id: LEARNED_SHARED + merchant.slice(1) + (flow ? '.' + flow : ''), mkey, ...(flow ? { flow } : {}), ...live });
       changed = true;
       continue;
     }
@@ -879,7 +959,7 @@ function applyRules(state, entries, concurrent = new Set()) {
     if (rule.category != null && next.category == null) release(state, mkey, rule);
     else if (rule.category != null && (undone || concurrent.has(key)) && next.category !== rule.category) refile(state, mkey, rule);
     if (RULE_FIELDS.every((field) => next[field] == null)) {
-      for (let i = list.length - 1; i >= 0; i--) if (isObject(list[i]) && list[i].mkey === mkey) list.splice(i, 1);
+      for (let i = list.length - 1; i >= 0; i--) if (same(list[i])) list.splice(i, 1);
     } else {
       for (const field of RULE_FIELDS) {
         if (next[field] == null) delete rule[field];
@@ -909,7 +989,9 @@ function remember(state, txId, key) {
 /**
  * A rule's category taken back (or the rule): the deposits it had filed into an income stream are let go of the
  * stream, so that classification reads them again (a linked deposit keeps its kind); detection links them again if
- * they still belong.
+ * they still belong. The rows a rule filed name it (`ruleId`), money in that read as income only because the rule
+ * filed the purchase it would mirror as other than a spend included (classify's attribution, 3.3); a deposit linked
+ * before the rule names another and is left as it is.
  */
 function release(state, mkey, rule) {
   const id = typeof rule.id === 'string' && rule.id ? (rule.id.startsWith('learned:') ? rule.id : 'learned:' + rule.id) : null;
@@ -941,12 +1023,26 @@ function refile(state, mkey, rule) {
 function refileRows(state, rows, rule) {
   if (!rows.length) return;
   const links = new Map(rows.map((tx) => [tx, tx.streamId]));
+  const ids = new Map(rows.map((tx) => [tx, tx.ruleId]));
   for (const tx of rows) tx.streamId = null;
-  const category = rule ? rule.category : undefined;
-  if (rule) delete rule.category; // read without the rule's category, its other fields kept
+  // read without the merchant's learned categories, their other fields kept: the rule's, and those of the other rules
+  // of that merchant (a rule of one direction is laid over one made before rules had a direction, 3.3), as a device
+  // that held neither reads them
+  const mkeys = new Set([...(rule ? [rule.mkey] : []), ...rows.map((tx) => tx.mkey)]);
+  const held = listOf(isObject(state.settings) ? state.settings.rules : null).filter((one) => isObject(one) && mkeys.has(one.mkey) && one.category !== undefined);
+  const categories = held.map((one) => one.category);
+  for (const one of held) delete one.category;
   reclassify(state, rows.map((tx) => tx.id));
-  if (rule && category !== undefined) rule.category = category;
-  for (const tx of rows) if (tx.kind === 'income') tx.streamId = links.get(tx);
+  held.forEach((one, i) => { one.category = categories[i]; });
+  // a row linked again keeps naming the rule that filed it, while that rule still covers it (as classify's keepsRule
+  // keeps it on a frozen row): taking that rule back later (release) then reaches the same rows on every device
+  const all = listOf(isObject(state.settings) ? state.settings.rules : null);
+  for (const tx of rows) {
+    if (tx.kind !== 'income') continue;
+    tx.streamId = links.get(tx);
+    const id = ids.get(tx);
+    if (typeof id === 'string' && all.some((one) => isObject(one) && one.mkey === tx.mkey && learnedIdOf(one) === id && ruleCovers(one, tx.flow))) tx.ruleId = id;
+  }
 }
 
 /** What `ruleId` holds on the rows a learned rule filed (classify's learnedRuleId); null when it has no id. */
@@ -999,7 +1095,10 @@ function applyMoves(state, entries) {
       // a deposit whose category goes back to the rules is read again as a device that never held the correction
       // reads it: it keeps its link when classification without the merchant rule's category files it as income
       if (dead.includes('category') && tx.streamId != null) {
-        const rule = listOf(isObject(state.settings) ? state.settings.rules : null).find((one) => isObject(one) && one.mkey === tx.mkey && one.category != null);
+        // the rule that files this row's category (of its direction, 3.3)
+        const view = ruleOfRow(state, tx);
+        const id = view && view.category != null ? learnedIdOf(view) : null;
+        const rule = id ? listOf(isObject(state.settings) ? state.settings.rules : null).find((one) => isObject(one) && learnedIdOf(one) === id) : null;
         refileRows(state, [tx], rule || null);
       }
       changed = true;
@@ -1074,6 +1173,21 @@ function blank() {
 
 function isMerchantKey(key) {
   return MERCHANT_KEY.test(key);
+}
+
+function isRuleKey(key) {
+  return RULE_KEY.test(key);
+}
+
+/** A rule's key in this device's copy: its merchant's, then the direction it covers (none for a rule made before rules had one). */
+function ruleKeyOf(merchant, flow) {
+  return flow === 'out' || flow === 'in' ? merchant + ':' + flow : merchant;
+}
+
+/** The merchant and the direction a rule's key names (direction null: both). */
+function ruleKeyParts(key) {
+  const at = key.indexOf(':');
+  return at < 0 ? { merchant: key, flow: null } : { merchant: key.slice(0, at), flow: key.slice(at + 1) };
 }
 
 function isRowKey(key) {

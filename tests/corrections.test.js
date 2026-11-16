@@ -123,7 +123,9 @@ function setStream(d, fields, at = NOW) {
 /** The classification of the rows that matter, and the rules: what "where a device was" means here. */
 function picture(d) {
   return {
-    rules: d.state.settings.rules.map((r) => ({ mkey: r.mkey, category: r.category, merchant: r.merchant })),
+    // a merchant may hold a rule for each direction (3.3): their order in the list means nothing
+    rules: d.state.settings.rules.map((r) => ({ mkey: r.mkey, flow: r.flow, category: r.category, merchant: r.merchant }))
+      .sort((x, y) => (JSON.stringify(x) < JSON.stringify(y) ? -1 : 1)),
     rows: ROWS.map((r) => d.row(r.extId)).filter(Boolean).map((tx) => [tx.ext.id, tx.kind, tx.category, tx.merchant,
       (tx.locks || []).filter((f) => f !== 'review').sort().join(',')]),
   };
@@ -208,7 +210,7 @@ test('the Undo is stamped just above the entry it undoes, so a later edit on ano
   const a = device(repo);
   const b = device(repo);
   correct(a, 'CAFE-1109', { merchant: 'Fernleaf' }, { at: NOW + 1000 });
-  const merchant = payeeKey(a.row('CAFE-1109').mkey);
+  const merchant = payeeKey(a.row('CAFE-1109').mkey) + ':out'; // a purchase teaches the merchant's money-out rule (3.3)
   const stamp = exportCorrections(a.state).rules[merchant].merchant.at;
   a.undo(NOW + 50000); // the Undo comes much later, but its stamp is the field's + 1
   assert.deepEqual(exportCorrections(a.state).rules[merchant], { merchant: { deleted: true, at: stamp + 1, undo: true } }, 'the field alone is taken back, marked as an Undo');
@@ -925,7 +927,7 @@ test('two Undos in a row on a device whose clock runs fast, then an edit on anot
   a.undo(NOW + SKEW + 4000);
   a.undo(NOW + SKEW + 5000);
   correct(b, 'CAFE-1109', { merchant: 'Fernleaf Nook' }, { at: NOW + 30000 }); // after both Undos, in real time
-  const merchant = payeeKey(a.row('CAFE-1109').mkey);
+  const merchant = payeeKey(a.row('CAFE-1109').mkey) + ':out'; // a purchase teaches the merchant's money-out rule (3.3)
   assert.equal(exportCorrections(b.state).rules[merchant].merchant.at, exportCorrections(a.state).rules[merchant].merchant.at, 'the stamps tie');
   await settle([a, b, c], NOW + SKEW + 6000);
   for (const d of [a, b, c]) assert.equal(d.row('CAFE-1109').merchant, 'Fernleaf Nook');
@@ -1120,7 +1122,9 @@ test('two changes of one payer’s rule on one device with no round between: eve
         assert.equal(incomeRows(d), 10, label + ': every paycheck is income');
       }
       assert.match(String(clock(a.state, NOW + 9000).nextPayday), /^\d{4}-\d{2}-\d{2}$/, label + ': a payday');
-      assert.equal(a.state.settings.rules[0].category, second, label + ': the rule is the later one');
+      // each direction holds its own rule (3.3): the purchase taught money out, the paycheck money in
+      assert.equal(a.state.settings.rules.find((r) => r.flow === 'out').category, second, label + ': the money-out rule is the later one');
+      assert.equal(a.state.settings.rules.find((r) => r.flow === 'in').category, 'income', label + ': the money-in rule stays');
     }
   }
 });
@@ -1161,7 +1165,7 @@ test('the two changes in the other order (the purchase first, then the paycheck)
   }
 });
 
-test('after the two changes, a later paycheck follows the rule on every device: the same income, links and payday', async () => {
+test('after the two changes, a later paycheck follows the money-in rule on every device: income, linked, the same payday', async () => {
   const later = NOW + 7 * DAY_MS;
   const next = [...ROWS, row('DEP-2026-11-20', 150000, '2026-11-20', PAYER)];
   const repo = repoOf();
@@ -1177,7 +1181,8 @@ test('after the two changes, a later paycheck follows the rule on every device: 
   for (const d of ds) {
     assert.deepEqual([outcome(d, later + 9000), fresh(d)], [outcome(b, later + 9000), fresh(b)]);
   }
-  assert.deepEqual(fresh(b), ['refund', 'shopping', false], 'the new deposit follows the rule');
+  // the purchase rule covers money out only (3.3): the paycheck is income and linked, as the owner filed money in
+  assert.deepEqual(fresh(b), ['income', 'income', true], 'the new deposit follows the money-in rule');
 });
 
 test('one Undo takes back the whole correction: the rule and the paychecks it kept, on every device', async () => {
@@ -1191,10 +1196,12 @@ test('one Undo takes back the whole correction: the rule and the paychecks it ke
     if (between) await settle([b, a, c], NOW + 1100);
     const was = outcome(b, NOW + 9000);
     correct(b, 'BUY-0920', { category: 'shopping' }, { at: NOW + 2000 });
+    // the purchase rule covers money out only (3.3): it holds no paycheck, so none is locked or written
     const kept = b.state.txs.filter((tx) => tx.mkey === b.row('DEP-2026-07-03').mkey && tx.streamId != null && tx.locks.includes('category'));
-    assert.equal(kept.length, 10, label + ': B locks the category of every paycheck the rule did not move');
+    assert.deepEqual(kept.map((tx) => tx.ext.id), ['DEP-2026-07-03'], label + ': only the paycheck the owner corrected is locked');
     await settle([b, a, c], NOW + 3000);
-    assert.equal(a.row('DEP-2026-10-23').locks.includes('category'), true, label + ': and the other devices take it as a row correction');
+    assert.equal(a.row('DEP-2026-10-23').locks.includes('category'), false, label + ': and no row correction reaches the other devices for the others');
+    assert.equal(a.row('BUY-0920').category, 'shopping', label + ': the purchase rule reached them');
     b.undo(NOW + 4000);
     assert.deepEqual(outcome(b, NOW + 9000), was, label + ': B is back where it was');
     await settleQuiet([b, a, c], NOW + 5000);
@@ -1234,23 +1241,27 @@ test('the 400-day line is drawn from the file, never from a device’s clock: tw
   assert.deepEqual(Object.keys(results[0].moves), Object.keys(results[1].moves), 'and which clock is ahead changes nothing');
 });
 
-test('a changed rule that arrives locks nothing by itself: only the owner’s own edit makes its held rows explicit', async () => {
-  const repo = repoOf();
-  const a = device(repo);
-  const b = device(repo);
-  correct(a, 'DEP-2026-11-06', { category: 'income' }, { at: NOW + 1000 });
-  await settle([a, b], NOW + 2000);
-  const locked = (d) => d.state.txs.filter((tx) => (tx.locks || []).includes('category')).map((tx) => tx.ext.id).sort();
-  const before = [locked(b), Object.keys(exportCorrections(b.state).moves).sort()];
-  // the rule's category as another device's later edit would bring it, with no row entry beside it
-  const copy = exportCorrections(b.state);
-  const key = Object.keys(copy.rules)[0];
-  const cell = copy.rules[key].category;
-  copy.rules[key] = { ...copy.rules[key], category: { v: 'shopping', at: cell.at + 2, over: cell.at } };
-  b.state.share.corrections = copy;
-  applyCorrections(b.state, NOW + 3000);
-  refresh(b.state, NOW + 3000);
-  assert.equal(b.state.settings.rules[0].category, 'shopping', 'the rule arrived');
-  assert.deepEqual([locked(b), Object.keys(exportCorrections(b.state).moves).sort()], before, 'no row was locked or written on arrival');
-  assert.equal(incomeRows(b), 10, 'the linked paychecks keep their kind, as learnRule leaves them');
+test('a changed rule that arrives locks and releases nothing by itself, an edit’s as a seed’s: only the owner’s own edit makes its held rows explicit', async () => {
+  for (const seed of [false, true]) {
+    const repo = repoOf();
+    const a = device(repo);
+    const b = device(repo);
+    correct(a, 'DEP-2026-11-06', { category: 'income' }, { at: NOW + 1000 });
+    await settle([a, b], NOW + 2000);
+    const locked = (d) => d.state.txs.filter((tx) => (tx.locks || []).includes('category')).map((tx) => tx.ext.id).sort();
+    const before = [locked(b), Object.keys(exportCorrections(b.state).moves).sort()];
+    // the rule's category as another device's later edit would bring it, with no row entry beside it; or as a seed (0)
+    const copy = exportCorrections(b.state);
+    const key = Object.keys(copy.rules)[0];
+    const cell = copy.rules[key].category;
+    copy.rules[key] = { ...copy.rules[key], category: seed ? { v: 'shopping', at: 0 } : { v: 'shopping', at: cell.at + 2, over: cell.at } };
+    b.state.share.corrections = copy;
+    applyCorrections(b.state, NOW + 3000);
+    refresh(b.state, NOW + 3000);
+    assert.equal(b.state.settings.rules[0].category, 'shopping', 'the rule arrived');
+    assert.deepEqual([locked(b), Object.keys(exportCorrections(b.state).moves).sort()], before, 'no row was locked or written on arrival');
+    // an arriving rule lets no link go (as learnRule leaves a linked deposit on the device that made the edit): what a
+    // device that held a newer deposit linked does with it is the known limit of 3.8
+    assert.equal(incomeRows(b), 10, (seed ? 'a seed' : 'an edit') + ': the linked paychecks keep their kind, as learnRule leaves them');
+  }
 });
