@@ -1,15 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- Networth single-file build 2026-11-14 -->
+<!-- Networth single-file build 2026-11-16 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Networth</title>
 <meta name="description" content="Networth: a private net-worth board. It reads your bank feed itself; your data stays on your device.">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
-<meta name="networth-build" content="344e5aa22c8d">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-AC6tLdNGR7FtqGPVTG4+tbX0yCgjez2AwLPEv4xgEe4='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-rrcgv2y0KMkdT76+jAxvRcNQTlj6UpNB9oKKC0whQNA=' 'sha256-e/tbGNncdNoZz13l4nvoF3bB1VC0tPaMfOMw7T5fyIM=' 'sha256-QZySRq3duz+06TEJEE3OZm9xbivVHzjw2V1w4xyZ4so=' 'sha256-bjsMTiPXO/fV7QJlhFnicz5k0INxLBT0hibL6mxaByc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-Emyu5cw7i4JN3GbUB61EyK9lHxxGx58pdLBCYR43F4c=' 'sha256-VzoPHmMbD+TfmkRekvrhksYUuT8rj+c4jA1P/9P6/qI=' 'sha256-DteyLvNz/HtxRqT86M19HgoZfGS3Vjh7g7Qv8sqoXaE=' 'sha256-Yq5LqpSuZYrQBiwZV3GIUKl7VztQyUyyTLeHF8RzYfM=' 'sha256-3slL6XKCxBUrVwsIn+pfLSFvsWrg1SlNV1OOfV1jrRE=' 'sha256-0Q0aqbibC2pJ+jg+2zSPosbIxN93hLKqymzq/mkX9B0=' 'sha256-niQW6BHsFCuf+mNMjOPiKJl0QACazn3cmhTykWBmDew='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://beta-bridge.simplefin.org https://bridge.simplefin.org https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="networth-build" content="bc403bedf9db">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-ujzecORz84dhl+/UwC+8pQ7j30OMTyUkKhq2ZI6sXL4='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-rrcgv2y0KMkdT76+jAxvRcNQTlj6UpNB9oKKC0whQNA=' 'sha256-e/tbGNncdNoZz13l4nvoF3bB1VC0tPaMfOMw7T5fyIM=' 'sha256-+kkhchUCRBd+0VQYn43jlCAxw7wA5HMQjWisXKwaHnY=' 'sha256-bjsMTiPXO/fV7QJlhFnicz5k0INxLBT0hibL6mxaByc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-Emyu5cw7i4JN3GbUB61EyK9lHxxGx58pdLBCYR43F4c=' 'sha256-VzoPHmMbD+TfmkRekvrhksYUuT8rj+c4jA1P/9P6/qI=' 'sha256-DteyLvNz/HtxRqT86M19HgoZfGS3Vjh7g7Qv8sqoXaE=' 'sha256-Yq5LqpSuZYrQBiwZV3GIUKl7VztQyUyyTLeHF8RzYfM=' 'sha256-3slL6XKCxBUrVwsIn+pfLSFvsWrg1SlNV1OOfV1jrRE=' 'sha256-0Q0aqbibC2pJ+jg+2zSPosbIxN93hLKqymzq/mkX9B0=' 'sha256-niQW6BHsFCuf+mNMjOPiKJl0QACazn3cmhTykWBmDew='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://beta-bridge.simplefin.org https://bridge.simplefin.org https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#F3EDE1" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#15130F" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
@@ -894,7 +894,10 @@ a.row:hover .row-label, button.row:hover .row-label { text-decoration: underline
 .clock-run .fig small { font-size: .62em; }
 .tt { display: inline-flex; align-items: center; gap: 6px; color: var(--spot); white-space: nowrap; }
 .tt .ev { font-size: .875rem; stroke-width: 2; }
-.runway { display: grid; grid-template-columns: repeat(7, 1fr); height: 9px; margin-top: 10px; border: 1px solid var(--ink); border-right: 0; }
+.runway { position: relative; display: grid; grid-template-columns: repeat(7, 1fr); height: 9px; margin-top: 10px; border: 1px solid var(--ink); border-right: 0; }
+.runway-payday { position: absolute; top: -4px; bottom: -4px; left: calc(var(--at) * 100%); width: 2px; margin-left: -1px; background-color: var(--gain); pointer-events: none; }
+@media (forced-colors: active) { .runway-payday { background-color: CanvasText; } }
+.clock-payday { margin-top: 3px; }
 .runway i { border-right: 1px solid var(--ink); }
 .runway i.is-on { background-color: var(--ink); }
 .runway-labs { display: flex; justify-content: space-between; gap: var(--s-3); margin-top: 4px; }
@@ -18640,6 +18643,32 @@ function againWords(state, key, nowMs, before) {
 return { isCountedCash, cashNoteWords, rowLineLead, othersWords, beforeCountWords, countedWords, payerWords, payerNames, listedPayers, recordEstimate, recordLead, bankWhere, cashLineWords, itemWords, confirmWords, countWords, removedWords, paymentState, againWords };
 })();
 
+// ---- js/views/clock-words.js
+__mods["js/views/clock-words.js"] = (function () {
+const { diffDays, fmtDate, isYmd } = __mods["js/model/dates.js"];
+function daysToPayday(today, clock) {
+  if (!clock || !isYmd(today) || !isYmd(clock.nextPayday)) return null;
+  // the clock already speaks for the payday itself ("Payday is today.") and for an awaited one
+  // ("Pay expected … is not on the bank's record yet."): no countdown then
+  if (isYmd(clock.payAwaited) || clock.nextPayday <= today) return null;
+  const n = diffDays(today, clock.nextPayday);
+  return n >= 1 ? n : null;
+}
+
+function paydayWords(today, clock) {
+  const n = daysToPayday(today, clock);
+  if (n === null) return '';
+  return 'Payday ' + (n === 1 ? 'tomorrow' : 'in ' + n + ' days') + ' · ' + fmtDate(clock.nextPayday, 'dowshort');
+}
+
+function paydayMark(today, clock, segments) {
+  const n = daysToPayday(today, clock);
+  if (n === null || !(segments > 0) || n > segments) return null;
+  return n / segments;
+}
+return { paydayWords, paydayMark };
+})();
+
 // ---- js/model/cashflow.js
 __mods["js/model/cashflow.js"] = (function () {
 const { ACCOUNT_TYPES } = __mods["js/model/schema.js"];
@@ -19063,6 +19092,7 @@ const { refresh } = __mods["js/model/detect.js"];
 const { answerItems, answerPayer, cashAccountOf, incomeQuestions, isIdleCash } = __mods["js/model/income.js"];
 const { evalGlyph, timeTroubleGlyph, moveGlyph, resultMark } = __mods["js/ui/glyphs.js"];
 const { bankWhere, beforeCountWords, confirmWords, isCountedCash, itemWords, listedPayers, othersWords, payerWords } = __mods["js/views/income-words.js"];
+const { paydayMark, paydayWords } = __mods["js/views/clock-words.js"];
 const { money, inlineMoney, keptLine, statusLine, roundTitle, colourOf, crosstable, movesList, notableMoves, worstGlyph, spentUnposted, recentList, toneStyle, flowLookups, payFlowClass, unbankedWords } = __mods["js/views/parts.js"];
 const TEN_MINUTES_MS = 10 * 60 * 1000;
 const WORTH_DAYS = 90;
@@ -19369,6 +19399,9 @@ function clockMain(ctx, v) {
   const runwayLabel = days == null ? 'Runway: not yet known' : days >= RUNWAY_SEGMENTS ? 'Runway: 7 days or more' : 'Runway: ' + plural(on, 'day', 'days') + ' of 7';
   const segments = [];
   for (let i = 0; i < RUNWAY_SEGMENTS; i++) segments.push(html`<i${attrs({ class: i < on ? 'is-on' : null })}></i>`);
+  // the next payday: a countdown beside the days on the clock, and a mark on the runway when it falls within it
+  const payday = paydayWords(ctx.today, c);
+  const mark = paydayMark(ctx.today, c, RUNWAY_SEGMENTS);
   // The engine averages outflows over 60 days whatever the record holds; say so while the record is shorter.
   const short = v.firstDay && v.historyDays < BURN_DAYS;
 
@@ -19390,9 +19423,11 @@ function clockMain(ctx, v) {
             <p class="cap">at about <span data-fig>${fmt(c.burn)}</span> a day${short
               ? (ctx.wide ? html`, a ${BURN_DAYS}-day average with ${plural(v.historyDays, 'day', 'days')} on record` : html` <span class="board-runnote">${v.historyDays} of ${BURN_DAYS} days on record</span>`)
               : ''}</p>`}
+        ${payday ? html`<p class="cap clock-payday">${payday}</p>` : ''}
       </div>
     </div>
-    <div class="runway" role="img" aria-label="${runwayLabel}">${segments}</div>
+    <div class="runway" role="img" aria-label="${runwayLabel + (mark !== null ? '. ' + payday.replace(' · ', ', ') + '.' : '')}">${segments}${mark !== null
+      ? html`<b class="runway-payday" style="${'--at:' + mark.toFixed(4)}"></b>` : ''}</div>
     <div class="runway-labs"><span class="lab">Flag</span><span class="lab">7 days · out of time trouble</span></div>
     ${clockDue(ctx, c)}`;
 }

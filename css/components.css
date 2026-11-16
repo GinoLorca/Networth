@@ -939,7 +939,11 @@ a.row:hover .row-label, button.row:hover .row-label { text-decoration: underline
 .clock-run .fig small { font-size: .62em; }
 .tt { display: inline-flex; align-items: center; gap: 6px; color: var(--spot); white-space: nowrap; }
 .tt .ev { font-size: .875rem; stroke-width: 2; }
-.runway { display: grid; grid-template-columns: repeat(7, 1fr); height: 9px; margin-top: 10px; border: 1px solid var(--ink); border-right: 0; }
+.runway { position: relative; display: grid; grid-template-columns: repeat(7, 1fr); height: 9px; margin-top: 10px; border: 1px solid var(--ink); border-right: 0; }
+/* the next payday on the runway, when it falls within its 7 days: money arriving, in the colour of money arriving */
+.runway-payday { position: absolute; top: -4px; bottom: -4px; left: calc(var(--at) * 100%); width: 2px; margin-left: -1px; background-color: var(--gain); pointer-events: none; }
+@media (forced-colors: active) { .runway-payday { background-color: CanvasText; } }
+.clock-payday { margin-top: 3px; }
 .runway i { border-right: 1px solid var(--ink); }
 .runway i.is-on { background-color: var(--ink); }
 .runway-labs { display: flex; justify-content: space-between; gap: var(--s-3); margin-top: 4px; }

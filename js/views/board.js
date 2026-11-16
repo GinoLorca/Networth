@@ -36,6 +36,7 @@ import { refresh } from '../model/detect.js';
 import { answerItems, answerPayer, cashAccountOf, incomeQuestions, isIdleCash } from '../model/income.js';
 import { evalGlyph, timeTroubleGlyph, moveGlyph, resultMark } from '../ui/glyphs.js';
 import { bankWhere, beforeCountWords, confirmWords, isCountedCash, itemWords, listedPayers, othersWords, payerWords } from './income-words.js';
+import { paydayMark, paydayWords } from './clock-words.js';
 import { money, inlineMoney, keptLine, statusLine, roundTitle, colourOf, crosstable, movesList, notableMoves, worstGlyph, spentUnposted, recentList, toneStyle, flowLookups, payFlowClass, unbankedWords } from './parts.js';
 
 const TEN_MINUTES_MS = 10 * 60 * 1000;
@@ -393,6 +394,9 @@ function clockMain(ctx, v) {
   const runwayLabel = days == null ? 'Runway: not yet known' : days >= RUNWAY_SEGMENTS ? 'Runway: 7 days or more' : 'Runway: ' + plural(on, 'day', 'days') + ' of 7';
   const segments = [];
   for (let i = 0; i < RUNWAY_SEGMENTS; i++) segments.push(html`<i${attrs({ class: i < on ? 'is-on' : null })}></i>`);
+  // the next payday: a countdown beside the days on the clock, and a mark on the runway when it falls within it
+  const payday = paydayWords(ctx.today, c);
+  const mark = paydayMark(ctx.today, c, RUNWAY_SEGMENTS);
   // The engine averages outflows over 60 days whatever the record holds; say so while the record is shorter.
   const short = v.firstDay && v.historyDays < BURN_DAYS;
 
@@ -414,9 +418,11 @@ function clockMain(ctx, v) {
             <p class="cap">at about <span data-fig>${fmt(c.burn)}</span> a day${short
               ? (ctx.wide ? html`, a ${BURN_DAYS}-day average with ${plural(v.historyDays, 'day', 'days')} on record` : html` <span class="board-runnote">${v.historyDays} of ${BURN_DAYS} days on record</span>`)
               : ''}</p>`}
+        ${payday ? html`<p class="cap clock-payday">${payday}</p>` : ''}
       </div>
     </div>
-    <div class="runway" role="img" aria-label="${runwayLabel}">${segments}</div>
+    <div class="runway" role="img" aria-label="${runwayLabel + (mark !== null ? '. ' + payday.replace(' · ', ', ') + '.' : '')}">${segments}${mark !== null
+      ? html`<b class="runway-payday" style="${'--at:' + mark.toFixed(4)}"></b>` : ''}</div>
     <div class="runway-labs"><span class="lab">Flag</span><span class="lab">7 days · out of time trouble</span></div>
     ${clockDue(ctx, c)}`;
 }
