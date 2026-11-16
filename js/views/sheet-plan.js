@@ -19,8 +19,12 @@ import { closeSheet, onRoute } from '../router.js';
 import { fmt } from '../model/money.js';
 import { nowMs, fmtDate, fmtTime } from '../model/dates.js';
 import { colourOf } from './parts.js';
+import { sayHtml } from '../ui/say.js';
+import { phrase } from '../model/words.js';
 
-export const label = 'Opening preparation';
+export function label(ctx) {
+  return phrase('plan.label', ctx && ctx.words);
+}
 
 const SHEET = 'plan';
 const STOP_CHOICES = [0, 1, 2];
@@ -49,10 +53,10 @@ function yesNo(name, legend, value) {
 function contextLine(ctx, round) {
   const made = round.stops > 0 ? html` ${round.stops} ${round.stops === 1 ? 'stop' : 'stops'} made so far today, ${fig(round.conv)}.` : '';
   if (!ctx.state.meta.matchStart || round.status === 'prematch') {
-    return html`The match has not begun, so no round is scored on ${fmtDate(ctx.today, 'dowshort')}; the plan is kept with the day all the same.${made}`;
+    return html`${sayHtml('plan.notBegun', ctx.words, { day: fmtDate(ctx.today, 'dowshort') })}${made}`;
   }
-  if (round.bye) return html`Round ${round.n} is a bye and scores a draw; a plan still marks which stops were meant.${made}`;
-  return html`Round ${round.n}, with ${colourOf(round)}. Habit plays ${fig(round.habit)} on a ${round.type === 'work' ? 'workday' : 'day off'}; win at ${fig(round.winLine)} or less.${made}`;
+  if (round.bye) return html`${sayHtml('plan.bye', ctx.words, { n: round.n })}${made}`;
+  return html`${sayHtml('plan.round', ctx.words, { n: round.n, colour: colourOf(round, ctx.words), habit: fig(round.habit), kind: round.type === 'work' ? 'workday' : 'day off', win: fig(round.winLine) })}${made}`;
 }
 
 export function render(ctx, params) {
@@ -62,7 +66,7 @@ export function render(ctx, params) {
   const stops = plan && Number.isFinite(plan.stops) ? plan.stops : null;
   return html`<form class="sheet-body pl" data-submit="plan.save"${attrs({ 'data-cover': cover })}>
     <p class="sheet-head lab"><b>Morning plan</b><i class="sep"></i>${fmtDate(ctx.today, 'dowshort')}</p>
-    <h2 class="sheet-title">Opening preparation.</h2>
+    <h2 class="sheet-title">${sayHtml('plan.title', ctx.words)}</h2>
     <p class="cap">${contextLine(ctx, round)}</p>
     ${yesNo('container', 'Container filled', plan ? plan.container : null)}
     ${yesNo('breakfast', 'Breakfast sorted', plan ? plan.breakfast : null)}
@@ -71,7 +75,7 @@ export function render(ctx, params) {
       <div class="seg seg-fig seg-block" role="radiogroup" aria-label="Planned stops today">
         ${STOP_CHOICES.map((n) => html`<label class="seg-opt"><input type="radio" name="stops" value="${n}"${attrs({ checked: stops === n })}><span>${n}</span></label>`)}
       </div>
-      <span class="field-help cap">A planned stop is a book move: it prints bare, without ?! or ?. An unanswered line stays blank.</span>
+      <span class="field-help cap">${sayHtml('plan.bookMove', ctx.words)}</span>
     </fieldset>
     ${plan ? html`<p class="pl-saved"><span class="cap">Set at ${fmtTime(plan.at)} on ${fmtDate(ctx.today, 'short')}.</span><button class="btn-link" type="button" data-action="plan.clear">Clear the plan</button></p>` : ''}
     <div class="sheet-actions">

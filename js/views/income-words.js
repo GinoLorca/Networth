@@ -7,6 +7,13 @@
 import { fmt } from '../model/money.js';
 import { addDays, fmtDate, gameDay, nowMs } from '../model/dates.js';
 import { LATE_MS, WAIT_MS, cashAccountOf, incomeLabel, incomeOf, incomePayments, isIncomeMove, liveCounts, payerAnswer } from '../model/income.js';
+import { phrase, wordsOf } from '../model/words.js';
+import { context } from '../runtime.js';
+
+/** The physical-cash account's name in the words asked for: 'Cash in hand' / 'Physical cash' (model/words.js). */
+function cashName(words) {
+  return phrase('schema.account.cash', words);
+}
 
 const CHANGE_PAYER = ' Change it in Settings.';
 const CHANGE_ITEM = ' Ask again from the payment.';
@@ -68,8 +75,8 @@ function staysWords(state, value, cover) {
  * The lead of a line of a bank row's sheet for a payment the row holds: "Confirms " when the row counts for it with
  * no question open, "The board asks whether this is " while the row's confirmation question is open.
  */
-export function rowLineLead(asked) {
-  return asked ? 'The board asks whether this is ' : 'Confirms ';
+export function rowLineLead(asked, words) {
+  return asked ? phrase('income.boardAsks', words) : 'Confirms ';
 }
 
 /**
@@ -89,22 +96,22 @@ export function othersWords(others, cover) {
  * says so in one sentence, to follow the answer itself ("Their …" for a payer's answer, `kind` 'payer'; "The
  * $123.45 was …", "It was …" or "They were …" for a payment's). Otherwise `text` gives the figure now ('' under cover).
  */
-export function beforeCountWords(state, had, value, today, cover, kind) {
+export function beforeCountWords(state, had, value, today, cover, kind, words = wordsOf(state)) {
   const count = latestCount(state);
   const account = cashAccountOf(state);
   if (!count || !account) return null;
   const moved = state.txs.filter((tx) => isIncomeMove(tx) && tx.accountId === account.id && tx.income && !had.has(tx.income.key) && Number.isFinite(tx.at));
   if (!moved.length) return null;
-  if (moved.some((tx) => tx.at > count.at)) return { stays: false, text: cover ? '' : 'Cash in hand is now ' + fmt(value) + '.' };
+  if (moved.some((tx) => tx.at > count.at)) return { stays: false, text: cover ? '' : cashName(words) + ' is now ' + fmt(value) + '.' };
   const one = moved.length === 1;
   const day = countDayWords(gameDay(count.at, rolloverOf(state)), today);
   const stays = staysWords(state, value, cover) + '.';
   if (kind === 'payer') {
     const what = !one ? moved.length + ' payments were' : (cover ? 'payment' : fmt(Math.round(moved[0].amount))) + ' was';
-    return { stays: true, text: 'Their ' + what + ' marked before ' + day + ', so Cash in hand ' + stays };
+    return { stays: true, text: 'Their ' + what + ' marked before ' + day + ', so ' + cashName(words) + ' ' + stays };
   }
   const who = !one ? 'They were' : cover ? 'It was' : 'The ' + fmt(Math.round(moved[0].amount)) + ' was';
-  return { stays: true, text: who + ' marked before ' + day + ', so Cash in hand ' + stays };
+  return { stays: true, text: who + ' marked before ' + day + ', so ' + cashName(words) + ' ' + stays };
 }
 
 /**
@@ -133,10 +140,10 @@ export function countedWords(state, today) {
  * deposit ({ cents, day }) of a confirmation question the answer raised, or null; `moved`: how many payments the
  * answer put in Cash in hand (0: none, so the toast does not say it counts there).
  */
-export function payerWords(name, how, cash, asks, cover, moved, where) {
-  const said = name + (how === 'cash' ? (moved === 0 ? ' pays in cash.' : ' pays in cash: it counts in Cash in hand.') : ' pays by Zelle or transfer: it counts in pencil until the bank shows it.');
+export function payerWords(name, how, cash, asks, cover, moved, where, mode = (context() || {}).words) {
+  const said = name + (how === 'cash' ? (moved === 0 ? ' pays in cash.' : ' pays in cash: it counts in ' + cashName(mode) + '.') : phrase('income.zelle', mode));
   const words = cash && cash.stays ? name + ' pays in cash. ' + cash.text : withCash(said, cash);
-  const ask = asks ? ' Networth asks about the ' + (cover ? 'deposit' : fmt(asks.cents)) + ' of ' + fmtDate(asks.day, 'short') + ' on the board.' : '';
+  const ask = asks ? ' Networth asks about the ' + (cover ? 'deposit' : fmt(asks.cents)) + ' of ' + fmtDate(asks.day, 'short') + phrase('income.onBoard', mode) : '';
   // in Settings the switch is under the owner's finger: the toast ends at the answer
   return words + ask + (where === 'settings' ? '' : CHANGE_PAYER);
 }
@@ -188,10 +195,10 @@ export function recordEstimate(m) {
 }
 
 /** The first words of the record chart's caption when nothing is smoothed: what the line is, and its pencil part. */
-export function recordLead(m) {
+export function recordLead(m, words) {
   const pencil = m.provisional > 0 || m.provisionalIn > 0;
   const where = bankWhere(m.handCash);
-  return 'Net worth ' + where + ', day by day.' + (pencil ? ' The last step, in pencil, counts the moves not yet at the bank; dotted: ' + where + '.' : '');
+  return 'Net worth ' + where + ', day by day.' + (pencil ? phrase('income.record.pencil', words) + where + '.' : '');
 }
 
 /** What a line of the record holds: 'at the bank', or 'at the bank and in hand' while Cash in hand is part of it. */
@@ -203,38 +210,38 @@ export function bankWhere(handCash) {
  * Material's line on what Cash in hand is: '' when there is no Cash in hand; "your count of {count} and payments
  * marked as cash since" once counted, else "from payments marked as cash".
  */
-export function cashLineWords(state) {
+export function cashLineWords(state, words = wordsOf(state)) {
   if (!cashAccountOf(state)) return '';
   const count = latestCount(state);
-  return count ? 'Cash in hand: your count of ' + fmt(count.cents) + ' and payments marked as cash since.' : 'Cash in hand: from payments marked as cash.';
+  return count ? cashName(words) + ': your count of ' + fmt(count.cents) + ' and payments marked as cash since.' : cashName(words) + ': from payments marked as cash.';
 }
 
 /** A payment answered (it was cash, it is in the bank, it came by Zelle, it is still coming), and how to change it. */
-export function itemWords(label, how, cash, at, rollover) {
-  const said = how === 'cash' ? ' was cash: it counts in Cash in hand.' : how === 'gone' ? ' is in the bank: it no longer counts on its own.'
+export function itemWords(label, how, cash, at, rollover, words) {
+  const said = how === 'cash' ? ' was cash: it counts in ' + cashName(words) + '.' : how === 'gone' ? ' is in the bank: it no longer counts on its own.'
     : how === 'bank' ? ' came by Zelle: the bank’s row counts for it.'
       : ' is still coming: Networth asks again on ' + fmtDate(gameDay(at + WAIT_MS, rollover), 'short') + '.';
   return (how === 'cash' ? withCash(label + said, cash, label + ' was cash.') : label + said) + (how === 'gone' ? CHANGE_GONE : CHANGE_ITEM);
 }
 
 /** A bank row's confirmation question answered for the payments it asks about (`n` of them). */
-export function confirmWords(label, n, how, cash) {
+export function confirmWords(label, n, how, cash, words) {
   const change = n > 1 ? CHANGE_EACH : CHANGE_ITEM;
   if (how === 'cash') {
-    return withCash(label + (n > 1 ? ': ' + n + ' payments were cash; they count in Cash in hand.' : ' was cash: it counts in Cash in hand.'), cash,
+    return withCash(label + (n > 1 ? ': ' + n + ' payments were cash; they count in ' + cashName(words) + '.' : ' was cash: it counts in ' + cashName(words) + '.'), cash,
       label + (n > 1 ? ': ' + n + ' payments were cash.' : ' was cash.')) + change;
   }
   return label + (n > 1 ? ': ' + n + ' payments came by Zelle; the bank’s row counts for them.' : ' came by Zelle: the bank’s row counts for it.') + change;
 }
 
 /** A count of Cash in hand. */
-export function countWords(cents, cover) {
-  return (cover ? 'Cash in hand is counted.' : 'Cash in hand is counted: ' + fmt(cents) + '.') + CHANGE_COUNT;
+export function countWords(cents, cover, words) {
+  return (cover ? cashName(words) + ' is counted.' : cashName(words) + ' is counted: ' + fmt(cents) + '.') + CHANGE_COUNT;
 }
 
 /** The latest count removed: the count before it rules again. */
-export function removedWords(value, cover) {
-  return (cover ? 'The latest count is removed.' : 'The latest count is removed: Cash in hand is ' + fmt(value) + '.') + CHANGE_COUNT;
+export function removedWords(value, cover, words) {
+  return (cover ? 'The latest count is removed.' : 'The latest count is removed: ' + cashName(words) + ' is ' + fmt(value) + '.') + CHANGE_COUNT;
 }
 
 function moveOf(state, key) {
@@ -255,7 +262,7 @@ export function paymentState(state, key) {
  * (paymentState). "again" only for a return to pencil from "in the bank" (asked only of a payment in pencil),
  * "still" when it counts where it did, "now" otherwise. Cash in hand "stays as counted" only when it is the count.
  */
-export function againWords(state, key, nowMs, before) {
+export function againWords(state, key, nowMs, before, words = (context() || {}).words) {
   const rollover = rolloverOf(state);
   const move = moveOf(state, key);
   const payment = incomePayments(state, rollover).find((p) => p.key === key);
@@ -263,17 +270,17 @@ export function againWords(state, key, nowMs, before) {
   const lead = subject ? subject + ': ' : '';
   const says = (text) => lead + (lead ? text : text.charAt(0).toUpperCase() + text.slice(1));
   if (!move) return says('it no longer counts.');
-  if (move.income.confirm === true) return says('Networth asks about it on the board.');
+  if (move.income.confirm === true) return says('Networth asks about it' + phrase('income.onBoard', words));
   if (move.matchId) return says('the bank’s row counts for it.');
   if (move.income.how === 'cash') {
     const count = latestCount(state);
     if (count && !(move.at > count.at)) {
       const account = cashAccountOf(state);
       const value = account ? Math.round(Number(account.balance) || 0) : 0;
-      return says('it was marked before ' + countDayWords(gameDay(count.at, rollover), gameDay(nowMs, rollover)) + ', so Cash in hand '
+      return says('it was marked before ' + countDayWords(gameDay(count.at, rollover), gameDay(nowMs, rollover)) + ', so ' + cashName(words) + ' '
         + staysWords(state, value, !!(state.settings && state.settings.cover)) + '.');
     }
-    return says(before === 'cash' ? 'it still counts in Cash in hand.' : 'it counts in Cash in hand now.');
+    return says(before === 'cash' ? 'it still counts in ' + cashName(words) + '.' : 'it counts in ' + cashName(words) + ' now.');
   }
   const pencil = before === 'pencil' ? 'it still counts in pencil' : !before || before === 'none' ? 'it counts in pencil again' : 'it counts in pencil now';
   const askAt = move.at + LATE_MS;

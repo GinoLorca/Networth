@@ -37,8 +37,12 @@ import { addProvisional, addDecline, removeManual } from '../model/merge.js';
 import { previewMove, reviewRounds } from '../model/annotate.js';
 import { purchaseImpact } from '../model/forecast.js';
 import { money, spentUnposted } from './parts.js';
+import { sayHtml } from '../ui/say.js';
+import { phrase, say } from '../model/words.js';
 
-export const label = 'Candidate move';
+export function label(ctx) {
+  return phrase('move.label', ctx && ctx.words);
+}
 
 const SHEET = 'move';
 const ADJOURN_MS = 10 * 60 * 1000;
@@ -122,29 +126,29 @@ function estFig(cents) {
 /* ------------------------------------------------------------ the read-out */
 
 /** Where the day would stand against the line that decides it, in the annotator's words. */
-function resultLine(round, preview) {
-  if (round.bye) return html`A bye scores a draw whatever is played; the ${fig(round.habit - preview.keptAfter)} still counts.`;
+function resultLine(round, preview, words) {
+  if (round.bye) return sayHtml('move.bye', words, { amount: fig(round.habit - preview.keptAfter) });
   const conv = round.habit - preview.keptAfter;
   const same = preview.resultBefore === preview.resultAfter;
-  if (preview.resultAfter === 1) return html`${same ? 'Still a win' : 'A win'}: ${fig(round.winLine - conv)} inside the win line.`;
-  if (preview.resultAfter === 0.5) return html`${same ? 'Still a draw' : 'A draw'}: ${fig(round.lossLine - conv)} inside the loss line.`;
-  return html`${same ? 'The round was already lost' : 'The round is lost'} — the margin still counts: ${fig(conv - round.lossLine)} past the loss line.`;
+  if (preview.resultAfter === 1) return sayHtml('move.win.line', words, { word: phrase(same ? 'move.win.still' : 'move.win', words), amount: fig(round.winLine - conv) });
+  if (preview.resultAfter === 0.5) return sayHtml('move.draw.line', words, { word: phrase(same ? 'move.draw.still' : 'move.draw', words), amount: fig(round.lossLine - conv) });
+  return sayHtml('move.lost.line', words, { word: phrase(same ? 'move.lost.already' : 'move.lost', words), amount: fig(conv - round.lossLine) });
 }
 
-function keptLine(before, after) {
-  return html`<p class="mv-kept"><span class="lab">Kept today</span>
+function keptLine(before, after, words) {
+  return html`<p class="mv-kept"><span class="lab">${sayHtml('move.keptToday', words)}</span>
     <span class="mv-kept-figs">${money(before, { est: true, size: 'm' })}<span class="mv-arrow" aria-hidden="true">→</span><span class="vh">becomes</span>${money(after, { est: true, size: 'm' })}</span></p>`;
 }
 
 /** A purchase judged in today's round. */
 function roundConsequence(ctx, round, move) {
-  const preview = previewMove(round, { amount: move.amount, category: move.category });
+  const preview = previewMove(round, { amount: move.amount, category: move.category }, { words: ctx.words });
   if (preview.stopNumber === null) {
     const name = move.category === 'other' ? 'Not a convenience stop' : categoryLabel(move.category);
     return html`<div class="conseq mv-conseq" aria-live="polite">
       <div>
-        <strong>Outside the daily game.</strong>
-        <p class="mv-line">${name}: ${fig(move.amount)} is recorded and is not played against Habit. Today’s round stays at ${fig(preview.keptBefore)} kept.</p>
+        <strong>${sayHtml('move.outside', ctx.words)}</strong>
+        <p class="mv-line">${sayHtml('move.outside.line', ctx.words, { name, amount: fig(move.amount), kept: fig(preview.keptBefore) })}</p>
       </div>
     </div>`;
   }
@@ -152,7 +156,7 @@ function roundConsequence(ctx, round, move) {
   const stacked = preview.glyph !== null;
   let pattern = '';
   if (stacked) {
-    const review = reviewRounds(ctx.d.thisMonth.rounds, { sweepTxIds: ctx.d.sweepTxIds });
+    const review = reviewRounds(ctx.d.thisMonth.rounds, { sweepTxIds: ctx.d.sweepTxIds, words: ctx.words });
     const month = fmtMonth(monthOf(ctx.today), 'name');
     pattern = review.stackedDays
       ? html`<p class="mv-line">Days with stacked stops in ${month}: <span data-cover-keep>${review.stackedDays}</span>, costing ${fig(review.stackedCost)}.</p>`
@@ -162,8 +166,8 @@ function roundConsequence(ctx, round, move) {
     ${stacked ? html`<b class="conseq-sym">${preview.glyph}</b>` : ''}
     <div>
       <strong>${ordinal(preview.stopNumber)} stop of the day${planned ? ', in the plan' : stacked ? ', unplanned' : ''}.</strong>
-      ${keptLine(preview.keptBefore, preview.keptAfter)}
-      <p class="mv-line">${resultLine(round, preview)}</p>
+      ${keptLine(preview.keptBefore, preview.keptAfter, ctx.words)}
+      <p class="mv-line">${resultLine(round, preview, ctx.words)}</p>
       ${pattern}
     </div>
   </div>`;
@@ -175,8 +179,8 @@ function prematchConsequence(ctx, round, move) {
   const stop = isStop(move.category);
   return html`<div class="conseq mv-conseq" aria-live="polite">
     <div>
-      <strong>The match has not begun.</strong>
-      <p class="mv-line">Habit is measured over ${ctx.d.matchFromDay - 1} full days of bank history: the match begins on day ${ctx.d.matchFromDay} on record; <span data-cover-keep>${days}</span> so far. Until then a move or a declined purchase is recorded as played, with no round to weigh it against.</p>
+      <strong>${sayHtml('move.notBegun', ctx.words)}</strong>
+      <p class="mv-line">${sayHtml('move.notBegun.line', ctx.words, { full: ctx.d.matchFromDay - 1, day: ctx.d.matchFromDay, days: html`<span data-cover-keep>${days}</span>` })}</p>
       ${stop
         ? html`<p class="mv-line">Convenience stops today: ${fig(round.conv)} in ${round.stops}. With this one: ${fig(round.conv + move.amount)} in ${round.stops + 1}.</p>`
         : html`<p class="mv-line">${move.category === 'other' ? 'Not a convenience stop' : categoryLabel(move.category)}: ${fig(move.amount)}, recorded on ${fmtDate(ctx.today, 'dowshort')}.</p>`}
@@ -187,7 +191,7 @@ function prematchConsequence(ctx, round, move) {
 /** $100 or more: what it does to the clock and to the card — never a balance, never a verdict. */
 function largeConsequence(ctx, move) {
   const clock = ctx.d.clock;
-  const shared = { ledger: ctx.d.ledger };
+  const shared = { ledger: ctx.d.ledger, words: ctx.words };
   const fromCash = purchaseImpact(ctx.state, ctx.now, { amount: move.amount, on: 'cash' }, shared);
   const hasCard = ctx.d.accounts('card').length > 0;
   const onCard = hasCard ? purchaseImpact(ctx.state, ctx.now, { amount: move.amount, on: 'card' }, shared) : null;
@@ -198,7 +202,7 @@ function largeConsequence(ctx, move) {
     : clock.payAwaited && clock.dueUntil ? 'through ' + fmtDate(clock.dueUntil, 'dowshort')
     : clock.nextPayday ? 'before payday, ' + fmtDate(clock.nextPayday, 'dowshort') : 'in the next 14 days';
   let cashLine;
-  if (clock.dueTotal <= 0) cashLine = html`nothing in the Book falls due ${until}.`;
+  if (clock.dueTotal <= 0) cashLine = sayHtml('move.book.due', ctx.words, { until });
   else if (fromCash.shortfallAfter > 0) cashLine = html`${estFig(fromCash.shortfallAfter)} short of the ${estFig(clock.dueTotal)} due ${until}.`;
   else cashLine = html`the ${estFig(clock.dueTotal)} due ${until} stays covered.`;
   let cardLine = '';
@@ -212,8 +216,8 @@ function largeConsequence(ctx, move) {
   const pay = tail ? tail.charAt(0).toUpperCase() + tail.slice(1) : '';
   return html`<div class="conseq mv-conseq mv-large" aria-live="polite">
     <div>
-      <strong>${fig(move.amount)}: a larger move.</strong>
-      <p class="lab mv-scenario"><i class="hatch-mark"></i>Scenario<i class="sep"></i>if played today</p>
+      <strong>${sayHtml('move.larger', ctx.words, { amount: fig(move.amount) })}</strong>
+      <p class="lab mv-scenario"><i class="hatch-mark"></i>Scenario<i class="sep"></i>${sayHtml('move.ifPlayed', ctx.words)}</p>
       <p class="mv-line"><span class="lab">From cash</span> ${cashLine}</p>
       ${cardLine}
       ${pay ? html`<p class="mv-line"><span data-fig>${pay}</span></p>` : ''}
@@ -233,11 +237,11 @@ function standing(ctx, round) {
   let line;
   if (!inMatch(ctx, round)) {
     const days = ctx.d.historyDays;
-    line = html`The match has not begun: it begins on day ${ctx.d.matchFromDay} on record; ${days} so far. A move or a declined purchase is recorded all the same.`;
+    line = sayHtml('move.standing.notBegun', ctx.words, { day: ctx.d.matchFromDay, days });
   } else if (round.bye) {
-    line = html`Round ${round.n} is a bye: it scores a draw whatever is played. So far ${spentUnposted(round) ? estFig(round.conv) : fig(round.conv)} in ${countOf(round.stops, 'stop')}.`;
+    line = sayHtml('move.standing.bye', ctx.words, { n: round.n, conv: spentUnposted(round) ? estFig(round.conv) : fig(round.conv), stops: countOf(round.stops, 'stop') });
   } else {
-    line = html`Round ${round.n}: Habit plays ${fig(round.habit)}. So far ${spentUnposted(round) ? estFig(round.conv) : fig(round.conv)} in ${countOf(round.stops, 'stop')}, ${round.status !== 'final' ? estFig(round.kept) : fig(round.kept)} kept. Win at ${fig(round.winLine)} or less; loss above ${fig(round.lossLine)}.`;
+    line = sayHtml('move.standing', ctx.words, { n: round.n, habit: fig(round.habit), conv: spentUnposted(round) ? estFig(round.conv) : fig(round.conv), stops: countOf(round.stops, 'stop'), kept: round.status !== 'final' ? estFig(round.kept) : fig(round.kept), win: fig(round.winLine), loss: fig(round.lossLine) });
   }
   return html`<div class="mv-standing">
     <p class="cap">${line}</p>
@@ -252,9 +256,9 @@ function standing(ctx, round) {
 
 function headLine(ctx, round, note) {
   const where = inMatch(ctx, round)
-    ? 'Round ' + round.n + ', move ' + (round.moves.filter((tx) => !tx.matchId).length + 1)
+    ? say('move.where', ctx.words, { n: round.n, m: round.moves.filter((tx) => !tx.matchId).length + 1 })
     : fmtDate(ctx.today, 'dowshort');
-  return html`<p class="sheet-head lab"><b>Candidate move</b><i class="sep"></i>${note || where}</p>`;
+  return html`<p class="sheet-head lab"><b>${sayHtml('move.label', ctx.words)}</b><i class="sep"></i>${note || where}</p>`;
 }
 
 function editView(ctx, draft) {
@@ -265,7 +269,7 @@ function editView(ctx, draft) {
   const cover = !!ctx.state.settings.cover;
   return html`<div class="sheet-body mv"${attrs({ 'data-cover': cover })}>
     ${headLine(ctx, round)}
-    <h2 class="sheet-title">Look before you play it.</h2>
+    <h2 class="sheet-title">${sayHtml('move.title', ctx.words)}</h2>
     ${usual.length ? html`<div class="chips mv-usual" role="group" aria-label="Your usual stops">
       ${usual.map((chip) => html`<button class="chip" type="button" data-key="${chip.mkey}" data-action="move.chip" data-mkey="${chip.mkey}"
         aria-pressed="${draft.mkey === chip.mkey && move.amount === chip.typical ? 'true' : 'false'}">${chip.merchant}&nbsp;<span data-fig>${fmtPlain(chip.typical)}</span></button>`)}
@@ -277,7 +281,7 @@ function editView(ctx, draft) {
         <input class="money-input" type="text" name="amount" inputmode="decimal" placeholder="0.00" autocomplete="off" enterkeyhint="done"
           value="${draft.amount}" data-input="move.input"${attrs({ autofocus: ctx.wide && !draft.amount, 'aria-invalid': draft.error === 'amount' ? 'true' : null })}>
       </label>
-      ${draft.error === 'amount' ? html`<p class="field-error" role="alert">Enter the price first: a move is recorded with its amount.</p>` : ''}
+      ${draft.error === 'amount' ? html`<p class="field-error" role="alert">${sayHtml('move.noPrice', ctx.words)}</p>` : ''}
     </div>
     <label class="field">
       <span class="field-label lab">Place</span>
@@ -290,9 +294,9 @@ function editView(ctx, draft) {
     </div>
     ${move.amount === null ? standing(ctx, round) : consequence(ctx, round, move)}
     <div class="sheet-actions">
-      <button class="btn" type="button" data-action="move.play">Play it</button>
-      <button class="btn" type="button" data-action="move.adjourn">Adjourn 10:00</button>
-      <button class="btn btn-solid" type="button" data-action="move.decline">Decline</button>
+      <button class="btn" type="button" data-action="move.play">${sayHtml('move.play', ctx.words)}</button>
+      <button class="btn" type="button" data-action="move.adjourn">${sayHtml('move.adjourn', ctx.words)}</button>
+      <button class="btn btn-solid" type="button" data-action="move.decline">${sayHtml('move.decline', ctx.words)}</button>
     </div>
   </div>`;
 }
@@ -309,23 +313,23 @@ function sealedView(ctx, sealed) {
   const open = wait <= 0;
   const cover = !!ctx.state.settings.cover;
   return html`<div class="sheet-body mv"${attrs({ 'data-cover': cover })}>
-    ${headLine(ctx, round, 'adjourned')}
-    <h2 class="sheet-title">${open ? html`The ten minutes are up.` : html`Sealed until ${fmtTime(sealed.until)}.`}</h2>
+    ${headLine(ctx, round, phrase('move.adjourned', ctx.words))}
+    <h2 class="sheet-title">${open ? html`The ten minutes are up.` : sayHtml('move.sealedUntil', ctx.words, { time: fmtTime(sealed.until) })}</h2>
     <p class="mv-count">
-      <span class="fig fig-xl" role="timer" data-cover-keep><span class="vh">${open ? 'Time is up: ' : 'Time until play resumes: '}</span>${clockText(wait)}</span>
-      <span class="cap">${open ? html`Sealed at ${fmtTime(sealed.at)}. The move is open: play it or decline it.` : html`until play resumes. Sealed at ${fmtTime(sealed.at)}; nothing is recorded yet.`}</span>
+      <span class="fig fig-xl" role="timer" data-cover-keep><span class="vh">${phrase(open ? 'move.timeUp' : 'move.timeLeft', ctx.words)}</span>${clockText(wait)}</span>
+      <span class="cap">${open ? sayHtml('move.open', ctx.words, { time: fmtTime(sealed.at) }) : sayHtml('move.waiting', ctx.words, { time: fmtTime(sealed.at) })}</span>
     </p>
     <ul class="rows">
       <li class="row" data-key="sealed">
-        <span class="row-label">${move.merchant || categoryLabel(move.category)} <em class="row-note">${move.merchant ? categoryLabel(move.category) + ' · ' : ''}the sealed move</em></span>
+        <span class="row-label">${move.merchant || categoryLabel(move.category)} <em class="row-note">${move.merchant ? categoryLabel(move.category) + ' · ' : ''}${phrase('move.sealedMove', ctx.words)}</em></span>
         <span class="row-value">${money(move.amount, { est: true })}</span>
       </li>
     </ul>
     ${move.amount === null ? '' : consequence(ctx, round, move)}
-    <p class="mv-aside"><button class="btn-link" type="button" data-action="move.unseal">Set it aside</button><span class="cap">Clears the sealed move without recording it.</span></p>
+    <p class="mv-aside"><button class="btn-link" type="button" data-action="move.unseal">Set it aside</button><span class="cap">${sayHtml('move.unseal', ctx.words)}</span></p>
     <div class="sheet-actions">
-      <button class="btn" type="button" data-action="move.play">Play it</button>
-      <button class="btn btn-solid" type="button" data-action="move.decline">Decline</button>
+      <button class="btn" type="button" data-action="move.play">${sayHtml('move.play', ctx.words)}</button>
+      <button class="btn btn-solid" type="button" data-action="move.decline">${sayHtml('move.decline', ctx.words)}</button>
     </div>
   </div>`;
 }
@@ -337,13 +341,13 @@ function insteadView(ctx, draft) {
   const cover = !!ctx.state.settings.cover;
   const priced = Number.isFinite(draft.amount) && draft.amount > 0;
   return html`<div class="sheet-body mv"${attrs({ 'data-cover': cover })}>
-    ${headLine(ctx, round, 'declined ' + fmtTime(draft.at))}
-    <h2 class="sheet-title">Not played.</h2>
+    ${headLine(ctx, round, say('move.declinedAt', ctx.words, { time: fmtTime(draft.at) }))}
+    <h2 class="sheet-title">${sayHtml('move.notPlayed', ctx.words)}</h2>
     <div class="conseq mv-conseq">
       ${mark ? html`<b class="conseq-sym">${mark.glyph}</b>` : ''}
       <div>
-        <strong>Declined${draft.merchant ? html`: ${draft.merchant}` : ''}.</strong>
-        <p class="mv-line">${priced ? html`The ${fig(draft.amount)} stays on your side of the board.` : html`Recorded at ${fmtTime(draft.at)} without a price.`}${inMatch(ctx, round) ? html` Kept today holds at ${fig(round.kept)}.` : ''}</p>
+        <strong>${sayHtml('move.declined', ctx.words)}${draft.merchant ? html`: ${draft.merchant}` : ''}.</strong>
+        <p class="mv-line">${priced ? sayHtml('move.yourSide', ctx.words, { amount: fig(draft.amount) }) : html`Recorded at ${fmtTime(draft.at)} without a price.`}${inMatch(ctx, round) ? sayHtml('move.keptHolds', ctx.words, { kept: fig(round.kept) }) : ''}</p>
       </div>
     </div>
     ${insteads.length ? html`<fieldset class="field mv-instead">
@@ -351,8 +355,8 @@ function insteadView(ctx, draft) {
       <div class="chips">
         ${insteads.map((text, i) => html`<button class="chip" type="button" data-key="${'i' + i}" data-action="move.instead" data-instead="${text}">${text}</button>`)}
       </div>
-      <span class="field-help cap">One tap adds it to the move and closes. Answering is optional.</span>
-    </fieldset>` : html`<p class="cap">The declined purchase is on today’s scoresheet, recorded at ${fmtTime(draft.at)}.</p>`}
+      <span class="field-help cap">${sayHtml('move.instead', ctx.words)}</span>
+    </fieldset>` : html`<p class="cap">${sayHtml('move.onSheet', ctx.words, { time: fmtTime(draft.at) })}</p>`}
     <div class="sheet-actions">
       <button class="btn" type="button" data-action="move.done">Done</button>
     </div>
@@ -449,17 +453,17 @@ function recordedText(ctx, tx) {
   const cover = !!ctx.state.settings.cover;
   const name = tx.merchant || categoryLabel(tx.category);
   if (tx.kind === 'decline') {
-    return 'Declined: ' + name + (cover || !(tx.amount > 0) ? '.' : ', ' + fmt(tx.amount) + ' not spent.');
+    return say('move.toast.declined', ctx.words, { name }) + (cover || !(tx.amount > 0) ? '.' : ', ' + fmt(tx.amount) + ' not spent.');
   }
   const round = ctx.d.round(tx.day);
-  const rd = round && round.n > 0 && round.status !== 'prematch' ? ', round ' + round.n : ', ' + fmtDate(tx.day, 'short');
+  const rd = round && round.n > 0 && round.status !== 'prematch' ? say('move.toast.round', ctx.words, { n: round.n }) : ', ' + fmtDate(tx.day, 'short');
   return 'Recorded: ' + name + (cover ? '' : ' ' + fmt(tx.amount)) + rd + '.';
 }
 
 function recorded(txId) {
   const ctx = context();
   const tx = ctx.state.txs.find((t) => t && t.id === txId);
-  const name = tx ? tx.merchant || categoryLabel(tx.category) : 'the move';
+  const name = tx ? tx.merchant || categoryLabel(tx.category) : phrase('move.theMove', ctx.words);
   const removedText = tx && !ctx.state.settings.cover && tx.amount > 0 ? 'Removed: ' + name + ' ' + fmt(tx.amount) + '.' : 'Removed: ' + name + '.';
   toast(tx ? recordedText(ctx, tx) : 'Recorded on ' + fmtDate(ctx.today, 'short') + '.', {
     action: 'Undo',

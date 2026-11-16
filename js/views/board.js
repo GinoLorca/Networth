@@ -37,7 +37,9 @@ import { answerItems, answerPayer, cashAccountOf, incomeQuestions, isIdleCash } 
 import { evalGlyph, timeTroubleGlyph, moveGlyph, resultMark } from '../ui/glyphs.js';
 import { bankWhere, beforeCountWords, confirmWords, isCountedCash, itemWords, listedPayers, othersWords, payerWords } from './income-words.js';
 import { paydayMark, paydayWords } from './clock-words.js';
-import { money, inlineMoney, keptLine, statusLine, roundTitle, colourOf, crosstable, movesList, notableMoves, worstGlyph, spentUnposted, recentList, toneStyle, flowLookups, payFlowClass, unbankedWords } from './parts.js';
+import { evalName, glyphName, lowerFirst, phrase, say } from '../model/words.js';
+import { sayHtml } from '../ui/say.js';
+import { money, inlineMoney, keptLine, statusLine, roundTitle, colourOf, crosstable, movesList, notableMoves, worstGlyph, spentUnposted, recentList, toneStyle, flowLookups, payFlowClass, unbankedWords, rungNumber } from './parts.js';
 
 const TEN_MINUTES_MS = 10 * 60 * 1000;
 const WORTH_DAYS = 90;
@@ -233,17 +235,17 @@ function heroCaption(ctx, v) {
   const { pos, estimated, showLive } = v;
   const reported = whenText(ctx, pos.dataAt ?? pos.syncedAt, true);
   if (!showLive) {
-    const byHand = v.manualCount ? html`, with the ${plural(v.manualCount, 'account', 'accounts')} kept by hand at your own figures` : '';
+    const byHand = v.manualCount ? sayHtml('board.byHand', ctx.words, { accounts: plural(v.manualCount, 'account', 'accounts') }) : '';
     const on = v.historyDays > 0 ? 'in the ' + plural(v.historyDays, 'day', 'days') + ' on record' : 'yet';
     // "not found" is only for a record with no regular pay at all; pay the owner counts on arrival is said as that
     const plain = estimated ? '' : !ctx.state.settings.smoothing
-      ? html` Pay is counted when it arrives: day-by-day counting is switched off, so pay and bills count on the day they post.`
+      ? sayHtml('board.plain.off', ctx.words)
       : v.payOnArrival
-        ? html` Pay is counted when it arrives: ${v.payOnArrival} is not counted day by day, so pay and bills count on the day they post.`
+        ? sayHtml('board.plain.arrives', ctx.words, { name: v.payOnArrival })
         : v.lapsed.length
           ? html` Pay and bills count on the day they post.`
           : html` No regular pay is detected ${on}, so pay and bills count on the day they post.`;
-    return html`<p class="cap board-compo">As the bank reported it ${reported}${byHand}.${plain}</p>${lapsedLines(v)}`;
+    return html`<p class="cap board-compo">As the bank reported it ${reported}${byHand}.${plain}</p>${lapsedLines(v, ctx.words)}`;
   }
   const main = pos.receivables.slice().sort((a, b) => b.daily - a.daily)[0];
   const held = pos.smoothing && pos.rate === 0 && pos.freshness !== 'fresh';
@@ -259,8 +261,8 @@ function heroCaption(ctx, v) {
   const liveC = Number.isFinite(pos.live) ? Math.floor(pos.live) : null;
   const payC = liveC != null ? bankC + recvC - provC + provInC - liveC : Math.round(pos.payable);
   if (pos.smoothing) {
-    bits.push(html`<span class="nowrap">pay earned${main ? ' since ' + fmtDate(main.since, 'short') : ''} ${money(recvC, { est: true, signed: true })}</span>`);
-    bits.push(html`<span class="nowrap">bills used ${money(-payC, { est: true, signed: true })}</span>`);
+    bits.push(html`<span class="nowrap">${sayHtml('board.payEarned', ctx.words, { since: main ? ' since ' + fmtDate(main.since, 'short') : '', amount: money(recvC, { est: true, signed: true }) })}</span>`);
+    bits.push(html`<span class="nowrap">${sayHtml('board.billsUsed', ctx.words, { amount: money(-payC, { est: true, signed: true }) })}</span>`);
   }
   if (provC > 0) {
     bits.push(html`<span class="nowrap">${unbankedWords(ctx.state)}, not yet at the bank ${money(-provC, { est: true, signed: true })}</span>`);
@@ -269,7 +271,7 @@ function heroCaption(ctx, v) {
     bits.push(html`<span class="nowrap">payments marked, not yet at the bank ${money(provInC, { est: true, signed: true })}</span>`);
   }
   return html`<p class="cap board-compo">${bits.map((bit, i) => html`${i ? DOT : ''}${bit}`)}${held
-    ? html`<span class="board-held">The figure holds still: the bank last reported ${reported}.</span>` : ''}</p>${lapsedLines(v)}`;
+    ? html`<span class="board-held">The figure holds still: the bank last reported ${reported}.</span>` : ''}</p>${lapsedLines(v, ctx.words)}`;
 }
 
 /** The Cash in hand account when it is part of the figures: not left out, and not idle. */
@@ -297,15 +299,15 @@ function countedDayByDay(v, id) {
   return !stream || stream.accrue !== false;
 }
 
-function lapsedLines(v) {
-  return v.lapsed.map((item) => html`<p class="cap board-lapsed" data-key="${'lapsed-' + item.id}">No deposit from ${item.name || 'a regular payer'} since ${isYmd(item.since) ? fmtDate(item.since, 'short') : 'a day not on record'}; ${countedDayByDay(v, item.id) ? 'pay is no longer counted as earned' : 'its payday is no longer expected'}.</p>`);
+function lapsedLines(v, words) {
+  return v.lapsed.map((item) => html`<p class="cap board-lapsed" data-key="${'lapsed-' + item.id}">No deposit from ${item.name || 'a regular payer'} since ${isYmd(item.since) ? fmtDate(item.since, 'short') : 'a day not on record'}; ${countedDayByDay(v, item.id) ? say('board.lapsed.earned', words) : 'its payday is no longer expected'}.</p>`);
 }
 
 /** What yesterday's change was made of: earned · bills · spent. */
-function yesterdayParts(y, smoothing) {
+function yesterdayParts(y, smoothing, words) {
   // earned and bills are accruals while pay and bills are counted day by day; a day in pencil is not final at all
   const accrued = !!smoothing || !!y.partial;
-  return html`earned ${inlineMoney(y.earned, { est: accrued })}${DOT}bills ${inlineMoney(y.bills, { est: accrued })}${DOT}spent ${inlineMoney(y.spent, { est: !!y.partial })}`;
+  return sayHtml('board.yesterday.parts', words, { earned: inlineMoney(y.earned, { est: accrued }), dot: DOT, bills: inlineMoney(y.bills, { est: accrued }), spent: inlineMoney(y.spent, { est: !!y.partial }) });
 }
 
 /** Yesterday · this month · since last look. */
@@ -318,17 +320,17 @@ function heroMeta(ctx, v) {
     <span class="lab">Yesterday</span>
     ${y ? money(y.result, { est: y.partial || pos.smoothing, signed: true, tint: true, rim: true }) : html`<span class="fig">—</span>`}
     <span class="cap">${y
-      ? (ctx.wide ? yesterdayParts(y, pos.smoothing) : html`${fmtDate(y.day, 'dowshort')}${y.partial ? ', in pencil' : ''}`)
+      ? (ctx.wide ? yesterdayParts(y, pos.smoothing, ctx.words) : html`${fmtDate(y.day, 'dowshort')}${y.partial ? say('board.inPencil', ctx.words) : ''}`)
       : html`no record of ${fmtDate(addDays(ctx.today, -1), 'short')}`}</span>
   </div>`);
   items.push(html`<div class="tally-item">
     <span class="lab">This month</span>
     ${money(ret.kept, { est: !!pos.smoothing || pos.provisional > 0 || pos.provisionalIn > 0, signed: true, tint: true, rim: true })}
     <span class="cap">${ret.rate == null
-      ? 'nothing counted as earned yet this month'
+      ? say('board.month.none', ctx.words)
       : ret.kept >= 0
-        ? html`kept of ${inlineMoney(ret.earned, { est: pos.smoothing || pos.provisionalIn > 0 })} earned`
-        : html`more went out than the ${inlineMoney(ret.earned, { est: pos.smoothing || pos.provisionalIn > 0 })} earned`}</span>
+        ? sayHtml('board.month.kept', ctx.words, { earned: inlineMoney(ret.earned, { est: pos.smoothing || pos.provisionalIn > 0 }) })
+        : sayHtml('board.month.over', ctx.words, { earned: inlineMoney(ret.earned, { est: pos.smoothing || pos.provisionalIn > 0 }) })}</span>
   </div>`);
   if (v.seen) {
     items.push(html`<div class="tally-item">
@@ -350,9 +352,9 @@ function heroMore(ctx, v) {
   const label = cover ? 'Assets against liabilities' : 'Assets ' + fmt(pos.assets) + ' against liabilities ' + fmt(pos.liabilities);
   let note = '';
   if (v.manualCount && pos.slowAssets > 0) {
-    note = html`${fmtPct(slow, 0)} of the assets is slow to sell: equipment and the like, at your own estimate.`;
+    note = sayHtml('board.slow', ctx.words, { pct: fmtPct(slow, 0) });
   } else if (v.manualCount) {
-    note = html`0% of the assets is slow to sell: all of it is cash and accounts.`;
+    note = sayHtml('board.slow.none', ctx.words);
   }
   const y = ctx.wide ? null : ctx.d.yesterday;
   return html`
@@ -402,8 +404,8 @@ function clockMain(ctx, v) {
 
   return html`
     <div class="sec-head">
-      <h2 class="lab" id="b-clock"><b>Cash on hand</b><i class="sep"></i>the clock</h2>
-      ${c.trouble ? html`<span class="tt lab">${timeTroubleGlyph({ decorative: true })}Time trouble</span>` : ''}
+      <h2 class="lab" id="b-clock"><b>Cash on hand</b><i class="sep"></i>${sayHtml('board.clock', ctx.words)}</h2>
+      ${c.trouble ? html`<span class="tt lab">${timeTroubleGlyph({ decorative: true, words: ctx.words })}${sayHtml('glyph.timeTrouble', ctx.words)}</span>` : ''}
     </div>
     <div class="clock-body">
       <div>
@@ -412,9 +414,9 @@ function clockMain(ctx, v) {
       </div>
       <div class="clock-run">
         ${days == null
-          ? html`<span class="fig est">— <small>on the clock</small></span>
-            <p class="cap">Runway is read from 60 days of outflows; too few are on record.</p>`
-          : html`<span class="fig est" data-cover-keep><span class="approx">≈</span>${days < 1 ? 'under 1 day' : plural(days, 'day', 'days')} <small>on the clock</small></span>
+          ? html`<span class="fig est">— <small>${sayHtml('board.onClock', ctx.words)}</small></span>
+            <p class="cap">${sayHtml('board.runway.later', ctx.words)}</p>`
+          : html`<span class="fig est" data-cover-keep><span class="approx">≈</span>${days < 1 ? 'under 1 day' : plural(days, 'day', 'days')} <small>${sayHtml('board.onClock', ctx.words)}</small></span>
             <p class="cap">at about <span data-fig>${fmt(c.burn)}</span> a day${short
               ? (ctx.wide ? html`, a ${BURN_DAYS}-day average with ${plural(v.historyDays, 'day', 'days')} on record` : html` <span class="board-runnote">${v.historyDays} of ${BURN_DAYS} days on record</span>`)
               : ''}</p>`}
@@ -423,7 +425,7 @@ function clockMain(ctx, v) {
     </div>
     <div class="runway" role="img" aria-label="${runwayLabel + (mark !== null ? '. ' + payday.replace(' · ', ', ') + '.' : '')}">${segments}${mark !== null
       ? html`<b class="runway-payday" style="${'--at:' + mark.toFixed(4)}"></b>` : ''}</div>
-    <div class="runway-labs"><span class="lab">Flag</span><span class="lab">7 days · out of time trouble</span></div>
+    <div class="runway-labs"><span class="lab">${sayHtml('board.flag', ctx.words)}</span><span class="lab">${sayHtml('board.runway.end', ctx.words)}</span></div>
     ${clockDue(ctx, c)}`;
 }
 
@@ -459,12 +461,12 @@ function clockDue(ctx, c) {
       </div>
       ${c.shortfall > 0
         ? html`<div class="tally-item">
-            <span class="lab"><span class="spot">${timeTroubleGlyph({ decorative: true })}</span> Short</span>
+            <span class="lab"><span class="spot">${timeTroubleGlyph({ decorative: true, words: ctx.words })}</span> ${phrase('board.short', ctx.words)}</span>
             ${money(c.shortfall, { est: true })}
             <span class="cap">cash does not cover it</span>
           </div>`
         : html`<div class="tally-item">
-            <span class="lab">To spare</span>
+            <span class="lab">${phrase('board.spare', ctx.words)}</span>
             ${money(spare, { est: c.dueTotal > 0 })}
             <span class="cap">covered</span>
           </div>`}
@@ -475,7 +477,7 @@ function clockDue(ctx, c) {
         <span class="${cx('lab', 'lab-s', item.overdue && 'board-overdue')}">${item.overdue ? 'overdue since ' + fmtDate(item.day, 'short') : fmtDate(item.day, 'dowshort')}</span>
         ${money(item.amount, { est: true })}
       </li>`)}
-      ${more > 0 ? html`<li class="board-due-more" data-key="more"><a class="cap" href="#/book">and ${more} more ${until}, in the Book</a></li>` : ''}
+      ${more > 0 ? html`<li class="board-due-more" data-key="more"><a class="cap" href="#/book">${sayHtml('board.due.more', ctx.words, { more, until })}</a></li>` : ''}
     </ul>` : ''}`;
 }
 
@@ -485,10 +487,10 @@ function reserveBlock(ctx) {
   const next = c.milestones.findIndex((m) => !m.reached);
   return html`
     <p class="clock-reserve-row">
-      <span class="lab">Reserve</span>${money(c.reserve)}
+      <span class="lab">${sayHtml('board.reserve', ctx.words)}</span>${money(c.reserve)}
       <span class="cap">${c.reserveTarget > 0 ? html`${fmtPct(ratio(c.reserve, c.reserveTarget), 1)} of <span data-fig>${fmt(c.reserveTarget, { decimals: 0 })}</span>` : 'no goal is set'}</span>
     </p>
-    <ol class="ticks" aria-label="Reserve milestones, in days of typical outflow">
+    <ol class="ticks" aria-label="${say('board.reserve.aria', ctx.words)}">
       ${c.milestones.map((m, i) => html`<li${attrs({ class: m.reached ? 'is-done' : i === next ? 'is-next' : null })}>${m.label}${m.reached ? html`<span class="vh">, reached</span>` : i === next ? html`<span class="vh">, next</span>` : ''}</li>`)}
     </ol>`;
 }
@@ -520,7 +522,7 @@ function payNote(row, earlier) {
 /** What movesList needs to colour a move's amount by its cash flow: the accounts, and a pair's other leg. */
 function flowOpts(ctx) {
   const { accountOf, pairOf } = flowLookups(ctx);
-  return { accounts: accountOf, pairs: pairOf };
+  return { accounts: accountOf, pairs: pairOf, words: ctx.words };
 }
 
 /** One payment of the checklist: the box, the name with its day and standing, the amount, and what may be said about it. */
@@ -604,7 +606,7 @@ function planSummary(ctx, plan) {
   if (plan.stops != null) bits.push(plan.stops === 0 ? '0 planned stops' : plural(plan.stops, 'planned stop', 'planned stops'));
   const record = ctx.state.days[ctx.today];
   const at = record && record.plan && Number.isFinite(record.plan.at) ? record.plan.at : null;
-  return 'Opening preparation' + (at ? ', ' + fmtTime(at) : '') + ': ' + (bits.length ? bits.join(', ') : 'recorded for ' + fmtDate(ctx.today, 'short')) + '.';
+  return phrase('board.plan', ctx.words) + (at ? ', ' + fmtTime(at) : '') + ': ' + (bits.length ? bits.join(', ') : 'recorded for ' + fmtDate(ctx.today, 'short')) + '.';
 }
 
 function todayBlock(ctx, v) {
@@ -617,44 +619,44 @@ function todayBlock(ctx, v) {
   const per = ctx.state.settings.byesPerMonth || 0;
   const byesLeft = Math.max(0, per - byesUsed(ctx));
   const month = fmtMonth(monthOf(ctx.today), 'name');
-  const label = v.cover ? 'Kept against spent, so far' : 'Kept ' + fmt(Math.max(0, r.kept)) + ' against spent ' + fmt(r.conv) + ', so far';
+  const label = v.cover ? say('board.split.cover', ctx.words) : say('board.split', ctx.words, { kept: fmt(Math.max(0, r.kept)), spent: fmt(r.conv) });
   // The premise of the round. Under the title on wide screens; under the bar on phones, where the
   // standing itself has to reach the first screenful.
-  const premise = html`Habit plays <span data-fig>${fmt(r.habit)}</span> on a ${workday ? 'workday' : 'day off'}.
-    Win at <span data-fig>${fmt(r.winLine)}</span> or less${DOT}loss above <span data-fig>${fmt(r.lossLine)}</span>.${
-    r.bye ? ' A bye is declared: today scores ½ whatever is spent, and its dollars still count.' : ''}`;
+  const premise = html`${sayHtml('board.premise.habit', ctx.words, { habit: html`<span data-fig>${fmt(r.habit)}</span>`, kind: workday ? 'workday' : 'day off' })}
+    ${sayHtml('board.premise.lines', ctx.words, { win: html`<span data-fig>${fmt(r.winLine)}</span>`, dot: DOT, loss: html`<span data-fig>${fmt(r.lossLine)}</span>` })}${
+    r.bye ? say('board.premise.bye', ctx.words) : ''}`;
 
   return html`
     <div class="sec-head">
-      <h2 class="lab" id="b-today"><b>Today</b><i class="sep"></i>Round ${r.n}</h2>
-      <span class="lab">${fmtDate(r.day, 'dowshort')}<i class="sep"></i>${colourOf(r)}</span>
+      <h2 class="lab" id="b-today"><b>Today</b><i class="sep"></i>${sayHtml('board.today.round', ctx.words, { n: r.n })}</h2>
+      <span class="lab">${fmtDate(r.day, 'dowshort')}<i class="sep"></i>${colourOf(r, ctx.words)}</span>
     </div>
-    <h3 class="title board-vs">You <i>v.</i> Habit</h3>
+    <h3 class="title board-vs">${sayHtml('board.vs', ctx.words)}</h3>
     ${ctx.wide ? html`<p class="cap board-premise">${premise}</p>` : ''}
     <div class="tally board-standing">
-      <div class="tally-item"><span class="lab">Habit</span>${money(r.habit)}</div>
+      <div class="tally-item"><span class="lab">${sayHtml('board.habit', ctx.words)}</span>${money(r.habit)}</div>
       <div class="tally-item"><span class="lab">Spent</span>${money(r.conv, { est: spentUnposted(r) })}</div>
-      <div class="tally-item"><span class="lab"><b>Standing</b></span><span class="fig est"><span class="approx">≈</span>${fmt(r.kept, { sign: 'always' })} <small>so far</small></span></div>
+      <div class="tally-item"><span class="lab"><b>${sayHtml('board.standing', ctx.words)}</b></span><span class="fig est"><span class="approx">≈</span>${fmt(r.kept, { sign: 'always' })} <small>so far</small></span></div>
     </div>
     <figure class="split board-kept">
-      <figcaption class="split-labs"><span class="lab"><b>Kept</b></span><span class="lab"><b>Spent</b></span></figcaption>
+      <figcaption class="split-labs"><span class="lab"><b>${sayHtml('board.kept', ctx.words)}</b></span><span class="lab"><b>Spent</b></span></figcaption>
       <nw-split data-island slim${attrs({ a: Math.max(0, r.kept), b: Math.max(0, r.conv), label })}></nw-split>
       ${ctx.wide ? '' : html`<p class="cap split-note">${premise}</p>`}
     </figure>
-    ${movesList(notable, reasons(ann.moves, v.cover), { ...flowOpts(ctx), blank: true, blankAt: notable.length + Math.max(0, others) + 1, label: 'Today’s moves' })}
+    ${movesList(notable, reasons(ann.moves, v.cover), { ...flowOpts(ctx), blank: true, blankAt: notable.length + Math.max(0, others) + 1, label: say('board.today.moves', ctx.words) })}
     ${notable.length || others > 0
       ? (others > 0 ? html`<p class="cap board-more"><a href="${scoresheetDay(r.day)}">${notable.length
-          ? 'and ' + plural(others, 'other move', 'other moves') + ' so far today'
-          : plural(others, 'move', 'moves') + ' so far today'}</a>${notable.length ? '' : ', outside the game with Habit'}</p>` : '')
-      : html`<p class="cap board-quiet">No moves on ${fmtDate(r.day, 'dowshort')} yet. The bank reports them as they post.</p>`}
+          ? say('board.more.others', ctx.words, { others: plural(others, phrase('board.more.other.one', ctx.words), phrase('board.more.other.many', ctx.words)) })
+          : plural(others, phrase('board.more.move.one', ctx.words), phrase('board.more.move.many', ctx.words)) + ' so far today'}</a>${notable.length ? '' : say('board.more.outside', ctx.words)}</p>` : '')
+      : html`<p class="cap board-quiet">${sayHtml('board.today.none', ctx.words, { day: fmtDate(r.day, 'dowshort') })}</p>`}
     <div class="btn-row board-actions">
-      <button class="btn" type="button" data-action="app.move"><span class="plus">+</span> Candidate move</button>
+      <button class="btn" type="button" data-action="app.move"><span class="plus">+</span> ${sayHtml('board.candidate', ctx.words)}</button>
       ${workday && !r.plan ? html`<button class="btn" type="button" data-action="app.sheet" data-sheet="plan">Plan the morning</button>` : ''}
     </div>
     ${r.plan ? html`<p class="cap board-line">${planSummary(ctx, r.plan)}
       <button class="btn-link" type="button" data-action="app.sheet" data-sheet="plan">Change</button></p>` : ''}
-    ${!r.bye && !played && byesLeft > 0 ? html`<p class="cap board-line">${byesLeft} of ${plural(per, 'bye', 'byes')} for ${month} not yet taken.
-      <button class="btn-link" type="button" data-action="app.sheet" data-sheet="day" data-day="${r.day}">Take a bye</button></p>` : ''}`;
+    ${!r.bye && !played && byesLeft > 0 ? html`<p class="cap board-line">${sayHtml('board.byes', ctx.words, { left: byesLeft, byes: plural(per, phrase('board.bye.one', ctx.words), phrase('board.bye.many', ctx.words)), month })}
+      <button class="btn-link" type="button" data-action="app.sheet" data-sheet="day" data-day="${r.day}">${sayHtml('board.bye.take', ctx.words)}</button></p>` : ''}`;
 }
 
 /** The last round that has a result. Returns '' when there is none to show. */
@@ -666,10 +668,10 @@ function lastBlock(ctx, v) {
     if (awaited.status === 'prematch') {
       return html`
         <div class="sec-head"><h2 class="lab" id="b-last"><b>Last result</b></h2></div>
-        <p class="cap board-quiet">The match began ${fmtDate(ctx.state.meta.matchStart, 'dowshort')}: round ${ctx.d.todayRound.n} is its first, and no result is on record yet.</p>`;
+        <p class="cap board-quiet">${sayHtml('board.last.began', ctx.words, { date: fmtDate(ctx.state.meta.matchStart, 'dowshort'), n: ctx.d.todayRound.n })}</p>`;
     }
     return html`
-      <div class="sec-head"><h2 class="lab" id="b-last"><b>Last result</b><i class="sep"></i>${roundTitle(awaited)}</h2></div>
+      <div class="sec-head"><h2 class="lab" id="b-last"><b>Last result</b><i class="sep"></i>${roundTitle(awaited, ctx.words)}</h2></div>
       <p class="cap board-quiet">The bank has not reported ${fmtDate(yesterday, 'dowshort')} yet. Its result is entered when it does.</p>`;
   }
   const ann = ctx.d.annotations(r.day);
@@ -680,22 +682,22 @@ function lastBlock(ctx, v) {
 
   return html`
     <div class="sec-head">
-      <h2 class="lab" id="b-last"><b>Last result</b><i class="sep"></i>${roundTitle(r)}</h2>
-      <span class="lab">${colourOf(r)}</span>
+      <h2 class="lab" id="b-last"><b>Last result</b><i class="sep"></i>${roundTitle(r, ctx.words)}</h2>
+      <span class="lab">${colourOf(r, ctx.words)}</span>
     </div>
     <p class="board-result">
-      <span class="board-result-mark">${resultMark(r.result, r.status, { glyph: ann.round ? ann.round.glyph : null })}</span>
-      <span class="${cx('fig', 'fig-l', provisional && 'est')}">${provisional ? html`<span class="approx">≈</span>` : ''}${keptLine(r)}</span>
-      <span class="cap">${r.bye ? 'A declared bye: it scores ½ and its dollars still count. ' : ''}${statusLine(r)}</span>
+      <span class="board-result-mark">${resultMark(r.result, r.status, { glyph: ann.round ? ann.round.glyph : null, words: ctx.words })}</span>
+      <span class="${cx('fig', 'fig-l', provisional && 'est')}">${provisional ? html`<span class="approx">≈</span>` : ''}${keptLine(r, ctx.words)}</span>
+      <span class="cap">${r.bye ? say('board.last.bye', ctx.words) : ''}${statusLine(r, ctx.words)}</span>
     </p>
-    ${ann.round ? html`<p class="cap board-ann"><b class="sym">${ann.round.glyph}</b>${figText(why || 'The round carries an annotation.')}${!why || /[.?…]$/.test(why) ? '' : '.'}</p>` : ''}
-    ${r.day !== yesterday ? html`<p class="cap board-ann">The bank has not reported ${fmtDate(yesterday, 'dowshort')} yet: round ${r.n} is the latest result on record.</p>` : ''}
-    ${notable.length ? movesList(notable, reasons(ann.moves, v.cover), { ...flowOpts(ctx), label: 'Moves of round ' + r.n }) : ''}
+    ${ann.round ? html`<p class="cap board-ann"><b class="sym">${ann.round.glyph}</b>${figText(why || say('board.last.annotated', ctx.words))}${!why || /[.?…]$/.test(why) ? '' : '.'}</p>` : ''}
+    ${r.day !== yesterday ? html`<p class="cap board-ann">${sayHtml('board.last.late', ctx.words, { day: fmtDate(yesterday, 'dowshort'), n: r.n })}</p>` : ''}
+    ${notable.length ? movesList(notable, reasons(ann.moves, v.cover), { ...flowOpts(ctx), label: say('board.last.moves', ctx.words, { n: r.n }) }) : ''}
     ${others > 0 || !notable.length ? html`<p class="cap board-more"><a href="${scoresheetDay(r.day)}">${
-      notable.length ? 'and ' + plural(others, 'other move', 'other moves')
-        : others > 0 ? plural(others, 'move', 'moves') + ' on ' + fmtDate(r.day, 'short')
-          : 'Round ' + r.n + ' on the Scoresheet'}</a>${
-      notable.length ? '' : others > 0 ? ', outside the game with Habit' : html`: no move on ${fmtDate(r.day, 'short')}`}</p>` : ''}`;
+      notable.length ? 'and ' + plural(others, phrase('board.more.other.one', ctx.words), phrase('board.more.other.many', ctx.words))
+        : others > 0 ? plural(others, phrase('board.more.move.one', ctx.words), phrase('board.more.move.many', ctx.words)) + ' on ' + fmtDate(r.day, 'short')
+          : say('board.last.onSheet', ctx.words, { n: r.n })}</a>${
+      notable.length ? '' : others > 0 ? say('board.more.outside', ctx.words) : sayHtml('board.last.none', ctx.words, { date: fmtDate(r.day, 'short') })}</p>` : ''}`;
 }
 
 /** Before the match: one sentence, and what today holds so far. */
@@ -709,21 +711,21 @@ function prematchBlock(ctx, v) {
   const begins = v.firstDay && have < from ? addDays(v.firstDay, from - 1) : null;
   return html`
     <div class="sec-head">
-      <h2 class="lab" id="b-today"><b>Today</b><i class="sep"></i>before the match</h2>
+      <h2 class="lab" id="b-today"><b>Today</b><i class="sep"></i>${sayHtml('board.prematch', ctx.words)}</h2>
       <span class="lab">${fmtDate(r.day, 'dowshort')}</span>
     </div>
-    <h3 class="title board-vs">You <i>v.</i> Habit</h3>
+    <h3 class="title board-vs">${sayHtml('board.vs', ctx.words)}</h3>
     <p class="board-lede">${have < from
-      ? html`The match begins on day ${from} on record; ${have} so far${begins ? html`. Round 1 falls around ${fmtDate(begins, 'dowshort')}` : ''}.`
-      : html`The match begins with the next reading of the bank: today is day ${have} on record, and Habit is measured over the ${from - 1} full days of bank history before it.`}</p>
-    <p class="cap board-line">Habit is your own usual spending on coffee and food on the go, measured over its first ${ctx.d.matchFromDay - 1} full days of bank history and then frozen. Each day after that is 1 round against it.</p>
+      ? sayHtml('board.prematch.begins', ctx.words, { from, have, begins: begins ? sayHtml('board.prematch.first', ctx.words, { date: fmtDate(begins, 'dowshort') }) : '' })
+      : sayHtml('board.prematch.next', ctx.words, { have, days: from - 1 })}</p>
+    <p class="cap board-line">${sayHtml('board.prematch.habit', ctx.words, { days: ctx.d.matchFromDay - 1 })}</p>
     ${notable.length ? html`
       <div class="board-sofar">
-        <p class="lab">Convenience moves so far today<i class="sep"></i><span data-fig>${fmt(r.conv)}</span></p>
-        ${movesList(notable, reasons(ann.moves, v.cover), { ...flowOpts(ctx), label: 'Today’s convenience moves', plain: true })}
-      </div>` : html`<p class="cap board-quiet">No convenience move on ${fmtDate(r.day, 'dowshort')} yet. The bank reports them as they post.</p>`}
+        <p class="lab">${sayHtml('board.prematch.sofar', ctx.words)}<i class="sep"></i><span data-fig>${fmt(r.conv)}</span></p>
+        ${movesList(notable, reasons(ann.moves, v.cover), { ...flowOpts(ctx), label: say('board.prematch.label', ctx.words), plain: true })}
+      </div>` : html`<p class="cap board-quiet">${sayHtml('board.prematch.none', ctx.words, { day: fmtDate(r.day, 'dowshort') })}</p>`}
     <div class="btn-row board-actions">
-      <button class="btn" type="button" data-action="app.move"><span class="plus">+</span> Candidate move</button>
+      <button class="btn" type="button" data-action="app.move"><span class="plus">+</span> ${sayHtml('board.candidate', ctx.words)}</button>
     </div>`;
 }
 
@@ -734,18 +736,19 @@ function crosstableBlock(ctx, v) {
   const pencil = month.rounds.filter((r) => r.status === 'provisional').map((r) => r.n);
   const off = month.rounds.find((r) => r.type === 'off' && r.habit > 0);
   const notes = [];
-  if (!v.matchOn) notes.push('No round of ' + fmtMonth(month.ym, 'name') + ' is scored yet: scoring starts with round 1 of the match.');
+  if (!v.matchOn) notes.push(say('board.xt.none', ctx.words, { month: fmtMonth(month.ym, 'name') }));
   // rounds of this month before the match began print their results in grey: say on the caption that they do not count
   const start = ctx.state.meta.matchStart;
-  if (v.matchOn && isYmd(start) && month.rounds.some((r) => r.status === 'prematch')) notes.push('Rounds before ' + fmtDate(start, 'short') + ' are set back: an exhibition, not counted.');
-  if (pencil.length) notes.push((pencil.length === 1 ? 'Round ' + pencil[0] + ' is' : 'Rounds ' + pencil.join(', ') + ' are') + ' in pencil until the bank makes ' + (pencil.length === 1 ? 'it' : 'them') + ' final.');
-  const note = html`${notes.join(' ')}${off ? html` Shaded rounds are days off, where Habit plays <span data-fig>${fmt(off.habit)}</span>.` : ''}`;
+  if (v.matchOn && isYmd(start) && month.rounds.some((r) => r.status === 'prematch')) notes.push(say('board.xt.prematch', ctx.words, { date: fmtDate(start, 'short') }));
+  if (pencil.length) notes.push(say(pencil.length === 1 ? 'board.xt.pencil.one' : 'board.xt.pencil.many', ctx.words, { n: pencil.join(', ') }));
+  const note = html`${notes.join(' ')}${off ? sayHtml('board.xt.off', ctx.words, { amount: html`<span data-fig>${fmt(off.habit)}</span>` }) : ''}`;
   return crosstable(month, {
     today: ctx.today,
     glyphOf: (day) => worstGlyph(ctx.d.annotations(day)),
     scale: true,
     note,
     cover: !!ctx.state.settings.cover,
+    words: ctx.words,
   });
 }
 
@@ -755,12 +758,12 @@ function positionBlock(ctx) {
   const a = ctx.d.assessment;
   const factors = [a.material, a.time, a.structure, a.initiative];
   return html`
-    <div class="sec-head"><h2 class="lab" id="b-pos"><b>The position</b><i class="sep"></i>assessment</h2></div>
-    <div class="verdict">${evalGlyph(a.symbol)}<p>${figText(a.sentence)}</p></div>
+    <div class="sec-head"><h2 class="lab" id="b-pos"><b>${sayHtml('board.position', ctx.words)}</b><i class="sep"></i>assessment</h2></div>
+    <div class="verdict">${evalGlyph(a.symbol, { words: ctx.words })}<p>${figText(a.sentence)}</p></div>
     <dl class="factors">
       ${factors.map((f) => html`<div class="factor" data-key="${f.key}">
-        <span class="factor-sym">${evalGlyph(f.symbol, { decorative: true })}${f.timeTrouble ? html`<span class="spot">${timeTroubleGlyph({ decorative: true })}</span>` : ''}</span>
-        <dt class="factor-title lab"><b>${f.title}</b> <i>${String(f.label).toLowerCase()}${f.timeTrouble ? ' · time trouble' : ''}</i></dt>
+        <span class="factor-sym">${evalGlyph(f.symbol, { decorative: true, words: ctx.words })}${f.timeTrouble ? html`<span class="spot">${timeTroubleGlyph({ decorative: true, words: ctx.words })}</span>` : ''}</span>
+        <dt class="factor-title lab"><b>${f.title}</b> <i>${String(f.label).toLowerCase()}${f.timeTrouble ? say('board.factor.tt', ctx.words) : ''}</i></dt>
         <dd>${figText(f.sentence)}</dd>
       </div>`)}
     </dl>`;
@@ -844,22 +847,22 @@ function notesBlock(ctx) {
   if (sweep && !notes.some((n) => String(n.key).startsWith('sweep'))) {
     rows.push(html`<li class="note" data-key="sweep-open">
       <b class="note-n">${rows.length + 1}</b>
-      <span class="note-text">The week of ${fmtDate(sweep.weekOf, 'short')} kept <i data-fig>${fmt(sweep.amount, { decimals: 0 })}</i> against habit. It has not been moved to the ${sweep.target === 'card' ? 'card' : 'reserve'} yet.</span>
-      <button class="note-action btn-link" type="button" data-action="app.sheet" data-sheet="sweep">Move it</button>
+      <span class="note-text">${sayHtml('board.sweep.open', ctx.words, { date: fmtDate(sweep.weekOf, 'short'), amount: html`<i data-fig>${fmt(sweep.amount, { decimals: 0 })}</i>`, target: sweep.target === 'card' ? 'card' : phrase('board.sweep.reserve', ctx.words) })}</span>
+      <button class="note-action btn-link" type="button" data-action="app.sheet" data-sheet="sweep">${sayHtml('assess.cta.sweep', ctx.words)}</button>
     </li>`);
   }
   return html`
-    <div class="sec-head"><h2 class="lab" id="b-notes"><b>Coach’s notes</b></h2><span class="lab">${fmtDate(ctx.today, 'short')}</span></div>
-    ${rows.length ? html`<ol class="notes">${rows}</ol>` : html`<p class="cap board-quiet">No notes for ${fmtDate(ctx.today, 'dowshort')}: nothing on the board asks for attention.</p>`}`;
+    <div class="sec-head"><h2 class="lab" id="b-notes"><b>${sayHtml('assess.notes', ctx.words)}</b></h2><span class="lab">${fmtDate(ctx.today, 'short')}</span></div>
+    ${rows.length ? html`<ol class="notes">${rows}</ol>` : html`<p class="cap board-quiet">${sayHtml('board.notes.none', ctx.words, { day: fmtDate(ctx.today, 'dowshort') })}</p>`}`;
 }
 
 function principlesBlock(ctx) {
   const list = (ctx.state.settings.principles || []).filter((p) => typeof p === 'string' && p.trim());
   return html`
-    <div class="sec-head"><h2 class="lab" id="b-princ"><b>Opening principles</b></h2><span class="lab">Your own rules</span></div>
+    <div class="sec-head"><h2 class="lab" id="b-princ"><b>${sayHtml('board.principles', ctx.words)}</b></h2><span class="lab">Your own rules</span></div>
     ${list.length
       ? html`<ol class="principles">${list.map((p, i) => html`<li data-key="${'p' + i}"><b>${i + 1}</b><span>${p}</span></li>`)}</ol>`
-      : html`<p class="cap board-quiet">0 principles are written down. They are your own rules, kept in <a href="#/settings">Settings</a>.</p>`}`;
+      : html`<p class="cap board-quiet">${sayHtml('board.principles.none', ctx.words, { settings: html`<a href="#/settings">Settings</a>` })}</p>`}`;
 }
 
 /* ------------------------------------------------------------ G. figures */
@@ -913,17 +916,17 @@ function figuresBlock(ctx, v) {
         <nw-chart data-island kind="worth" data="${JSON.stringify(worth.data)}"></nw-chart>
         <figcaption class="cap"><span class="lab"><b>Fig. 1</b></span>
           ${v.pos.smoothing
-            ? html`Net worth, the last ${plural(worth.count, 'day', 'days')}. Ink: with pay earned and bills used. Dotted: ${bankWhere(!!handAccount(ctx))}. The tail in pencil is not final.`
-            : html`Net worth ${bankWhere(!!handAccount(ctx))}, the last ${plural(worth.count, 'day', 'days')}${worth.count < WORTH_DAYS ? html`: the record begins ${fmtDate(worth.from, 'short')}` : ''}. The tail in pencil is not final.`}
+            ? html`${sayHtml('board.worth.lead', ctx.words, { days: plural(worth.count, 'day', 'days') })} Dotted: ${bankWhere(!!handAccount(ctx))}.${sayHtml('board.worth.tail', ctx.words)}`
+            : html`Net worth ${bankWhere(!!handAccount(ctx))}, the last ${plural(worth.count, 'day', 'days')}${worth.count < WORTH_DAYS ? html`: the record begins ${fmtDate(worth.from, 'short')}` : ''}.${sayHtml('board.worth.tail', ctx.words)}`}
         </figcaption>
       </figure>
       <figure class="${cx('board-fig', !edge.from && 'is-empty')}">
         <nw-chart data-island kind="edge" data="${JSON.stringify(edge.data)}"></nw-chart>
         <figcaption class="cap"><span class="lab"><b>Fig. 2</b></span>
           ${edge.from
-            ? html`Kept versus habit ${edge.windowed ? html`over the last ${EDGE_ROUNDS_SHOWN} rounds; the match began ${fmtDate(ctx.state.meta.matchStart, 'medium')}` : html`since the match began, ${fmtDate(edge.from, 'short')}`}.
-              Hatched: the edge, <span data-fig>${fmt(e.kept, { sign: 'always' })}</span>. Solid: the part already moved, <span data-fig>${fmt(e.moved)}</span>.`
-            : html`Kept versus habit, round by round. It starts with round 1${begins ? html`, around ${fmtDate(begins, 'short')}` : html`, on day ${ctx.d.matchFromDay} on record`}.`}
+            ? html`${sayHtml('board.edge', ctx.words, { span: edge.windowed ? sayHtml('board.edge.windowed', ctx.words, { n: EDGE_ROUNDS_SHOWN, date: fmtDate(ctx.state.meta.matchStart, 'medium') }) : sayHtml('board.edge.since', ctx.words, { date: fmtDate(edge.from, 'short') }) })}
+              ${sayHtml('board.edge.parts', ctx.words, { kept: html`<span data-fig>${fmt(e.kept, { sign: 'always' })}</span>`, moved: html`<span data-fig>${fmt(e.moved)}</span>` })}`
+            : sayHtml('board.edge.later', ctx.words, { when: begins ? html`, around ${fmtDate(begins, 'short')}` : html`, on day ${ctx.d.matchFromDay} on record` })}
         </figcaption>
       </figure>
     </div>`;
@@ -1004,7 +1007,7 @@ function cardBlock(ctx, v) {
     ${!inCredit && pace == null && m.ym === monthOf(ctx.today) && Number(ctx.today.slice(8, 10)) < PACE_FROM_DAY
       ? html`<p class="cap board-line">A pace is read from day ${PACE_FROM_DAY} of the month.</p>` : ''}
     ${!inCredit && pace != null && m.scheduled > 0
-      ? html`<p class="cap board-line">The pace takes off ${inlineMoney(m.scheduled, { est: true })} of payments still scheduled in the Book this month.</p>` : ''}
+      ? html`<p class="cap board-line">${sayHtml('board.card.scheduled', ctx.words, { amount: inlineMoney(m.scheduled, { est: true }) })}</p>` : ''}
     ${m.complete ? '' : html`<p class="cap board-line">The bank’s record starts inside ${name}: “began at” is the first balance on record.</p>`}`;
 }
 
@@ -1022,18 +1025,20 @@ function ladderBlock(ctx) {
     <a class="btn-link" href="#/analysis">Analysis</a>
   </div>`;
   if (!rungs.length) {
-    return html`${head}<p class="cap board-quiet">0 norms are set. <span data-fig>${fmt(l.received)}</span> was received in the last ${plural(l.days, 'day', 'days')}.</p>`;
+    return html`${head}<p class="cap board-quiet">${sayHtml('board.ladder.none', ctx.words, { amount: html`<span data-fig>${fmt(l.received)}</span>`, days: plural(l.days, 'day', 'days') })}</p>`;
   }
   return html`${head}
     <ol class="ladder board-ladder">
       ${rungs.map((rung, i) => {
         const next = rung.target === nextTarget;
         const reached = rung.reached && !thin;
-        const caption = next ? 'next norm · ' + fmtPct(rung.fraction, 1) + ' there'
+        const caption = next ? say('board.ladder.next', ctx.words, { pct: fmtPct(rung.fraction, 1) })
           : reached ? 'reached'
             : i === 0 && isYmd(l.final.by) ? 'by ' + fmtMonth(monthOf(l.final.by)) : '';
         return html`<li class="${cx('rung', next && 'is-next', reached && 'is-done', !next && !reached && 'is-later')}" data-key="${'rung' + rung.target}">
-          <span class="rung-title">${i < NORM_TITLES.length ? NORM_TITLES[i] : rungs.length - i}</span>
+          <span class="rung-title">${ctx.words !== 'finance'
+            ? (i < NORM_TITLES.length ? NORM_TITLES[i] : say('board.ladder.target', ctx.words, { n: rungs.length - i }))
+            : rungNumber(i) ? say('board.ladder.target', ctx.words, { n: rungNumber(i) }) : ''}</span>
           <span class="fig">${fmt(rung.target, { decimals: 0 })}</span>
           <span class="cap">${caption}</span>
         </li>`;
@@ -1042,29 +1047,30 @@ function ladderBlock(ctx) {
         <span class="bar rung-bar" style="${'--p:' + (fraction * 100).toFixed(1) + '%'}" aria-hidden="true"><i></i></span>
         <span class="rung-title">You</span>
         ${thin ? html`<span class="fig est" data-cover-keep>—</span>` : money(l.grossApprox, { est: true, decimals: 0 })}
-        <span class="cap">${thin ? 'a year’s figure is read from day 60' : l.next ? 'gross, about, a year' : 'every norm is reached'}</span>
+        <span class="cap">${thin ? 'a year’s figure is read from day 60' : l.next ? 'gross, about, a year' : say('board.ladder.all', ctx.words)}</span>
         <span class="cap rung-note">${thin
           ? html`<span data-fig>${fmt(l.received)}</span> received in ${plural(l.days, 'day', 'days')} on record: too short a stretch to scale to a year.`
           : l.partial
             ? html`<span data-fig>${fmt(l.received)}</span> received in ${plural(l.days, 'day', 'days')} on record, scaled to a year: rough until more history is in.`
-            : html`<span data-fig>${fmt(l.received)}</span> received in the last 12 months, grossed up for what is withheld.`} Kept apart from net worth.</span>
+            : html`<span data-fig>${fmt(l.received)}</span> received in the last 12 months, grossed up for what is withheld.`}${sayHtml('board.ladder.apart', ctx.words)}</span>
       </li>
     </ol>`;
 }
 
 /* ---------------------------------------------------------------- J. key */
 
-function keyBlock() {
-  const sign = (symbol, text) => html`<span>${evalGlyph(symbol, { decorative: true })}${text}</span>`;
+function keyBlock(words) {
+  const sign = (symbol) => html`<span>${evalGlyph(symbol, { decorative: true, words })}${lowerFirst(evalName(symbol, words))}</span>`;
   const mark = (glyph, text) => html`<span><b class="sym" aria-hidden="true">${glyph}</b>${text}</span>`;
   return html`<p class="key">
     <span class="lab">Key to symbols</span>
-    ${sign('winning', 'winning')}${sign('clear_plus', 'clear advantage')}${sign('slight_plus', 'slight advantage')}${sign('equal', 'equal')}
-    ${sign('slight_minus', 'slightly worse')}${sign('clear_minus', 'clearly worse')}${sign('losing', 'losing')}${sign('unclear', 'unclear')}
-    <span>${timeTroubleGlyph({ decorative: true })}time trouble</span>
-    <span class="board-key-box">${moveGlyph('□', { title: 'Only move' })}only move: rent, a loan payment</span>
-    ${mark('!!', 'clean-sheet workday')}${mark('!', 'declined, moved, or played to plan')}${mark('!?', 'judged by its return')}
+    ${sign('winning')}${sign('clear_plus')}${sign('slight_plus')}${sign('equal')}
+    ${sign('slight_minus')}${sign('clear_minus')}${sign('losing')}${sign('unclear')}
+    <span>${timeTroubleGlyph({ decorative: true, words })}${lowerFirst(phrase('glyph.timeTrouble', words))}</span>
+    <span class="board-key-box">${moveGlyph('□', { title: glyphName('□', words), words })}${sayHtml('board.key.only', words)}</span>
+    ${mark('!!', phrase('board.key.clean', words))}${mark('!', phrase('board.key.good', words))}${mark('!?', 'judged by its return')}
     ${mark('?!', 'unplanned 2nd stop')}${mark('?', 'unplanned 3rd stop')}${mark('??', 'avoidable penalty')}
+    <button class="btn-link" type="button" data-action="app.sheet" data-sheet="words">${phrase('words.open', words)}</button>
   </p>`;
 }
 
@@ -1074,7 +1080,7 @@ function wideBoard(ctx, v) {
   const last = v.matchOn ? lastBlock(ctx, v) : '';
   const card = cardBlock(ctx, v);
   return html`<div class="board">
-    <h1 class="vh">The Board, ${fmtDate(ctx.today, 'long')}</h1>
+    <h1 class="vh">${sayHtml('board.title', ctx.words, { date: fmtDate(ctx.today, 'long') })}</h1>
     <div class="cols">
       <section class="col col-8 hero" aria-labelledby="b-nw">${heroMain(ctx, v)}${heroMore(ctx, v)}</section>
       <section class="col col-4 clock" aria-labelledby="b-clock">${clockMain(ctx, v)}<div class="clock-reserve">${reserveBlock(ctx)}</div>${v.pay ? html`<section class="board-pay-col" aria-labelledby="b-pay">${payBlock(ctx, v)}</section>` : ''}</section>
@@ -1100,7 +1106,7 @@ function wideBoard(ctx, v) {
         <section class="band" aria-labelledby="b-ladder">${ladderBlock(ctx)}</section>
       </div>
     </div>
-    <section class="band pb-0" aria-label="Key to symbols">${keyBlock()}</section>
+    <section class="band pb-0" aria-label="Key to symbols">${keyBlock(ctx.words)}</section>
   </div>`;
 }
 
@@ -1108,7 +1114,7 @@ function narrowBoard(ctx, v) {
   const last = v.matchOn ? lastBlock(ctx, v) : '';
   const card = cardBlock(ctx, v);
   return html`<div class="board board-narrow">
-    <h1 class="vh">The Board, ${fmtDate(ctx.today, 'long')}</h1>
+    <h1 class="vh">${sayHtml('board.title', ctx.words, { date: fmtDate(ctx.today, 'long') })}</h1>
     <section class="band hero board-top" aria-labelledby="b-nw">${heroMain(ctx, v)}</section>
     <section class="band clock board-top" aria-labelledby="b-clock">${clockMain(ctx, v)}</section>
     ${v.pay ? html`<section class="band board-pay-band" aria-labelledby="b-pay">${payBlock(ctx, v)}</section>` : ''}
@@ -1121,7 +1127,7 @@ function narrowBoard(ctx, v) {
       ${heroMore(ctx, v)}
     </section>
     <section class="band clock" aria-labelledby="b-reserve">
-      <div class="sec-head"><h2 class="lab" id="b-reserve"><b>Cash on hand</b><i class="sep"></i>the reserve</h2><span class="lab">Measured in time</span></div>
+      <div class="sec-head"><h2 class="lab" id="b-reserve"><b>Cash on hand</b><i class="sep"></i>${sayHtml('board.reserve.head', ctx.words)}</h2><span class="lab">${sayHtml('board.reserve.note', ctx.words)}</span></div>
       <div class="board-reserve">${reserveBlock(ctx)}</div>
     </section>
     <section class="band" aria-labelledby="b-pos">${positionBlock(ctx)}</section>
@@ -1131,7 +1137,7 @@ function narrowBoard(ctx, v) {
     <section class="band" aria-labelledby="b-figs">${figuresBlock(ctx, v)}</section>
     ${card ? html`<section class="band" aria-labelledby="b-card">${card}</section>` : ''}
     <section class="band" aria-labelledby="b-ladder">${ladderBlock(ctx)}</section>
-    <section class="band pb-0" aria-label="Key to symbols">${keyBlock()}</section>
+    <section class="band pb-0" aria-label="Key to symbols">${keyBlock(ctx.words)}</section>
   </div>`;
 }
 
@@ -1152,7 +1158,7 @@ function inCash(state) {
  */
 function cashAfter(ctx, had, kind) {
   const account = cashAccountOf(store.state);
-  return account ? beforeCountWords(store.state, had, Math.round(Number(account.balance) || 0), ctx.today, !!store.state.settings.cover, kind) : null;
+  return account ? beforeCountWords(store.state, had, Math.round(Number(account.balance) || 0), ctx.today, !!store.state.settings.cover, kind, ctx.words) : null;
 }
 
 /** The place of the question a button belongs to (0 for the first), or 0. */
@@ -1273,7 +1279,7 @@ export const actions = {
     // a payment of theirs that a bank row holds now asks to be confirmed: say so, and go to that question
     const raised = incomeQuestions(store.state, at).confirm.find((c) => !asked.has(c.key)) || null;
     const moved = [...inCash(store.state)].filter((key) => !before.has(key)).length;
-    toast(payerWords(name, data.how, data.how === 'cash' ? cashAfter(ctx, before, 'payer') : null, raised ? raised.bank : null, !!store.state.settings.cover, moved));
+    toast(payerWords(name, data.how, data.how === 'cash' ? cashAfter(ctx, before, 'payer') : null, raised ? raised.bank : null, !!store.state.settings.cover, moved, undefined, ctx.words));
     focusAfterAnswer(index, raised ? 'income-confirm-' + raised.key : null);
   },
 
@@ -1289,7 +1295,7 @@ export const actions = {
     const change = (s) => answerItems(s, data.source, [data.item], data.how, at);
     store.update((s) => { done = change(s); }, { past: change });
     if (!done) return;
-    toast(itemWords(label, data.how, data.how === 'cash' ? cashAfter(ctx, had) : null, at, ctx.state.settings.rolloverHour));
+    toast(itemWords(label, data.how, data.how === 'cash' ? cashAfter(ctx, had) : null, at, ctx.state.settings.rolloverHour, ctx.words));
     focusAfterAnswer(index);
   },
 
@@ -1306,7 +1312,7 @@ export const actions = {
     const change = (s) => answerItems(s, data.source, ids, data.how, at);
     store.update((s) => { done = change(s); }, { past: change });
     if (!done) return;
-    toast(confirmWords(label, ids.length, data.how, data.how === 'cash' ? cashAfter(ctx, had) : null));
+    toast(confirmWords(label, ids.length, data.how, data.how === 'cash' ? cashAfter(ctx, had) : null, ctx.words));
     focusAfterAnswer(index);
   },
 

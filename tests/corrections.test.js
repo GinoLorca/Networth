@@ -616,15 +616,27 @@ test('worst case: income, payments by hand and corrections at their limits stay 
 });
 
 test('the words: Settings says, in one plain line, that corrections reach the other devices', async () => {
-  const { readFileSync } = await import('node:fs');
-  const settings = readFileSync(new URL('../js/views/settings.js', import.meta.url), 'utf8');
-  assert.match(settings, /'Corrections \(categories, merchant names, income settings\) reach your other devices too/);
-  assert.equal(settings.match(/\$\{SHARED_CORRECTIONS\}/g).length, 3, 'in the section whether sharing is on, off or refused');
+  // the two sentences are phrases of the vocabulary (model/words.js); in Chess words they are exactly the wording pinned here
+  const { phrase } = await import('../js/model/words.js');
+  const corrections = phrase('settings.shared.corrections', 'chess');
+  const what = phrase('settings.shared.what', 'chess');
+  assert.equal(corrections, 'Corrections (categories, merchant names, income settings) reach your other devices too, each with an unreadable fingerprint of its merchant or move and, for a corrected move, its bank date, so that every device finds the same move.');
+  assert.equal(what, 'Apart from the date of a corrected move, nothing the bank reported goes there: no balance, no transaction, no account. Only what you entered, your ticks, and an unreadable fingerprint of who each payment goes to, so every device recognises it the same way.');
+  assert.match(corrections, /^Corrections \(categories, merchant names, income settings\) reach your other devices too/);
   // exactly what travels with them: a fingerprint, and a corrected move's bank date, so every device finds the same move
-  assert.match(settings, /an unreadable fingerprint of its merchant or move and, for a corrected move, its bank date, so that every device finds the same move\.'/);
+  assert.match(corrections, /an unreadable fingerprint of its merchant or move and, for a corrected move, its bank date, so that every device finds the same move\.$/);
   // and the sentence after it stays true: the bank date is the one thing the bank reported that goes there
-  assert.match(settings, /'Apart from the date of a corrected move, nothing the bank reported goes there: no balance, no transaction, no account\./);
-  assert.ok(settings.indexOf('${SHARED_CORRECTIONS}') < settings.indexOf('${SHARED_WHAT}'), 'the date is named before the sentence that sets it apart');
+  assert.match(what, /^Apart from the date of a corrected move, nothing the bank reported goes there: no balance, no transaction, no account\./);
+  // Settings with sharing set up shows that wording in Chess words, in the section whether sharing is on, off or refused
+  const { execFileSync } = await import('node:child_process');
+  const { fileURLToPath } = await import('node:url');
+  const helper = fileURLToPath(new URL('./helpers/render-settings.mjs', import.meta.url));
+  for (const share of ['on', 'off', 'refused']) {
+    const page = JSON.parse(execFileSync(process.execPath, [helper, 'chess', share], { encoding: 'utf8' }));
+    assert.equal(page.split(corrections).length - 1, 1, share + ': the corrections sentence, once');
+    assert.equal(page.split(what).length - 1, 1, share + ': what is shared, once');
+    assert.ok(page.indexOf(corrections) < page.indexOf(what), share + ': the date is named before the sentence that sets it apart');
+  }
 });
 
 /* ------------------------------------------------- field by field, and Undo */

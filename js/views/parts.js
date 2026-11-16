@@ -10,10 +10,11 @@
  *   flowClass(tx, accountOf, pairOf)  'flow-out' | 'flow-in' | '' — a transaction's amount by its cash flow (model/cashflow.js)
  *   payFlowClass(status)          the same for a row of the payments to make: paid, pending or ticked is 'flow-out'
  *   flowLookups(ctx)              { accountOf, pairOf } for flowClass, read from the render context
- *   fmtScore(x) / scoreOf(s, n)   6.5 -> "6½"; (6.5, 10) -> "6½/10"
+ *   rungNumber(index)             an income-ladder rung's fixed number from the top: GM 5, IM 4, FM 3, CM 2, NM 1
+ *   fmtScore(x, words) / scoreOf(s, n, words)   6.5 -> "6½"; (6.5, 10) -> "6½/10"; in Finance words "6.5", "6.5/10"
  *   plainSigned(cents)            "+16.20" / "−6.40" — scoresheet notation, no currency sign
  *   resultText(round)             what a round's result cell prints: 1 · ½ · 0 · * · – · · · bye
- *   keptLine(round)               "+$16.20 kept" / "−$6.40" — the dollar margin of a round, in words
+ *   keptLine(round, words)        "+$16.20 kept" / "−$6.40" — the dollar margin of a round, in words
  *   statusLine(round)             one plain sentence about how final a round is
  *   roundTitle(round)             "Round 9 · Tue, Jun 9"
  *   colourOf(round)               "Black" (a workday) or "White" (a day off)
@@ -27,6 +28,8 @@ import { html, cx } from '../ui/dom.js';
 import { fmt, fmtSigned, fmtPlain, MINUS, toneOf } from '../model/money.js';
 import { addDays, fmtDate, fmtMonth, dow, parts as ymdParts, monthOf, ymd } from '../model/dates.js';
 import { moveGlyph } from '../ui/glyphs.js';
+import { phrase, say, resultText as resultSign, wordsMode } from '../model/words.js';
+import { sayHtml } from '../ui/say.js';
 import { categoryLabel, accountLabel, accountShort } from '../model/schema.js';
 import { cashFlowOf, payFlowOf } from '../model/cashflow.js';
 
@@ -129,20 +132,36 @@ export function flowLookups(ctx) {
   return {
     accountOf: ctx && ctx.d ? ctx.d.account : () => null,
     pairOf: (id) => txs.find((t) => t && t.id === id) || null,
+    words: ctx ? ctx.words : undefined,
   };
 }
 
-/** A chess score: 6.5 -> "6½", 0.5 -> "½", 7 -> "7". */
-export function fmtScore(x) {
+/**
+ * The fixed number of an income-ladder rung, counted from the top rung (index 0): GM = 5, IM = 4, FM = 3, CM = 2,
+ * NM = 1, as the glossary pairs them ("Target 5 · 4 · 3 · 2 · 1"), whatever the ladder's length; null below the fifth.
+ * @param {number} index
+ * @returns {number|null}
+ */
+export function rungNumber(index) {
+  return Number.isInteger(index) && index >= 0 && index < 5 ? 5 - index : null;
+}
+
+/**
+ * A score: 6.5 -> "6½", 0.5 -> "½", 7 -> "7". In Finance words it is a decimal: 6.5 -> "6.5", 0.5 -> "0.5".
+ * @param {number} x
+ * @param {*} [words]   the mode (ctx.words), or { words }; Chess words when absent
+ */
+export function fmtScore(x, words) {
   if (!Number.isFinite(x)) return '—';
   const whole = Math.floor(x);
   const half = x - whole >= 0.5;
+  if (wordsMode(words && typeof words === 'object' ? words.words : words) === 'finance') return String(whole) + (half ? '.5' : '');
   return (whole === 0 && half ? '' : String(whole)) + (half ? HALF : '');
 }
 
-/** "6½/10" */
-export function scoreOf(score, played) {
-  return fmtScore(score) + '/' + played;
+/** "6½/10"; "6.5/10" in Finance words. */
+export function scoreOf(score, played, words) {
+  return fmtScore(score, words) + '/' + played;
 }
 
 /** Scoresheet notation for a signed amount: "+16.20", "−6.40", "0.00". */
@@ -155,18 +174,33 @@ export function plainSigned(cents) {
 /* ------------------------------------------------------------------ rounds */
 
 /** What the result cell of a round prints. */
-export function resultText(round) {
+export function resultText(round, words) {
   if (round.status === 'live') return '*';
   if (round.status === 'awaiting') return '–';
   if (round.status === 'future') return '·';
   if (round.result == null) return '·';
-  if (round.bye) return 'bye';
-  return round.result === 0.5 ? HALF : String(round.result);
+  if (round.bye) return phrase('parts.bye', words);
+  return words === 'finance' ? resultSign(round.result, words) : round.result === 0.5 ? HALF : String(round.result);
 }
 
 /** The dollar margin of a round in words: "+$16.20 kept", or "−$6.40" when habit was exceeded. */
-export function keptLine(round) {
-  return round.kept >= 0 ? fmtSigned(round.kept) + ' kept' : fmtSigned(round.kept);
+export function keptLine(round, words) {
+  if (!(round.kept >= 0)) return fmtSigned(round.kept);
+  const amount = fmtSigned(round.kept);
+  if (wordsMode(words) !== 'finance') return say('parts.kept', words, { amount });
+  // Finance words run longer ("under baseline"): the amount stays whole and the words keep together, so that where
+  // the screen is too narrow for both the words take the next line (board.css, [data-words="finance"] .board-result)
+  const [before, after = ''] = phrase('parts.kept', words).split('{amount}');
+  return html`${before}<span class="kept-amt">${amount}</span> <span class="kept-words">${after.trim()}</span>`;
+}
+
+/**
+ * A run of words kept on one line, in Finance words only. Their labels run longer ("Day 18", "Day off"), so on a
+ * narrow screen a label of dated parts breaks only at its separators and never inside a date ("Thu, Jun" / "18").
+ * Chess words get the content back as it is, so their markup is unchanged.
+ */
+export function keepWhole(content, words) {
+  return wordsMode(words) === 'finance' ? html`<span class="nowrap">${content}</span>` : content;
 }
 
 /**
@@ -178,25 +212,25 @@ export function spentUnposted(round) {
 }
 
 /** One plain sentence about how final a round is. */
-export function statusLine(round) {
+export function statusLine(round, words) {
   switch (round.status) {
     case 'final': return 'Final: the bank has reported the whole day.';
-    case 'provisional': return 'In pencil until the bank finishes reporting the day.';
-    case 'live': return 'In progress. The bank reports today’s moves as they post.';
+    case 'provisional': return phrase('parts.status.provisional', words);
+    case 'live': return phrase('parts.status.live', words);
     case 'awaiting': return 'The bank has not reported this day yet.';
-    case 'prematch': return 'Before the match began: shown for reference, not counted.';
-    default: return 'Not yet played.';
+    case 'prematch': return phrase('parts.status.prematch', words);
+    default: return phrase('parts.status.future', words);
   }
 }
 
 /** "Round 9 · Tue, Jun 9" */
-export function roundTitle(round) {
-  return 'Round ' + round.n + ' · ' + fmtDate(round.day, 'dowshort');
+export function roundTitle(round, words) {
+  return say('parts.roundTitle', words, { n: round.n, day: fmtDate(round.day, 'dowshort') });
 }
 
 /** A workday is played with Black, a day off with White. */
-export function colourOf(round) {
-  return round.type === 'work' ? 'Black' : 'White';
+export function colourOf(round, words) {
+  return phrase(round.type === 'work' ? 'parts.colour.work' : 'parts.colour.off', words);
 }
 
 /**
@@ -238,15 +272,15 @@ function inPencil(round) {
   return round.status === 'provisional' || round.status === 'live';
 }
 
-function weekCell(index, rounds, cover) {
+function weekCell(index, rounds, cover, words) {
   const counted = rounds.filter(hasCountedResult);
   const score = counted.reduce((n, r) => n + r.result, 0);
   const kept = counted.reduce((n, r) => n + r.kept, 0);
   const est = counted.some(inPencil);
-  const label = 'Week ' + index + ': ' + (counted.length ? fmtScore(score) + ' of ' + counted.length + (cover ? '' : ', kept ' + (est ? 'approximately ' : '') + fmtSigned(kept)) : 'not yet played');
+  const label = 'Week ' + index + ': ' + (counted.length ? fmtScore(score, words) + ' of ' + counted.length + (cover ? '' : say('parts.week.kept', words, { approx: est ? 'approximately ' : '', amount: fmtSigned(kept) })) : phrase('parts.week.future', words));
   return html`<li class="x x-week" data-key="${'week-' + index}" aria-label="${label}">
     <span class="x-rd">Wk</span><span class="x-day">${index}</span>
-    <span class="x-res">${counted.length ? fmtScore(score) || '0' : '·'}</span>
+    <span class="x-res">${counted.length ? fmtScore(score, words) || '0' : '·'}</span>
     <span class="${cx('x-edge', est && 'est')}">${counted.length ? html`${est ? html`<span class="approx">≈</span>` : ''}${plainSigned(kept)}` : ''}</span>
   </li>`;
 }
@@ -262,6 +296,7 @@ function weekCell(index, rounds, cover) {
  */
 export function crosstable(month, opts) {
   const today = opts.today;
+  const words = opts.words;
   const rounds = month.rounds;
   const link = opts.link !== false;
   const cells = [];
@@ -276,37 +311,37 @@ export function crosstable(month, opts) {
     if (counted) running += round.result;
     const glyph = opts.glyphOf && counted ? opts.glyphOf(round.day) : null;
     const reachable = link && round.day <= today && round.status !== 'prematch';
-    const label = 'Round ' + round.n + ', ' + fmtDate(round.day, 'dowshort') + (counted ? ': ' + (round.bye ? 'bye' : round.result === 1 ? 'win' : round.result === 0 ? 'loss' : 'draw') + (round.status === 'provisional' ? ', provisional' : '') : round.status === 'live' ? ': in progress' : '');
+    const label = say('parts.cell', words, { n: round.n, day: fmtDate(round.day, 'dowshort') }) + (counted ? ': ' + (round.bye ? phrase('parts.bye', words) : phrase(round.result === 1 ? 'parts.cell.win' : round.result === 0 ? 'parts.cell.loss' : 'parts.cell.draw', words)) + (round.status === 'provisional' ? ', provisional' : '') : round.status === 'live' ? ': in progress' : '');
     cells.push(html`<li class="${cellClass(round, today)}" data-key="${round.day}">
       <span class="x-rd">${round.n}</span><span class="x-day">${DOW_LETTER[dow(round.day)]}</span>
-      <span class="x-res">${resultText(round)}${glyph ? html`<sup>${glyph}</sup>` : ''}</span>
+      <span class="x-res">${resultText(round, words)}${glyph ? html`<sup>${glyph}</sup>` : ''}</span>
       <span class="x-edge">${counted || round.status === 'live' ? plainSigned(round.kept) : ''}</span>
-      <span class="x-cum">${counted ? fmtScore(running) || '0' : round.status === 'live' ? '·' : ''}</span>
+      <span class="x-cum">${counted ? fmtScore(running, words) || '0' : round.status === 'live' ? '·' : ''}</span>
       ${reachable ? html`<a class="x-a" href="${'#/scoresheet/' + monthOf(round.day) + '?day=' + round.day}"><span class="vh">${label}</span></a>` : ''}
     </li>`);
     week.push(round);
     if (dow(round.day) === 0 || i === rounds.length - 1) {
-      cells.push(weekCell(weekIndex++, week, !!opts.cover));
+      cells.push(weekCell(weekIndex++, week, !!opts.cover, words));
       week = [];
     }
   });
 
-  const title = opts.title || 'Crosstable';
+  const title = opts.title || phrase('parts.crosstable', words);
   const noteParts = [];
   if (opts.note) noteParts.push(opts.note);
-  if (opts.scale && month.perfect > 0) noteParts.push(html`A perfect ${fmtMonth(month.ym, 'name')} is worth <span data-fig>${fmt(month.perfect)}</span>.`);
+  if (opts.scale && month.perfect > 0) noteParts.push(sayHtml('parts.perfect', words, { month: fmtMonth(month.ym, 'name'), amount: html`<span data-fig>${fmt(month.perfect)}</span>` }));
   return html`<section class="xt">
     <div class="xt-head">
-      <div class="sec-head"><h2 class="lab"><b>${title}</b><i class="sep"></i>${fmtMonth(month.ym)}<i class="sep"></i>You v. Habit</h2></div>
+      <div class="sec-head"><h2 class="lab"><b>${title}</b><i class="sep"></i>${fmtMonth(month.ym)}<i class="sep"></i>${sayHtml('parts.vs', words)}</h2></div>
       <p class="xt-score">
-        <span class="xt-score-item"><span class="lab">Score</span><span class="fig fig-xl" data-cover-keep>${month.played ? scoreOf(month.score, month.played) : '—'}</span></span>
-        <span class="xt-score-item"><span class="lab">With Black</span><span class="fig" data-cover-keep>${month.black.played ? scoreOf(month.black.score, month.black.played) : '—'}</span></span>
-        <span class="xt-score-item"><span class="lab">With White</span><span class="fig" data-cover-keep>${month.white.played ? scoreOf(month.white.score, month.white.played) : '—'}</span></span>
-        <span class="xt-score-item"><span class="lab">Kept</span>${month.played ? money(month.kept, { est: month.rounds.some((r) => hasCountedResult(r) && inPencil(r)), signed: true }) : html`<span class="fig">—</span>`}</span>
+        <span class="xt-score-item"><span class="lab">${sayHtml('parts.score', words)}</span><span class="fig fig-xl" data-cover-keep>${month.played ? scoreOf(month.score, month.played, words) : '—'}</span></span>
+        <span class="xt-score-item"><span class="lab">${sayHtml('parts.withBlack', words)}</span><span class="fig" data-cover-keep>${month.black.played ? scoreOf(month.black.score, month.black.played, words) : '—'}</span></span>
+        <span class="xt-score-item"><span class="lab">${sayHtml('parts.withWhite', words)}</span><span class="fig" data-cover-keep>${month.white.played ? scoreOf(month.white.score, month.white.played, words) : '—'}</span></span>
+        <span class="xt-score-item"><span class="lab">${sayHtml('parts.kept.total', words)}</span>${month.played ? money(month.kept, { est: month.rounds.some((r) => hasCountedResult(r) && inPencil(r)), signed: true }) : html`<span class="fig">—</span>`}</span>
       </p>
     </div>
-    <ol class="xt-grid has-weeks" style="${'--days:' + rounds.length}" aria-label="${fmtMonth(month.ym) + ', round by round'}">
-      <li class="x x-legend" data-key="legend" aria-hidden="true"><span class="x-rd">Rd</span><span class="x-day">Day</span><span class="x-res">Result</span><span class="x-edge">± $</span><span class="x-cum">Score</span></li>
+    <ol class="xt-grid has-weeks" style="${'--days:' + rounds.length}" aria-label="${say('parts.byRound', words, { month: fmtMonth(month.ym) })}">
+      <li class="x x-legend" data-key="legend" aria-hidden="true"><span class="x-rd">${sayHtml('parts.legend.rd', words)}</span><span class="x-day">Day</span><span class="x-res">Result</span><span class="x-edge">± $</span><span class="x-cum">${sayHtml('parts.legend.score', words)}</span></li>
       ${cells}
     </ol>
     ${noteParts.length ? html`<p class="cap xt-note">${noteParts.map((n, i) => html`${i ? ' ' : ''}${n}`)}</p>` : ''}
@@ -321,9 +356,9 @@ function isCashPayment(tx) {
 }
 
 /** The tag of a move not yet at the bank: an alert, a payment another app reported, or one tapped in. */
-function pencilTag(tx) {
+function pencilTag(tx, words) {
   if (tx.via === 'alert') return 'Alert';
-  if (tx.via === 'income') return 'In pencil · not at the bank yet';
+  if (tx.via === 'income') return phrase('parts.pencilTag', words);
   return 'Tapped in';
 }
 
@@ -356,8 +391,8 @@ function sentence(text) {
   return /[.!?\u2026:]$/.test(t) ? t : t + '.';
 }
 
-function moveName(tx) {
-  if (tx.kind === 'decline') return 'Declined: ' + (tx.merchant || 'a purchase');
+function moveName(tx, words) {
+  if (tx.kind === 'decline') return say('parts.declined', words, { name: tx.merchant || 'a purchase' });
   return txName(tx);
 }
 
@@ -388,26 +423,26 @@ export function movesList(moves, annotations, opts = {}) {
     if (opts.detail === 'full') {
       const bits = [categoryLabel(tx.category)];
       const account = opts.accounts && tx.accountId ? opts.accounts(tx.accountId) : null;
-      if (account) bits.push(accountLabel(account));
+      if (account) bits.push(accountLabel(account, opts.words));
       notes.push(bits.join(' · '));
     }
     if (tx.note) notes.push(sentence(tx.note));
     const tags = [];
     if (tx.pending) tags.push('Pending');
-    if (state === 'is-provisional') tags.push(pencilTag(tx));
+    if (state === 'is-provisional') tags.push(pencilTag(tx, opts.words));
     else if (tx.inBalance === true) tags.push('Alert · in the balance');
     else if (isCashPayment(tx) && opts.detail !== 'full') tags.push('Cash'); // in full detail the account already says Cash in hand
     if (tx.planned) tags.push('Planned');
     const inner = html`<span class="move-n">${start + i}.</span>
-      <span class="move-m">${moveName(tx)}${notes.length || tags.length || tx.review ? html` <em class="move-note">${notes.length ? html`<span class="move-why">${figured(notes.join(' '))}</span> ` : ''}${tags.map((t) => html`<span class="move-tag">${t}</span>`)}${tx.review ? html`<span class="move-tag">Needs a look</span>` : ''}</em>` : ''}</span>
+      <span class="move-m">${moveName(tx, opts.words)}${notes.length || tags.length || tx.review ? html` <em class="move-note">${notes.length ? html`<span class="move-why">${figured(notes.join(' '))}</span> ` : ''}${tags.map((t) => html`<span class="move-tag">${t}</span>`)}${tx.review ? html`<span class="move-tag">Needs a look</span>` : ''}</em>` : ''}</span>
       <span class="${cx('move-a', flowClass(tx, opts.accounts, opts.pairs))}">${moveAmount(tx)}</span>
-      <span class="move-s">${ann ? (opts.cover ? moveGlyph(ann.glyph) : moveGlyph(ann.glyph, { title: ann.why })) : ''}</span>`;
+      <span class="move-s">${ann ? (opts.cover ? moveGlyph(ann.glyph, { words: opts.words }) : moveGlyph(ann.glyph, { title: ann.why, words: opts.words })) : ''}</span>`;
     return open
       ? html`<li data-key="${tx.id}"><button class="${cx('move', state)}" type="button" data-action="app.sheet" data-sheet="tx" data-id="${tx.id}">${inner}</button></li>`
       : html`<li class="${cx('move', state)}" data-key="${tx.id}">${inner}</li>`;
   });
   if (opts.blank) rows.push(html`<li class="move is-blank" data-key="blank" aria-hidden="true"><span class="move-n">${Number.isInteger(opts.blankAt) && opts.blankAt > 0 ? opts.blankAt : start + moves.length}.</span><span class="move-m"></span><span class="move-a"></span><span class="move-s"></span></li>`);
-  return html`<ol class="${cx('moves', opts.plain && 'moves-plain')}" aria-label="${opts.label || 'Moves'}">${rows}</ol>`;
+  return html`<ol class="${cx('moves', opts.plain && 'moves-plain')}" aria-label="${opts.label || phrase('parts.moves', opts.words)}">${rows}</ol>`;
 }
 
 /** Moves worth showing on the Board for a round: game-class spends, declines, and anything annotated. */
@@ -471,9 +506,9 @@ export function recentList(ctx, rows, opts = {}) {
       const unsettled = !!tx.pending || provisional;
       const incoming = tx.flow === 'in';
       const notes = [];
-      if (opts.account !== false && account) notes.push(accountShort(account));
+      if (opts.account !== false && account) notes.push(accountShort(account, ctx.words));
       if (tx.pending) notes.push('Pending');
-      if (provisional) notes.push(pencilTag(tx));
+      if (provisional) notes.push(pencilTag(tx, ctx.words));
       else if (tx.inBalance === true) notes.push('Alert · in the balance');
       else if (isCashPayment(tx) && !(opts.account !== false && account)) notes.push('Cash'); // the account already says Cash in hand
       return html`<li data-key="${tx.id}"><button class="recent-row" type="button" data-action="app.sheet" data-sheet="tx" data-id="${tx.id}">

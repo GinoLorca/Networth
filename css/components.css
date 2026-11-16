@@ -144,6 +144,20 @@ html { scroll-padding-bottom: calc(var(--bottom-bar) + env(safe-area-inset-botto
   .tabbar { display: none; }
   html { scroll-padding-bottom: 0; }
 }
+/* Finance words (the root carries data-words): the labels are longer (Transactions, Balance sheet, + Purchase), so on a
+   phone each column sizes to its label and the room left is shared out equally, so every label reads as its own word
+   with a gap of 6px or more; a label of two words takes two lines (app.js sets each word in a .tabbar-word), and no
+   label breaks inside a word. Below 360px the text is 10px. */
+@media (max-width: 719px) {
+  [data-words="finance"] .tabbar { grid-template-columns: repeat(6, auto); column-gap: 2px; }
+  [data-words="finance"] .tabbar a { flex-direction: column; text-align: center; line-height: 1.15; letter-spacing: 0; }
+  [data-words="finance"] .tabbar-word { display: block; }
+  [data-words="finance"] .tabbar :is(.tabbar-move, .tab-move) { padding: 0 5px; gap: 3px; font-size: .6875rem; letter-spacing: .02em; }
+}
+@media (max-width: 359px) {
+  [data-words="finance"] .tabbar a { font-size: .625rem; }
+  [data-words="finance"] .tabbar :is(.tabbar-move, .tab-move) { padding: 0 4px; font-size: .625rem; }
+}
 
 /* The typographic plus of "+ Move" and "+ Candidate move": <span class="plus">+</span> */
 .plus { font-family: var(--f-figure); font-weight: 400; font-size: 1.6em; line-height: 1; letter-spacing: 0; margin-top: -.14em; }
@@ -340,6 +354,12 @@ html { scroll-padding-bottom: calc(var(--bottom-bar) + env(safe-area-inset-botto
   transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
 }
 .seg-opt + .seg-opt { border-left: 1px solid var(--ink); }
+/* Finance words: "This transaction only" runs longer than "This move only"; on a phone the two options of a
+   correction's reach (the transaction sheet) stack, one per line, so each reads whole. */
+@media (max-width: 599px) {
+  [data-words="finance"] .seg-block:has(input[name="scope"]) { grid-auto-flow: row; }
+  [data-words="finance"] .seg-block:has(input[name="scope"]) .seg-opt + .seg-opt { border-left: 0; border-top: 1px solid var(--ink); }
+}
 .seg-opt input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
 @media (hover: hover) {
   .seg-opt:hover { color: var(--ink); background-color: var(--paper-2); }
@@ -759,6 +779,9 @@ a.row:hover .row-label, button.row:hover .row-label { text-decoration: underline
 .move.is-declined .move-a::before { content: "("; }
 .move.is-declined .move-a::after { content: ")"; }
 .move.is-declined .move-a { color: var(--ink-2); }
+/* Finance words: a skipped purchase is struck through instead of bracketed (model/words.js; the root carries data-words) */
+[data-words="finance"] .move.is-declined .move-a::before, [data-words="finance"] .move.is-declined .move-a::after { content: none; }
+[data-words="finance"] .move.is-declined .move-a { text-decoration: line-through; }
 .move.is-provisional .move-a, .move.is-pending .move-a { font-style: italic; }
 /* a move's cash flow wins over a quiet list's grey (the Scoresheet's transfers and card payments) */
 .moves .move-a.flow-in { color: var(--gain); }
@@ -856,6 +879,10 @@ a.row:hover .row-label, button.row:hover .row-label { text-decoration: underline
 .xt-note :is(.sym, .mg) { font-size: 1.08em; }
 
 /* The crosstable answers to the width of .xt, not of the screen, so it also works inside a column. */
+/* Finance words: an exempt day's cell reads "exempt", longer than "bye"; in a narrow crosstable it sits a little tighter */
+@container xt (max-width: 559px) {
+  [data-words="finance"] .x.is-bye .x-res { letter-spacing: -.03em; }
+}
 @container xt (max-width: 340px) {
   .x-res { font-size: 1.375rem; }
   .x-edge { font-size: .6875rem; letter-spacing: -.03em; }
@@ -884,6 +911,8 @@ a.row:hover .row-label, button.row:hover .row-label { text-decoration: underline
   .x-legend { display: flex; align-items: flex-start; text-align: left; }
   .x-legend > span { font-family: var(--f-label); font-weight: 600; font-size: .6875rem; letter-spacing: .14em; text-transform: uppercase; font-style: normal; color: var(--ink-3); }
   .x-legend .x-cum { align-self: stretch; }
+  /* Finance words: the running column's key reads "Budget score", on two lines within the same 25px band */
+  [data-words="finance"] .x-legend .x-cum { line-height: 12px; }
 }
 @container xt (min-width: 1200px) {
   .xt-score { gap: 4px 36px; }
@@ -1012,6 +1041,9 @@ a.row:hover .row-label, button.row:hover .row-label { text-decoration: underline
 .rung.is-done .fig { color: var(--ink-2); }
 .rung.is-you { border-bottom: 0; padding-top: var(--s-2); }
 .rung.is-you .rung-title { color: var(--spot); }
+/* Finance words: a rung is numbered "Target 5" … "Target 1" where the title GM … NM sits; its column holds it on one line */
+[data-words="finance"] .ladder .rung { grid-template-columns: 3.75rem auto minmax(0, 1fr); }
+[data-words="finance"] .rung-title { white-space: nowrap; }
 .rung-bar { grid-column: 1 / -1; margin-bottom: var(--s-2); }
 .rung .rung-note { grid-column: 2 / -1; margin-top: 2px; text-align: left; }
 

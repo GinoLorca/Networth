@@ -21,6 +21,8 @@
  *  - Nothing in this repository may contain a real person's financial data.
  */
 
+import { GLYPH_NAMES, phrase, wordsMode } from './words.js';
+
 export const SCHEMA_VERSION = 2;
 
 /* ------------------------------------------------------------ enumerations */
@@ -34,7 +36,7 @@ export const SCHEMA_VERSION = 2;
 export const ACCOUNT_TYPES = {
   checking: { group: 'cash', label: 'Checking', tier: 'now', fast: true },
   savings: { group: 'cash', label: 'Savings', tier: 'now', fast: true },
-  cash: { group: 'cash', label: 'Cash in hand', tier: 'now', fast: true },
+  cash: { group: 'cash', label: phrase('schema.account.cash', 'chess'), tier: 'now', fast: true },
   credit_card: { group: 'card', label: 'Credit card', fast: true },
   investment: { group: 'asset', label: 'Investments', tier: 'days' },
   equipment: { group: 'asset', label: 'Equipment', tier: 'slow' },
@@ -64,7 +66,7 @@ export const TX_KINDS = {
   transfer: { label: 'Transfer' },    // between the owner's own accounts — never income or spending
   payment: { label: 'Debt payment' }, // toward a card or loan — never spending (interest is its own spend)
   refund: { label: 'Refund' },        // reverses a spend
-  decline: { label: 'Declined' },     // a purchase considered and not made: no monetary effect at all
+  decline: { label: phrase('schema.kind.decline', 'chess') }, // a purchase considered and not made: no monetary effect at all
 };
 
 /**
@@ -77,10 +79,10 @@ export const TX_KINDS = {
  *  oneoff — an exceptional item outside the usual pattern (equipment, a tax bill).
  */
 export const KLASSES = {
-  game: { label: 'Convenience', short: 'Daily game' },
+  game: { label: 'Convenience', short: phrase('schema.klass.game.short', 'chess') },
   need: { label: 'Necessary', short: 'Necessary' },
   want: { label: 'Extra', short: 'Extras' },
-  book: { label: 'The Book', short: 'Book' },
+  book: { label: phrase('schema.klass.book', 'chess'), short: phrase('schema.klass.book.short', 'chess') },
   oneoff: { label: 'One-off', short: 'One-off' },
 };
 
@@ -134,15 +136,16 @@ export const FLOW_CATEGORIES = {
 /**
  * Annotation symbols (standard chess annotation). Most moves carry none.
  * Negative symbols are only ever applied to unplanned `game` moves.
+ * `name` is the sign's name in Chess words; the names in both modes are words.js GLYPH_NAMES (glyphName).
  */
 export const GLYPHS = {
-  '!!': { name: 'Brilliant', tone: 'good' },   // a clean-sheet workday
-  '!': { name: 'Good move', tone: 'good' },    // a declined purchase, an extra debt payment, a day played to plan
-  '!?': { name: 'Interesting', tone: 'open' }, // a business purchase awaiting its return check
-  '?!': { name: 'Dubious', tone: 'warn' },     // an unplanned 2nd stop
-  '?': { name: 'Mistake', tone: 'bad' },       // an unplanned 3rd stop; a business purchase that did not pay back
-  '??': { name: 'Blunder', tone: 'bad' },      // an avoidable penalty only: late fee, over-limit fee, overdraft
-  '□': { name: 'Only move', tone: 'forced' }, // rent, a loan payment
+  '!!': { name: GLYPH_NAMES['!!'].chess, tone: 'good' },   // a clean-sheet workday
+  '!': { name: GLYPH_NAMES['!'].chess, tone: 'good' },     // a declined purchase, an extra debt payment, a day played to plan
+  '!?': { name: GLYPH_NAMES['!?'].chess, tone: 'open' },   // a business purchase awaiting its return check
+  '?!': { name: GLYPH_NAMES['?!'].chess, tone: 'warn' },   // an unplanned 2nd stop
+  '?': { name: GLYPH_NAMES['?'].chess, tone: 'bad' },      // an unplanned 3rd stop; a business purchase that did not pay back
+  '??': { name: GLYPH_NAMES['??'].chess, tone: 'bad' },    // an avoidable penalty only: late fee, over-limit fee, overdraft
+  '□': { name: GLYPH_NAMES['□'].chess, tone: 'forced' },  // rent, a loan payment
 };
 
 export const CADENCES = {
@@ -402,6 +405,10 @@ export function defaultState(now) {
     settings: {
       /** 'auto' follows the device; 'paper' (light) or 'night' (dark) forces it */
       theme: 'auto',
+      /** the words of the interface: 'chess' (Chess words) or 'finance' (Finance words); only words change (words.js) */
+      words: 'chess',
+      /** the stamp of the last choice of words, ms; 0 = never chosen. It travels in the shared file's prefs (prefs.js) */
+      wordsAt: 0,
       /** weekdays that are workdays by default (0 = Sunday). A day's own record can override. */
       workdays: [1, 2, 3, 4, 5],
       /** the game day rolls over at this hour (0-6) */
@@ -487,7 +494,8 @@ export function defaultState(now) {
  * Check that an object looks like a Networth document (used when restoring a backup or pairing a device).
  * @returns {string|null} a human-readable problem, or null when it is acceptable
  */
-export function checkDoc(doc) {
+export function checkDoc(doc, opts) {
+  const mode = wordsMode(isPlain(opts) ? opts.words : undefined);
   const NOT_A_COPY = 'This file is not a copy of a Networth record.';
   if (!isPlain(doc)) return NOT_A_COPY;
   if (!isPlain(doc.meta) || !Number.isInteger(doc.meta.v) || doc.meta.v < 0) return NOT_A_COPY;
@@ -507,7 +515,8 @@ export function checkDoc(doc) {
   if (mismatch) return 'This copy has an unreadable part (' + mismatch + ').';
 
   const templates = { accounts: makeAccount(), txs: makeTx(), recurring: makeRecurring(), streams: makeStream() };
-  const words = { accounts: 'account', txs: 'move', recurring: 'Book entry', streams: 'pay stream', habits: 'opponent' };
+  const words = { accounts: 'account', txs: phrase('schema.noun.tx', mode), recurring: phrase('schema.noun.recurring', mode), streams: 'pay stream',
+    habits: phrase('schema.noun.habit', mode) };
   for (const key of ['accounts', 'txs', 'recurring', 'streams', 'habits']) {
     for (const item of doc[key]) {
       const bad = 'This copy contains an unreadable ' + words[key] + '.';
@@ -527,17 +536,17 @@ export function checkDoc(doc) {
   }
   for (const t of doc.txs) {
     if (!Object.hasOwn(TX_KINDS, t.kind) || !isCents(t.amount) || t.amount < 0 || (t.flow !== 'in' && t.flow !== 'out') || !isDay(t.day)) {
-      return 'This copy contains an unreadable move.';
+      return 'This copy contains an unreadable ' + words.txs + '.';
     }
   }
   for (const r of doc.recurring) {
-    if (!Object.hasOwn(CADENCES, r.cadence) || !isCents(r.amount)) return 'This copy contains an unreadable Book entry.';
-    if (r.dueDay != null && !(Number.isInteger(r.dueDay) && r.dueDay >= 1 && r.dueDay <= 31)) return 'This copy contains an unreadable Book entry.';
-    if (r.payee != null && typeof r.payee !== 'string') return 'This copy contains an unreadable Book entry.';
+    if (!Object.hasOwn(CADENCES, r.cadence) || !isCents(r.amount)) return 'This copy contains an unreadable ' + words.recurring + '.';
+    if (r.dueDay != null && !(Number.isInteger(r.dueDay) && r.dueDay >= 1 && r.dueDay <= 31)) return 'This copy contains an unreadable ' + words.recurring + '.';
+    if (r.payee != null && typeof r.payee !== 'string') return 'This copy contains an unreadable ' + words.recurring + '.';
     // a payment the owner sends is monthly, has its day and an anchor that is a day: without them it would be due and on no checklist
-    if (r.byHand === true && (r.dueDay == null || r.cadence !== 'monthly' || !isDay(r.anchor))) return 'This copy contains an unreadable Book entry.';
+    if (r.byHand === true && (r.dueDay == null || r.cadence !== 'monthly' || !isDay(r.anchor))) return 'This copy contains an unreadable ' + words.recurring + '.';
     for (const key of ['marks', 'skips']) {
-      if (r[key] != null && !Object.values(r[key]).every(isPlain)) return 'This copy contains an unreadable Book entry.';
+      if (r[key] != null && !Object.values(r[key]).every(isPlain)) return 'This copy contains an unreadable ' + words.recurring + '.';
     }
   }
   if (doc.share != null && doc.share.tombs != null && !Object.values(doc.share.tombs).every((x) => Number.isFinite(x))) {
@@ -730,9 +739,18 @@ export function isFast(account) {
   return !!ACCOUNT_TYPES[account.type].fast;
 }
 
-/** The label to show for an account: the owner's own name for it, else the bank's (tidied), else its kind. */
-export function accountLabel(account) {
-  return account.nick || tidyName(account.name) || ACCOUNT_TYPES[account.type].label;
+/** The label to show for an account: the owner's own name for it, else the bank's (tidied), else its kind (in the words of `mode`). */
+export function accountLabel(account, mode) {
+  if (isNamedCash(account)) return accountTypeLabel('cash', mode);
+  return account.nick || tidyName(account.name) || accountTypeLabel(account.type, mode);
+}
+
+/**
+ * The physical-cash account the app made itself (income.js CASH_NAME) is named after its kind, so its name follows
+ * the words of the interface; a name the owner gave it (nick) is theirs.
+ */
+function isNamedCash(account) {
+  return !account.nick && account.type === 'cash' && account.name === ACCOUNT_TYPES.cash.label;
 }
 
 /**
@@ -740,9 +758,10 @@ export function accountLabel(account) {
  * kind of account with the last four digits the bank's name carries ("Credit card ··4321"), else the
  * bank's name.
  */
-export function accountShort(account) {
+export function accountShort(account, mode) {
   if (account.nick) return account.nick;
-  const kind = ACCOUNT_TYPES[account.type] ? ACCOUNT_TYPES[account.type].label : 'Account';
+  if (isNamedCash(account)) return accountTypeLabel('cash', mode);
+  const kind = ACCOUNT_TYPES[account.type] ? accountTypeLabel(account.type, mode) : 'Account';
   const name = typeof account.name === 'string' ? account.name : '';
   const digits = /(\d{4})(?!.*\d)/.exec(name);
   return digits ? kind + ' ··' + digits[1] : tidyName(name) || kind;
@@ -755,6 +774,34 @@ function tidyName(name) {
   if (!closing) return name;
   const head = name.slice(0, closing.index);
   return head.includes(closing[1]) ? head.trim() : name;
+}
+
+/**
+ * The label of a kind of account in the words of `mode` (Chess words when absent): ACCOUNT_TYPES[type].label, but
+ * for the physical-cash account in Finance words. '' for a type that is not one.
+ */
+export function accountTypeLabel(type, mode) {
+  if (!Object.hasOwn(ACCOUNT_TYPES, type)) return '';
+  return type === 'cash' ? phrase('schema.account.cash', mode) : ACCOUNT_TYPES[type].label;
+}
+
+/** The label of a spending class in the words of `mode`: KLASSES[klass].label ('The Book' / 'Recurring bills'). */
+export function klassLabel(klass, mode) {
+  if (!Object.hasOwn(KLASSES, klass)) return '';
+  return klass === 'book' ? phrase('schema.klass.book', mode) : KLASSES[klass].label;
+}
+
+/** The short label of a spending class in the words of `mode`: KLASSES[klass].short ('Daily game' / 'Daily budget'). */
+export function klassShort(klass, mode) {
+  if (!Object.hasOwn(KLASSES, klass)) return '';
+  if (klass === 'game') return phrase('schema.klass.game.short', mode);
+  return klass === 'book' ? phrase('schema.klass.book.short', mode) : KLASSES[klass].short;
+}
+
+/** The label of a transaction kind in the words of `mode`: TX_KINDS[kind].label ('Declined' / 'Skipped'). */
+export function txKindLabel(kind, mode) {
+  if (!Object.hasOwn(TX_KINDS, kind)) return '';
+  return kind === 'decline' ? phrase('schema.kind.decline', mode) : TX_KINDS[kind].label;
 }
 
 export function categoryLabel(key) {

@@ -2,7 +2,8 @@
  * What travels between the owner's devices: the payments they send themselves, their ticks, and the
  * fingerprints that let every device recognise a payment the same way; the answers about the
  * income another app of theirs reports (`income`, ARCHITECTURE 3.7); and the owner's corrections
- * (`corrections`, 3.8: merchant rules, a row's locked fields, a stream's locked settings).
+ * (`corrections`, 3.8: merchant rules, a row's locked fields, a stream's locked settings); and the owner's
+ * choices that reach every device (`prefs`, 11: the words of the interface).
  * See ARCHITECTURE.md section 3.5.
  *
  * Pure: no clock, no DOM, no network. A round (`roundShared`) is handed the device and the transport.
@@ -17,6 +18,7 @@ import {
   applyCorrections, arrivedCorrections, exportCorrections, isBlankCorrections, mergeCorrections, pruneCorrections, readCorrections,
   storeCorrections, storedCorrections,
 } from './corrections.js';
+import { applyPrefs, exportPrefs, isBlankPrefs, mergePrefs, noteSeenPrefs, prefsDiffer, prefsUnseen, readPrefs } from './prefs.js';
 
 const VERSION = 1;
 const APP = 'networth';
@@ -34,7 +36,7 @@ const MAX_DEPTH = 12;
 const TOMB_KEEP_MS = 400 * 86400000;
 /** How many times a round starts again when another device wrote the file meanwhile. */
 const RESTARTS = 3;
-const KNOWN = new Set(['v', 'app', 'savedAt', 'byHand', 'income', 'corrections']);
+const KNOWN = new Set(['v', 'app', 'savedAt', 'byHand', 'income', 'corrections', 'prefs']);
 const UNSAFE = new Set(['__proto__', 'constructor', 'prototype']);
 const ID = /^[A-Za-z0-9_.:-]{1,80}$/;
 const PAYEE = /^p[0-9a-f]{13}$/;
@@ -84,6 +86,12 @@ function fileOf(raw) {
     const corrections = readCorrections(raw.corrections);
     if (!corrections) return null;
     if (!isBlankCorrections(corrections)) out.corrections = corrections;
+  }
+  if (raw.prefs !== undefined) {
+    // the owner's choices that reach every device (11): checked like the rest; an empty section is left out
+    const prefs = readPrefs(raw.prefs);
+    if (!prefs) return null;
+    if (!isBlankPrefs(prefs)) out.prefs = prefs;
   }
   for (const key of Object.keys(raw)) {
     if (!KNOWN.has(key) && !UNSAFE.has(key)) out[key] = plain(raw[key], 0);
@@ -162,6 +170,9 @@ export function exportShared(state, nowMs) {
   // the owner's corrections; a row correction older than 400 days is no longer written (3.8)
   const corrections = pruneCorrections(exportCorrections(doc));
   if (!isBlankCorrections(corrections)) out.corrections = corrections;
+  // the owner's choices, each that was ever chosen with its stamp (11)
+  const prefs = exportPrefs(doc);
+  if (!isBlankPrefs(prefs)) out.prefs = prefs;
   return out;
 }
 
@@ -200,6 +211,8 @@ export function mergeShared(a, b) {
   if (!isBlankIncome(income)) out.income = income;
   const corrections = mergeCorrections(x.corrections, y.corrections);
   if (!isBlankCorrections(corrections)) out.corrections = corrections;
+  const prefs = mergePrefs(x.prefs, y.prefs);
+  if (!isBlankPrefs(prefs)) out.prefs = prefs;
   for (const key of union(x, y)) {
     if (KNOWN.has(key)) continue;
     const p = own(x, key);
@@ -304,12 +317,19 @@ export function applyShared(state, merged, nowMs) {
     storeCorrections(state, mergeCorrections(fileOf(merged).corrections, null));
     applyCorrections(state, nowMs, before);
   }
+  // the owner's choices: the merged ones become the device's (the later stamp has already won in the merge)
+  // (a value this version does not know is carried in the file, never applied: its stamp is noted, so that the device's
+  // next choice is stamped above it and travels)
+  if (ops.some((one) => one.op === 'prefs')) {
+    applyPrefs(state, fileOf(merged).prefs);
+    noteSeenPrefs(state, fileOf(merged).prefs);
+  }
   if (!Array.isArray(state.recurring)) state.recurring = [];
   if (!isObject(state.share)) state.share = { tombs: {} };
   if (!isObject(state.share.tombs)) state.share.tombs = {};
   const tombs = state.share.tombs;
   for (const { op, id, want } of ops) {
-    if (op === 'income' || op === 'corrections') continue;
+    if (op === 'income' || op === 'corrections' || op === 'prefs') continue;
     const at = state.recurring.findIndex((r) => isObject(r) && r.id === id);
     if (op === 'remove') {
       if (at >= 0) state.recurring.splice(at, 1);
@@ -344,6 +364,7 @@ function planOf(state, merged) {
   const income = mergeIncomeShared(file.income, null);
   if (JSON.stringify(sortedCopy(incomeOf(state).shared)) !== JSON.stringify(sortedCopy(income))) ops.push({ op: 'income' });
   if (canon(storedCorrections(state)) !== canon(mergeCorrections(file.corrections, null))) ops.push({ op: 'corrections' });
+  if (prefsDiffer(state, file.prefs) || prefsUnseen(state, file.prefs)) ops.push({ op: 'prefs' });
   for (const id of Object.keys(file.byHand)) {
     const want = file.byHand[id];
     const have = list.find((r) => isObject(r) && r.id === id);
@@ -459,7 +480,7 @@ function blank() {
 }
 
 function isBlank(file) {
-  return Object.keys(file).every((key) => KNOWN.has(key)) && Object.keys(file.byHand).length === 0 && !file.income && !file.corrections;
+  return Object.keys(file).every((key) => KNOWN.has(key)) && Object.keys(file.byHand).length === 0 && !file.income && !file.corrections && !file.prefs;
 }
 
 /** A copy with every object's keys in order, so that equal content prints the same. */

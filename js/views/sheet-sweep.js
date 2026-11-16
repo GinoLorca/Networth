@@ -21,8 +21,12 @@ import { fmt } from '../model/money.js';
 import { addDays, weekStart, gameDay, relDay, fmtDate, fmtTime } from '../model/dates.js';
 import { accountLabel } from '../model/schema.js';
 import { money } from './parts.js';
+import { sayHtml } from '../ui/say.js';
+import { phrase, say } from '../model/words.js';
 
-export const label = 'Move what you kept';
+export function label(ctx) {
+  return phrase('sweep.label', ctx && ctx.words);
+}
 
 const SHEET = 'sweep';
 const WEEK_DAYS = 7;
@@ -89,7 +93,7 @@ function destination(ctx, target) {
   }
   const cash = ctx.d.accounts('cash');
   const account = cash.find((a) => a.reserve) || null;
-  if (account) return { kind: 'reserve', account, name: accountLabel(account), now: ctx.d.valueOf(account), several: false };
+  if (account) return { kind: 'reserve', account, name: accountLabel(account, ctx.words), now: ctx.d.valueOf(account), several: false };
   return null;
 }
 
@@ -98,7 +102,7 @@ function destination(ctx, target) {
 function ledgerLine(ctx) {
   const edge = ctx.d.edge;
   const start = ctx.state.meta.matchStart;
-  return html`<p class="cap sw-ledger">Since the match began on ${fmtDate(start, 'short')}: ${keptFig(edge.kept, recentPencil(ctx), true)} kept against habit, ${fig(edge.moved)} of it moved.</p>`;
+  return html`<p class="cap sw-ledger">${sayHtml('sweep.ledger', ctx.words, { date: fmtDate(start, 'short'), kept: keptFig(edge.kept, recentPencil(ctx), true), moved: fig(edge.moved) })}</p>`;
 }
 
 function openView(ctx, sweep) {
@@ -106,26 +110,26 @@ function openView(ctx, sweep) {
   const week = keptInWeek(ctx, sweep.weekOf);
   const dest = destination(ctx, sweep.target);
   const lastDay = addDays(sweep.weekOf, 2 * WEEK_DAYS - 1);
-  const where = !dest ? (sweep.target === 'card' ? 'the card' : 'the reserve') : dest.kind === 'card' ? 'the ' + dest.name : dest.name + ', the reserve';
+  const where = !dest ? (sweep.target === 'card' ? 'the card' : phrase('sweep.reserve', ctx.words)) : dest.kind === 'card' ? 'the ' + dest.name : say('sweep.reserveOf', ctx.words, { name: dest.name });
   const after = dest ? (dest.kind === 'card' ? dest.now - sweep.amount : dest.now + sweep.amount) : null;
   return html`<div class="sheet-body sw"${attrs({ 'data-cover': cover })}>
-    <p class="sheet-head lab"><b>Sweep</b><i class="sep"></i>week of ${fmtDate(sweep.weekOf, 'short')}</p>
-    <h2 class="sheet-title">Last week you kept ${keptFig(week.kept, week.pencil)} against habit.</h2>
-    <p class="sw-ask">Move ${money(sweep.amount, { size: 's', decimals: 0 })} to ${where}. Kept money that is not moved gets absorbed.</p>
+    <p class="sheet-head lab"><b>${sayHtml('sweep.head', ctx.words)}</b><i class="sep"></i>week of ${fmtDate(sweep.weekOf, 'short')}</p>
+    <h2 class="sheet-title">${sayHtml('sweep.title', ctx.words, { kept: keptFig(week.kept, week.pencil) })}</h2>
+    <p class="sw-ask">${sayHtml('sweep.ask', ctx.words, { amount: money(sweep.amount, { size: 's', decimals: 0 }), where })}</p>
     ${dest ? html`<ul class="rows">
       <li class="row" data-key="now">
-        <span class="row-label">${dest.kind === 'card' ? 'Card balance today' : 'Reserve today'} <em class="row-note">${dest.name}${ageOf(ctx, dest.account.asOf) ? ' · ' + ageOf(ctx, dest.account.asOf) : ''}${dest.several ? ' · the card owed the most' : ''}</em></span>
+        <span class="row-label">${dest.kind === 'card' ? 'Card balance today' : phrase('sweep.reserveToday', ctx.words)} <em class="row-note">${dest.name}${ageOf(ctx, dest.account.asOf) ? ' · ' + ageOf(ctx, dest.account.asOf) : ''}${dest.several ? ' · the card owed the most' : ''}</em></span>
         <span class="row-value fig">${fmt(dest.now)}</span>
       </li>
       <li class="row" data-key="after">
-        <span class="row-label">After the sweep <em class="row-note">once the bank reports it</em></span>
+        <span class="row-label">${sayHtml('sweep.after', ctx.words)} <em class="row-note">once the bank reports it</em></span>
         <span class="row-value">${money(after, { est: true })}</span>
       </li>
     </ul>` : ''}
-    <p class="cap">Networth does not move money: make the ${sweep.target === 'card' ? 'payment' : 'transfer'} in the bank’s own app. A ${sweep.target === 'card' ? 'card payment' : 'transfer to the reserve'} of ${fig(Math.ceil(sweep.amount * AUTO_SHARE))} or more that posts by ${fmtDate(lastDay, 'dowshort')} is recorded by itself.</p>
+    <p class="cap">${sayHtml('sweep.noMove', ctx.words, { what: sweep.target === 'card' ? 'payment' : 'transfer', kind: sweep.target === 'card' ? 'card payment' : phrase('sweep.toReserve', ctx.words), amount: fig(Math.ceil(sweep.amount * AUTO_SHARE)), day: fmtDate(lastDay, 'dowshort') })}</p>
     ${ledgerLine(ctx)}
     <div class="sheet-actions sheet-actions-stack">
-      <button class="btn btn-solid" type="button" data-action="sweep.moved">I moved it</button>
+      <button class="btn btn-solid" type="button" data-action="sweep.moved">${sayHtml('sweep.moved', ctx.words)}</button>
       <button class="btn" type="button" data-action="sweep.skip">Not this week</button>
     </div>
   </div>`;
@@ -152,26 +156,26 @@ function restView(ctx) {
   const tapped = !!mine && isTapped(mine);
   let why;
   if (!started) {
-    why = html`The match has not begun, so nothing has been kept against habit yet. Once it has, each Monday offers the week before when it kept ${fmt(MINIMUM_CENTS, { decimals: 0 })} or more.`;
+    why = sayHtml('sweep.notBegun', ctx.words, { amount: fmt(MINIMUM_CENTS, { decimals: 0 }) });
   } else if (mine && mine.amount > 0) {
-    why = html`The week of ${fmtDate(lastWeek, 'short')} is recorded: ${fig(mine.amount)} moved on ${fmtDate(mine.day, 'short')}, ${viaWords(mine)}. The next week is offered on ${fmtDate(nextMonday, 'dowshort')}.`;
+    why = sayHtml('sweep.recorded', ctx.words, { week: fmtDate(lastWeek, 'short'), amount: fig(mine.amount), day: fmtDate(mine.day, 'short'), via: viaWords(mine), next: fmtDate(nextMonday, 'dowshort') });
   } else if (mine) {
     why = html`The week of ${fmtDate(lastWeek, 'short')} was set aside on ${fmtDate(mine.day, 'short')}. The next week is offered on ${fmtDate(nextMonday, 'dowshort')}.`;
   } else {
     const week = keptInWeek(ctx, lastWeek);
     why = week.rounds
-      ? html`The week of ${fmtDate(lastWeek, 'short')} kept ${keptFig(week.kept, week.pencil)} against habit; a sweep is offered from ${fmt(MINIMUM_CENTS, { decimals: 0 })}. The next week is offered on ${fmtDate(nextMonday, 'dowshort')}.`
-      : html`No round of the week of ${fmtDate(lastWeek, 'short')} counts yet. A week is offered on the Monday after it when it kept ${fmt(MINIMUM_CENTS, { decimals: 0 })} or more: next on ${fmtDate(nextMonday, 'dowshort')}.`;
+      ? sayHtml('sweep.week', ctx.words, { week: fmtDate(lastWeek, 'short'), kept: keptFig(week.kept, week.pencil), min: fmt(MINIMUM_CENTS, { decimals: 0 }), next: fmtDate(nextMonday, 'dowshort') })
+      : sayHtml('sweep.none', ctx.words, { week: fmtDate(lastWeek, 'short'), min: fmt(MINIMUM_CENTS, { decimals: 0 }), next: fmtDate(nextMonday, 'dowshort') });
   }
   const history = sweeps.slice().sort((a, b) => (a.weekOf < b.weekOf ? 1 : a.weekOf > b.weekOf ? -1 : 0)).slice(0, HISTORY_ROWS);
   return html`<div class="sheet-body sw"${attrs({ 'data-cover': cover })}>
-    <p class="sheet-head lab"><b>Sweep</b><i class="sep"></i>${fmtDate(ctx.today, 'dowshort')}</p>
-    <h2 class="sheet-title">Nothing to move this week.</h2>
+    <p class="sheet-head lab"><b>${sayHtml('sweep.head', ctx.words)}</b><i class="sep"></i>${fmtDate(ctx.today, 'dowshort')}</p>
+    <h2 class="sheet-title">${sayHtml('sweep.nothing', ctx.words)}</h2>
     <p>${why}</p>
     ${tapped ? html`<p class="sw-aside"><button class="btn-link" type="button" data-action="sweep.reopen">Open the week again</button><span class="cap">Removes the record of ${fmtDate(mine.day, 'short')}; nothing else changes.</span></p>` : ''}
     ${started ? ledgerLine(ctx) : ''}
     ${history.length ? html`<section class="rows-group">
-      <h3 class="rows-title lab"><b>Sweeps so far</b> <span class="rows-title-note">${history.length === sweeps.length ? sweeps.length : 'latest ' + history.length + ' of ' + sweeps.length}</span></h3>
+      <h3 class="rows-title lab"><b>${sayHtml('sweep.history', ctx.words)}</b> <span class="rows-title-note">${history.length === sweeps.length ? sweeps.length : 'latest ' + history.length + ' of ' + sweeps.length}</span></h3>
       <ul class="rows">
         ${history.map((s) => html`<li class="row" data-key="${s.weekOf}">
           <span class="row-label">Week of ${fmtDate(s.weekOf, 'short')} <em class="row-note">${fmtDate(s.day, 'short')} · ${viaWords(s)}</em></span>
@@ -241,7 +245,7 @@ function record(amountOf, message) {
 }
 
 export const actions = {
-  'sweep.moved': () => record((sweep) => sweep.amount, (entry) => 'Sweep recorded for the week of ' + fmtDate(entry.weekOf, 'short') + '.'),
+  'sweep.moved': () => record((sweep) => sweep.amount, (entry) => say('sweep.toast.recorded', (context() || {}).words, { week: fmtDate(entry.weekOf, 'short') })),
   'sweep.skip': () => record(() => 0, (entry) => 'The week of ' + fmtDate(entry.weekOf, 'short') + ' is set aside.'),
   'sweep.reopen': () => {
     const ctx = context();

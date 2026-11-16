@@ -22,6 +22,8 @@ import { largestCharges, firstTransactionDay } from '../model/cards.js';
 import { CASH_ROLE, cashAccountOf, isIdleCash } from '../model/income.js';
 import { bankWhere, cashLineWords, cashNoteWords, countedWords, isCountedCash, recordEstimate, recordLead } from './income-words.js';
 import { figured, money, movesList, inlineMoney, toneStyle, flowLookups, unbankedWords } from './parts.js';
+import { sayHtml } from '../ui/say.js';
+import { phrase, say } from '../model/words.js';
 
 const CARD_MONTHS = 6;
 const LARGEST = 3;
@@ -113,9 +115,9 @@ function count(n, one, many) {
 }
 
 /** What the plain sum holds besides the bank: ", Cash in hand and 2 figures entered by hand included", or ''. */
-function handIncluded(m) {
+function handIncluded(m, words) {
   const parts = [];
-  if (m.handCash) parts.push('Cash in hand');
+  if (m.handCash) parts.push(phrase('schema.account.cash', words));
   if (m.handOther) parts.push(countLower(m.handOther, 'figure', 'figures') + ' entered by hand');
   return parts.length ? ', ' + parts.join(' and ') + ' included' : '';
 }
@@ -209,12 +211,12 @@ function head(ctx, m) {
   const tapped = tappedOut && markedIn ? html`${tappedOut} and ${markedIn}` : tappedOut || markedIn;
   const same = tapped ? html`this is the bank figure with ${tapped}.` : 'this equals the bank figure.';
   const smoothNote = p.smoothing
-    ? html`the bank figure, with pay earned ${inlineMoney(m.receivable, { est: true, signed: true })}${tapped ? ',' : ' and'} bills used ${inlineMoney(-m.payable, { est: true, signed: true })}${tapped ? html` and ${tapped}` : ''}`
+    ? sayHtml('material.smooth.note', ctx.words, { income: inlineMoney(m.receivable, { est: true, signed: true }), sep: tapped ? ',' : ' and', bills: inlineMoney(-m.payable, { est: true, signed: true }), tapped: tapped ? html` and ${tapped}` : '' })
     : lapsed.length
       // T4: a stream whose deposits stopped is named below; "counted when it arrives" is said only when none has
       ? html`Nothing accrues, so ${same}`
       : pay === 'off'
-      ? html`Pay is counted when it arrives, so nothing accrues and ${same}`
+      ? sayHtml('material.arrives', ctx.words, { same })
       : html`No regular pay has been found yet, so nothing accrues and ${same}`;
   const figure = (cents, est) => {
     const text = fmt(cents);
@@ -224,8 +226,8 @@ function head(ctx, m) {
   const slowShare = p.assets > 0 ? slowTotal / p.assets : 0;
   const splitNote = p.assets === 0 && p.liabilities === 0
     ? 'Nothing is on the record yet: the bar stands level until the bank reports a balance.'
-    : html`${p.bank >= 0 ? 'Net worth is the white past the center mark.' : 'The black runs past the center mark: more is owed than owned.'}${
-      slowTotal > 0 ? html` ${fmtPct(slowShare, 0)} of the assets is slow to sell, at your own estimate.` : ' None of the assets is slow to sell.'}`;
+    : html`${p.bank >= 0 ? sayHtml('material.split.worth', ctx.words) : sayHtml('material.split.owed', ctx.words)}${
+      slowTotal > 0 ? sayHtml('material.split.slow', ctx.words, { share: fmtPct(slowShare, 0) }) : sayHtml('material.split.noSlow', ctx.words)}`;
   return html`<div class="cols mat-head">
     <section class="col col-7">
       <div class="sec-head">
@@ -236,10 +238,10 @@ function head(ctx, m) {
         <p class="mat-worth-item">
           <span class="lab"><i class="bank-mark"></i><b>${m.handCash ? 'At the bank and in hand' : 'At the bank'}</b></span>
           ${figure(p.bank, bankEst)}
-          <span class="cap">the plain sum of every balance${handIncluded(m)}${age ? html` · bank data ${age}` : ''}</span>
+          <span class="cap">the plain sum of every balance${handIncluded(m, ctx.words)}${age ? html` · bank data ${age}` : ''}</span>
         </p>
         <p class="mat-worth-item">
-          <span class="lab"><b>Smoothed</b></span>
+          <span class="lab"><b>${sayHtml('material.smoothed', ctx.words)}</b></span>
           ${figure(m.live, liveEst)}
           <span class="cap">${smoothNote}${p.smoothing && lapsed.length ? '.' : ''}${lapsed.map((item) => html` No deposit from ${item.name || 'a regular payer'} since ${isYmd(item.since) ? shortDay(ctx, item.since) : 'a day not on record'}.`)}</span>
         </p>
@@ -247,7 +249,7 @@ function head(ctx, m) {
     </section>
     <section class="col col-5">
       <div class="sec-head">
-        <h2 class="lab"><b>Material</b><i class="sep"></i>owned against owed</h2>
+        <h2 class="lab"><b>${sayHtml('material.title', ctx.words)}</b><i class="sep"></i>${sayHtml('material.title.note', ctx.words)}</h2>
       </div>
       <figure class="split mat-split">
         <figcaption class="split-labs">
@@ -269,7 +271,7 @@ function accountRow(ctx, account, opts = {}) {
   const value = ctx.d.valueOf(account);
   const est = isEstimate(ctx, account);
   const shown = Math.max(0, opts.owed ? -value : value);
-  const label = accountLabel(account);
+  const label = accountLabel(account, ctx.words);
   return html`<li data-key="${account.id}">
     <button class="row" type="button" data-action="app.sheet" data-sheet="account" data-id="${account.id}">
       <span class="row-label">${label} <em class="row-note">${dotted(opts.notes || [])}</em></span>
@@ -287,7 +289,7 @@ function provenance(ctx, account) {
   }
   const day = shortDay(ctx, valuedOn(ctx, account));
   if (isWorkedDown(ctx, account)) {
-    return [account.institution, html`worked down from the ${day} ${account.basis === 'statement' ? 'statement' : 'figure'} at ${trimPct(account.apr)}%`];
+    return [account.institution, sayHtml('material.workedDown', ctx.words, { day, basis: account.basis === 'statement' ? 'statement' : 'figure', apr: trimPct(account.apr) })];
   }
   return [account.institution, (account.basis === 'statement' ? 'from a statement, ' : 'your estimate, ') + day];
 }
@@ -299,8 +301,8 @@ function trimPct(apr) {
 function cashRow(ctx, account) {
   const value = ctx.d.valueOf(account);
   const notes = provenance(ctx, account);
-  if (account.source === 'bank' && value !== account.balance) notes.push('pending moves counted');
-  if (account.reserve) notes.push('reserve');
+  if (account.source === 'bank' && value !== account.balance) notes.push(say('material.pending', ctx.words));
+  if (account.reserve) notes.push(say('material.reserve', ctx.words));
   if (value < 0) notes.push('overdrawn: listed with liabilities');
   return accountRow(ctx, account, { notes });
 }
@@ -311,9 +313,9 @@ function assetRow(ctx, account) {
   if (value < 0) notes.push('below zero: listed with liabilities');
   if (tierOf(account) === 'slow') {
     if (Number.isFinite(account.quickSale) && value > 0) {
-      notes.push(html`a quick sale at ${fmtPct(account.quickSale, 0)}: <span data-fig>≈ ${fmt(Math.round(value * account.quickSale))}</span>`);
+      notes.push(sayHtml('material.quickSale', ctx.words, { share: fmtPct(account.quickSale, 0), value: html`<span data-fig>≈ ${fmt(Math.round(value * account.quickSale))}</span>` }));
     } else if (value > 0) {
-      notes.push('no quick-sale share set');
+      notes.push(say('material.noQuickSale', ctx.words));
     }
   }
   return accountRow(ctx, account, { notes });
@@ -354,7 +356,7 @@ function overdrawnRow(ctx, account) {
 function accrualRow(ctx, line, sheet, lead) {
   return html`<li data-key="${sheet + '-' + line.id}">
     <button class="row" type="button" data-action="app.sheet" data-sheet="${sheet}" data-id="${line.id}">
-      <span class="row-label">${lead ? html`<span class="est">${lead}</span>` : line.name} <em class="row-note">${dotted([lead ? line.name : null, 'since ' + shortDay(ctx, line.since), html`<span data-fig>${fmt(line.daily)}</span> a day`, lead ? 'in the smoothed figure only' : null])}</em></span>
+      <span class="row-label">${lead ? html`<span class="est">${lead}</span>` : line.name} <em class="row-note">${dotted([lead ? line.name : null, 'since ' + shortDay(ctx, line.since), html`<span data-fig>${fmt(line.daily)}</span> a day`, lead ? say('material.smoothedOnly', ctx.words) : null])}</em></span>
       ${money(line.amount, { est: true, cls: 'row-value' })}
     </button>
   </li>`;
@@ -386,7 +388,7 @@ function byHandNote(ctx, accounts, owed) {
   if (!owed) return html`${part ? html`<span data-fig>${fmt(part)}</span> of it at your own estimate` : ''}${part && handNote ? '; ' : ''}${handNote ? figured(handNote) : ''}`;
   const worked = accounts.filter((a) => isWorkedDown(ctx, a)).length;
   const guessed = accounts.filter((a) => isEstimate(ctx, a) && !isWorkedDown(ctx, a)).length;
-  return html`<span data-fig>${fmt(part)}</span> of it ${worked && guessed ? 'worked down by Networth or at your estimate' : worked ? 'worked down by Networth' : 'at your own estimate'}`;
+  return html`<span data-fig>${fmt(part)}</span> of it ${worked && guessed ? say('material.worked.both', ctx.words) : worked ? say('material.worked', ctx.words) : 'at your own estimate'}`;
 }
 
 function grand(label, cents, note, est) {
@@ -399,24 +401,24 @@ function assetsColumn(ctx, m) {
   const inDays = m.days.concat(m.credits);
   const dayRows = m.days.map((a) => assetRow(ctx, a))
     .concat(m.credits.map((a) => creditRow(ctx, a)))
-    .concat(p.receivables.map((line) => accrualRow(ctx, line, 'stream', 'Pay earned, not yet received')));
+    .concat(p.receivables.map((line) => accrualRow(ctx, line, 'stream', say('material.payEarned', ctx.words))));
   return html`<section class="col col-6 mat-side">
     <div class="sec-head">
-      <h2 class="lab"><b>Assets</b><i class="sep"></i>by how fast they turn into money</h2>
+      <h2 class="lab"><b>Assets</b><i class="sep"></i>${sayHtml('material.assets.note', ctx.words)}</h2>
     </div>
     <div class="mat-groups">
-      ${group('Now', 'cash · ' + countLower(m.cash.length, 'account', 'accounts'), m.cash.map((a) => cashRow(ctx, a)),
+      ${group(say('material.tier.now', ctx.words), say('material.tier.now.note', ctx.words, { accounts: countLower(m.cash.length, 'account', 'accounts') }), m.cash.map((a) => cashRow(ctx, a)),
         subtotal(ctx, 'Cash', sum(m.cash), m.cash),
         'The bank has reported no cash account yet. Cash appears here as soon as it does.')}
-      ${group('In days', 'investments, money owed to you, pay on its way', dayRows,
-        subtotal(ctx, 'In days, on the record', sum(inDays), inDays),
+      ${group(say('material.tier.days', ctx.words), say('material.tier.days.note', ctx.words), dayRows,
+        subtotal(ctx, say('material.tier.days.total', ctx.words), sum(inDays), inDays),
         p.smoothing
           ? 'No investments and nothing owed to you is on the record.'
           : payCounting(ctx) === 'off'
-            ? 'Nothing here yet. Investments the bank reports appear by themselves. Pay is counted when it arrives, so no pay earned is listed.'
-            : 'Nothing here yet. Investments the bank reports appear by themselves; pay is counted day by day once a regular deposit has been seen 3 times.')}
-      ${group('Slow', 'equipment and the like', m.slow.map((a) => assetRow(ctx, a)),
-        subtotal(ctx, 'Slow', sum(m.slow), m.slow),
+            ? say('material.tier.days.off', ctx.words)
+            : say('material.tier.days.later', ctx.words))}
+      ${group(say('material.tier.slow', ctx.words), 'equipment and the like', m.slow.map((a) => assetRow(ctx, a)),
+        subtotal(ctx, say('material.tier.slow', ctx.words), sum(m.slow), m.slow),
         'The bank cannot see equipment or a vehicle. Added by hand, each is counted here at your own figure.')}
     </div>
     ${grand('Total assets', p.assets, byHandNote(ctx, m.cash.concat(inDays, m.slow), false), m.estAssets)}
@@ -441,23 +443,23 @@ function liabilitiesColumn(ctx, m) {
       ${group('Cards', html`revolving${used}`, m.cards.map((a) => cardRow(ctx, a)),
         subtotal(ctx, 'Cards', owedSum(m.cards), m.cards),
         'No card is on the record.')}
-      ${group('Loans', 'italic when worked down by Networth', m.loans.map((a) => debtRow(ctx, a)),
+      ${group('Loans', say('material.loans.note', ctx.words), m.loans.map((a) => debtRow(ctx, a)),
         subtotal(ctx, 'Loans', owedSum(m.loans), m.loans),
         'No loan is on the record. One the bank feed does not carry can be added by hand, with its terms.')}
       ${others.length ? group('Other', 'owed elsewhere', otherRows, subtotal(ctx, 'Other', owedSum(others), others), '') : ''}
       <section class="rows-group mat-group">
-        <h3 class="rows-title lab"><b>Not yet charged</b> <span class="rows-title-note">in the smoothed figure only</span></h3>
+        <h3 class="rows-title lab"><b>${sayHtml('material.notCharged', ctx.words)}</b> <span class="rows-title-note">${sayHtml('material.smoothedOnly', ctx.words)}</span></h3>
         ${bills.length ? html`<details class="mat-more">
           <summary class="row">
-            <span class="row-label"><span class="est">Bills used, not yet charged</span> <em class="row-note">${countLower(bills.length, 'bill', 'bills')}, counted day by day since each was last charged</em></span>
+            <span class="row-label"><span class="est">${sayHtml('material.billsUsed', ctx.words)}</span> <em class="row-note">${sayHtml('material.billsUsed.note', ctx.words, { bills: countLower(bills.length, 'bill', 'bills') })}</em></span>
             ${money(m.payable, { est: true, cls: 'row-value' })}
           </summary>
           <ul class="rows rows-plain mat-more-rows">${bills.map((line) => accrualRow(ctx, line, 'recurring', ''))}</ul>
         </details>` : html`<p class="cap mat-none">${p.smoothing
           ? 'No bill is accruing today.'
           : payCounting(ctx) === 'off'
-            ? 'Nothing accrues: pay is counted when it arrives, and each bill on the day it is charged.'
-            : 'Nothing accrues yet. Bills are counted day by day once the Book and a regular pay day have been found.'}</p>`}
+            ? say('material.accrues.off', ctx.words)
+            : say('material.accrues.later', ctx.words)}</p>`}
       </section>
     </div>
     ${grand('Total liabilities', p.liabilities, byHandNote(ctx, m.cards.concat(m.loans, others), true), m.estDebts)}
@@ -474,22 +476,22 @@ function reckoning(ctx, m) {
     : ''}${m.provisionalIn > 0
     ? html`<li class="row"><span class="row-label"><span class="est">Payments marked, not yet at the bank</span></span>${money(m.provisionalIn, { est: true, signed: true, cls: 'row-value' })}</li>`
     : ''}`;
-  const names = m.shared.map((a) => accountLabel(a) + ' at ' + fmtPct(a.quickSale, 0)).join(', ');
+  const names = m.shared.map((a) => accountLabel(a, ctx.words) + ' at ' + fmtPct(a.quickSale, 0)).join(', ');
   const unshared = m.slow.filter((a) => !m.shared.includes(a) && ctx.d.valueOf(a) > 0);
   let quick;
   if (!m.slow.length) {
-    quick = html`<p class="cap">Nothing slow to sell is on the record, so a fast sale would change nothing: ${money(p.bank, { est: bankEst })}.</p>`;
+    quick = html`<p class="cap">${sayHtml('material.quick.none', ctx.words, { amount: money(p.bank, { est: bankEst }) })}</p>`;
   } else if (!m.shared.length) {
-    quick = html`<p class="cap">No quick-sale share is set on ${unshared.map((a) => accountLabel(a)).join(', ') || 'the slow assets'}, so a fast sale is counted at full value: ${money(p.bank, { est: bankEst })}. A share can be set on each asset.</p>`;
+    quick = html`<p class="cap">${sayHtml('material.quick.unset', ctx.words, { assets: unshared.map((a) => accountLabel(a, ctx.words)).join(', ') || say('material.quick.slowAssets', ctx.words), amount: money(p.bank, { est: bankEst }) })}</p>`;
   } else {
     quick = html`<p class="mat-quick"><span class="fig est mat-quick-fig"><span class="approx">≈</span>${fmt(m.quickNet)}</span></p>
-      <p class="cap">Net worth at the bank, less <span data-fig>${fmt(m.haircut)}</span> that a fast sale would not raise: ${names}.${
-        unshared.length ? ' ' + unshared.map((a) => accountLabel(a)).join(', ') + ' has no share set and is counted in full.' : ''}</p>`;
+      <p class="cap">${sayHtml('material.quick.less', ctx.words, { haircut: html`<span data-fig>${fmt(m.haircut)}</span>`, names })}${
+        unshared.length ? ' ' + unshared.map((a) => accountLabel(a, ctx.words)).join(', ') + say('material.quick.unshared', ctx.words) : ''}</p>`;
   }
   return html`<div class="cols mat-reckon">
     <section class="col col-7">
       <div class="sec-head">
-        <h2 class="lab"><b>The reckoning</b><i class="sep"></i>how the two figures are reached</h2>
+        <h2 class="lab"><b>${sayHtml('material.reckoning', ctx.words)}</b><i class="sep"></i>how the two figures are reached</h2>
       </div>
       <ul class="rows rows-plain mat-sum">
         <li class="row"><span class="row-label">Assets</span>${money(p.assets, { est: m.estAssets, cls: 'row-value' })}</li>
@@ -497,30 +499,30 @@ function reckoning(ctx, m) {
       </ul>
       <p class="row row-total"><span class="row-label lab"><i class="bank-mark"></i><b>${m.handCash ? 'Net worth at the bank and in hand' : 'Net worth at the bank'}</b></span>${money(p.bank, { est: bankEst, cls: 'row-value' })}</p>
       ${p.smoothing ? html`<ul class="rows rows-plain mat-sum">
-        <li class="row"><span class="row-label"><span class="est">Pay earned, not yet received</span></span>${money(m.receivable, { est: true, signed: true, cls: 'row-value' })}</li>
-        <li class="row"><span class="row-label"><span class="est">Bills used, not yet charged</span></span>${money(-m.payable, { est: true, signed: true, cls: 'row-value' })}</li>
+        <li class="row"><span class="row-label"><span class="est">${sayHtml('material.payEarned', ctx.words)}</span></span>${money(m.receivable, { est: true, signed: true, cls: 'row-value' })}</li>
+        <li class="row"><span class="row-label"><span class="est">${sayHtml('material.billsUsed', ctx.words)}</span></span>${money(-m.payable, { est: true, signed: true, cls: 'row-value' })}</li>
         ${tappedRow}
       </ul>
-      <p class="row row-total"><span class="row-label lab"><b>Smoothed net worth</b></span>${money(m.live, { est: true, cls: 'row-value' })}</p>` : html`${m.provisional > 0 || m.provisionalIn > 0 ? html`<ul class="rows rows-plain mat-sum">${tappedRow}</ul>
-      <p class="row row-total"><span class="row-label lab"><b>Net worth, moves not yet at the bank counted</b></span>${money(m.live, { est: true, cls: 'row-value' })}</p>` : ''}
+      <p class="row row-total"><span class="row-label lab"><b>${sayHtml('material.smoothedWorth', ctx.words)}</b></span>${money(m.live, { est: true, cls: 'row-value' })}</p>` : html`${m.provisional > 0 || m.provisionalIn > 0 ? html`<ul class="rows rows-plain mat-sum">${tappedRow}</ul>
+      <p class="row row-total"><span class="row-label lab"><b>${sayHtml('material.unbanked', ctx.words)}</b></span>${money(m.live, { est: true, cls: 'row-value' })}</p>` : ''}
       <p class="cap mat-none">${
         payCounting(ctx) === 'off'
-          ? html`Pay is counted when it arrives, so nothing accrues${m.provisional > 0 || m.provisionalIn > 0 ? '' : html` and the smoothed figure is the same, ${money(m.live, { est: bankEst })}`}. Day-by-day counting is switched in Settings or on a stream’s own sheet.`
-          : html`The smoothed figure is the same for now${m.provisional > 0 || m.provisionalIn > 0 ? ' but for the moves not yet at the bank' : html`, ${money(m.live, { est: bankEst })}`}: pay is counted as it is earned once a regular deposit has been seen 3 times.`}</p>`}
+          ? sayHtml('material.same.off', ctx.words, { same: m.provisional > 0 || m.provisionalIn > 0 ? '' : sayHtml('material.same.offFigure', ctx.words, { amount: money(m.live, { est: bankEst }) }) })
+          : sayHtml('material.same.later', ctx.words, { but: m.provisional > 0 || m.provisionalIn > 0 ? sayHtml('material.same.unbanked', ctx.words) : html`, ${money(m.live, { est: bankEst })}` })}</p>`}
     </section>
     <section class="col col-5">
       <div class="sec-head">
-        <h2 class="lab"><b>Sold fast</b><i class="sep"></i>if everything slow had to go</h2>
+        <h2 class="lab"><b>${sayHtml('material.soldFast', ctx.words)}</b><i class="sep"></i>${sayHtml('material.soldFast.note', ctx.words)}</h2>
       </div>
       ${quick}
       <div class="mat-add">
         <p class="cap">${m.handOther
           ? countPhrase(m.handOther) + ' entered by hand. Equipment, a vehicle, money owed to you, a loan: each is counted at the figure you give.'
           : 'Equipment, a vehicle, money owed to you, a loan the feed does not carry: each can be counted at the figure you give. Nothing here needs it.'}${
-          m.handCash ? ' ' + cashLineWords(ctx.state) : ''}</p>
+          m.handCash ? ' ' + cashLineWords(ctx.state, ctx.words) : ''}</p>
         <p><button class="btn btn-fill" type="button" data-action="app.sheet" data-sheet="account"><span class="plus">+</span> Add what the bank cannot see</button></p>
       </div>
-      ${m.hidden.length ? html`<p class="cap mat-left">Left out of everything: ${m.hidden.map((a, i) => html`${i ? ', ' : ''}<button class="mat-inline" type="button" data-action="app.sheet" data-sheet="account" data-id="${a.id}">${accountLabel(a)}</button>`)}.</p>` : ''}
+      ${m.hidden.length ? html`<p class="cap mat-left">Left out of everything: ${m.hidden.map((a, i) => html`${i ? ', ' : ''}<button class="mat-inline" type="button" data-action="app.sheet" data-sheet="account" data-id="${a.id}">${accountLabel(a, ctx.words)}</button>`)}.</p>` : ''}
     </section>
   </div>`;
 }
@@ -579,13 +581,13 @@ function cycleTable(ctx, months) {
     months.length < CARD_MONTHS ? ' Earlier months appear as the bank feed reaches further back.' : ''}</p>`;
 }
 
-function paceLine(current) {
+function paceLine(current, words) {
   if (!current) return '';
   const month = fmtMonth(current.ym, 'name');
   // a card in credit owes nothing: the credit is the bank's own figure, and there is no pace to read
   if (current.credit > 0 && current.end === 0) {
     return html`<p class="mat-pace">In credit by <span class="fig" data-fig>${fmt(current.credit)}</span>: nothing is owed on a card.</p>
-    <p class="cap">${month} has no pace to read while nothing is owed. A month is judged when it ends, never move by move.</p>`;
+    <p class="cap">${month} has no pace to read while nothing is owed.${sayHtml('material.judged', words)}</p>`;
   }
   // no pace is read before day 7 of the month (R3a): the model leaves pace and projected null until then
   if (current.pace == null) {
@@ -593,10 +595,10 @@ function paceLine(current) {
   }
   const pace = Math.round(current.pace);
   // the pace already takes off the Book's payments to the card that are still to come this month
-  const after = current.scheduled > 0 ? html`, after <span class="fig est" data-fig><span class="approx">≈</span>${fmt(current.scheduled)}</span> of payments still scheduled in the Book` : '';
+  const after = current.scheduled > 0 ? html`, after <span class="fig est" data-fig><span class="approx">≈</span>${fmt(current.scheduled)}</span>${sayHtml('material.scheduled', words)}` : '';
   if (pace === 0) return html`<p class="mat-pace"><span class="est">On pace to end ${month} level with where it began${after}.</span></p>`;
   return html`<p class="mat-pace"><span class="est">On pace to end ${month} <span class="fig est"><span class="approx">≈</span>${fmt(Math.abs(pace))}</span> ${pace < 0 ? 'lower' : 'higher'} than it began${after}.</span></p>
-    <p class="cap">Day ${current.daysElapsed} of ${current.daysInMonth}: it began at <span data-fig>${fmt(current.start)}</span> and stands at <span data-fig>${fmt(current.end)}</span>. A month is judged when it ends, never move by move.</p>`;
+    <p class="cap">Day ${current.daysElapsed} of ${current.daysInMonth}: it began at <span data-fig>${fmt(current.start)}</span> and stands at <span data-fig>${fmt(current.end)}</span>.${sayHtml('material.judged', words)}</p>`;
 }
 
 function interestLine(ctx, cardsNow) {
@@ -623,7 +625,7 @@ function cardCycle(ctx, m, figNo) {
   const largest = largestCharges(ctx.state, ym, ctx.now, LARGEST);
   const cardsNow = ctx.d.cardsNow;
   const chart = months.map((mo) => ({ ym: mo.ym, start: mo.start, end: mo.end, charges: mo.charges, payments: mo.payments, change: mo.change, current: mo.current }));
-  const names = m.cards.length === 1 ? accountLabel(m.cards[0]) : countLower(m.cards.length, 'card', 'cards') + ' together';
+  const names = m.cards.length === 1 ? accountLabel(m.cards[0], ctx.words) : countLower(m.cards.length, 'card', 'cards') + ' together';
   return html`<div class="cols mat-cards">
     <section class="col col-5">
       <div class="sec-head">
@@ -632,10 +634,10 @@ function cardCycle(ctx, m, figNo) {
       </div>
       <figure class="mat-fig">
         <nw-chart data-island kind="months" data="${JSON.stringify({ months: chart })}"></nw-chart>
-        ${figcap(figNo, html`Each month: payments, white, against new charges, black, and the change in what is owed.${months.length === 1 ? ' One month is on the record so far.' : ''}`)}
+        ${figcap(figNo, html`${sayHtml('material.cycle.caption', ctx.words)}${months.length === 1 ? ' One month is on the record so far.' : ''}`)}
       </figure>
       <div class="mat-now">
-        ${paceLine(current)}
+        ${paceLine(current, ctx.words)}
         ${interestLine(ctx, cardsNow)}
         <p><a class="btn-link" href="#/analysis">The payoff scenario, in Analysis</a></p>
       </div>
@@ -672,7 +674,7 @@ function revaluations(ctx, days) {
     (account.history || []).forEach((entry, i) => {
       if (i === 0 || !entry) return;
       const list = names.get(entry.day) || [];
-      list.push(accountLabel(account));
+      list.push(accountLabel(account, ctx.words));
       names.set(entry.day, list);
     });
   }
@@ -711,7 +713,7 @@ function record(ctx, m, figNo) {
   const onRecord = Number.isFinite(ctx.d.historyDays) ? ctx.d.historyDays : span;
   const caption = span < 2
     ? 'One day is on the record. The line grows a day at a time from here.'
-    : html`${m.position.smoothing ? 'Solid: smoothed net worth. Dotted: ' + bankWhere(m.handCash) + ', rising on payday and falling when rent is charged.' : recordLead(m)} ${
+    : html`${m.position.smoothing ? say('material.record.solid', ctx.words) + ' Dotted: ' + bankWhere(m.handCash) + ', rising on payday and falling when rent is charged.' : recordLead(m, ctx.words)} ${
       events.length ? count(events.length, 'open square marks', 'open squares mark') + ' a figure you ' + what + '.' : 'An open square will mark any figure you revalue.'} ${
       onRecord < 30 ? count(onRecord, 'day is', 'days are') + ' on record so far, ' + fmtDate(from, 'short') + ' through ' + fmtDate(ctx.today, 'short') + '.' : ''}`;
   return html`<section class="band mat-record">

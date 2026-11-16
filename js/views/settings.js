@@ -7,6 +7,9 @@
  *   settings.rollover      (change) the hour the game day rolls over, 0–6
  *   settings.toggle        (change) a switch; data-field = smoothing | countPending | cover
  *   settings.byes          (change) half-point byes allowed per month, 0–4
+ *   settings.words         (change) chess | finance: the words of the interface (model/words.js), at once, with no
+ *                          reload; stamped for the shared file (model/prefs.js chooseWords). "See every term" opens
+ *                          the glossary sheet (sheet=words)
  *   settings.theme         (change) auto | paper | night: saves it, sets data-theme on <html> at once and
  *                          writes localStorage['networth.theme'] (not in the sample game, which keeps nothing)
  *   settings.line          (change) one line of the principles or of the "instead" choices (data-list, data-i):
@@ -37,13 +40,16 @@ import { navigate, openSheet } from '../router.js';
 import { linkBank, unlinkBank } from '../sync.js';
 import { startShare, shareNow, forgetShare, shareInfo } from '../share.js';
 import { wipeStorage, listSnapshots } from '../db.js';
-import { ACCOUNT_TYPES, CADENCES, PURPOSES, SCHEMA_VERSION, accountLabel, checkDoc, migrate, defaultState } from '../model/schema.js';
+import { ACCOUNT_TYPES, CADENCES, PURPOSES, SCHEMA_VERSION, accountLabel, accountTypeLabel, checkDoc, migrate, defaultState } from '../model/schema.js';
 import { fmt } from '../model/money.js';
 import { gameDay, diffDays, fmtDate, fmtTime, nowMs } from '../model/dates.js';
 import { position } from '../model/ledger.js';
 import { makeDerived } from '../derive.js';
 import { coverText, inlineMoney } from './parts.js';
 import { alertStatus } from '../model/alerts.js';
+import { chooseWords } from '../model/prefs.js';
+import { WORDS, phrase, say, wordsMode, wordsOf } from '../model/words.js';
+import { sayHtml } from '../ui/say.js';
 import { answerPayer, askAgain, cashAccountOf, isIdleCash, ensureCashAccount, incomeLabel, incomeOf, incomePayments, incomeQuestions, payerAnswer } from '../model/income.js';
 import { againWords, beforeCountWords, countedWords, isCountedCash, listedPayers, payerWords, paymentState } from './income-words.js';
 
@@ -119,9 +125,9 @@ function dangerous(ctx, what, { ask, sentence, go, action }) {
 
 /* ---------------------------------------------------------------- the bank */
 
-function accountTag(a) {
-  const type = ACCOUNT_TYPES[a.type] ? ACCOUNT_TYPES[a.type].label : 'Account';
-  const more = a.hidden ? 'left out' : a.everyday ? 'everyday' : a.reserve ? 'reserve' : '';
+function accountTag(a, words) {
+  const type = ACCOUNT_TYPES[a.type] ? accountTypeLabel(a.type, words) : 'Account';
+  const more = a.hidden ? 'left out' : a.everyday ? 'everyday' : a.reserve ? phrase('settings.reserve', words) : '';
   return html`<b>${type}</b>${more ? html`<i class="sep"></i>${more}` : ''}`;
 }
 
@@ -134,13 +140,13 @@ function accountRows(ctx, accounts) {
     <ul class="rows">
       ${accounts.map((a) => html`<li data-key="${a.id}">
         <button class="row set-acct" type="button" data-action="app.sheet" data-sheet="account" data-id="${a.id}">
-          <span class="row-label">${accountLabel(a)}${a.institution ? html`<em class="row-note">${a.institution}</em>` : ''}</span>
-          <span class="lab set-acct-tag">${accountTag(a)}</span>
+          <span class="row-label">${accountLabel(a, ctx.words)}${a.institution ? html`<em class="row-note">${a.institution}</em>` : ''}</span>
+          <span class="lab set-acct-tag">${accountTag(a, ctx.words)}</span>
         </button>
       </li>`)}
     </ul>
     <p class="cap set-after">Open one to correct its type, rename it, or leave it out. ${
-      accounts.some((a) => a.everyday) ? 'Everyday accounts are the ones the daily round reads.' : ''}</p>
+      accounts.some((a) => a.everyday) ? phrase('settings.everyday', ctx.words) : ''}</p>
   </section>`;
 }
 
@@ -225,8 +231,8 @@ function bankSection(ctx) {
 
   if (ctx.demo) {
     return html`<section class="col col-7 set-sec" aria-label="The bank">
-      ${head('Sample game', html`<i class="hatch-mark"></i>`)}
-      <p class="title set-state">Sample game — nothing is linked.</p>
+      ${head(phrase('settings.sample', ctx.words), html`<i class="hatch-mark"></i>`)}
+      <p class="title set-state">${sayHtml('settings.sample.bank', ctx.words)}</p>
       <p class="set-lede">These ${accounts.length === 1 ? 'account is' : accounts.length + ' accounts are'} invented. Your own arrive with one setup token from SimpleFIN Bridge;
         nothing is typed in or imported, ever.</p>
       <p><button class="btn btn-solid btn-fill" type="button" data-action="app.leave-demo">Link your bank</button></p>
@@ -237,7 +243,7 @@ function bankSection(ctx) {
   if (!s.linked) {
     return html`<section class="col col-7 set-sec" aria-label="The bank">
       ${head('Not linked', '')}
-      <p class="title set-state">Not linked. The record is kept.</p>
+      <p class="title set-state">${phrase('settings.unlinked', ctx.words)}</p>
       <p class="set-lede">Nothing new arrives until this device is linked again${s.lastOk ? html`; the last reading was ${whenText(s.lastOk, ctx)}` : ''}.
         Linking again adds to the record already here.</p>
       ${linkForm(ctx, 'Link my bank')}
@@ -255,7 +261,7 @@ function bankSection(ctx) {
       ${accountRows(ctx, accounts)}
       <div class="set-dangers">
         ${dangerous(ctx, 'unlink', { ask: 'Unlink, keep the record', action: 'settings.unlink', go: 'Unlink — the record stays',
-          sentence: 'The key is forgotten on this device and nothing new arrives. Every account, move and round already here stays.' })}
+          sentence: phrase('settings.unlink', ctx.words) })}
       </div>
     </section>`;
   }
@@ -269,18 +275,18 @@ function bankSection(ctx) {
     ${accountRows(ctx, accounts)}
     <div class="set-dangers">
       ${dangerous(ctx, 'unlink', { ask: 'Unlink, keep the record', action: 'settings.unlink', go: 'Unlink — the record stays',
-        sentence: 'The key is forgotten on this device and nothing new arrives. Every account, move and round already here stays.' })}
+        sentence: phrase('settings.unlink', ctx.words) })}
       ${dangerous(ctx, 'unlink-erase', { ask: 'Unlink and erase everything', action: 'settings.erase', go: 'Erase — this cannot be undone',
-        sentence: 'The bank key, the key of the shared list if this device has one, every account, move and round, and the daily snapshots (up to 14) are removed from this device. A saved copy is the only way back.' })}
+        sentence: phrase('settings.erase', ctx.words) })}
     </div>
   </section>`;
 }
 
 /* ------------------------------------------------- sharing between devices */
+/** What the shared file holds, and the owner's corrections that travel in it (ARCHITECTURE 3.8), in the render's words. */
+const sharedWhat = (ctx) => phrase('settings.shared.what', ctx.words);
+const sharedCorrections = (ctx) => phrase('settings.shared.corrections', ctx.words);
 
-const SHARED_WHAT = 'Apart from the date of a corrected move, nothing the bank reported goes there: no balance, no transaction, no account. Only what you entered, your ticks, and an unreadable fingerprint of who each payment goes to, so every device recognises it the same way.';
-/** The owner's corrections travel in the same file (ARCHITECTURE 3.8). */
-const SHARED_CORRECTIONS = 'Corrections (categories, merchant names, income settings) reach your other devices too, each with an unreadable fingerprint of its merchant or move and, for a corrected move, its bank date, so that every device finds the same move.';
 
 function shareForm(ctx) {
   const busy = ctx.share.busy;
@@ -290,7 +296,7 @@ function shareForm(ctx) {
       <span class="field-label lab">The key</span>
       <input class="input set-share-key" type="password" name="key" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
         placeholder="Paste the key here" ${busy ? html`disabled` : ''}>
-      <span class="field-help cap">Kept on this device only, outside the record: it is in no saved copy, and this box is cleared the moment it is used. Each device needs 1 paste.</span>
+      <span class="field-help cap">${phrase('settings.share.keyHelp', ctx.words)}</span>
     </label>
     <div class="set-link-status" role="status" aria-live="polite">${
       error ? html`<p class="notice is-error"><i class="notice-mark"></i><span><b>Not started</b>${error}</span></p>` : ''}</div>
@@ -320,7 +326,7 @@ function shareFacts(ctx) {
       <span class="row-value" data-cover-keep>${sh.agreedAt ? sh.count : '—'}</span>
     </li>
     <li class="row">
-      <span class="row-label">Kept in <em class="row-note">a private repository of your own</em></span>
+      <span class="row-label">${phrase('settings.share.keptIn', ctx.words)} <em class="row-note">a private repository of your own</em></span>
       <span class="row-value set-share-where" data-cover-keep>${sh.owner}/networth-data</span>
     </li>
   </ul>`;
@@ -357,15 +363,15 @@ function shareSection(ctx) {
   const what = html`<section class="col col-5 set-sec" aria-label="What is shared">
     <div class="sec-head"><h3 class="lab"><b>What is shared</b><i class="sep"></i>1 private file</h3></div>
     <p class="set-lede">The payments you send yourself and their ticks, in the file networth-shared.json of ${sh.owner}/networth-data on your own GitHub.</p>
-    <p class="cap set-help">${SHARED_CORRECTIONS}</p>
-    <p class="cap set-help">${SHARED_WHAT}</p>
+    <p class="cap set-help">${sharedCorrections(ctx)}</p>
+    <p class="cap set-help">${sharedWhat(ctx)}</p>
   </section>`;
 
   if (ctx.demo) {
     return html`<div class="cols">
       <section class="col col-7 set-sec" aria-label="Share between devices">
-        ${head('Sample game')}
-        <p class="title set-state">Sample game — nothing is shared.</p>
+        ${head(phrase('settings.sample', ctx.words))}
+        <p class="title set-state">${sayHtml('settings.sample.share', ctx.words)}</p>
         <p class="set-lede">With your own record, 1 paste on each device keeps the payments you send, and their ticks, the same on all of them.</p>
       </section>
       ${what}
@@ -377,10 +383,10 @@ function shareSection(ctx) {
       <section class="col col-7 set-sec" aria-label="Share between devices">
         ${head('Off')}
         <p class="title set-state">Not sharing. 1 paste on each device starts it.</p>
-        <p class="set-lede">The payments you send yourself, and their ticks, are then kept in a private file on your own GitHub (${sh.owner}/networth-data):
-          what is added or ticked on 1 device shows on the others within seconds of opening them, and nothing is typed twice.</p>
-        <p class="cap set-help">${SHARED_CORRECTIONS}</p>
-        <p class="cap set-help">${SHARED_WHAT}</p>
+        <p class="set-lede">${say('settings.share.offLede', ctx.words, { owner: sh.owner })}
+          ${phrase('settings.share.offLedeMore', ctx.words)}</p>
+        <p class="cap set-help">${sharedCorrections(ctx)}</p>
+        <p class="cap set-help">${sharedWhat(ctx)}</p>
       </section>
       <section class="col col-5 set-sec" aria-label="The key">
         <div class="sec-head"><h3 class="lab"><b>The key</b><i class="sep"></i>3 steps, once per device</h3></div>
@@ -404,8 +410,8 @@ function shareSection(ctx) {
       <section class="col col-5 set-sec" aria-label="The key">
         <div class="sec-head"><h3 class="lab"><b>A new key</b><i class="sep"></i>3 steps</h3></div>
         ${shareSteps()}
-        <p class="cap set-help">${SHARED_CORRECTIONS}</p>
-        <p class="cap set-help">${SHARED_WHAT}</p>
+        <p class="cap set-help">${sharedCorrections(ctx)}</p>
+        <p class="cap set-help">${sharedWhat(ctx)}</p>
       </section>
     </div>`;
   }
@@ -413,7 +419,7 @@ function shareSection(ctx) {
   return html`<div class="cols">
     <section class="col col-7 set-sec" aria-label="Share between devices">
       ${head(sh.busy ? 'Working' : sh.code ? 'Not shared' : 'On')}
-      <p class="title set-state">${sh.code ? 'The last round did not go through.' : sh.agreedAt ? 'Sharing through your own GitHub.' : 'Sharing: the first round has not run yet.'}</p>
+      <p class="title set-state">${sh.code ? phrase('settings.share.failed', ctx.words) : sh.agreedAt ? 'Sharing through your own GitHub.' : phrase('settings.share.first', ctx.words)}</p>
       ${sh.code && !sh.busy ? html`<div class="set-problems"><p class="notice is-error"><i class="notice-mark"></i><span><b>Not shared</b>${sh.message}${
         sh.failedAt ? ' Tried ' + whenText(sh.failedAt, ctx) + '; nothing on this device was changed.' : ''}</span></p></div>` : ''}
       ${shareFacts(ctx)}
@@ -472,9 +478,9 @@ function alertSection(ctx) {
         <h2 class="lab"><b>Card purchases within minutes</b><i class="sep"></i>from your card’s text alerts</h2>
         <span class="lab">${alertPause(ctx)}</span>
       </div>
-      <p class="set-lede">Each charge on your card lowers the net worth on every device within a minute or two of your card’s bank texting you, shown like a move tapped in.
+      <p class="set-lede">${phrase('settings.alerts.lede', ctx.words)}
         It takes 1 setup on the iPhone. Each alert’s text is written to your private repository. The app deletes the file once the bank’s record replaces the purchase, or once the card’s balance has taken it in, but the repository’s history keeps every file ever written.
-        The shortcut sends no text that holds a code word or no dollar figure, and the app turns only a completed purchase into a move: any other text is deleted.</p>
+        ${phrase('settings.alerts.only', ctx.words)}</p>
       ${alertLine(ctx)}
     </section>
     <section class="col col-5 set-sec" aria-label="Setting up the iPhone">
@@ -487,7 +493,7 @@ function alertSection(ctx) {
         <li>Add <b>Base64 Encode</b>: <b>Shortcut Input</b>, <b>Line Breaks: None</b>.</li>
         <li>Add <b>Current Date</b>, then <b>Format Date</b>: <b>Date Format: Custom</b>, format ${c('yyyyMMdd-HHmmss-SSS')}.</li>
         <li>Add <b>Text</b>: <code class="set-code set-code-block" data-cover-keep>${inboxAddress(sh.owner)}</code> then the <b>Formatted Date</b>, then ${c('.txt')}, with no spaces.</li>
-        <li>Add <b>Get Contents of URL</b> with that <b>Text</b>. <b>Method</b>: PUT. <b>Headers</b>: ${c('Authorization')} = the word ${c('Bearer')}, then one space, then your key (the same key as pasted here; if it was not kept, make a new one the same way and paste it here on every device too), and ${c('Accept')} = ${block('application/vnd.github+json')} <b>Request Body</b>: JSON, two Text fields: ${c('message')} = ${c('alert')} and ${c('content')} = the <b>Base64 Encoded</b> result.</li>
+        <li>Add <b>Get Contents of URL</b> with that <b>Text</b>. <b>Method</b>: PUT. <b>Headers</b>: ${c('Authorization')} = the word ${c('Bearer')}, then one space, then your key (${phrase('settings.alerts.sameKey', ctx.words)}), and ${c('Accept')} = ${block('application/vnd.github+json')} <b>Request Body</b>: JSON, two Text fields: ${c('message')} = ${c('alert')} and ${c('content')} = the <b>Base64 Encoded</b> result.</li>
         <li>The first time it runs, Shortcuts asks to allow it to connect to api.github.com: choose <b>Always Allow</b>.</li>
         <li>To test it, send yourself nothing: wait for the first real purchase alert, then look at the line under “Card purchases within minutes” here.</li>
       </ol>
@@ -579,7 +585,7 @@ function incomeSection(ctx) {
         <span class="lab">${head}</span>
       </div>
       <p class="set-lede">Another app of yours writes the payments it records into <code class="set-code">income/</code> in your private repository, and this device reads them with its sharing key. There is nothing to set up here: the other app holds its own key.
-        A payment by Zelle or transfer counts in pencil until the bank’s row takes its place; a payment in cash counts in Cash in hand.</p>
+        ${sayHtml('settings.income.pencil', ctx.words)}</p>
       <p class="cap" role="status">${status}</p>
       ${ids.length ? html`<ul class="set-income-sources">${ids.map((id, i) => incomeSourceLine(ctx, id, sources[id], payments, shared.since, i + 1))}</ul>`
         : html`<p class="cap">Nothing has arrived yet.</p>`}
@@ -589,7 +595,7 @@ function incomeSection(ctx) {
       ${payers.length ? html`<div class="set-income-payers">${payers.map((p, i) => incomePayerRow(p, payerAnswer(shared, p.payerKey), i + 1, names.get(p.payerKey)))}</div>`
         : html`<p class="cap">No payer yet.</p>`}
       <p><button class="btn-link" type="button" data-action="settings.income-cash">Count your cash</button>${cash && !isIdleCash(ctx.state, cash)
-        ? html` <span class="cap">Cash in hand: ${inlineMoney(ctx.d.valueOf(cash), { est: !isCountedCash(ctx.state, ctx.d.valueOf(cash)) })}, ${countedWords(ctx.state, ctx.today).words}.</span>` : ''}</p>
+        ? html` <span class="cap">${phrase('settings.income.cash', ctx.words)} ${inlineMoney(ctx.d.valueOf(cash), { est: !isCountedCash(ctx.state, ctx.d.valueOf(cash)) })}, ${countedWords(ctx.state, ctx.today).words}.</span>` : ''}</p>
     </section>
   </div>`;
 }
@@ -605,7 +611,7 @@ function payLine(ctx) {
   const cadence = CADENCES[stream.cadence] ? CADENCES[stream.cadence].label.toLowerCase() : 'regularly';
   return html`Regular pay found: ${stream.name}, <span class="est" data-fig><span class="approx">≈</span>${fmt(stream.amount)}</span> ${cadence}. ${
     on ? 'Net worth rises a little every day instead of jumping on payday, and bills count as they are used.'
-      : 'Switched off, net worth moves only on the day money moves.'}`;
+      : phrase('settings.payOff', ctx.words)}`;
 }
 
 function switchRow(field, on, text, help) {
@@ -627,8 +633,8 @@ function daySection(ctx) {
   const count = WEEK.filter(([d]) => workdays.includes(d)).length;
   return html`<section class="col col-5 set-sec" aria-label="The day">
     <div class="sec-head">
-      <h2 class="lab"><b>The day</b><i class="sep"></i>how a round is counted</h2>
-      <span class="lab" data-cover-keep>${count} with Black<i class="sep"></i>${7 - count} with White</span>
+      <h2 class="lab"><b>The day</b><i class="sep"></i>${sayHtml('settings.day.note', ctx.words)}</h2>
+      <span class="lab" data-cover-keep>${sayHtml('settings.day.count', ctx.words, { work: count, sep: html`<i class="sep"></i>`, off: 7 - count })}</span>
     </div>
     <fieldset class="field">
       <legend class="field-label lab">Workdays</legend>
@@ -636,25 +642,25 @@ function daySection(ctx) {
         ${WEEK.map(([d, short, long]) => html`<label class="chip"><input type="checkbox" name="workday" value="${d}" aria-label="${long}"
           data-change="settings.workday" data-day="${d}" ${workdays.includes(d) ? html`checked` : ''}><span>${short}</span></label>`)}
       </div>
-      <p class="cap field-help">A workday is played with Black against the workday habit; the other days are days off, with White.${
-        ctx.state.meta.matchStart ? '' : ' No match is in progress yet: the match begins on day ' + ctx.d.matchFromDay + ' on record; ' + (Number.isFinite(ctx.d.historyDays) ? ctx.d.historyDays : 0) + ' so far. These choices apply from then.'}</p>
+      <p class="cap field-help">${sayHtml('settings.day.workday', ctx.words)}${
+        ctx.state.meta.matchStart ? '' : say('settings.day.notBegun', ctx.words, { day: ctx.d.matchFromDay, days: Number.isFinite(ctx.d.historyDays) ? ctx.d.historyDays : 0 })}</p>
     </fieldset>
     <label class="field set-hour">
       <span class="field-label lab">The day rolls over at</span>
       <span class="select"><select name="rollover" data-change="settings.rollover">
         ${HOURS.map((label, h) => html`<option value="${h}" ${h === hour ? html`selected` : ''}>${label}</option>`)}
       </select></span>
-      <span class="cap field-help">A purchase at 1:00 AM belongs to the evening before. Applies to moves read from now on.</span>
+      <span class="cap field-help">${sayHtml('settings.rollover', ctx.words)}</span>
     </label>
     ${switchRow('smoothing', !!st.smoothing, 'Count pay as it is earned', payLine(ctx))}
     ${switchRow('countPending', !!st.countPending, 'Count pending transactions',
-      'Pending charges enter balances and rounds at once. A round stays in pencil until they post, usually within 3 days.')}
+      phrase('settings.pending', ctx.words))}
     <fieldset class="field">
-      <legend class="field-label lab">Byes a month</legend>
-      <div class="seg seg-fig set-byes" role="radiogroup" aria-label="Byes a month">
+      <legend class="field-label lab">${sayHtml('settings.byes', ctx.words)}</legend>
+      <div class="seg seg-fig set-byes" role="radiogroup" aria-label="${say('settings.byes', ctx.words)}">
         ${BYES.map((n) => html`<label class="seg-opt"><input type="radio" name="byes" value="${n}" data-change="settings.byes" ${n === byes ? html`checked` : ''}><span>${n}</span></label>`)}
       </div>
-      <p class="cap field-help">A bye is a day declared ahead: it scores ½, and its dollars still count.</p>
+      <p class="cap field-help">${sayHtml('settings.byes.help', ctx.words)}</p>
     </fieldset>
   </section>`;
 }
@@ -676,15 +682,41 @@ function appearanceSection(ctx) {
       </div>
       <p class="cap field-help">Device follows the light or dark setting of this ${ctx.wide ? 'computer' : 'phone'}; paper and night hold still.</p>
     </fieldset>
+    ${wordsField(ctx)}
     ${switchRow('cover', !!st.cover, 'Cover figures',
-      'Every amount becomes an ink bar, for opening Networth in public. It stays on until switched off; Cover in the masthead does the same.')}
+      phrase('settings.cover', ctx.words))}
   </section>`;
+}
+
+/**
+ * Words: Chess | Finance, and the way to the glossary. The checked option is the record's own choice (wordsOf), which
+ * is what the switch sets. Without ?words= that is also the words in force; when the address sets the words for the
+ * visit, one line names both: the words this visit shows and the words later visits use. Every render recomputes both,
+ * so a click updates the radio and the line at once while the page keeps the address's words.
+ */
+function wordsField(ctx) {
+  const words = wordsOf(ctx.state);
+  const legend = phrase('words.legend', ctx.words);
+  return html`<fieldset class="field">
+      <legend class="field-label lab">${legend}</legend>
+      <div class="seg seg-block" role="radiogroup" aria-label="${legend}">
+        ${WORDS.map((value) => html`<label class="seg-opt"><input type="radio" name="words" value="${value}" data-change="settings.words" ${
+          value === words ? html`checked` : ''}><span>${phrase('words.option.' + value, ctx.words)}</span></label>`)}
+      </div>
+      ${ctx.wordsForced ? html`<p class="cap field-help" data-key="words-forced">${ctx.demo
+        // the sample keeps nothing, so a choice made in it holds for no later visit
+        ? say('words.forced.sample', ctx.words, { mode: phrase('words.option.' + wordsMode(ctx.words), ctx.words) })
+        : say('words.forced', ctx.words, {
+          mode: phrase('words.option.' + wordsMode(ctx.words), ctx.words), saved: phrase('words.option.' + words, ctx.words) })}</p>` : ''}
+      <p class="cap field-help">${phrase('words.help', ctx.words)} <button class="btn-link" type="button" data-action="app.sheet" data-sheet="words">${
+        phrase('words.open', ctx.words)}</button></p>
+    </fieldset>`;
 }
 
 /* -------------------------------------------------------------- your rules */
 
 function lineList(ctx, key, title, note) {
-  const spec = LISTS[key];
+  const spec = key === 'principles' ? { ...LISTS[key], one: phrase('settings.principle.one', ctx.words), add: phrase('settings.principle.add', ctx.words) } : LISTS[key];
   const lines = listOf(ctx.state.settings[key]).filter((x) => typeof x === 'string');
   const room = lines.length < spec.max;
   return html`<fieldset class="set-list">
@@ -712,8 +744,8 @@ function rulesSection(ctx) {
       <h2 class="lab"><b>Your rules</b><i class="sep"></i>in your own words</h2>
     </div>
     <div class="set-rules">
-      ${lineList(ctx, 'principles', 'Opening principles', 'Shown on the candidate-move sheet before a purchase. Up to 8; clear a line to remove it.')}
-      ${lineList(ctx, 'insteads', 'Instead', 'One tap after a declined purchase records what was done instead. Up to 6; clear a line to remove it.')}
+      ${lineList(ctx, 'principles', phrase('settings.principles', ctx.words), phrase('settings.principles.help', ctx.words))}
+      ${lineList(ctx, 'insteads', 'Instead', phrase('settings.insteads.help', ctx.words))}
       <fieldset class="set-list">
         <legend class="field-label lab">Purpose tags</legend>
         <ul class="set-lines">
@@ -723,7 +755,7 @@ function rulesSection(ctx) {
               autocomplete="off" aria-label="Name of purpose tag ${i + 1}" data-change="settings.purpose" data-purpose="${key}">
           </li>`)}
         </ul>
-        <p class="cap field-help">The 4 tags a move or an account can carry. A cleared name returns to its default.</p>
+        <p class="cap field-help">${sayHtml('settings.purposes.help', ctx.words)}</p>
       </fieldset>
     </div>
   </section>`;
@@ -732,13 +764,13 @@ function rulesSection(ctx) {
 /* -------------------------------------------------------------- the record */
 
 function storageLine(ctx) {
-  if (ctx.demo) return html`The sample game is kept nowhere: it is rebuilt each time, and nothing changed in it is saved.`;
+  if (ctx.demo) return sayHtml('settings.sample.kept', ctx.words);
   const status = store.status;
   if (status.mode === 'memory') {
     return html`<span class="spot">This window cannot store anything.</span> The record lasts until the tab is closed; open Networth in a normal (not private) window, or save a copy.`;
   }
   const where = status.mode === 'localstorage' ? 'in this browser’s local storage' : 'in this browser’s own database, with one snapshot a day, up to 14 days back';
-  return html`Kept on this device only, ${where}. ${status.error ? html`<span class="spot">The last save did not go through: ${status.error}.</span>`
+  return html`${phrase('settings.storage.kept', ctx.words)} ${where}. ${status.error ? html`<span class="spot">The last save did not go through: ${status.error}.</span>`
     : status.savedAt ? html`Last saved at ${fmtTime(status.savedAt)}.` : 'Nothing has needed saving yet.'}${mirrorLine(status.mirror)}`;
 }
 
@@ -758,7 +790,7 @@ export function restoreBlock(ctx) {
   }
   if (!r) return '';
   return html`<div class="set-confirm" role="group" aria-label="Restore a copy: confirm">
-    <p class="cap"><i>${r.name}</i> holds <span data-cover-keep>${plural(r.accounts, 'account', 'accounts')} and ${plural(r.moves, 'move', 'moves')}</span>${
+    <p class="cap"><i>${r.name}</i> holds <span data-cover-keep>${plural(r.accounts, 'account', 'accounts')} and ${plural(r.moves, phrase('settings.move.one', ctx.words), phrase('settings.move.many', ctx.words))}</span>${
       r.savedAt ? html`, saved ${fmtDate(gameDay(r.savedAt, 0), 'medium')}` : ''}. It replaces everything now on this device; the bank link itself is not changed.</p>
     <div class="btn-row">
       <button class="btn btn-solid" type="button" data-action="settings.restore">Replace — this cannot be undone</button>
@@ -773,7 +805,7 @@ function recordSection(ctx) {
   return html`<section class="col col-7 set-sec" aria-label="The record">
     <div class="sec-head">
       <h2 class="lab"><b>The record</b><i class="sep"></i>this device only</h2>
-      <span class="lab" data-cover-keep>${plural(listOf(st.accounts).length, 'account', 'accounts')}<i class="sep"></i>${plural(listOf(st.txs).length, 'move', 'moves')}</span>
+      <span class="lab" data-cover-keep>${plural(listOf(st.accounts).length, 'account', 'accounts')}<i class="sep"></i>${plural(listOf(st.txs).length, phrase('settings.move.one', ctx.words), phrase('settings.move.many', ctx.words))}</span>
     </div>
     <p class="set-lede">${storageLine(ctx)}</p>
     <div class="set-copy">
@@ -787,19 +819,19 @@ function recordSection(ctx) {
         <p class="cap">Choose a file saved here earlier. It is checked first, and asked about once, before anything is replaced.</p>
       </div>
     </div>
-    ${sample ? html`<p class="cap">In the sample game there is nothing of yours to save, restore or erase.</p>` : html`
+    ${sample ? html`<p class="cap">${sayHtml('settings.sample.nothing', ctx.words)}</p>` : html`
       <div class="set-restore" role="status" aria-live="polite">${restoreBlock(ctx)}</div>
       <p class="cap">These are conveniences. Nothing here is ever required: the record keeps itself.</p>
       <div class="set-dangers">
         ${dangerous(ctx, 'erase', { ask: 'Erase everything on this device', action: 'settings.erase', go: 'Erase — this cannot be undone',
-          sentence: 'The bank key, the key of the shared list if this device has one, every account, move and round, and the daily snapshots (up to 14) are removed from this device. A saved copy is the only way back.' })}
+          sentence: phrase('settings.erase', ctx.words) })}
       </div>`}
   </section>`;
 }
 
 /* ------------------------------------------------------------------- about */
 
-function aboutSection() {
+function aboutSection(ctx) {
   return html`<section class="col col-5 set-sec" aria-label="About">
     <div class="sec-head">
       <h2 class="lab"><b>About</b><i class="sep"></i>Networth</h2>
@@ -810,14 +842,14 @@ function aboutSection() {
         <h3 class="lab"><b>It does</b></h3>
         <ul class="set-points">
           <li>Read balances and transactions through a read-only feed, about once a day.</li>
-          <li>Work out the Book of bills, the pay rhythm, the daily round against Habit, and net worth.</li>
+          <li>${sayHtml('settings.does', ctx.words)}</li>
           <li>Keep all of it on this device, in 1 record.</li>
         </ul>
       </div>
       <div>
         <h3 class="lab"><b>It does not</b></h3>
         <ul class="set-points">
-          <li>Move money, or see a bank password: you sign in on the bank’s own page.</li>
+          <li>${sayHtml('settings.doesNot', ctx.words)}</li>
           <li>Have a server, an account or tracking. 0 requests go anywhere but the bank feed.</li>
           <li>Present an estimate as the bank’s figure: italic figures marked <span class="approx">≈</span> are computed.</li>
         </ul>
@@ -840,8 +872,8 @@ export function render(ctx) {
       <div class="set-top-row">
         <h1 class="title title-l set-title">Settings</h1>
         <p class="cap set-top-note">The bank link, ${shared ? (ctx.demo ? 'sharing between devices, ' : 'sharing between devices, card purchases within minutes, income your other apps report, ') : ''}how a day is counted, appearance, your own rules and the record. ${ctx.demo
-          ? 'In the sample game a change lasts until this page is closed or reloaded, and none is kept'
-          : 'Every control saves the moment it changes'}, and none of the ${shared ? (ctx.demo ? 7 : 9) : 6} sections needs a visit: the board is complete as it stands.</p>
+          ? phrase('settings.top.sample', ctx.words)
+          : 'Every control saves the moment it changes'}${sayHtml('settings.top.complete', ctx.words, { n: shared ? (ctx.demo ? 7 : 9) : 6 })}</p>
       </div>
     </section>
     <div class="cols">
@@ -857,7 +889,7 @@ export function render(ctx) {
     </div>
     <div class="cols">
       ${recordSection(ctx)}
-      ${aboutSection()}
+      ${aboutSection(ctx)}
     </div>
   </div>`;
 }
@@ -892,6 +924,11 @@ function setByes({ el }) {
   const n = Number(el.value);
   if (!BYES.includes(n)) return;
   store.update((s) => { s.settings.byesPerMonth = n; });
+}
+
+function setWords({ el }) {
+  const choice = wordsMode(el.value);
+  store.update((s) => { chooseWords(s, choice, nowMs()); });
 }
 
 function setTheme({ el }) {
@@ -955,7 +992,8 @@ async function link({ el, values }) {
       if (navigator.storage && typeof navigator.storage.persist === 'function') navigator.storage.persist().catch(() => {});
     } catch { /* the answer does not matter */ }
     const n = store.state.accounts.filter((a) => a.source === 'bank').length;
-    toast('Linked. ' + plural(n, 'account', 'accounts') + ' on the board' + (res.added ? ', ' + plural(res.added, 'new move', 'new moves') : '') + '.');
+    const words = (context() || {}).words;
+    toast(say('settings.toast.linked', words, { accounts: plural(n, 'account', 'accounts') }) + (res.added ? ', ' + plural(res.added, phrase('settings.toast.newMoves.one', words), phrase('settings.toast.newMoves.many', words)) : '') + '.');
     return;
   }
   store.setUi({ settingsLinkError: (res && res.message) || 'The bank was not linked. Try again in a moment.' });
@@ -1096,7 +1134,7 @@ function restorePick({ el }) {
       fail('That file is not a Networth copy.');
       return;
     }
-    const problem = checkDoc(doc);
+    const problem = checkDoc(doc, { words: (context() || {}).words });
     if (problem) { fail(problem); return; }
     const now = context() ? context().now : 0;
     try {
@@ -1140,7 +1178,7 @@ async function restore() {
       return;
     }
     store.update(() => {}, { silent: true }); // now it is saved
-    toast('Restored: ' + plural(summary.accounts, 'account', 'accounts') + ', ' + plural(summary.moves, 'move', 'moves') + '.');
+    toast('Restored: ' + plural(summary.accounts, 'account', 'accounts') + ', ' + plural(summary.moves, phrase('settings.move.one', (context() || {}).words), phrase('settings.move.many', (context() || {}).words)) + '.');
   }, 250);
 }
 
@@ -1191,7 +1229,7 @@ export const actions = {
     const moved = [...inCash(store.state)].filter((key) => !before.has(key)).length;
     const account = cashAccountOf(store.state);
     const cover = !!store.state.settings.cover;
-    const cash = how === 'cash' && account ? beforeCountWords(store.state, before, Math.round(Number(account.balance) || 0), ctx.today, cover, 'payer') : null;
+    const cash = how === 'cash' && account ? beforeCountWords(store.state, before, Math.round(Number(account.balance) || 0), ctx.today, cover, 'payer', ctx.words) : null;
     const called = payer ? listedPayers(store.state).names.get(payer.payerKey) || payer.payerName : 'The payer';
     toast(payerWords(called, how, cash, raised ? raised.bank : null, cover, moved, 'settings'));
   },
@@ -1224,7 +1262,7 @@ export const actions = {
     const ctx = context();
     if (!ctx || ctx.demo) return;
     let id = cashAccountOf(ctx.state) ? cashAccountOf(ctx.state).id : null;
-    if (!id) store.update((s) => { id = ensureCashAccount(s).id; }, { undo: 'Cash in hand added' });
+    if (!id) store.update((s) => { id = ensureCashAccount(s).id; }, { undo: phrase('settings.undo.cash', (context() || {}).words) });
     if (id) openSheet('account', { id });
   },
   'settings.workday': setWorkday,
@@ -1232,6 +1270,7 @@ export const actions = {
   'settings.toggle': setToggle,
   'settings.byes': setByes,
   'settings.theme': setTheme,
+  'settings.words': setWords,
   'settings.line': setLine,
   'settings.purpose': setPurpose,
   'settings.link': link,

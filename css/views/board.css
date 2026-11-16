@@ -156,6 +156,10 @@ button.pay-box:focus-visible .check-box { outline: 2px solid var(--spot); outlin
 .board-result-mark { grid-row: 1 / 3; min-width: .6em; padding-right: .34em; font-family: var(--f-display); font-size: 3.625rem; line-height: 1; text-align: center; }
 .board-result > .fig { align-self: end; white-space: nowrap; }
 .board-result > .cap { align-self: start; margin-top: 1px; }
+/* Finance words: "+$22.89 under baseline" runs longer than "kept". The amount stays whole and the words keep together;
+   where the screen is too narrow for both (320px, or 360px with a three-digit margin), the words take the next line. */
+[data-words="finance"] .board-result > .fig { white-space: normal; }
+[data-words="finance"] .board-result :is(.kept-amt, .kept-words) { white-space: nowrap; }
 .board-ann { margin-top: var(--s-2); }
 .board-ann .sym { margin-right: .4em; font-size: 1.12em; }
 .board-ann + .moves, .board-result + .moves { margin-top: var(--s-3); }

@@ -25,6 +25,8 @@ import { addDays, diffDays, fmtDate, isYmd, monthOf, relDay } from '../model/dat
 import { ACCOUNT_TYPES, CADENCES, STREAM_KINDS, accountLabel, categoryLabel } from '../model/schema.js';
 import { annualCost, dailyCost, nextOccurrence } from '../model/book.js';
 import { moveGlyph, timeTroubleGlyph } from '../ui/glyphs.js';
+import { sayHtml } from '../ui/say.js';
+import { say } from '../model/words.js';
 import { money } from './parts.js';
 
 const UPCOMING_DAYS = 30;
@@ -77,7 +79,7 @@ function purposeLabel(ctx, key) {
 
 function accountName(ctx, id) {
   const account = id == null ? null : ctx.d.account(id);
-  return account ? accountLabel(account) : null;
+  return account ? accountLabel(account, ctx.words) : null;
 }
 
 /** True when a charge to this account lowers cash: a cash account, or no known account (ARCHITECTURE 4.9). */
@@ -201,12 +203,13 @@ function nextDay(m, rec) {
 /* ------------------------------------------------------------------- totals */
 
 function totalsBand(ctx, m) {
+  const w = ctx.words;
   const t = m.totals;
   if (!t.count) {
     return html`<section class="band bk-total">
-      <div class="sec-head"><h1 class="lab"><b>The Book</b><i class="sep"></i>recurring bills</h1></div>
+      <div class="sec-head"><h1 class="lab"><b>${sayHtml('book.title', w)}</b><i class="sep"></i>${sayHtml('book.titleNote', w)}</h1></div>
       <div class="empty empty-plain">
-        <p class="empty-title">The Book has no lines yet.</p>
+        <p class="empty-title">${sayHtml('book.empty', w)}</p>
         <p class="cap">${historyPhrase(ctx)[0].toUpperCase() + historyPhrase(ctx).slice(1)} ${historyDays(ctx) === 1 ? 'holds' : 'hold'} no repeating charge so far.
           A monthly bill is entered after its second or third charge, a yearly one after its second; nothing needs typing.</p>
       </div>
@@ -216,7 +219,7 @@ function totalsBand(ctx, m) {
   return html`<div class="cols">
     <section class="col col-5 bk-total">
       <div class="sec-head">
-        <h1 class="lab"><b>The Book</b><i class="sep"></i>recurring bills</h1>
+        <h1 class="lab"><b>${sayHtml('book.title', w)}</b><i class="sep"></i>${sayHtml('book.titleNote', w)}</h1>
         <span class="lab">${plural(t.count, 'line')}</span>
       </div>
       <p class="lab bk-total-lab">Committed each month</p>
@@ -227,7 +230,7 @@ function totalsBand(ctx, m) {
         <div class="tally-item"><span class="lab">A day</span>${money(t.perDay, { est: true })}</div>
       </div>
       <p class="cap bk-total-note">${m.debtCount
-        ? html`${plural(m.debtCount, 'payment')} toward debts ${m.debtCount === 1 ? 'leaves' : 'leave'} cash, so ${m.debtCount === 1 ? 'it is' : 'they are'} committed, but ${m.debtCount === 1 ? 'it is' : 'they are'} not a cost: ${m.debtCount === 1 ? 'it lowers' : 'they lower'} what is owed. Without ${m.debtCount === 1 ? 'it' : 'them'} the Book costs ${inFig(costPerMonth, true)} a month.`
+        ? html`${plural(m.debtCount, 'payment')} toward debts ${m.debtCount === 1 ? 'leaves' : 'leave'} cash, so ${m.debtCount === 1 ? 'it is' : 'they are'} committed, but ${m.debtCount === 1 ? 'it is' : 'they are'} not a cost: ${m.debtCount === 1 ? 'it lowers' : 'they lower'} what is owed. ${sayHtml('book.withoutDebts', w, { them: m.debtCount === 1 ? 'it' : 'them', amount: inFig(costPerMonth, true) })}`
         : html`None of the ${plural(t.count, 'line')} pays down a debt: all ${inFig(t.perMonth, true)} a month is cost.`}
         ${m.byHand === t.count
           ? html`${t.count === 1 ? 'The amount is the figure' : 'Each amount is a figure'} entered by hand, taken to repeat on its cadence.`
@@ -287,8 +290,8 @@ function upcomingSection(ctx, m) {
   if (!rows.length) {
     return html`<section class="band">${head}
       <p class="cap bk-quiet">${m.totals.count
-        ? html`No line of the Book falls between today and ${fmtDate(until, 'short')}.`
-        : html`Nothing is expected through ${fmtDate(until, 'short')}: the Book has no lines yet. Charges that repeat appear here ${UPCOMING_DAYS} days ahead.`}</p>
+        ? sayHtml('book.upcoming.none', ctx.words, { date: fmtDate(until, 'short') })
+        : sayHtml('book.upcoming.empty', ctx.words, { date: fmtDate(until, 'short'), days: UPCOMING_DAYS })}</p>
     </section>`;
   }
   const payday = m.payday;
@@ -323,7 +326,7 @@ function upcomingSection(ctx, m) {
       : payday
       ? before.length
         ? html`The rule in the margin marks what falls before payday, ${fmtDate(payday, 'dowshort')}: ${plural(before.length, 'charge')}.`
-        : html`Nothing in the Book falls before payday, ${fmtDate(payday, 'dowshort')}.`
+        : sayHtml('book.beforePayday.none', ctx.words, { day: fmtDate(payday, 'dowshort') })
       : awaited
         ? html`Pay expected ${fmtDate(awaited, 'dowshort')} is not on the bank’s record yet, so nothing is marked as falling before a payday.`
       : lapsedNote(ctx)
@@ -380,13 +383,13 @@ function paydayBand(ctx, m) {
       <div class="tally-item"><span class="lab">Cash on hand</span>${money(clock.cash)}<span class="cap">at the bank</span></div>
     </div>
     <p class="bk-due-line">${clock.shortfall > 0
-      ? html`<span class="tt lab">${timeTroubleGlyph({ decorative: true })}Time trouble</span> Cash is short ${inFig(clock.shortfall, cashEst)} of what is due ${window}.`
+      ? html`<span class="tt lab">${timeTroubleGlyph({ decorative: true, words: ctx.words })}${sayHtml('glyph.timeTrouble', ctx.words)}</span> Cash is short ${inFig(clock.shortfall, cashEst)} of what is due ${window}.`
       : clock.dueTotal > 0
-        ? html`Cash covers what is due ${window}, with ${inFig(spare, cashEst)} to spare.`
-        : html`Nothing draws on cash ${window}.`}</p>
+        ? sayHtml('book.cash.spare', ctx.words, { window, amount: inFig(spare, cashEst) })
+        : sayHtml('book.cash.none', ctx.words, { window })}</p>
     ${overdue.length ? html`<p class="cap bk-foot">Due and not yet charged, still counted from cash: ${overdue.map((item, i) => html`${i ? '; ' : ''}${item.name} ${inFig(item.amount, true)}, due ${fmtDate(item.day, 'short')}`)}.</p>` : ''}
-    ${beyondBook.length ? html`<p class="cap bk-foot">Counted from cash and not in the Book: ${beyondBook.map((item, i) => html`${i ? '; ' : ''}${item.name} ${inFig(item.amount, true)} on ${fmtDate(item.day, 'short')}`)}.</p>` : ''}
-    ${clock.nextPayday !== null ? '' : html`<p class="cap bk-foot">No payday is known yet, so the clock counts ${NO_PAYDAY_DAYS} days ahead instead.</p>`}
+    ${beyondBook.length ? html`<p class="cap bk-foot">${sayHtml('book.beyond', ctx.words, { items: beyondBook.map((item, i) => html`${i ? '; ' : ''}${item.name} ${inFig(item.amount, true)} on ${fmtDate(item.day, 'short')}`) })}</p>` : ''}
+    ${clock.nextPayday !== null ? '' : html`<p class="cap bk-foot">${sayHtml('book.noPayday', ctx.words, { days: NO_PAYDAY_DAYS })}</p>`}
   </section>`;
 }
 
@@ -402,10 +405,10 @@ function renewalsBand(ctx, m) {
     const slow = m.active.filter(({ rec }) => CADENCES[rec.cadence] && CADENCES[rec.cadence].perYear <= 4).length;
     return html`<section class="band">${head}
       <p class="cap bk-quiet">${later
-        ? html`No quarterly or longer charge falls before ${fmtDate(until, 'short')}. The next is <button class="bk-line" type="button" data-action="book.open" data-sheet="recurring" data-id="${later.id}">${later.name}</button>, ${inFig(later.amount, true)} on ${fmtDate(later.day, 'medium')}; ${inFig(later.setAside, true)} of it is set aside by time.`
+        ? html`No quarterly or longer charge falls before ${fmtDate(until, 'short')}. The next is <button class="bk-line" type="button" data-action="book.open" data-sheet="recurring" data-id="${later.id}">${later.name}</button>, ${inFig(later.amount, true)} on ${fmtDate(later.day, 'medium')}${sayHtml('book.renewal.next', ctx.words, { aside: inFig(later.setAside, true) })}`
         : slow
           ? html`No quarterly or longer charge falls before ${fmtDate(until, 'short')}.`
-          : html`The Book holds no quarterly, half-yearly or yearly charge so far. One is entered after its second charge, and is announced here ${RENEWAL_DAYS} days ahead.`}</p>
+          : sayHtml('book.renewal.none', ctx.words, { days: RENEWAL_DAYS })}</p>
     </section>`;
   }
   return html`<section class="band">${head}
@@ -420,14 +423,14 @@ function renewalsBand(ctx, m) {
             <span class="${cx('row-value fig', est && 'est')}">${est ? html`<span class="approx">≈</span>` : ''}${fmt(row.amount)}</span>
           </button>
           <div class="bk-aside">
-            <div class="bar bar-ink" style="${'--p:' + share + '%'}" role="img" aria-label="${share + '% of it set aside by time'}"><i></i></div>
-            <p class="cap">${inFig(row.setAside, true)} of ${inFig(row.amount, est)} set aside by time</p>
+            <div class="bar bar-ink" style="${'--p:' + share + '%'}" role="img" aria-label="${say('book.aside.aria', ctx.words, { share })}"><i></i></div>
+            <p class="cap">${sayHtml('book.aside', ctx.words, { aside: inFig(row.setAside, true), amount: inFig(row.amount, est) })}</p>
           </div>
         </li>`;
       })}
     </ul>
-    <p class="cap bk-foot">Set aside by time: the share of each charge that the days since its last one have used up.
-      ${ctx.d.position.smoothing ? 'The smoothed net worth already carries it.' : 'Net worth is shown as the bank reports it, so that share is not taken off the figure.'}</p>
+    <p class="cap bk-foot">${sayHtml('book.aside.foot', ctx.words)}
+      ${ctx.d.position.smoothing ? sayHtml('book.aside.smoothed', ctx.words) : 'Net worth is shown as the bank reports it, so that share is not taken off the figure.'}</p>
   </section>`;
 }
 
@@ -440,12 +443,12 @@ function verdictChips(rec) {
 }
 
 /** The name, with the only-move box kept on the line of its last word when the entry is essential. */
-function nameWithMark(rec) {
+function nameWithMark(rec, words) {
   const name = rec.name || 'Unnamed line';
   if (!rec.essential) return name;
   const cut = name.lastIndexOf(' ') + 1;
   const tail = name.slice(cut);
-  const mark = moveGlyph('□', { title: 'Essential: an only move' });
+  const mark = moveGlyph('□', { title: say('book.essential', words), words });
   // a long unbroken last word must stay free to wrap: only a short one is held on the line of the mark
   if (tail.length > 12) return html`${name} ${mark}`;
   return html`${name.slice(0, cut)}<span class="nowrap">${tail} ${mark}</span>`;
@@ -461,7 +464,7 @@ function entryRow(ctx, m, item) {
   const standing = rec.byHand ? payWords(m, rec) : '';
   return html`<li class="bk-entry" data-key="${rec.id}">
     <button class="bk-open" type="button" data-action="book.open" data-sheet="recurring" data-id="${rec.id}">
-      <span class="bk-name">${nameWithMark(rec)}</span>
+      <span class="bk-name">${nameWithMark(rec, ctx.words)}</span>
       <em class="bk-note">${rec.byHand ? html`${standing || (next ? 'First due ' + comingDay(next, m.today) : 'No day on its schedule')} <span class="bk-tag">You send it</span>` : html`${categoryLabel(rec.category)}${account ? ' · ' + account : ''}${debt ? html` · pays down ${accountName(ctx, rec.toAccountId) || 'a debt'} <span class="bk-tag">Toward debt</span>` : ''}${rec.source === 'manual' ? html` <span class="bk-tag">Entered by you</span>` : ''}`}</em>
     </button>
     <span class="${cx('bk-amt fig', est && 'est')}">${est ? html`<span class="approx">≈</span>` : ''}${fmt(rec.amount)}</span>
@@ -486,15 +489,15 @@ function linesBand(ctx, m) {
       ${m.inactive.map((rec) => {
         const dismissed = Array.isArray(rec.locks) && rec.locks.includes('active');
         return html`<li data-key="${rec.id}"><button class="row" type="button" data-action="book.open" data-sheet="recurring" data-id="${rec.id}">
-          <span class="row-label">${rec.name || 'Unnamed line'} <em class="row-note">${rec.byHand ? 'A payment you send, switched off' : dismissed ? 'Taken out of the Book by you' : 'Ended'} · ${cadenceText(rec.cadence)}${rec.anchor && !rec.byHand ? ' · last charged ' + fmtDate(rec.anchor, 'medium') : ''}</em></span>
+          <span class="row-label">${rec.name || 'Unnamed line'} <em class="row-note">${rec.byHand ? 'A payment you send, switched off' : dismissed ? say('book.removed', ctx.words) : 'Ended'} · ${cadenceText(rec.cadence)}${rec.anchor && !rec.byHand ? ' · last charged ' + fmtDate(rec.anchor, 'medium') : ''}</em></span>
           <span class="row-value fig">${fmt(rec.amount)}</span>
         </button></li>`;
       })}
     </ul>
   </details>` : '';
   const send = html`<p class="cap bk-send">${m.sent
-    ? html`${plural(m.sent, 'line')} you send yourself each month; the Board keeps ${m.sent === 1 ? 'its' : 'their'} checklist.`
-    : html`A payment you send yourself each month, by Zelle or bank transfer, gets a checklist on the Board.`}
+    ? sayHtml('book.sent.some', ctx.words, { lines: plural(m.sent, 'line'), its: m.sent === 1 ? 'its' : 'their' })
+    : sayHtml('book.sent.none', ctx.words)}
     <button class="btn-link" type="button" data-action="book.pay-add">Add a payment you send</button></p>`;
   if (!m.active.length) {
     return html`<section class="band">${head}
@@ -505,7 +508,7 @@ function linesBand(ctx, m) {
   }
   return html`<section class="band">${head}
     ${send}
-    <ol class="bk-list" aria-label="The lines of the Book, by cost a month">
+    <ol class="bk-list" aria-label="${say('book.lines.aria', ctx.words)}">
       <li class="bk-entry bk-head" data-key="head" aria-hidden="true">
         <span class="lab">Line</span><span class="lab bk-amt">Amount</span>
         <span class="bk-meta"><span class="lab bk-cad">Cadence</span><span class="lab bk-next">Next</span><span class="lab bk-purpose">Purpose</span></span>
@@ -514,7 +517,7 @@ function linesBand(ctx, m) {
       </li>
       ${m.active.map((item) => entryRow(ctx, m, item))}
     </ol>
-    <p class="cap bk-foot">${moveGlyph('□')} marks an essential line, an only move. A verdict is a note to yourself and changes no figure; tap it again to clear it.
+    <p class="cap bk-foot">${moveGlyph('□', { words: ctx.words })}${sayHtml('book.lines.foot', ctx.words)} A verdict is a note to yourself and changes no figure; tap it again to clear it.
       A line the feed has not shown yet can be added by hand, and the bank’s own charges take it over when they arrive.</p>
     ${ended}
   </section>`;
@@ -536,16 +539,17 @@ function streamRow(ctx, m, stream) {
     <span class="row-label">${stream.name || 'Unnamed stream'}
       <em class="row-note">${kind} · ${regular ? cadenceText(stream.cadence) : 'irregular'}${stream.anchor ? ' · last deposit ' + fmtDate(stream.anchor, 'dowshort') : ''}${account ? ' · ' + account : ''}${stream.active ? '' : ' · not seen lately'}</em>
       <em class="row-note bk-counted">${counted
-        ? html`Counted as earned day by day, ${inFig(daily, true)} a day`
+        ? sayHtml('book.stream.counted', ctx.words, { amount: inFig(daily, true) })
         : accrues(stream)
-          ? 'Set to count day by day; counted when it arrives while that is switched off in Settings'
-          : 'Counted when it arrives'}</em>
+          ? sayHtml('book.stream.set', ctx.words)
+          : sayHtml('book.stream.arrives', ctx.words)}</em>
     </span>
     <span class="row-value fig est"><span class="approx">≈</span>${fmt(stream.amount)}</span>
   </button></li>`;
 }
 
 function countingPassage(ctx, m) {
+  const w = ctx.words;
   const position = ctx.d.position;
   const streams = ctx.state.streams;
   const settingOn = !!ctx.state.settings.smoothing;
@@ -555,34 +559,34 @@ function countingPassage(ctx, m) {
     const payDaily = position.receivables.reduce((n, item) => n + item.daily, 0);
     const billDaily = position.payables.reduce((n, item) => n + item.daily, 0);
     const others = streams.filter((stream) => stream.active && !accrues(stream)).length;
-    return html`<p class="title title-s title-i">Pay is counted as it is earned.</p>
+    return html`<p class="title title-s title-i">${sayHtml('book.count.earned', w)}</p>
       <div class="prose bk-prose">
-        <p>${position.receivables.length === 1 ? html`${main.name} is` : html`${plural(position.receivables.length, 'stream')} are`} counted day by day: ${inFig(Math.round(payDaily), true)} is added to net worth each day,
-          so the figure rises a little daily and does not jump on payday. ${inFig(Math.round(position.receivable), true)} has been earned since ${position.receivables.length === 1 ? fmtDate(main.since, 'dowshort') : html`each one’s last deposit, the earliest on ${fmtDate(earliest, 'dowshort')},`} and not yet received;
+        <p>${position.receivables.length === 1 ? html`${main.name} is` : html`${plural(position.receivables.length, 'stream')} are`}${sayHtml('book.count.daily', w, { amount: inFig(Math.round(payDaily), true) })}
+          so the figure rises a little daily and does not jump on payday. ${sayHtml('book.count.since', w, { amount: inFig(Math.round(position.receivable), true), since: position.receivables.length === 1 ? fmtDate(main.since, 'dowshort') : html`each one’s last deposit, the earliest on ${fmtDate(earliest, 'dowshort')},` })}
           the live figure carries it in italics until the deposit lands.</p>
-        <p>Bills are counted the same way, as they are used: ${inFig(Math.round(billDaily), true)} a day comes off, so rent day is not a fall.
+        <p>${sayHtml('book.count.bills', w)} ${inFig(Math.round(billDaily), true)} a day comes off, so rent day is not a fall.
           ${others ? html`The other ${plural(others, 'stream')} ${others === 1 ? 'is' : 'are'} counted on the day ${others === 1 ? 'it arrives' : 'they arrive'}.` : ''}
           Net worth at the bank is never changed by this.</p>
       </div>`;
   }
   if (!settingOn) {
-    return html`<p class="title title-s title-i">${streams.some(accrues) ? 'Pay is counted when it arrives.' : 'Shown as the bank reports it.'}</p>
+    return html`<p class="title title-s title-i">${streams.some(accrues) ? sayHtml('book.count.arrives', w) : 'Shown as the bank reports it.'}</p>
       <div class="prose bk-prose">
-        <p>Counting pay as it is earned is switched off, so nothing accrues: net worth is shown exactly as the bank reports it.
-          It rises on the day a deposit arrives and falls on the day a bill is charged${streams.some(accrues) ? html`, even for the ${plural(streams.filter(accrues).length, 'stream')} set to count day by day` : ''}.</p>
+        <p>${sayHtml('book.count.off', w)}
+          It rises on the day a deposit arrives and falls on the day a bill is charged${streams.some(accrues) ? sayHtml('book.count.setTo', w, { streams: plural(streams.filter(accrues).length, 'stream') }) : ''}.</p>
         <p><a class="btn-link" href="#/settings">Settings</a></p>
       </div>`;
   }
   // regular pay switched off by hand on its own sheet is still regular pay: it is counted when it arrives
   const lockedOff = streams.filter((stream) => !stream.accrue && (stream.locks || []).includes('accrue') && !!CADENCES[stream.cadence]);
-  return html`<p class="title title-s title-i">${streams.some((stream) => stream.active && !!CADENCES[stream.cadence]) ? 'Pay is counted when it arrives.' : 'Shown as the bank reports it.'}</p>
+  return html`<p class="title title-s title-i">${streams.some((stream) => stream.active && !!CADENCES[stream.cadence]) ? sayHtml('book.count.arrives', w) : 'Shown as the bank reports it.'}</p>
     <div class="prose bk-prose">
       <p>${streams.length
-        ? html`None of the ${plural(streams.length, 'stream')} is counted day by day, so net worth is shown exactly as the bank reports it: it rises on the day a deposit arrives and falls on the day a bill is charged.`
+        ? sayHtml('book.count.none', w, { streams: plural(streams.length, 'stream') })
         : html`No income stream is known yet, so net worth is shown exactly as the bank reports it: it rises on the day a deposit arrives and falls on the day a bill is charged.`}</p>
       <p>${lockedOff.length
-        ? html`Day-by-day counting is switched off by hand on ${plural(lockedOff.length, 'stream')}, ${lockedOff.map((stream) => stream.name || 'an unnamed stream').join(', ')}; its own sheet switches it back on.`
-        : html`A regular paycheck is counted day by day once it has been seen 3 times${streams.length ? '; any stream can be switched by hand in its own sheet' : ''}.`}</p>
+        ? sayHtml('book.count.locked', w, { streams: plural(lockedOff.length, 'stream'), names: lockedOff.map((stream) => stream.name || 'an unnamed stream').join(', ') })
+        : sayHtml('book.count.regular', w, { rest: streams.length ? '; any stream can be switched by hand in its own sheet' : '' })}</p>
     </div>`;
 }
 
@@ -596,12 +600,12 @@ function incomeBands(ctx, m) {
       </div>
       ${streams.length
         ? html`<ul class="rows bk-streams">${streams.map((stream) => streamRow(ctx, m, stream))}</ul>
-          ${lapsed.map((item) => html`<p class="cap bk-foot" data-key="${'lapsed-' + item.id}">No deposit from ${item.name || 'a regular payer'} since ${isYmd(item.since) ? fmtDate(item.since, 'short') : 'a day not on record'}; ${(streams.find((s) => s && s.id === item.id) || {}).accrue === false ? 'it no longer sets the payday' : 'it no longer sets the payday or counts as earned'}.</p>`)}
+          ${lapsed.map((item) => html`<p class="cap bk-foot" data-key="${'lapsed-' + item.id}">No deposit from ${item.name || 'a regular payer'} since ${isYmd(item.since) ? fmtDate(item.since, 'short') : 'a day not on record'}; ${(streams.find((s) => s && s.id === item.id) || {}).accrue === false ? 'it no longer sets the payday' : say('book.lapsed.earned', ctx.words)}.</p>`)}
           <p class="cap bk-foot">A stream is a payer seen at least twice. Each deposit shown is the typical amount, in italics: not a figure the bank has reported for the next one.</p>`
         : html`<p class="cap bk-quiet">No pay has been found in ${historyPhrase(ctx)}. A payer is listed after its second deposit, and a paycheck is recognized after its third.</p>`}
     </section>
     <section class="band bk-counting">
-      <div class="sec-head"><h2 class="lab"><b>How pay is counted</b><i class="sep"></i>smoothing</h2><span class="lab">${ctx.d.position.smoothing ? 'on' : 'off'}</span></div>
+      <div class="sec-head"><h2 class="lab"><b>${sayHtml('book.counting', ctx.words)}</b><i class="sep"></i>${sayHtml('book.counting.note', ctx.words)}</h2><span class="lab">${ctx.d.position.smoothing ? 'on' : 'off'}</span></div>
       ${countingPassage(ctx, m)}
     </section>`;
 }

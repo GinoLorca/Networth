@@ -21,6 +21,7 @@ import { context } from '../runtime.js';
 import { navigate } from '../router.js';
 import { linkBank } from '../sync.js';
 import { restoreBlock } from './settings.js';
+import { sayHtml } from '../ui/say.js';
 
 const BRIDGE_URL = 'https://bridge.simplefin.org';
 
@@ -72,12 +73,12 @@ function header(ctx) {
       </p>
       <div class="mast-plate">
         <h1 class="wordmark">Networth</h1>
-        <span class="lab mast-sub">A private net-worth board<i class="sep"></i><b>Link the bank</b></span>
+        <span class="lab mast-sub">${sayHtml('connect.sub', ctx.words)}<i class="sep"></i><b>Link the bank</b></span>
       </div>
       <div class="rule-double mast-rule" aria-hidden="true"></div>
       <div class="mast-ear mast-ear-r">
         ${linkMark(ctx)}
-        <span class="cap only-wide">Read-only: it can look, it can never move money.</span>
+        <span class="cap only-wide">${sayHtml('connect.readOnly', ctx.words)}</span>
       </div>
     </div>
   </header>`;
@@ -146,7 +147,7 @@ function steps(ctx) {
       <span class="step-n" aria-hidden="true">3</span>
       <form class="step-body cn-form" data-submit="connect.link" autocomplete="off">
         <h3 class="step-title">Paste it here</h3>
-        <p>The first reading takes about 6 months of history, in 2 requests. After that the board keeps itself.</p>
+        <p>${sayHtml('connect.keeps', ctx.words)}</p>
         <label class="field cn-field">
           <span class="field-label lab">Setup token</span>
           <textarea class="tokenbox" name="token" rows="4" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
@@ -163,8 +164,8 @@ function steps(ctx) {
 function aside(ctx) {
   return html`<div class="cn-aside">
     <section class="cn-look">
-      <h2 class="lab"><b>Look around first</b><i class="sep"></i>a sample game</h2>
-      <p class="cn-look-text">A finished example with invented figures: 13 months of history, a match in progress, a Book of bills, a card and a loan. Nothing in it is saved.</p>
+      <h2 class="lab"><b>Look around first</b><i class="sep"></i>${sayHtml('connect.look.note', ctx.words)}</h2>
+      <p class="cn-look-text">${sayHtml('connect.look.text', ctx.words)}</p>
       <p><button class="btn btn-fill" type="button" data-action="app.demo">Look around first</button></p>
     </section>
     <section class="cn-restore">
@@ -175,7 +176,7 @@ function aside(ctx) {
     <section class="cn-private">
       <h2 class="lab"><i class="bank-mark"></i><b>Private</b><i class="sep"></i>this device only</h2>
       <p class="cap">The token is exchanged once for a read-only key that stays on this device. Networth has no server:
-        the bank feed is read straight from this browser, and the record is kept in its own storage.</p>
+        ${sayHtml('connect.private', ctx.words)}</p>
     </section>
   </div>`;
 }
@@ -191,11 +192,11 @@ export function render(ctx) {
       (Share → Add to Home Screen) and link the bank from there: the Home Screen app keeps its own storage.</span></p>` : ''}
     ${already ? html`<p class="notice cn-already"><i class="notice-mark"></i><span><b>Linked</b>A bank is already linked on this device, with ${found} ${
       found === 1 ? 'account' : 'accounts'}. A new token would replace the key.</span>
-      <a class="btn-link" href="#/board">Open the board</a></p>` : ''}
+      <a class="btn-link" href="#/board">${sayHtml('connect.open', ctx.words)}</a></p>` : ''}
     <div class="cn-page connect">
       <div class="cn-title">
-        <p class="lab"><b>Link the bank</b><i class="sep"></i>three moves</p>
-        <p class="connect-title">A net-worth board that reads the bank feed itself. Nothing to import, ever.</p>
+        <p class="lab"><b>Link the bank</b><i class="sep"></i>${sayHtml('connect.steps', ctx.words)}</p>
+        <p class="connect-title">${sayHtml('connect.title', ctx.words)}</p>
       </div>
       <section class="cn-how" aria-label="How to link the bank">
         <h2 class="vh">How to link the bank</h2>
@@ -205,7 +206,7 @@ export function render(ctx) {
     </div>
     <footer class="colophon cn-colophon">
       <p>Networth asks the bank feed for read-only updates and nothing else. No account, no tracking, nothing to type in: balances and
-        transactions arrive by themselves, and bills, pay, the daily round and net worth are worked out from them.</p>
+        transactions arrive by themselves, ${sayHtml('connect.colophon', ctx.words)}</p>
     </footer>
   </div>`;
 }

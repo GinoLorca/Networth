@@ -86,3 +86,16 @@
 .tx-pays { flex-wrap: wrap; gap: 2px var(--s-3); }
 .tx-pays .row-label { flex: 1 1 12em; min-width: 0; overflow-wrap: anywhere; }
 .tx-pays .btn-link { margin-left: auto; flex: none; }
+
+/* ------------------------------------------------------- the glossary (sheet-words.js) */
+
+/* every term by group: the two names on one line (wrapping on a phone), the meaning under them */
+.wd-lede { max-width: 60ch; }
+.wd-group { margin-top: var(--s-5); }
+.wd-head { padding-bottom: var(--s-2); border-bottom: var(--rule); }
+.wd-list { margin: 0; }
+.wd-term { padding: var(--s-2) 0 var(--s-3); border-bottom: var(--rule-hair); }
+.wd-names { color: var(--ink-2); overflow-wrap: anywhere; }
+.wd-now { color: var(--ink); font-weight: 600; }
+.wd-dot { color: var(--ink-3); }
+.wd-meaning { margin: 2px 0 0; max-width: 60ch; color: var(--ink-2); }

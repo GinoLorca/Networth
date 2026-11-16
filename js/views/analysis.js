@@ -19,12 +19,14 @@ import { store } from '../store.js';
 import { context, toast } from '../runtime.js';
 import { fmt, fmtSigned, fmtPlain, fmtPct, toCents } from '../model/money.js';
 import { addDays, addMonthsYm, diffDays, endOfMonth, fmtDate, fmtMonth, fmtTime, gameDay, monthOf } from '../model/dates.js';
-import { CATEGORIES, KLASSES, STREAM_KINDS, accountLabel, categoryLabel } from '../model/schema.js';
+import { CATEGORIES, KLASSES, STREAM_KINDS, accountLabel, categoryLabel, klassLabel } from '../model/schema.js';
 import { retention } from '../model/ledger.js';
 import { purchaseImpact } from '../model/forecast.js';
 import { payoff } from '../model/loans.js';
 import { firstTransactionDay } from '../model/cards.js';
-import { money } from './parts.js';
+import { money, rungNumber } from './parts.js';
+import { sayHtml } from '../ui/say.js';
+import { phrase, say } from '../model/words.js';
 
 const PACE_DAYS = 30;
 const RETENTION_MONTHS_BACK = 3;
@@ -32,7 +34,13 @@ const HORIZONS = [12, 24, 36, 60, 120];
 const QUICK_PAYMENTS = [10000, 20000, 30000, 50000];
 const QUICK_PURCHASES = [25000, 65000, 150000];
 const KLASS_ORDER = ['game', 'want', 'need', 'oneoff', 'book'];
-const KLASS_NOTES = { game: 'the daily game', want: 'judged by the month', need: '', oneoff: '', book: 'recurring bills' };
+const KLASS_NOTES = { game: 'analysis.klass.game', want: 'judged by the month', need: '', oneoff: '', book: 'analysis.klass.book' };
+
+/** The note beside a class of spending in the words of the interface ('' for none). */
+function klassNote(klass, words) {
+  const note = KLASS_NOTES[klass] || '';
+  return note.startsWith('analysis.') ? say(note, words) : note;
+}
 const RUNG_TITLES = ['GM', 'IM', 'FM', 'CM'];
 /** Limits on what a field accepts; anything outside is put back as it was. */
 const MAX_MONEY = 100000000000;
@@ -200,7 +208,7 @@ function abstract(ctx) {
   const est = heroEst(ctx);
   return html`<section class="band an-abstract">
     <div class="sec-head sec-head-wrap">
-      <h1 class="lab"><b>Analysis</b><i class="sep"></i>goals and variations</h1>
+      <h1 class="lab"><b>Analysis</b><i class="sep"></i>${sayHtml('analysis.note', ctx.words)}</h1>
       <p class="cap">What looks back is measured. What looks forward is a scenario, set in italics and never a prediction.</p>
     </div>
     <div class="tally tally-ruled tally-s an-abstract-tally">
@@ -217,11 +225,11 @@ function abstract(ctx) {
           : html`read from day ${paceFromDay(ctx)} on record; ${historyDays(ctx)} so far`}</span>
       </div>
       <div class="tally-item">
-        <span class="lab">Kept v. Habit</span>
+        <span class="lab">${sayHtml('analysis.edge', ctx.words)}</span>
         ${matchStart ? money(edge.kept, { est: true, signed: true }) : html`<span class="fig est" data-cover-keep>—</span>`}
         <span class="cap">${matchStart
           ? html`since ${fmtDate(matchStart, 'short')}<span class="not-phone">; a counterfactual, not cash</span>`
-          : html`the match begins on day ${matchFromDay(ctx)} on record; ${historyDays(ctx)} so far`}</span>
+          : sayHtml('analysis.edge.before', ctx.words, { day: matchFromDay(ctx), days: historyDays(ctx) })}</span>
       </div>
     </div>
   </section>`;
@@ -234,8 +242,8 @@ function reserveAccountsLine(ctx) {
   const flagged = cash.filter((account) => account.reserve);
   if (!cash.length) return 'No cash account is linked yet.';
   const age = ageWords(ctx, ctx.d.clock.asOf);
-  if (!flagged.length) return 'All cash accounts: none is marked as the reserve' + (age ? ' · ' + age : '') + '.';
-  return flagged.map(accountLabel).join(', ') + (age ? ' · at the bank ' + age : '');
+  if (!flagged.length) return say('analysis.reserve.none', ctx.words) + (age ? ' · ' + age : '') + '.';
+  return flagged.map((account) => accountLabel(account, ctx.words)).join(', ') + (age ? ' · at the bank ' + age : '');
 }
 
 function reserveSection(ctx) {
@@ -262,7 +270,7 @@ function reserveSection(ctx) {
     paceNote = html`The pace is not adding to cash: ${amt(pace.perMonth, { est: true, signed: true })} a month over ${daysWord(pace.days)}.`;
   } else {
     paceValue = plainFig(monthAfterDay(r.atPace.day), { est: true });
-    paceNote = html`${amt(pace.perMonth, { est: true, signed: true })} a month, if all of it reached the reserve: ${monthsWord(r.atPace.months)}.`;
+    paceNote = sayHtml('analysis.reserve.pace', ctx.words, { amount: amt(pace.perMonth, { est: true, signed: true }), months: monthsWord(r.atPace.months) });
   }
 
   const scnValue = met
@@ -271,33 +279,33 @@ function reserveSection(ctx) {
 
   return html`<section class="col col-5 an-reserve" aria-labelledby="an-reserve-h">
     <div class="sec-head">
-      <h2 class="lab" id="an-reserve-h"><b>Reserve</b><i class="sep"></i>cash set aside</h2>
+      <h2 class="lab" id="an-reserve-h"><b>${sayHtml('analysis.reserve', ctx.words)}</b><i class="sep"></i>cash set aside</h2>
       ${pct ? html`<span class="lab" data-cover-keep>${pct} of the goal</span>` : ''}
     </div>
     <p class="an-big">${money(r.have, { size: 'xl' })}</p>
     <p class="cap"><i class="bank-mark"></i>${reserveAccountsLine(ctx)}</p>
-    <div class="bar an-bar" style="${'--p:' + (r.fraction * 100).toFixed(1) + '%'}" role="img" aria-label="${pct ? pct + ' of the reserve goal' : 'The reserve goal, many times over'}"><i></i></div>
+    <div class="bar an-bar" style="${'--p:' + (r.fraction * 100).toFixed(1) + '%'}" role="img" aria-label="${pct ? say('analysis.reserve.aria', ctx.words, { pct }) : say('analysis.reserve.over', ctx.words)}"><i></i></div>
     <div class="an-sets">
       <label class="an-set">
         <span class="lab">Goal</span>
-        ${field({ field: 'reserve', value: fieldText(r.target), label: 'Reserve goal, in dollars', prefix: '$', width: 4 })}
+        ${field({ field: 'reserve', value: fieldText(r.target), label: say('analysis.reserve.goal', ctx.words), prefix: '$', width: 4 })}
       </label>
       <p class="an-set">
         <span class="lab">Gap</span>
         ${money(r.gap, { size: 'm' })}
       </p>
     </div>
-    <h3 class="lab an-sub an-sub-bare">Milestones<i class="sep"></i>measured in time</h3>
-    <ol class="ticks an-ticks" aria-label="Reserve milestones">
+    <h3 class="lab an-sub an-sub-bare">Milestones<i class="sep"></i>${sayHtml('analysis.milestones', ctx.words)}</h3>
+    <ol class="ticks an-ticks" aria-label="${say('analysis.milestones.aria', ctx.words)}">
       ${clock.milestones.map((m, i) => html`<li class="${cx(m.reached && 'is-done', i === nextIndex && 'is-next')}" data-key="${m.label}">${m.label}</li>`)}
     </ol>
     <p class="cap an-note">${clock.burn > 0
-      ? html`A day is ${amt(clock.burn, { est: true })}, the typical outflow over ${onRecord > 0 && onRecord < 60 ? 'the ' + daysWord(onRecord) + ' on record' : '60 days'}. ${met
+      ? html`${sayHtml('analysis.burn', ctx.words, { amount: amt(clock.burn, { est: true }), span: onRecord > 0 && onRecord < 60 ? 'the ' + daysWord(onRecord) + ' on record' : '60 days' })} ${met
         ? ''
         : next
         ? html`Next: ${next.label === 'Goal' ? 'the goal' : next.label}, ${amt(next.amount, { est: next.label !== 'Goal' })}; ${amt(Math.max(0, next.amount - r.have), { est: next.label !== 'Goal' })} to go.`
         : 'Every milestone is reached.'}`
-      : 'The milestones are sized once 60 days of outflow can be measured.'}</p>
+      : say('analysis.burn.later', ctx.words)}</p>
     <h3 class="lab an-sub">When the gap closes</h3>
     <ul class="rows rows-plain an-eta">
       <li class="row">
@@ -307,7 +315,7 @@ function reserveSection(ctx) {
       <li class="row">
         <span class="row-label">
           <label class="an-inline">${scenarioTag()}<span class="an-inline-text">at</span>
-            ${field({ field: 'toSavings', value: fieldText(scenario.toSavings), label: 'Scenario: dollars moved to the reserve each month', prefix: '$', width: 3, est: true })}
+            ${field({ field: 'toSavings', value: fieldText(scenario.toSavings), label: say('analysis.scenario.toSavings', ctx.words), prefix: '$', width: 3, est: true })}
             <span class="an-inline-text">a month</span></label>
           <em class="row-note">${met
             ? 'Nothing more is needed for the goal.'
@@ -449,8 +457,8 @@ function retentionSection(ctx) {
   const first = firstTransactionDay(ctx.state);
   return html`<section class="col col-4 an-retention" aria-labelledby="an-ret-h">
     <div class="sec-head">
-      <h2 class="lab" id="an-ret-h"><b>Retention</b><i class="sep"></i>by month</h2>
-      <span class="lab">kept of earned</span>
+      <h2 class="lab" id="an-ret-h"><b>${sayHtml('analysis.retention', ctx.words)}</b><i class="sep"></i>by month</h2>
+      <span class="lab">${sayHtml('analysis.retention.note', ctx.words)}</span>
     </div>
     <ol class="an-ret">
       ${rows.map((row) => {
@@ -458,22 +466,22 @@ function retentionSection(ctx) {
     return html`<li class="an-ret-row" data-key="${row.ym}">
         <p class="an-ret-head">
           <span class="lab"><b>${fmtMonth(row.ym, 'name')}</b><i class="sep"></i>${row.current ? 'so far, ' + daysWord(row.days) : row.partial ? 'from ' + fmtDate(first, 'short') : daysWord(row.days)}</span>
-          <span class="an-ret-kept"><span class="lab">Kept</span>${money(row.kept, { est, signed: true })}<span class="cap" data-cover-keep>${pct(row.rate, 1)}</span></span>
+          <span class="an-ret-kept"><span class="lab">${sayHtml('analysis.retention.kept', ctx.words)}</span>${money(row.kept, { est, signed: true })}<span class="cap" data-cover-keep>${pct(row.rate, 1)}</span></span>
         </p>
         <nw-split data-island slim a="${Math.max(0, row.kept)}" b="${Math.max(0, out)}"></nw-split>
         <p class="an-ret-parts">
-          <span><span class="lab lab-s">Earned</span>${money(row.earned, { est })}</span>
+          <span><span class="lab lab-s">${sayHtml('analysis.retention.earned', ctx.words)}</span>${money(row.earned, { est })}</span>
           <span><span class="lab lab-s">Bills</span>${money(row.bills, { est })}</span>
           <span><span class="lab lab-s">Spent</span>${money(row.spent)}</span>
         </p>
-        ${row.other ? html`<p class="cap an-ret-other">Also ${amt(row.other, { est, signed: true })} that is neither pay, a bill nor spending, such as money from an account left out. It is in what was kept.</p>` : ''}
+        ${row.other ? html`<p class="cap an-ret-other">Also ${amt(row.other, { est, signed: true })} that is neither pay, a bill nor spending, such as money from an account left out.${sayHtml('analysis.retention.other', ctx.words)}</p>` : ''}
       </li>`;
   })}
     </ol>
-    <p class="cap an-note">White is what was kept, black is bills and spending. ${est
-      ? 'Earned and bills are counted day by day, so they are italic.'
+    <p class="cap an-note">${sayHtml('analysis.retention.colors', ctx.words)} ${est
+      ? say('analysis.retention.daily', ctx.words)
       : payCounting(ctx) === 'off'
-        ? 'Pay is counted when it arrives, and each bill on the day it posts.'
+        ? say('analysis.retention.arrives', ctx.words)
         : 'Pay and bills are counted on the day they post: no regular pay has been detected yet.'}${rows.length <= RETENTION_MONTHS_BACK
       ? html` The bank’s record begins ${first ? fmtDate(first, 'short') : 'with the first sync'}; earlier months are not shown.` : ''}</p>
   </section>`;
@@ -494,9 +502,9 @@ function scenarioSection(ctx) {
   const parts = [];
   if (byKey.has('pace')) parts.push(html`Solid: the last ${daysWord(pace.days)}’ pace, ${amt(pace.perMonth, { est: true, signed: true })} a month, carried on.`);
   parts.push(html` Dashed: net worth rising ${amt(scenario.monthlyImprove)} a month.`);
-  if (hasHabit) parts.push(html` Dotted: the same pace without what was kept against Habit, ${amt(perMonth('habit'), { est: true, signed: true })} a month.`);
+  if (hasHabit) parts.push(sayHtml('analysis.projection.habit', ctx.words, { amount: amt(perMonth('habit'), { est: true, signed: true }) }));
   if (!byKey.has('pace')) parts.push(html` The measured pace joins the figure from day ${paceFromDay(ctx)} on record; ${historyDays(ctx)} so far.`);
-  else if (!hasHabit) parts.push(' The line at Habit joins once the match has begun.');
+  else if (!hasHabit) parts.push(say('analysis.projection.later', ctx.words));
 
   return html`<section class="col col-8 an-scenario" aria-labelledby="an-scn-h">
     <div class="sec-head">
@@ -577,11 +585,13 @@ function ladderSection(ctx) {
     const isNext = rung.target === nextTarget;
     const reached = rung.reached && !thin;
     const notes = [];
-    if (isNext) notes.push(pct(rung.fraction, 1) ? 'next norm · ' + pct(rung.fraction, 1) + ' there' : 'next norm');
+    if (isNext) notes.push(pct(rung.fraction, 1) ? say('analysis.ladder.nextThere', ctx.words, { pct: pct(rung.fraction, 1) }) : say('analysis.ladder.next', ctx.words));
     else if (reached) notes.push('reached');
     if (isTop && l.final.by) notes.push('by ' + fmtDate(l.final.by, 'full'));
     return html`<li class="${cx('rung', isNext && 'is-next', reached && 'is-done', !isNext && !reached && 'is-later')}" data-key="${rung.target}">
-          <span class="rung-title">${RUNG_TITLES[i] || 'N' + (rungs.length - i)}</span>
+          <span class="rung-title">${ctx.words !== 'finance'
+            ? RUNG_TITLES[i] || say('analysis.ladder.target', ctx.words, { n: rungs.length - i })
+            : rungNumber(i) ? say('analysis.ladder.target', ctx.words, { n: rungNumber(i) }) : ''}</span>
           <span class="fig">${fmt(rung.target, { decimals: 0 })}</span>
           <span class="cap" data-cover-keep>${notes.join(' · ')}</span>
         </li>`;
@@ -592,12 +602,12 @@ function ladderSection(ctx) {
         ${has ? money(l.grossApprox, { est: true, decimals: 0 }) : plainFig('—', { est: true })}
         <span class="cap">${thin
           ? html`A year’s income is read from day 60 of deposits: ${daysWord(l.days)} so far.`
-          : l.next ? html`${amt(l.next.gap, { est: true, decimals: 0 })} to the next norm` : 'every norm is reached'}</span>
+          : l.next ? sayHtml('analysis.ladder.gap', ctx.words, { amount: amt(l.next.gap, { est: true, decimals: 0 }) }) : say('analysis.ladder.all', ctx.words)}</span>
         ${thin ? '' : html`<span class="cap rung-note">${l.partial && has
           ? html`Annualized from ${daysWord(l.days)} of deposits, so a single payday moves it a long way. `
           : ''}${top > 0 && l.final.requiredGrowth != null && l.grossApprox < top && pct(l.final.requiredGrowth, 0)
-          ? html`The final norm, ${amt(top, { decimals: 0 })} by ${fmtDate(l.final.by, 'full')}, would need growth of about ${pct(l.final.requiredGrowth, 0)} a year from here.`
-          : top > 0 && l.grossApprox >= top ? 'The final norm is reached.' : top > 0 && l.final.requiredGrowth != null ? '' : html`Growth toward the final norm is read once income has been received.`}</span>`}
+          ? sayHtml('analysis.ladder.final', ctx.words, { amount: amt(top, { decimals: 0 }), date: fmtDate(l.final.by, 'full'), pct: pct(l.final.requiredGrowth, 0) })
+          : top > 0 && l.grossApprox >= top ? say('analysis.ladder.finalReached', ctx.words) : top > 0 && l.final.requiredGrowth != null ? '' : sayHtml('analysis.ladder.finalLater', ctx.words)}</span>`}
       </li>
     </ol>
     <div class="an-sets">
@@ -660,7 +670,7 @@ function spendingSection(ctx) {
     return html`<section class="col col-7 an-went" aria-labelledby="an-went-h">${head}
       <div class="empty empty-plain">
         <p class="empty-title">No spending on record.</p>
-        <p class="cap">The bank has reported no purchases in the 90 days to ${fmtDate(ctx.today, 'short')}. Categories fill in as moves post.</p>
+        <p class="cap">The bank has reported no purchases in the 90 days to ${fmtDate(ctx.today, 'short')}. ${sayHtml('analysis.went.later', ctx.words)}</p>
       </div>
     </section>`;
   }
@@ -674,7 +684,7 @@ function spendingSection(ctx) {
       </tr></thead>
       ${groups.map((group) => html`<tbody data-key="${group.klass}">
         <tr class="an-group">
-          <th scope="rowgroup"><span class="lab"><b>${(KLASSES[group.klass] || { label: 'Other' }).label}</b>${KLASS_NOTES[group.klass] ? html`<i class="sep not-phone"></i><span class="not-phone">${KLASS_NOTES[group.klass]}</span>` : ''}</span></th>
+          <th scope="rowgroup"><span class="lab"><b>${KLASSES[group.klass] ? klassLabel(group.klass, ctx.words) : 'Other'}</b>${klassNote(group.klass, ctx.words) ? html`<i class="sep not-phone"></i><span class="not-phone">${klassNote(group.klass, ctx.words)}</span>` : ''}</span></th>
           <td class="num">${fmt(group.a30)}</td>
           <td class="num">${fmt(group.a90)}</td>
           <td></td>
@@ -697,7 +707,7 @@ function spendingSection(ctx) {
       </tr></tfoot>
     </table>
     <p class="cap an-note">Purchases net of refunds, as the bank reported them; transfers and card payments are not spending. A target is optional: write one in the last column, or leave the dash. It changes nothing else.${days > 0 && days < 90
-      ? html` The record covers ${daysWord(days)}, so ${days < 30 ? 'both columns hold the same moves' : 'the 90-day column is not yet full'}.` : ''}</p>
+      ? html` The record covers ${daysWord(days)}, so ${days < 30 ? phrase('analysis.columns', ctx.words) : 'the 90-day column is not yet full'}.` : ''}</p>
   </section>`;
 }
 
@@ -713,15 +723,15 @@ function buyState(ctx) {
 }
 
 function buyConsequences(ctx, buy) {
-  const impact = purchaseImpact(ctx.state, ctx.now, { amount: buy.amount, on: buy.on }, { ledger: ctx.d.ledger });
+  const impact = purchaseImpact(ctx.state, ctx.now, { amount: buy.amount, on: buy.on }, { ledger: ctx.d.ledger, words: ctx.words });
   const clock = ctx.d.clock;
   const rows = [];
   rows.push({ key: 'nw', label: 'Net worth', note: 'A purchase is spending whichever account pays.', value: money(impact.netWorth, { est: true }) });
   if (buy.on === 'cash') {
     const runAfter = clock.burn > 0 ? Math.max(0, Math.floor(impact.cashAfter / clock.burn)) : null;
     rows.push({
-      key: 'cash', label: 'Cash on the clock',
-      note: html`From ${amt(clock.cash)}${runAfter != null && clock.runwayDays != null ? html`; about ${daysWord(runAfter)} of typical outflow, from ${clock.runwayDays}` : ''}.`,
+      key: 'cash', label: say('analysis.buy.cash', ctx.words),
+      note: html`From ${amt(clock.cash)}${runAfter != null && clock.runwayDays != null ? sayHtml('analysis.buy.cashNote', ctx.words, { days: daysWord(runAfter), from: clock.runwayDays }) : ''}.`,
       value: money(impact.cashAfter, { est: true }),
     });
     if (clock.dueTotal > 0) {
@@ -765,7 +775,7 @@ function purchaseSection(ctx) {
   const result = buy.amount > 0 ? buyConsequences(ctx, buy) : null;
   return html`<section class="band an-buy" aria-labelledby="an-buy-h">
     <div class="sec-head">
-      <h2 class="lab" id="an-buy-h"><b>Before a larger purchase</b><span class="not-phone"><i class="sep"></i>a candidate move</span></h2>
+      <h2 class="lab" id="an-buy-h"><b>Before a larger purchase</b><span class="not-phone"><i class="sep"></i>${sayHtml('analysis.buy.note', ctx.words)}</span></h2>
       ${scenarioTag('nothing is recorded', true)}
     </div>
     <div class="an-buy-grid">
@@ -789,7 +799,7 @@ function purchaseSection(ctx) {
         ${result ? html`
           <div class="an-buy-lead">
             <p class="an-buy-line">${figText(result.impact.sentence)}</p>
-            <p class="cap an-note">Consequences as of ${fmtDate(ctx.today, 'short')}, set out before the move. The choice is the owner’s.</p>
+            <p class="cap an-note">${sayHtml('analysis.buy.asOf', ctx.words, { date: fmtDate(ctx.today, 'short') })}</p>
           </div>
           <ul class="rows an-buy-rows">
             ${result.rows.map((row) => html`<li class="row" data-key="${row.key}">
@@ -797,7 +807,7 @@ function purchaseSection(ctx) {
               <span class="row-value">${row.value}</span>
             </li>`)}
           </ul>`
-    : html`<div class="an-buy-lead"><p class="an-buy-line an-buy-idle">An amount shows what the move would do to the clock and the card.</p>
+    : html`<div class="an-buy-lead"><p class="an-buy-line an-buy-idle">${sayHtml('analysis.buy.idle', ctx.words)}</p>
           <p class="cap an-note">Cash on hand is ${amt(ctx.d.clock.cash)}${ctx.d.clock.dueTotal > 0 ? html`, with ${amt(ctx.d.clock.dueTotal, { est: dueIsEstimate(ctx, ctx.d.clock) })} due ${dueWindow(ctx.d.clock, 'text', ctx.today)}` : ''}.${awaitedLine(ctx.d.clock, ctx.today)} Typing here is optional and saves nothing.</p></div>`}
       </div>
     </div>
@@ -812,27 +822,27 @@ function opponentSection(ctx) {
   const segment = habits.filter((h) => h.from <= ctx.today).slice(-1)[0] || habits[0] || null;
   const edge = ctx.d.edge;
   const head = html`<div class="sec-head">
-      <h2 class="lab" id="an-opp-h"><b>The opponent</b><i class="sep"></i>Habit</h2>
-      <span class="lab">${segment ? 'in force since ' + fmtDate(segment.from, 'short') : 'not yet seated'}</span>
+      <h2 class="lab" id="an-opp-h"><b>${sayHtml('analysis.opp', ctx.words)}</b><i class="sep"></i>${sayHtml('analysis.opp.note', ctx.words)}</h2>
+      <span class="lab">${segment ? 'in force since ' + fmtDate(segment.from, 'short') : say('analysis.opp.unseated', ctx.words)}</span>
     </div>`;
   if (!segment) {
     const days = historyDays(ctx);
     return html`<section class="band an-opp" aria-labelledby="an-opp-h">${head}
-      <p class="title title-s an-opp-title">You <i>v.</i> Habit</p>
-      <p class="cap an-note">Habit is the average of your own convenience spending. It needs 14 full days of bank history, so the match begins on day ${matchFromDay(ctx)} on record; ${days} so far, as of ${fmtDate(ctx.today, 'short')}. Until then no round is scored.</p>
-      <p class="an-opp-open"><button class="btn btn-s" type="button" data-action="app.sheet" data-sheet="habit">How Habit is set</button></p>
+      <p class="title title-s an-opp-title">${sayHtml('analysis.opp.vs', ctx.words)}</p>
+      <p class="cap an-note">${sayHtml('analysis.opp.young', ctx.words, { day: matchFromDay(ctx), days, date: fmtDate(ctx.today, 'short') })}</p>
+      <p class="an-opp-open"><button class="btn btn-s" type="button" data-action="app.sheet" data-sheet="habit">${sayHtml('analysis.opp.how', ctx.words)}</button></p>
     </section>`;
   }
   return html`<section class="band an-opp" aria-labelledby="an-opp-h">${head}
-    <p class="title title-s an-opp-title">You <i>v.</i> Habit</p>
+    <p class="title title-s an-opp-title">${sayHtml('analysis.opp.vs', ctx.words)}</p>
     <p class="cap">Your own frozen baseline of convenience spending${segment.window ? html`, averaged over ${fmtDate(segment.window.from, 'short')} – ${fmtDate(segment.window.to, 'short')}` : ''}.</p>
     <div class="tally tally-s an-opp-tally">
-      <div class="tally-item"><span class="lab">Workday</span>${money(segment.work)}<span class="cap">win at ${amt(segment.winWork, { decimals: 0 })} or less</span></div>
-      <div class="tally-item"><span class="lab">Day off</span>${money(segment.off)}<span class="cap">win at ${amt(segment.winOff, { decimals: 0 })} or less</span></div>
-      <div class="tally-item"><span class="lab">Kept v. Habit</span>${matchStart ? money(edge.kept, { est: true, signed: true }) : plainFig('—', { est: true })}<span class="cap">${matchStart ? 'since ' + fmtDate(matchStart, 'short') : 'no round yet'}</span></div>
+      <div class="tally-item"><span class="lab">Workday</span>${money(segment.work)}<span class="cap">${sayHtml('analysis.opp.win', ctx.words, { amount: amt(segment.winWork, { decimals: 0 }) })}</span></div>
+      <div class="tally-item"><span class="lab">Day off</span>${money(segment.off)}<span class="cap">${sayHtml('analysis.opp.win', ctx.words, { amount: amt(segment.winOff, { decimals: 0 }) })}</span></div>
+      <div class="tally-item"><span class="lab">${sayHtml('analysis.edge', ctx.words)}</span>${matchStart ? money(edge.kept, { est: true, signed: true }) : plainFig('—', { est: true })}<span class="cap">${matchStart ? 'since ' + fmtDate(matchStart, 'short') : say('analysis.opp.noRound', ctx.words)}</span></div>
     </div>
-    <p class="cap an-note">Habit never changes by itself. A new opponent can be seated from the last 60 days; the kept total carries over.</p>
-    <p class="an-opp-open"><button class="btn btn-s" type="button" data-action="app.sheet" data-sheet="habit">The opponent’s sheet</button></p>
+    <p class="cap an-note">${sayHtml('analysis.opp.never', ctx.words)}</p>
+    <p class="an-opp-open"><button class="btn btn-s" type="button" data-action="app.sheet" data-sheet="habit">${sayHtml('analysis.opp.sheet', ctx.words)}</button></p>
   </section>`;
 }
 

@@ -21,7 +21,7 @@
 import { html, cx, attrs } from '../ui/dom.js';
 import { fmt, fmtPlain, toCents } from '../model/money.js';
 import { fmtDate, fmtTime, isYmd, nowMs } from '../model/dates.js';
-import { CATEGORIES, KLASSES, PURPOSES, GLYPHS, ACCOUNT_TYPES, accountLabel, categoryLabel, klassOf, makeAccount } from '../model/schema.js';
+import { CATEGORIES, KLASSES, PURPOSES, GLYPHS, ACCOUNT_TYPES, accountLabel, categoryLabel, klassLabel, klassOf, makeAccount } from '../model/schema.js';
 import { learnRule, confirmMove } from '../model/classify.js';
 import { noteMove } from '../model/corrections.js';
 import { refresh } from '../model/detect.js';
@@ -30,7 +30,9 @@ import { skipRow } from '../model/byhand.js';
 import { askAgain, incomeOf, incomeQuestions, itemAnswer, rowPayments } from '../model/income.js';
 import { againWords, paymentState, rowLineLead } from './income-words.js';
 import { moveGlyph } from '../ui/glyphs.js';
-import { flowClass, flowLookups, inlineMoney, txName } from './parts.js';
+import { flowClass, flowLookups, inlineMoney, keepWhole, txName } from './parts.js';
+import { sayHtml } from '../ui/say.js';
+import { phrase, say } from '../model/words.js';
 import { store } from '../store.js';
 import { closeSheet } from '../router.js';
 import { context, toast } from '../runtime.js';
@@ -38,7 +40,13 @@ import { context, toast } from '../runtime.js';
 const KLASS_ORDER = ['game', 'need', 'want', 'oneoff', 'book'];
 const GLYPH_ORDER = ['!!', '!', '!?', '?!', '?', '??', '□'];
 const OUTCOMES = [['yes', 'Yes'], ['notyet', 'Not yet'], ['no', 'No']];
-const KIND_WORDS = { spend: 'Move', income: 'Income', refund: 'Refund', transfer: 'Transfer', payment: 'Payment', decline: 'Declined purchase' };
+const KIND_WORDS = { spend: 'tx.kind.spend', income: 'Income', refund: 'Refund', transfer: 'Transfer', payment: 'Payment', decline: 'tx.kind.decline' };
+
+/** The kind of a transaction in the words of the interface (the sheet's head). */
+function kindWord(kind, words) {
+  const word = KIND_WORDS[kind] || 'tx.kind.spend';
+  return word.startsWith('tx.') ? phrase(word, words) : word;
+}
 const NOTE_MAX = 280;
 const VIA_MAX = 120;
 const NEW_ACCOUNT = 'new';
@@ -103,7 +111,7 @@ function undoLast() {
 
 export function label(ctx, params) {
   const tx = findTx(ctx.state, params && params.id);
-  return tx ? 'Move: ' + nameOf(tx) : 'Move';
+  return tx ? say('tx.sheet', ctx.words, { name: nameOf(tx) }) : phrase('tx.sheet.bare', ctx.words);
 }
 
 /* ------------------------------------------------------------------ render */
@@ -112,9 +120,9 @@ export function render(ctx, params) {
   const tx = findTx(ctx.state, params && params.id);
   if (!tx) {
     return html`<div class="sheet-body">
-      <p class="sheet-head lab"><b>Move</b></p>
-      <h2 class="sheet-title">This move is no longer on the sheet.</h2>
-      <p class="cap">A pending row can leave the bank feed before it posts, and a tapped-in move is replaced by the bank’s own row within 7 days.</p>
+      <p class="sheet-head lab"><b>${sayHtml('tx.sheet.bare', ctx.words)}</b></p>
+      <h2 class="sheet-title">${sayHtml('tx.gone', ctx.words)}</h2>
+      <p class="cap">${sayHtml('tx.gone.why', ctx.words)}</p>
       <div class="sheet-actions"><button class="btn" type="button" data-action="app.sheet-close">Close</button></div>
     </div>`;
   }
@@ -124,7 +132,7 @@ export function render(ctx, params) {
   const found = ctx.d.annotations(tx.day).moves.get(tx.id) || null;
   const ann = found && prematch && tx.klass === 'game' && !found.manual ? null : found;
   const manual = tx.source === 'manual';
-  const head = html`<p class="sheet-head lab"><b>${KIND_WORDS[tx.kind] || 'Move'}</b><i class="sep"></i>${prematch ? '' : html`Round ${round.n}<i class="sep"></i>`}${fmtDate(tx.day, 'dowshort')}</p>
+  const head = html`<p class="sheet-head lab"><b>${kindWord(tx.kind, ctx.words)}</b><i class="sep"></i>${prematch ? '' : html`${keepWhole(sayHtml('tx.round', ctx.words, { n: round.n }), ctx.words)}<i class="sep"></i>`}${keepWhole(fmtDate(tx.day, 'dowshort'), ctx.words)}</p>
     <h2 class="sheet-title">${nameOf(tx)}</h2>`;
 
   if (manual && tx.matchId) {
@@ -132,7 +140,7 @@ export function render(ctx, params) {
     return html`<div class="sheet-body" data-key="${'tx-' + tx.id}" ${coverAttr(ctx)}>
       ${head}
       ${facts(ctx, tx)}
-      <p class="cap">The bank has reported this move; its own row replaced the one ${tx.via === 'alert' ? 'from the card’s alert' : tx.via === 'income' ? 'your other app reported' : 'tapped in'}, which no longer counts.</p>
+      <p class="cap">${sayHtml('tx.replaced', ctx.words, { from: tx.via === 'alert' ? 'from the card’s alert' : tx.via === 'income' ? 'your other app reported' : 'tapped in' })}</p>
       <div class="sheet-actions">
         ${bank ? html`<button class="btn" type="button" data-action="app.sheet" data-sheet="tx" data-id="${bank.id}">The bank’s row</button>` : ''}
         <button class="btn btn-solid" type="button" data-action="app.sheet-close">Close</button>
@@ -144,17 +152,17 @@ export function render(ctx, params) {
     ${head}
     ${facts(ctx, tx)}
     ${manual && tx.inBalance === true ? html`<p class="cap">The bank gives this card’s balance but none of its transactions. Its balance has taken this purchase in, so it no longer lowers the figures; this line is its only record.</p>` : ''}
-    ${ann ? html`<p class="tx-ann"><span class="tx-ann-sym">${moveGlyph(ann.glyph)}</span><span class="cap">${figured(ann.why)}.${ann.manual ? ' Your own mark.' : ''}</span></p>` : ''}
+    ${ann ? html`<p class="tx-ann"><span class="tx-ann-sym">${moveGlyph(ann.glyph, { words: ctx.words })}</span><span class="cap">${figured(ann.why)}.${ann.manual ? ' Your own mark.' : ''}</span></p>` : ''}
     ${classification(ctx, tx)}
     ${isSpendish(tx) && CATEGORIES[tx.category] && CATEGORIES[tx.category].stop ? html`<div class="tx-check">
       <label class="check"><input type="checkbox" name="planned" ${tx.planned ? html`checked` : ''}><span class="check-box" aria-hidden="true"></span><span>It was planned</span></label>
-      <p class="cap">A stop in the morning plan is a book move: it prints bare, whichever stop of the day it was.</p>
+      <p class="cap">${sayHtml('tx.bookMove', ctx.words)}</p>
     </div>` : ''}
-    ${tx.kind !== 'transfer' ? glyphField(tx) : ''}
+    ${tx.kind !== 'transfer' ? glyphField(tx, ctx.words) : ''}
     ${tx.kind === 'spend' ? business(ctx, tx) : ''}
     <label class="field">
       <span class="field-label lab">Note</span>
-      <textarea class="textarea tx-note" name="note" rows="2" maxlength="${NOTE_MAX}" placeholder="Printed under the move">${tx.note || ''}</textarea>
+      <textarea class="textarea tx-note" name="note" rows="2" maxlength="${NOTE_MAX}" placeholder="${say('tx.note.placeholder', ctx.words)}">${tx.note || ''}</textarea>
     </label>
     <div class="sheet-actions">
       ${manual && tx.via !== 'income' ? html`<button class="btn" type="button" data-action="tx.remove" data-id="${tx.id}">Remove</button>` : ''}
@@ -165,15 +173,15 @@ export function render(ctx, params) {
 
 /* ------------------------------------------------------------ what is known */
 
-function statusNote(tx) {
-  if (tx.kind === 'decline') return 'not paid: a declined purchase moves no money';
+function statusNote(tx, words) {
+  if (tx.kind === 'decline') return phrase('tx.declined', words);
   if (tx.source === 'manual' && tx.via === 'alert' && tx.inBalance === true) return 'from the card’s text alert' + (Number.isFinite(tx.at) ? ' at ' + fmtTime(tx.at) : '') + '; the bank’s balance has taken it in';
   if (tx.source === 'manual' && tx.via === 'alert') return 'from the card’s text alert' + (Number.isFinite(tx.at) ? ' at ' + fmtTime(tx.at) : '') + '; the bank has not reported it yet';
   if (tx.source === 'manual' && tx.via === 'income') {
     // a payment another app of the owner reported (3.7); un-marked there, it leaves here too
     const marked = 'marked paid in your other app' + (Number.isFinite(tx.at) ? ' at ' + fmtTime(tx.at) : '');
     if (tx.matchId) return marked + '; the bank’s row has taken its place';
-    return tx.income && tx.income.how === 'cash' ? marked + '; paid in cash, it counts in Cash in hand' : marked + '; the bank has not reported it yet';
+    return tx.income && tx.income.how === 'cash' ? marked + phrase('tx.cashInHand', words) : marked + '; the bank has not reported it yet';
   }
   if (tx.source === 'manual') return 'tapped in' + (tx.loggedAt ? ' at ' + fmtTime(tx.loggedAt) : '') + '; the bank has not reported it yet';
   if (tx.pending) return 'pending at the bank: the amount can still change';
@@ -207,7 +215,7 @@ function confirmsRows(ctx, tx) {
   if (tx.source !== 'bank' || typeof tx.reportedAs !== 'string' || !tx.reportedAs || ctx.demo) return '';
   const asked = incomeQuestions(ctx.state, ctx.now).confirm.some((c) => c.row === tx.id);
   return rowPayments(ctx.state, tx.id).map((p, i) => againRow(ctx, p.key,
-    html`${rowLineLead(asked)}<span data-cover-keep>${p.label}</span>, ${inlineMoney(p.cents)}, marked ${fmtDate(p.marked, 'short')}`, i + 1));
+    html`${rowLineLead(asked, ctx.words)}<span data-cover-keep>${p.label}</span>, ${inlineMoney(p.cents)}, marked ${fmtDate(p.marked, 'short')}`, i + 1));
 }
 
 /** The payment the owner sends that this bank row pays, or null. */
@@ -230,7 +238,7 @@ function facts(ctx, tx) {
     : html`<span class="${cx('row-value fig', pencil && 'est', flow)}">${tx.source === 'manual' && pencil ? html`<span class="approx">≈</span>` : ''}${sign}${fmt(tx.amount)}</span>`;
   return html`<ul class="rows tx-facts">
     <li class="row" data-key="amount">
-      <span class="row-label">${tx.kind === 'decline' ? 'Price' : 'Amount'} <em class="row-note">${statusNote(tx)}</em></span>
+      <span class="row-label">${tx.kind === 'decline' ? 'Price' : 'Amount'} <em class="row-note">${statusNote(tx, ctx.words)}</em></span>
       ${amount}
     </li>
     <li class="row" data-key="day">
@@ -239,7 +247,7 @@ function facts(ctx, tx) {
     </li>
     ${account ? html`<li class="row" data-key="account">
       <span class="row-label">Account</span>
-      <span class="tx-v">${accountLabel(account)}${account.institution ? html` <em class="row-note">${account.institution}</em>` : ''}</span>
+      <span class="tx-v">${accountLabel(account, ctx.words)}${account.institution ? html` <em class="row-note">${account.institution}</em>` : ''}</span>
     </li>` : ''}
     ${tx.via === 'income' && tx.income ? againRow(ctx, tx.income.key, null, 0) : confirmsRows(ctx, tx)}
     ${pays ? html`<li class="row tx-pays" data-key="pays">
@@ -255,18 +263,18 @@ function facts(ctx, tx) {
 
 /* ---------------------------------------------------------- classification */
 
-function categoryOptions(tx) {
+function categoryOptions(tx, words) {
   const option = (key, text) => html`<option value="${key}" ${tx.category === key ? html`selected` : ''}>${text}</option>`;
   const byKlass = (klass) => Object.keys(CATEGORIES).filter((key) => CATEGORIES[key].klass === klass).map((key) => option(key, CATEGORIES[key].label));
   if (tx.kind === 'decline') {
-    return KLASS_ORDER.filter((k) => k !== 'book').map((k) => html`<optgroup label="${KLASSES[k].label}">${byKlass(k)}</optgroup>`);
+    return KLASS_ORDER.filter((k) => k !== 'book').map((k) => html`<optgroup label="${klassLabel(k, words)}">${byKlass(k)}</optgroup>`);
   }
   if (tx.flow === 'in') {
     return html`<optgroup label="Money in">${option('income', 'Income')}</optgroup>
       <optgroup label="Not income">${option('transfer', 'Transfer between my accounts')}${option('card_payment', 'Card or loan payment')}</optgroup>
       <optgroup label="A refund of">${Object.keys(CATEGORIES).map((key) => option(key, CATEGORIES[key].label))}</optgroup>`;
   }
-  return html`${KLASS_ORDER.map((k) => html`<optgroup label="${KLASSES[k].label}">${byKlass(k)}</optgroup>`)}
+  return html`${KLASS_ORDER.map((k) => html`<optgroup label="${klassLabel(k, words)}">${byKlass(k)}</optgroup>`)}
     <optgroup label="Not spending">${option('transfer', 'Transfer between my accounts')}${option('card_payment', 'Card or loan payment')}</optgroup>`;
 }
 
@@ -283,20 +291,20 @@ function classification(ctx, tx) {
   const stream = tx.streamId ? ctx.state.streams.find((s) => s.id === tx.streamId) : null;
 
   return html`<fieldset class="tx-class">
-    <legend class="vh">How this move is read</legend>
+    <legend class="vh">${sayHtml('tx.read', ctx.words)}</legend>
     ${frozen ? html`<p class="cap tx-frozen">${tx.pairId
       ? 'One leg of a movement between your own accounts, paired with the other: never spending, never income.'
-      : 'A deposit of ' + (stream ? stream.name : 'a known income stream') + ', counted as income. The stream itself is edited in the Book.'}</p>`
+      : 'A deposit of ' + (stream ? stream.name : 'a known income stream') + ', counted as income. ' + phrase('tx.stream.book', ctx.words)}</p>`
       : html`<label class="field">
           <span class="field-label lab">Category</span>
-          <span class="select"><select name="category" data-change="tx.category">${categoryOptions(tx)}</select></span>
+          <span class="select"><select name="category" data-change="tx.category">${categoryOptions(tx, ctx.words)}</select></span>
         </label>`}
     ${isSpendish(tx) ? html`<fieldset class="field">
       <legend class="field-label lab">Class</legend>
       <div class="chips" role="radiogroup" aria-label="Class">
-        ${KLASS_ORDER.map((k) => html`<label class="chip"><input type="radio" name="klass" value="${k}" ${tx.klass === k ? html`checked` : ''}><span>${KLASSES[k].label}</span></label>`)}
+        ${KLASS_ORDER.map((k) => html`<label class="chip"><input type="radio" name="klass" value="${k}" ${tx.klass === k ? html`checked` : ''}><span>${klassLabel(k, ctx.words)}</span></label>`)}
       </div>
-      <p class="field-help cap">Only Convenience is played against Habit in the daily round.</p>
+      <p class="field-help cap">${sayHtml('tx.class.help', ctx.words)}</p>
     </fieldset>` : ''}
     ${moved && frozen ? '' : html`<fieldset class="field">
       <legend class="field-label lab">Purpose</legend>
@@ -308,24 +316,24 @@ function classification(ctx, tx) {
       <legend class="field-label lab">A correction applies to</legend>
       <div class="seg seg-block" role="radiogroup" aria-label="A correction applies to">
         <label class="seg-opt"><input type="radio" name="scope" value="all" ${labelled ? '' : html`checked`}><span>All from this merchant</span></label>
-        <label class="seg-opt"><input type="radio" name="scope" value="one" ${labelled ? html`checked` : ''}><span>This move only</span></label>
+        <label class="seg-opt"><input type="radio" name="scope" value="one" ${labelled ? html`checked` : ''}><span>${sayHtml('tx.scope.one', ctx.words)}</span></label>
       </div>
       <p class="field-help cap">${sameMerchant > 1
-        ? html`All: the <i data-cover-keep>${sameMerchant}</i> moves from ${merchantOf(tx)} on record, and every later one, follow. A move corrected on its own keeps its correction.`
-        : html`All: later moves from ${merchantOf(tx)} follow. This is the only one on record so far.`}</p>
+        ? sayHtml('tx.scope.all', ctx.words, { count: html`<i data-cover-keep>${sameMerchant}</i>`, merchant: merchantOf(tx) })
+        : sayHtml('tx.scope.later', ctx.words, { merchant: merchantOf(tx) })}</p>
     </fieldset>` : ''}
   </fieldset>`;
 }
 
-function glyphField(tx) {
+function glyphField(tx, words) {
   const own = tx.glyph && GLYPHS[tx.glyph] ? tx.glyph : '';
   return html`<fieldset class="field">
-    <legend class="field-label lab">Annotation</legend>
-    <div class="chips tx-glyphs" role="radiogroup" aria-label="Annotation">
-      <label class="chip"><input type="radio" name="glyph" value="" ${own ? '' : html`checked`}><span>The annotator’s</span></label>
-      ${GLYPH_ORDER.map((g) => html`<label class="chip tx-glyph"><input type="radio" name="glyph" value="${g}" ${own === g ? html`checked` : ''}><span>${moveGlyph(g)}</span></label>`)}
+    <legend class="field-label lab">${sayHtml('tx.glyph', words)}</legend>
+    <div class="chips tx-glyphs" role="radiogroup" aria-label="${say('tx.glyph', words)}">
+      <label class="chip"><input type="radio" name="glyph" value="" ${own ? '' : html`checked`}><span>${sayHtml('tx.glyph.auto', words)}</span></label>
+      ${GLYPH_ORDER.map((g) => html`<label class="chip tx-glyph"><input type="radio" name="glyph" value="${g}" ${own === g ? html`checked` : ''}><span>${moveGlyph(g, { words })}</span></label>`)}
     </div>
-    <p class="field-help cap">A mark of your own replaces the annotator’s on this move. Most moves carry none.</p>
+    <p class="field-help cap">${sayHtml('tx.glyph.help', words)}</p>
   </fieldset>`;
 }
 
@@ -371,12 +379,12 @@ function business(ctx, tx) {
           <label class="field">
             <span class="field-label lab">Held in</span>
             <span class="select"><select name="equip_account">
-              ${accounts.map((a) => html`<option value="${a.id}" ${chosen === a.id ? html`selected` : ''}>${accountLabel(a)}</option>`)}
+              ${accounts.map((a) => html`<option value="${a.id}" ${chosen === a.id ? html`selected` : ''}>${accountLabel(a, ctx.words)}</option>`)}
               <option value="${NEW_ACCOUNT}" ${chosen === NEW_ACCOUNT ? html`selected` : ''}>A new equipment entry</option>
             </select></span>
           </label>
         </div>
-        <p class="field-help cap">That part of the <span data-fig>${fmt(tx.amount)}</span> becomes an asset on Material from ${fmtDate(tx.day, 'short')}; the rest is spending. Half the price is the starting estimate.</p>
+        <p class="field-help cap">${sayHtml('tx.asset', ctx.words, { amount: html`<span data-fig>${fmt(tx.amount)}</span>`, date: fmtDate(tx.day, 'short') })}</p>
       </div>
     </div>
   </div>`;
@@ -505,7 +513,7 @@ function save({ values, data }) {
     if (tx.review) {
       store.update((s) => {
         confirmMove(s, tx.id);
-      }, { undo: 'Move confirmed' });
+      }, { undo: phrase('tx.undo.confirmed', (context() || {}).words) });
       closeSheet();
       toast('Confirmed as read: ' + nameOf(tx) + ', ' + fmt(tx.amount) + ' on ' + fmtDate(tx.day, 'short') + '.', { action: 'Undo', onAction: undoLast });
       return;
@@ -539,7 +547,7 @@ function save({ values, data }) {
         if (existing) {
           row.capital.accountId = existing.id;
           countInto(row, existing);
-          heldIn = accountLabel(existing);
+          heldIn = accountLabel(existing, ctx.words);
         } else {
           const account = makeAccount({
             type: 'equipment', name: 'Equipment', balance: row.capital.value, asOf: ctx.now, basis: 'estimate',
@@ -548,7 +556,7 @@ function save({ values, data }) {
           s.accounts.push(account);
           row.capital.accountId = account.id;
           row.capital.created = true;
-          heldIn = 'a new entry named ' + accountLabel(account);
+          heldIn = 'a new entry named ' + accountLabel(account, ctx.words);
         }
       }
     }
@@ -562,10 +570,10 @@ function save({ values, data }) {
       }
     }
     refresh(s, ctx.now);
-  }, { undo: corrected ? 'Move corrected' : 'Move updated' });
+  }, { undo: phrase(corrected ? 'tx.toast.corrected' : 'tx.toast.updated', ctx.words) });
 
   closeSheet();
-  const what = result.changed > 1 ? result.changed + ' moves from ' + merchantOf(tx) + ' corrected.' : corrected ? 'Move corrected.' : 'Move updated.';
+  const what = result.changed > 1 ? say('tx.toast.many', ctx.words, { count: result.changed, merchant: merchantOf(tx) }) : phrase(corrected ? 'tx.toast.corrected' : 'tx.toast.updated', ctx.words) + '.';
   let split = '';
   if (touched.includes('capital')) {
     split = next.capital
@@ -621,7 +629,7 @@ export const actions = {
     const ctx = context();
     const tx = ctx ? findTx(ctx.state, data.id) : null;
     if (!tx || tx.source !== 'manual') return;
-    const words = tx.kind === 'decline' ? 'Declined purchase removed' : 'Move removed';
+    const words = phrase(tx.kind === 'decline' ? 'tx.toast.declinedRemoved' : 'tx.toast.removed', ctx.words);
     store.update((s) => { removeManual(s, tx.id, nowMs()); }, { undo: words });
     closeSheet();
     toast(words + '.', { action: 'Undo', onAction: undoLast });

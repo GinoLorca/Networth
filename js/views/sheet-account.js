@@ -36,13 +36,15 @@ import { context, toast } from '../runtime.js';
 import { openSheet, closeSheet } from '../router.js';
 import { fmt, fmtPlain, toCents } from '../model/money.js';
 import { fmtDate, fmtTime, gameDay, diffDays, nowMs, parts as ymdParts } from '../model/dates.js';
-import { ACCOUNT_TYPES, accountLabel, makeAccount } from '../model/schema.js';
+import { ACCOUNT_TYPES, accountLabel, accountTypeLabel, makeAccount } from '../model/schema.js';
 import { lacksHistory } from '../model/feed.js';
 import { refresh } from '../model/detect.js';
 import { CASH_ROLE, COUNT_MAX_CENTS, countCash, removeCount } from '../model/income.js';
 import { countWords, countedWords, isCountedCash, removedWords } from './income-words.js';
 import { icon } from '../ui/icons.js';
 import { coverText, money, recentList } from './parts.js';
+import { sayHtml } from '../ui/say.js';
+import { phrase, say } from '../model/words.js';
 
 /** What can be added by hand, in the order offered. */
 const KINDS = [
@@ -173,11 +175,11 @@ function field(name, label, opts = {}) {
   </label>`;
 }
 
-function typeField(types, current, help) {
+function typeField(types, current, help, words) {
   return html`<label class="field">
     <span class="field-label lab">Kind</span>
     <span class="select"><select name="type" data-change="account.type">
-      ${types.map((type) => html`<option value="${type}" ${attrs({ selected: type === current })}>${ACCOUNT_TYPES[type].label}</option>`)}
+      ${types.map((type) => html`<option value="${type}" ${attrs({ selected: type === current })}>${accountTypeLabel(type, words)}</option>`)}
     </select></span>
     ${help ? html`<span class="field-help cap">${help}</span>` : ''}
   </label>`;
@@ -196,15 +198,22 @@ function option(name, label, checked, help) {
 
 /* ----------------------------------------------------------------- chooser */
 
-function chooser() {
+/** A kind's note in the words of the interface: the few words that differ are swapped for the vocabulary's. */
+function kindNote(kind, words) {
+  let note = kind.note;
+  for (const key of ['account.kind.slow', 'account.kind.days', 'account.kind.workedDown']) note = note.replace(phrase(key, 'chess'), phrase(key, words));
+  return note;
+}
+
+function chooser(words) {
   return html`<div class="sheet-body">
-    <p class="sheet-head lab"><b>Material</b><i class="sep"></i>by hand</p>
+    <p class="sheet-head lab"><b>${sayHtml('account.chooser', words)}</b><i class="sep"></i>by hand</p>
     <h2 class="sheet-title">Add what the bank cannot see.</h2>
     <p class="cap">Six kinds. Each joins net worth at the figure you give, is marked as yours, and can be removed again.</p>
     <ul class="rows acct-kinds">
       ${KINDS.map((kind) => html`<li data-key="${kind.type}">
         <button class="row" type="button" data-action="app.sheet" data-sheet="account" data-type="${kind.type}">
-          <span class="row-label">${kind.title} <em class="row-note">${kind.note}</em></span>
+          <span class="row-label">${kind.title} <em class="row-note">${kindNote(kind, words)}</em></span>
           <span class="row-action">${icon('chevron-right')}</span>
         </button>
       </li>`)}
@@ -242,14 +251,14 @@ function manualForm(ctx, account, type) {
   const basis = account ? (account.basis === 'statement' ? 'statement' : 'estimate') : debt ? 'statement' : 'estimate';
   const loan = account && account.loan ? account.loan : null;
   const quick = account ? account.quickSale : type === 'equipment' ? 0.5 : null;
-  const typeLabel = ACCOUNT_TYPES[type].label;
+  const typeLabel = accountTypeLabel(type, ctx.words);
   const valueLabel = debt ? 'What is owed' : 'What it is worth';
   const wasType = account && account.type !== type;
 
   const figure = fresh ? '' : html`<p class="acct-now">
     ${money(debt ? -value : value, { est: estimate })}
     <span class="cap">${debt ? 'owed' : 'counted'} today · ${amortised
-      ? html`worked down by Networth from the <span data-fig>${fmt(Math.abs(latest ? latest.balance : account.balance))}</span> entered ${shortDay(ctx, latest ? latest.day : null)}`
+      ? sayHtml('account.workedDown', ctx.words, { amount: html`<span data-fig>${fmt(Math.abs(latest ? latest.balance : account.balance))}</span>`, day: shortDay(ctx, latest ? latest.day : null) })
       : (account.basis === 'statement' ? 'from a statement, ' : 'your estimate, ') + 'entered ' + shortDay(ctx, latest ? latest.day : gameDay(account.asOf, ctx.state.settings.rolloverHour))}</span>
   </p>`;
 
@@ -259,7 +268,7 @@ function manualForm(ctx, account, type) {
 
   return html`<form class="sheet-body" data-submit="account.save" data-input="account.touch" data-id="${account ? account.id : ''}" novalidate autocomplete="off"${coverAttr(ctx)}>
     <p class="sheet-head lab"><b>${fresh ? 'New' : 'By hand'}</b><i class="sep"></i>${typeLabel}</p>
-    <h2 class="sheet-title">${fresh ? TITLES[type] : accountLabel(account)}</h2>
+    <h2 class="sheet-title">${fresh ? (type === 'cash' ? phrase('account.cash.title', ctx.words) : TITLES[type]) : accountLabel(account, ctx.words)}</h2>
     ${figure}
 
     <div class="acct-set acct-set-first">
@@ -284,25 +293,25 @@ function manualForm(ctx, account, type) {
       </fieldset>
       ${field('note', 'Note on the figure', { value: fresh || !latest ? '' : latest.note, placeholder: debt ? 'From the March statement' : 'What it would sell for', maxlength: 120,
         help: fresh || !latest || latest.day === ctx.today
-          ? 'Optional. Kept beside the figure in the record.'
-          : 'Optional. Kept beside the figure in the record. Left as it is, it stays with the ' + shortDay(ctx, latest.day) + ' figure and a new figure starts without one.' })}
+          ? phrase('account.noteKept', ctx.words)
+          : say('account.noteKept.later', ctx.words, { day: shortDay(ctx, latest.day) }) })}
     </div>
 
     <div class="acct-set">
       <p class="lab"><b>On the statement</b></p>
       ${field('name', 'Name', { value: account ? account.name : '', placeholder: typeLabel, maxlength: 60, help: 'Left empty, it is listed as ' + typeLabel + '.' })}
       ${typeField(MANUAL_TYPES, type, wasType
-        ? 'Listed as ' + ACCOUNT_TYPES[account.type].label + ' until you save. ' + (groupOf(account.type) !== groupOf(type) ? 'The change moves it to the other side of the statement.' : 'The change moves it within the statement.')
-        : 'Decides where it stands on Material: cash now, money in days, slow to sell, or owed.')}
+        ? 'Listed as ' + accountTypeLabel(account.type, ctx.words) + ' until you save. ' + (groupOf(account.type) !== groupOf(type) ? 'The change moves it to the other side of the statement.' : 'The change moves it within the statement.')
+        : phrase('account.type.help', ctx.words), ctx.words)}
       ${debt || type === 'investment' || type === 'receivable'
         ? field('institution', debt ? 'Lender' : type === 'receivable' ? 'Owed by' : 'Held at', { value: account ? account.institution : '', maxlength: 60, help: 'Optional. Printed under the name.' })
         : ''}
     </div>
 
     ${isSlow(type) ? html`<div class="acct-set">
-      <p class="lab"><b>Sold fast</b></p>
-      ${field('quick', 'Quick-sale share', { value: quick == null ? '' : plainNumber(quick * 100), unit: '%', inputmode: 'decimal', maxlength: 6, error: errors.quick,
-        help: 'The share of the figure a sale within days would raise. It changes one line only: net worth “if everything slow had to be sold fast”. Empty counts it in full.' })}
+      <p class="lab"><b>${sayHtml('account.soldFast', ctx.words)}</b></p>
+      ${field('quick', phrase('account.quick', ctx.words), { value: quick == null ? '' : plainNumber(quick * 100), unit: '%', inputmode: 'decimal', maxlength: 6, error: errors.quick,
+        help: phrase('account.quick.help', ctx.words) })}
     </div>` : ''}
 
     ${debt ? html`<div class="acct-set">
@@ -344,8 +353,8 @@ function cashForm(ctx, account) {
   // right after a count the figure is the count itself: roman, as counted; a cash payment marked since makes it pencil
   const exact = isCountedCash(ctx.state, value);
   return html`<form class="sheet-body" data-submit="account.count" data-input="account.touch" data-id="${account.id}" novalidate autocomplete="off"${coverAttr(ctx)}>
-    <p class="sheet-head lab"><b>By hand</b><i class="sep"></i>${ACCOUNT_TYPES.cash.label}</p>
-    <h2 class="sheet-title">${accountLabel(account)}</h2>
+    <p class="sheet-head lab"><b>By hand</b><i class="sep"></i>${accountTypeLabel('cash', ctx.words)}</p>
+    <h2 class="sheet-title">${accountLabel(account, ctx.words)}</h2>
     <p class="acct-now">
       ${money(value, { est: !exact })}
       <span class="cap">in hand today · ${count
@@ -468,7 +477,7 @@ function bankForm(ctx, account, type) {
   const becameDebt = debtSide && !isDebtSide(account.type);
   const flip = becameDebt ? account.balance > 0 : account.flip;
   const wasType = account.type !== type;
-  const label = accountLabel(account);
+  const label = accountLabel(account, ctx.words);
 
   return html`<form class="sheet-body" data-submit="account.save" data-input="account.touch" data-id="${account.id}" novalidate autocomplete="off"${coverAttr(ctx)}>
     <p class="sheet-head lab"><b>From the bank</b>${account.institution ? html`<i class="sep"></i>${account.institution}` : ''}</p>
@@ -477,7 +486,7 @@ function bankForm(ctx, account, type) {
       ${money(Math.abs(value))}
       <span class="cap"><i class="bank-mark"></i>${standing}${
         pending
-          ? html`, pending moves counted · the bank reported <span data-fig>${fmt(Math.abs(account.balance))}</span> ${ageText(ctx, account.asOf)}`
+          ? sayHtml('account.pending', ctx.words, { amount: html`<span data-fig>${fmt(Math.abs(account.balance))}</span>`, age: ageText(ctx, account.asOf) })
           : ', as the bank reported it ' + ageText(ctx, account.asOf)}${
         account.hidden ? ' · left out of everything' : ''}</span>
     </p>
@@ -485,21 +494,21 @@ function bankForm(ctx, account, type) {
 
     <div class="acct-set acct-set-first">
       ${field('nick', 'Your name for it', { value: account.nick, placeholder: account.name, maxlength: 60,
-        help: html`Optional. The bank calls it “${account.name || ACCOUNT_TYPES[account.type].label}”; that name stays on file.` })}
+        help: html`Optional. The bank calls it “${account.name || accountTypeLabel(account.type, ctx.words)}”; that name stays on file.` })}
       ${typeField(BANK_TYPES, type, wasType
-        ? 'Read as ' + ACCOUNT_TYPES[account.type].label + ' until you save. Saving moves it on Material and is never guessed again.'
-        : 'Read from the account’s name. Correcting it moves the account between cash, cards, assets and debts, and it is never guessed again.')}
+        ? say('account.readAs', ctx.words, { type: accountTypeLabel(account.type, ctx.words) })
+        : phrase('account.readName', ctx.words), ctx.words)}
     </div>
 
     <div class="acct-set">
       <p class="lab"><b>How it counts</b></p>
       <div class="acct-opts">
         ${group === 'cash' || group === 'card' ? option('everyday', 'Everyday spending', account.everyday,
-          'The oldest report among everyday accounts decides when a round turns from pencil to ink.') : ''}
-        ${group === 'cash' ? option('reserve', 'Counts toward the reserve', account.reserve,
-          'Only flagged cash counts toward the reserve goal. With none flagged, all cash does.') : ''}
+          phrase('account.everyday', ctx.words)) : ''}
+        ${group === 'cash' ? option('reserve', phrase('account.reserve', ctx.words), account.reserve,
+          phrase('account.reserve.help', ctx.words)) : ''}
         ${option('hidden', 'Leave it out', account.hidden,
-          'Dropped from net worth, cash, the rounds and the card cycle. The bank feed keeps it up to date in case it returns.')}
+          phrase('account.hidden.help', ctx.words))}
       </div>
     </div>
 
@@ -509,7 +518,7 @@ function bankForm(ctx, account, type) {
         ${field('apr', 'APR', { value: plainNumber(account.apr), unit: '%', inputmode: 'decimal', maxlength: 6, error: errors.apr })}
         ${field('limit', 'Credit limit', { value: plainAmount(account.limit), unit: '$', inputmode: 'decimal', maxlength: 14, error: errors.limit, cover: true })}
       </div>
-      <p class="cap">The APR gives interest per day on Material and the payoff scenario in Analysis. The limit gives utilization.</p>
+      <p class="cap">${sayHtml('account.apr', ctx.words)}</p>
       <div class="acct-pair">
         ${field('min', 'Minimum payment', { value: plainAmount(account.minPayment), unit: '$', inputmode: 'decimal', maxlength: 14, error: errors.min, cover: true })}
         ${field('due', 'Due day', { value: account.dueDay ? String(account.dueDay) : '', inputmode: 'numeric', maxlength: 2, fig: true, placeholder: '1 to 31', error: errors.due })}
@@ -521,7 +530,7 @@ function bankForm(ctx, account, type) {
       </div>
       <p class="cap">Kept on file beside the loan. The balance itself is the bank’s own figure, so nothing is worked out from these.</p>`}
       ${option('flip', 'The bank reports what I owe as a positive number', flip,
-        'On when a debt shows up as money you have: the balance is read as owed, and that reading is kept through every sync.')}
+        phrase('account.flip', ctx.words))}
     </div>` : ''}
 
     <div class="sheet-actions">
@@ -544,7 +553,7 @@ function gone() {
 
 export function label(ctx, params) {
   const account = findAccount(ctx.state, params && params.id);
-  if (account) return accountLabel(account);
+  if (account) return accountLabel(account, ctx && ctx.words);
   return params && params.id ? 'Account' : 'Add what the bank cannot see';
 }
 
@@ -557,7 +566,7 @@ export function render(ctx, params = {}) {
     return account.source === 'bank' ? bankForm(ctx, account, type) : manualForm(ctx, account, type);
   }
   const type = shownType(null, params);
-  return type ? manualForm(ctx, null, type) : chooser();
+  return type ? manualForm(ctx, null, type) : chooser(ctx.words);
 }
 
 /* ----------------------------------------------------------------- parsing */
@@ -661,7 +670,7 @@ function saveManual(ctx, account, values) {
       source: 'manual', type, name, balance, asOf: now, basis,
       history: [{ day: today, balance, note }], ...terms,
     });
-    const shown = accountLabel(created);
+    const shown = accountLabel(created, ctx.words);
     const undoLabel = shown + ' added';
     store.update((s) => {
       s.accounts.push(created);
@@ -669,13 +678,13 @@ function saveManual(ctx, account, values) {
     }, { undo: undoLabel });
     clearErrors();
     closeSheet();
-    toast(shown + ' added to Material.', { action: 'Undo', onAction: () => undoIf(undoLabel) });
+    toast(say('account.toast.added', (context() || {}).words, { name: shown }), { action: 'Undo', onAction: () => undoIf(undoLabel) });
     return;
   }
 
   const id = account.id;
   const wasDebt = groupOf(account.type) === 'debt';
-  const undoLabel = accountLabel(account) + ' edited';
+  const undoLabel = accountLabel(account, ctx.words) + ' edited';
   store.update((s) => {
     const a = findAccount(s, id);
     if (!a) return;
@@ -703,7 +712,7 @@ function saveManual(ctx, account, values) {
   }, { undo: undoLabel });
   clearErrors();
   closeSheet();
-  toast(out.value != null ? 'Recorded: ' + accountLabel(account) + ', a new figure for ' + fmtDate(today, 'short') + '.' : 'Saved: ' + accountLabel(account) + ', the note for ' + fmtDate(today, 'short') + '.', { action: 'Undo', onAction: () => undoIf(undoLabel) });
+  toast(out.value != null ? 'Recorded: ' + accountLabel(account, ctx.words) + ', a new figure for ' + fmtDate(today, 'short') + '.' : 'Saved: ' + accountLabel(account, ctx.words) + ', the note for ' + fmtDate(today, 'short') + '.', { action: 'Undo', onAction: () => undoIf(undoLabel) });
 }
 
 function saveBank(ctx, account, values) {
@@ -721,7 +730,7 @@ function saveBank(ctx, account, values) {
 
   const id = account.id;
   const now = ctx.now;
-  const undoLabel = accountLabel(account) + ' edited';
+  const undoLabel = accountLabel(account, ctx.words) + ' edited';
   const flip = debtSide && values.flip != null;
   store.update((s) => {
     const a = findAccount(s, id);
@@ -750,7 +759,7 @@ function saveBank(ctx, account, values) {
   }, { undo: undoLabel });
   clearErrors();
   closeSheet();
-  toast('Saved: ' + accountLabel(account) + ', settings as of ' + fmtDate(ctx.today, 'short') + '.', { action: 'Undo', onAction: () => undoIf(undoLabel) });
+  toast('Saved: ' + accountLabel(account, ctx.words) + ', settings as of ' + fmtDate(ctx.today, 'short') + '.', { action: 'Undo', onAction: () => undoIf(undoLabel) });
 }
 
 function undoIf(label) {
@@ -806,10 +815,10 @@ export const actions = {
     // a count is made like a change from outside: no Undo takes it back; counting again corrects it
     const change = (s) => countCash(s, cents, at);
     store.update((s) => { done = change(s); }, { past: change });
-    if (!done) { fail(account.id, { value: 'This count could not be kept. Type the cash you have now, for example 120.00.' }); return; }
+    if (!done) { fail(account.id, { value: phrase('account.count.failed', ctx.words) }); return; }
     clearErrors();
     closeSheet();
-    toast(countWords(cents, !!ctx.state.settings.cover));
+    toast(countWords(cents, !!ctx.state.settings.cover, ctx.words));
   },
 
   /** Remove the latest count of Cash in hand, on every device: the count before it rules again from its own day (3.7). */
@@ -824,7 +833,7 @@ export const actions = {
     if (!done) return;
     // the figure now, as the rebuild stored it (the last render's context still holds the count just removed)
     const after = findAccount(store.state, account.id);
-    toast(removedWords(after ? Math.round(Number(after.balance) || 0) : 0, !!ctx.state.settings.cover));
+    toast(removedWords(after ? Math.round(Number(after.balance) || 0) : 0, !!ctx.state.settings.cover, ctx.words));
     focusCountField(); // the link is gone: the count field is the next place to act
   },
 
@@ -833,7 +842,7 @@ export const actions = {
     const account = ctx ? findAccount(ctx.state, data.id) : null;
     if (!account || account.source === 'bank' || account.role === CASH_ROLE) return;
     const id = account.id;
-    const undoLabel = accountLabel(account) + ' removed';
+    const undoLabel = accountLabel(account, ctx.words) + ' removed';
     const wasDebt = groupOf(account.type) === 'debt';
     const now = ctx.now;
     store.update((s) => {
@@ -844,6 +853,6 @@ export const actions = {
     }, { undo: undoLabel });
     clearErrors();
     closeSheet();
-    toast(accountLabel(account) + ' removed from Material.', { action: 'Undo', onAction: () => undoIf(undoLabel) });
+    toast(say('account.toast.removed', (context() || {}).words, { name: accountLabel(account, (context() || {}).words) }), { action: 'Undo', onAction: () => undoIf(undoLabel) });
   },
 };

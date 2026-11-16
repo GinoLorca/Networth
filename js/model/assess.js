@@ -1,6 +1,8 @@
 /**
  * The four-factor position assessment and the coach's notes. See ARCHITECTURE.md section 8.
- * Pure. Imports: schema, dates, money, ledger, cards, book, annotate.
+ * Every function takes `opts.words`, the words of the interface ('chess' when absent, or 'finance': words.js), and
+ * writes its titles, labels, sentences and calls to action in them.
+ * Pure. Imports: schema, dates, money, ledger, cards, book, annotate, words.
  */
 
 import { ACCOUNT_TYPES, CADENCES, categoryLabel } from './schema.js';
@@ -10,30 +12,23 @@ import { makeLedger } from './ledger.js';
 import { PACE_FROM_DAY, allCardsMonths, cardsNow, firstTransactionDay, historyDays as daysOnRecord } from './cards.js';
 import { annualCost, bookTotals, renewals } from './book.js';
 import { reviewRounds } from './annotate.js';
+import { evalName, phrase, say, wordsMode } from './words.js';
 
 /** Evaluation symbols, best to worst, plus 'unclear'. The UI draws each as an SVG glyph. */
 export const SYMBOLS = ['winning', 'clear_plus', 'slight_plus', 'equal', 'slight_minus', 'clear_minus', 'losing', 'unclear'];
 
-/** Plain names for the symbols. */
-export const SYMBOL_LABELS = {
-  winning: 'Winning', clear_plus: 'Clear advantage', slight_plus: 'Slight advantage', equal: 'Equal',
-  slight_minus: 'Slightly worse', clear_minus: 'Clearly worse', losing: 'Losing', unclear: 'Unclear',
-};
+/** Plain names for the symbols, in Chess words; evalName(symbol, mode) names them in either (words.js). */
+export const SYMBOL_LABELS = Object.fromEntries(SYMBOLS.map((symbol) => [symbol, evalName(symbol, 'chess')]));
 
 const UNCLEAR = 'unclear';
 const EQUAL_INDEX = SYMBOLS.indexOf('equal');
 const WORST_INDEX = SYMBOLS.indexOf('losing');
 
-const TITLES = { material: 'Material', time: 'Time', structure: 'Structure', initiative: 'Initiative' };
 /** The order factors are named in; it also settles which of two equally distant factors is named. */
 const FACTOR_ORDER = ['material', 'time', 'structure', 'initiative'];
 const WEIGHTS = { time: 35, structure: 25, material: 20, initiative: 20 };
-const STANDING = {
-  material: ['ahead on material', 'level on material', 'behind on material'],
-  time: ['ahead on time', 'level on time', 'short on time'],
-  structure: ['sound on structure', 'level on structure', 'weak on structure'],
-  initiative: ['ahead on initiative', 'level on initiative', 'behind on initiative'],
-};
+/** How a factor stands, ahead / level / behind, in the verdict's sentence (words.js 'assess.standing.*'). */
+const STANDING = ['ahead', 'level', 'behind'];
 
 const MATERIAL_DAYS = 30;
 const MIN_HISTORY_DAYS = 14;
@@ -141,7 +136,7 @@ export function assess(state, nowMs, opts) {
     initiative: initiativeFactor(view),
   };
   const symbol = verdictSymbol(factors);
-  return { ...factors, symbol, label: SYMBOL_LABELS[symbol], sentence: verdictSentence(symbol, factors) };
+  return { ...factors, symbol, label: evalName(symbol, view.words), sentence: verdictSentence(symbol, factors, view.words) };
 }
 
 /**
@@ -248,7 +243,7 @@ export function monthReview(state, ym, nowMs, opts) {
       estimated: listOf(table.rounds).some((round) => isObject(round) && (round.status === 'live'
         || (round.status === 'provisional' && round.result !== null))),
     },
-    review: reviewRounds(table.rounds, { sweepTxIds: sweepIdsOf(view.doc) }),
+    review: reviewRounds(table.rounds, { sweepTxIds: sweepIdsOf(view.doc), words: view.words }),
     scale: known ? scaleSentences(view, ym, ym, monthSpan(view, ym)).join(' ') : '',
   };
 }
@@ -267,6 +262,7 @@ function openView(state, nowMs, opts) {
     today: ledger.today,
     month: monthOf(ledger.today),
     firstDay: firstTransactionDay(doc),
+    words: wordsMode(isObject(opts) ? opts.words : undefined),
     cards: once(() => cardsNow(doc, nowMs, shared)),
     cardMonths: (months) => allCardsMonths(doc, months, nowMs, shared),
     recentCardMonths: once(() => allCardsMonths(doc, 3, nowMs, shared)),
@@ -284,8 +280,8 @@ function approxOf(view) {
   return position.smoothing || position.provisional > 0 ? APPROX : '';
 }
 
-function factor(key, symbol, sentence) {
-  return { key, title: TITLES[key], symbol, label: SYMBOL_LABELS[symbol], sentence };
+function factor(view, key, symbol, sentence) {
+  return { key, title: phrase('assess.factor.' + key, view.words), symbol, label: evalName(symbol, view.words), sentence };
 }
 
 /* ---------------------------------------------------------------- material */
@@ -294,7 +290,7 @@ function materialFactor(view) {
   // The rule needs MIN_HISTORY_DAYS completed days, so it is met from day MIN_HISTORY_DAYS + 1 on record.
   const history = historyDays(view);
   if (history <= MIN_HISTORY_DAYS) {
-    return factor('material', UNCLEAR, countOf(history, 'day') + ' on record so far; the 30-day change in net worth is read from day '
+    return factor(view, 'material', UNCLEAR, countOf(history, 'day') + ' on record so far; the 30-day change in net worth is read from day '
       + (MIN_HISTORY_DAYS + 1) + ' on record.');
   }
   const rows = view.ledger.closes(addDays(view.today, -MATERIAL_DAYS), view.today);
@@ -309,11 +305,11 @@ function materialFactor(view) {
     const symbol = materialSymbol(change * 100, MATERIAL_SHARES.map((share) => share * pay), liquid);
     // A share over 999% says nothing about a month of pay: the clause is dropped.
     const share = percentOf(change, pay);
-    return factor('material', symbol, moved + (share === null ? '.' : ', about ' + share + ' of a month of take-home pay.'));
+    return factor(view, 'material', symbol, moved + (share === null ? '.' : ', about ' + share + ' of a month of take-home pay.'));
   }
   const onArrival = hasRegularPay(view.doc) && !listOf(position.lapsedPay).length;
-  return factor('material', materialSymbol(change, MATERIAL_AMOUNTS, liquid),
-    moved + (onArrival ? '; pay is counted when it arrives.' : '; no regular pay is detected to measure it against.'));
+  return factor(view, 'material', materialSymbol(change, MATERIAL_AMOUNTS, liquid),
+    moved + (onArrival ? phrase('assess.material.onArrival', view.words) : '; no regular pay is detected to measure it against.'));
 }
 
 function materialSymbol(value, [high, middle, low], liquid) {
@@ -350,7 +346,7 @@ function hasRegularPay(doc) {
 
 function timeFactor(view) {
   const clock = view.ledger.clock();
-  return { ...factor('time', timeSymbol(clock), timeSentence(clock)), timeTrouble: !!clock.trouble };
+  return { ...factor(view, 'time', timeSymbol(clock), timeSentence(clock, view.words)), timeTrouble: !!clock.trouble };
 }
 
 function timeSymbol(clock) {
@@ -360,7 +356,7 @@ function timeSymbol(clock) {
   return step ? step[1] : 'winning';
 }
 
-function timeSentence(clock) {
+function timeSentence(clock, words) {
   if (clock.shortfall > 0) {
     // With nothing due, a shortfall is cash below zero: say that nothing is due, not an estimated zero.
     if (!(clock.dueTotal > 0)) {
@@ -371,7 +367,7 @@ function timeSentence(clock) {
     return 'Cash on hand is ' + fmt(clock.cash) + '; ' + APPROX + fmt(clock.dueTotal) + ' is due ' + dueWindow(clock) + ', '
       + APPROX + fmt(clock.shortfall) + ' more than the cash.';
   }
-  if (clock.runwayDays === null) return 'Cash on hand is ' + fmt(clock.cash) + '; the daily outflow is not known yet.';
+  if (clock.runwayDays === null) return say('assess.time.noBurn', words, { cash: fmt(clock.cash) });
   const runway = 'Cash of ' + fmt(clock.cash) + ' covers ' + runwayWords(clock.runwayDays) + ' at ' + fmt(clock.burn) + ' a day';
   // Ruling T1: a paycheck awaited is named in its own sentence, and today is never called the next payday.
   if (isYmd(clock.payAwaited)) return runway + '. ' + payAwaitedSentence(clock);
@@ -403,12 +399,12 @@ function runwayWords(days) {
 
 function structureFactor(view) {
   const { owed } = view.cards();
-  if (!(owed > 0)) return factor('structure', 'clear_plus', 'No card balance is carried as of ' + fmtDate(view.today, 'short') + '.');
+  if (!(owed > 0)) return factor(view, 'structure', 'clear_plus', 'No card balance is carried as of ' + fmtDate(view.today, 'short') + '.');
   const months = view.recentCardMonths();
   const current = months.find((row) => row.current) || null;
   const complete = months.filter((row) => !row.current && row.complete).slice(-2);
   if (!complete.length) {
-    return factor('structure', UNCLEAR, 'Card balance is ' + fmt(owed) + ' as of ' + fmtDate(view.today, 'short')
+    return factor(view, 'structure', UNCLEAR, 'Card balance is ' + fmt(owed) + ' as of ' + fmtDate(view.today, 'short')
       + '; its direction is read after 1 complete month of history.');
   }
   // No pace is read before day 7 of the month (cards.js): the sentence says so and the symbol rests on the complete months.
@@ -418,8 +414,8 @@ function structureFactor(view) {
   const ended = complete.map((row) => fmtMonth(row.ym, 'name') + ' ' + changeWords(row.change)).join(' and ');
   const pace = current === null ? ''
     : !read ? '; a pace for ' + fmtMonth(current.ym, 'name') + ' is read from day ' + PACE_FROM_DAY + ' of the month'
-    : '; ' + fmtMonth(current.ym, 'name') + ' is on pace to end ' + paceWords(current.pace) + afterScheduled(current);
-  return factor('structure', rising ? oneStepWorse(direction) : direction, 'Card balance ended ' + ended + pace + '.');
+    : '; ' + fmtMonth(current.ym, 'name') + ' is on pace to end ' + paceWords(current.pace) + afterScheduled(current, view.words);
+  return factor(view, 'structure', rising ? oneStepWorse(direction) : direction, 'Card balance ended ' + ended + pace + '.');
 }
 
 /** Where one or two complete months, oldest first, say the card balance is heading. */
@@ -455,8 +451,8 @@ function paceAgainstStart(change) {
 }
 
 /** ", after $460.00 in payments the Book still schedules" when the projection takes some off; else "". */
-function afterScheduled(row) {
-  return positive(row.scheduled) ? ', after ' + APPROX + fmt(row.scheduled) + ' in payments the Book still schedules' : '';
+function afterScheduled(row, words) {
+  return positive(row.scheduled) ? say('assess.afterScheduled', words, { amount: APPROX + fmt(row.scheduled) }) : '';
 }
 
 /** The same, against the start of the month: "$45.00 higher than it began". */
@@ -470,11 +466,10 @@ function initiativeFactor(view) {
   const month = view.ledger.retention(view.today);
   const name = fmtMonth(month.ym, 'name');
   if (month.days < MIN_MONTH_DAYS) {
-    return factor('initiative', UNCLEAR, name + ' is ' + countOf(month.days, 'day') + ' old; the share kept of what was earned is read from day '
-      + MIN_MONTH_DAYS + '.');
+    return factor(view, 'initiative', UNCLEAR, say('assess.initiative.young', view.words, { month: name, age: countOf(month.days, 'day'), day: MIN_MONTH_DAYS }));
   }
   if (!(month.earned > 0)) {
-    return factor('initiative', UNCLEAR, 'Nothing was earned in ' + name + ' as of ' + fmtDate(view.today, 'short') + ', so there is no share kept to read.');
+    return factor(view, 'initiative', UNCLEAR, say('assess.initiative.none', view.words, { month: name, date: fmtDate(view.today, 'short') }));
   }
   const step = RETENTION_STEPS.find(([percent]) => month.kept * 100 >= percent * month.earned);
   const share = percentOf(month.kept, month.earned, true);
@@ -483,9 +478,11 @@ function initiativeFactor(view) {
   const position = view.ledger.position();
   const accrued = !!position.smoothing;
   const pencil = accrued || position.provisional > 0;
-  return factor('initiative', step ? step[1] : 'clear_minus',
-    name + ' to date: ' + (accrued ? '≈' : '') + fmt(month.earned) + ' earned, ' + (pencil ? '≈' : '') + fmtSigned(month.kept) + ' kept'
-      + (share === null ? '' : ', ' + share) + '.');
+  return factor(view, 'initiative', step ? step[1] : 'clear_minus',
+    say('assess.initiative.read', view.words, {
+      month: name, earned: (accrued ? '≈' : '') + fmt(month.earned), kept: (pencil ? '≈' : '') + fmtSigned(month.kept),
+      share: share === null ? '' : ', ' + share,
+    }));
 }
 
 /* ----------------------------------------------------------------- verdict */
@@ -507,18 +504,18 @@ function verdictSymbol(factors) {
   return SYMBOLS[EQUAL_INDEX - Math.sign(mean) * Math.floor(Math.abs(mean) + 0.5)];
 }
 
-function verdictSentence(symbol, factors) {
+function verdictSentence(symbol, factors, words) {
   const read = FACTOR_ORDER.filter((key) => factors[key].symbol !== UNCLEAR);
-  if (!read.length) return SYMBOL_LABELS[symbol] + ' — no factor can be read yet.';
+  if (!read.length) return evalName(symbol, words) + ' — no factor can be read yet.';
   const furthest = read
     .slice()
     .sort((a, b) => Math.abs(scoreOf(factors[b].symbol)) - Math.abs(scoreOf(factors[a].symbol)))
     .slice(0, 2);
   const named = FACTOR_ORDER.filter((key) => furthest.includes(key)).map((key) => {
     const score = scoreOf(factors[key].symbol);
-    return STANDING[key][score > 0 ? 0 : score === 0 ? 1 : 2];
+    return phrase('assess.standing.' + key + '.' + STANDING[score > 0 ? 0 : score === 0 ? 1 : 2], words);
   });
-  return SYMBOL_LABELS[symbol] + ' — ' + named.join(', ') + '.';
+  return evalName(symbol, words) + ' — ' + named.join(', ') + '.';
 }
 
 /* ------------------------------------------------------------ coach's notes */
@@ -582,7 +579,9 @@ function shortfallNote(view) {
   const clock = view.ledger.clock();
   if (!(clock.shortfall > 0)) return null;
   return note('shortfall:' + (clock.nextPayday || 'next-' + DUE_WINDOW_DAYS + '-days'), 90, [
-    'Cash: ' + fmt(clock.cash) + ' on the clock, ' + (clock.dueTotal > 0 ? APPROX + fmt(clock.dueTotal) + ' due ' : 'nothing due ') + dueWindow(clock) + '.',
+    say('assess.shortfall', view.words, {
+      cash: fmt(clock.cash), due: clock.dueTotal > 0 ? APPROX + fmt(clock.dueTotal) + ' due' : 'nothing due', window: dueWindow(clock),
+    }),
   ], go('What is due', '#/book'));
 }
 
@@ -600,8 +599,7 @@ function overdueNote(view) {
   }
   const total = late.reduce((sum, item) => sum + Math.round(item.amount), 0);
   return note('overdue:' + oldest.id + ':' + oldest.day, 88, [
-    late.length + ' Book charges are past their day with no charge posted, ' + APPROX + fmt(total) + ' in all, the oldest from '
-      + fmtDate(oldest.day, 'short') + '.',
+    say('assess.overdue.many', view.words, { count: late.length, total: APPROX + fmt(total), date: fmtDate(oldest.day, 'short') }),
   ], cta);
 }
 
@@ -614,16 +612,16 @@ function lapsedPayNotes(view) {
     'No deposit from ' + item.name + ' since ' + fmtDate(item.since, 'short') + '.',
     countOf(Math.max(0, diffDays(item.since, view.today)), 'day') + ' on, '
       + (onArrival.has(item.id) ? 'its payday is no longer expected.' : 'its pay is no longer counted.'),
-  ], go('The Book', '#/book')));
+  ], go(phrase('assess.cta.book', view.words), '#/book')));
 }
 
 function sweepNote(view) {
   const { sweep } = view.ledger.edge();
   if (!sweep) return null;
   return note('sweep:' + sweep.weekOf, 80, [
-    'Last week you kept ' + fmt(sweep.amount, { decimals: 0 }) + ' against habit.',
-    sweep.target === 'card' ? 'Move it to the card.' : 'Move it to the reserve.',
-  ], openSheet('Move it', 'sweep'));
+    say('assess.sweep.kept', view.words, { amount: fmt(sweep.amount, { decimals: 0 }) }),
+    phrase(sweep.target === 'card' ? 'assess.sweep.card' : 'assess.sweep.reserve', view.words),
+  ], openSheet(phrase('assess.cta.sweep', view.words), 'sweep'));
 }
 
 /** The business purchase whose return check has been due the longest. */
@@ -692,7 +690,7 @@ function newEntry(view, entry, charges) {
   return {
     day: latest,
     note: note('book:new:' + entry.id, 62, [
-      'New in the Book: ' + shortName(entry.name) + ', ' + fmt(entry.amount) + ' ' + cadenceWords(entry) + ' since ' + fmtDate(first, 'short') + '.',
+      say('assess.book.new', view.words, { name: shortName(entry.name, view.words), amount: fmt(entry.amount), cadence: cadenceWords(entry), date: fmtDate(first, 'short') }),
       fmt(annualCost(entry), { decimals: 0 }) + ' a year.',
     ], openSheet('Open', 'recurring', entry.id)),
   };
@@ -707,7 +705,7 @@ function priceChange(view, entry, charges) {
   return {
     day: latest.day,
     note: note('book:price:' + entry.id + ':' + latest.day, 60, [
-      shortName(entry.name) + ' went from ' + fmt(last.amount) + ' to ' + fmt(latest.amount) + ' on ' + fmtDate(latest.day, 'short') + '.',
+      shortName(entry.name, view.words) + ' went from ' + fmt(last.amount) + ' to ' + fmt(latest.amount) + ' on ' + fmtDate(latest.day, 'short') + '.',
       fmtSigned(perYear, { decimals: 0 }) + ' a year.',
     ], openSheet('Open', 'recurring', entry.id)),
   };
@@ -720,8 +718,8 @@ function endedEntry(view, entry) {
   return {
     day: lapsedOn,
     note: note('book:ended:' + entry.id, 58, [
-      shortName(entry.name) + ' was last charged ' + fmtDate(entry.anchor, 'short') + ' and seems to have ended.',
-      positive(entry.amount) ? fmt(entry.amount) + ' ' + cadenceWords(entry) + ' is out of the Book.' : '',
+      shortName(entry.name, view.words) + ' was last charged ' + fmtDate(entry.anchor, 'short') + ' and seems to have ended.',
+      positive(entry.amount) ? say('assess.book.out', view.words, { amount: fmt(entry.amount), cadence: cadenceWords(entry) }) : '',
     ], openSheet('Open', 'recurring', entry.id)),
   };
 }
@@ -732,7 +730,7 @@ function renewalNote(view) {
   if (!next) return null;
   const when = next.inDays === 0 ? 'today' : fmtDate(next.day, 'dowshort') + ', in ' + countOf(next.inDays, 'day') + ',';
   return note('renewal:' + next.id + ':' + next.day, 50, [
-    shortName(next.name) + ' renews ' + when + ' at ' + APPROX + fmt(next.amount) + '.',
+    shortName(next.name, view.words) + ' renews ' + when + ' at ' + APPROX + fmt(next.amount) + '.',
     next.setAside > 0 ? 'About ' + fmt(next.setAside) + ' of it has accrued.' : '',
   ], openSheet('Open', 'recurring', String(next.id)));
 }
@@ -795,7 +793,7 @@ function targetNote(view) {
     categoryLabel(best.category) + ': ' + fmt(best.spent) + ' in ' + fmtMonth(view.month, 'name') + ' against a '
       + fmt(best.target, { decimals: best.target % 100 === 0 ? 0 : 2 }) + ' target.',
     before > 0 ? fmtMonth(lastMonth, 'name') + ' finished at ' + fmt(before) + '.' : '',
-  ], go('Scoresheet', '#/scoresheet'));
+  ], go(phrase('assess.cta.scoresheet', view.words), '#/scoresheet'));
 }
 
 function stackedNote(view) {
@@ -803,7 +801,7 @@ function stackedNote(view) {
   if (!stackedDays) return null;
   return note('stacked:' + view.month, 30, [
     'Stops stacked on ' + countOf(stackedDays, 'day') + ' in ' + fmtMonth(view.month, 'name') + ': the 2nd and later stops came to ' + fmt(stackedCost) + '.',
-  ], go('Scoresheet', '#/scoresheet'));
+  ], go(phrase('assess.cta.scoresheet', view.words), '#/scoresheet'));
 }
 
 /** The furthest reserve milestone reached, when the reserve was still short of it 14 days ago. */
@@ -814,8 +812,8 @@ function reserveNote(view) {
   if (!top || reserveOn(view, addDays(view.today, -NEWS_DAYS)) >= top.amount) return null;
   const next = clock.milestones.find((milestone) => !milestone.reached && milestone.amount > top.amount) || null;
   const first = top.label === 'Goal'
-    ? 'The reserve reached its goal of ' + fmt(top.amount) + ': ' + fmt(clock.reserve) + ' as of ' + fmtDate(view.today, 'short') + '.'
-    : 'The reserve of ' + fmt(clock.reserve) + ' now covers ' + top.label + ' of outflow at ' + fmt(clock.burn) + ' a day.';
+    ? say('assess.reserve.goal', view.words, { goal: fmt(top.amount), reserve: fmt(clock.reserve), date: fmtDate(view.today, 'short') })
+    : say('assess.reserve.covers', view.words, { reserve: fmt(clock.reserve), span: top.label, burn: fmt(clock.burn) });
   return note('reserve:' + top.label, 25, [
     first,
     next ? 'Next: ' + (next.label === 'Goal' ? 'the goal' : next.label) + ', ' + fmt(next.amount) + '.' : '',
@@ -837,11 +835,11 @@ function reserveOn(view, day) {
 function scaleSentences(view, gameYm, chargesYm, when) {
   const { perfect } = view.ledger.monthTable(gameYm);
   if (!(perfect > 0)) return [];
-  const first = 'A perfect month in the daily game is worth ' + fmt(perfect, { decimals: 0 }) + '.';
+  const first = say('assess.scale.perfect', view.words, { amount: fmt(perfect, { decimals: 0 }) });
   const row = cardRow(view, chargesYm);
   if (row && row.charges > 0) return [first, 'Cards took ' + fmt(row.charges, { decimals: 0 }) + ' in new charges ' + when + '.'];
   const { perMonth } = bookTotals(view.doc);
-  return perMonth > 0 ? [first, 'The Book takes ' + fmt(perMonth, { decimals: 0 }) + ' a month.'] : [first];
+  return perMonth > 0 ? [first, say('assess.scale.book', view.words, { amount: fmt(perMonth, { decimals: 0 }) })] : [first];
 }
 
 function scaleNote(view) {
@@ -861,7 +859,7 @@ function reviewNote(view) {
   }
   if (!count) return null;
   return note('review', 15, [
-    countOf(count, 'move') + (count === 1 ? ' is' : ' are') + ' waiting for a purpose, the oldest from ' + fmtDate(oldest, 'short') + '.',
+    say(count === 1 ? 'assess.review.one' : 'assess.review.many', view.words, { count, date: fmtDate(oldest, 'short') }),
   ], go('Review', '#/scoresheet?filter=review'));
 }
 
@@ -905,7 +903,7 @@ function cardReview(view, ym) {
     : early
     ? 'Card balance is ' + fmt(row.end) + ' as of ' + fmtDate(view.today, 'short') + '. A pace is read from day ' + PACE_FROM_DAY + ' of the month.'
     : row.current
-    ? 'Card balance is on pace to end ' + name + ' ' + paceAgainstStart(row.pace) + ', at ' + APPROX + fmt(row.projected) + afterScheduled(row) + '.'
+    ? 'Card balance is on pace to end ' + name + ' ' + paceAgainstStart(row.pace) + ', at ' + APPROX + fmt(row.projected) + afterScheduled(row, view.words) + '.'
     : 'Card balance ended ' + name + ' ' + againstStart(row.change) + ': ' + fmt(row.start) + ' to ' + fmt(row.end) + '.';
   return { change: row.change, start: row.start, end: row.end, sentence };
 }
@@ -1007,9 +1005,9 @@ function cadenceWords(entry) {
 }
 
 /** A name fit for a note: one line, at most 24 characters. Bank text stays text; the view escapes it. */
-function shortName(name) {
+function shortName(name, words) {
   const clean = typeof name === 'string' ? name.replace(/\s+/g, ' ').trim() : '';
-  if (!clean) return 'A Book entry';
+  if (!clean) return phrase('assess.unnamedEntry', words);
   return clean.length > MAX_NAME ? clean.slice(0, MAX_NAME - 1).trimEnd() + '…' : clean;
 }
 

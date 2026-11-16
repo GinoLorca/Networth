@@ -82,6 +82,12 @@
 import { define, esc } from './dom.js';
 import { fmt, fmtCompact, fmtSigned } from '../model/money.js';
 import { nowMs, ymd, isYmd, fmtDate, fmtMonth, addMonthsYm, monthOf } from '../model/dates.js';
+import { phrase, say, resultText } from '../model/words.js';
+
+/** The words of the interface, as app.js sets them on the root element (data-words); Chess words without a document. */
+function wordsNow() {
+  return typeof document !== 'undefined' && document.documentElement ? document.documentElement.getAttribute('data-words') : null;
+}
 
 const NOTE = 'no record yet';
 const MONTHS_SHORT = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
@@ -463,19 +469,19 @@ function edgeTotal(rounds) {
 }
 
 function sumEdge(d) {
-  if (!d.rounds.length) return 'Kept versus habit: ' + NOTE + '.';
+  const words = wordsNow();
+  if (!d.rounds.length) return phrase('charts.edge', words) + ': ' + NOTE + '.';
   const tot = edgeTotal(d.rounds);
   const [lo, hi] = extent([0].concat(d.rounds.map((r) => r.cum)));
-  return 'Kept versus habit over ' + d.rounds.length + (d.rounds.length === 1 ? ' round' : ' rounds') + ': began level, now ' +
-    (tot.final ? '' : 'about ') + fmtSigned(tot.kept) + (d.moved > 0 ? ', of which ' + fmt(d.moved) + ' moved' : '') +
+  return phrase('charts.edge', words) + ' over ' + d.rounds.length + ' ' + phrase(d.rounds.length === 1 ? 'charts.edge.round' : 'charts.edge.rounds', words) + ': began level, now ' +
+    (tot.final ? '' : 'about ') + fmtSigned(tot.kept) + (d.moved > 0 ? say('charts.edge.moved', words, { amount: fmt(d.moved) }) : '') +
     '; range ' + fmtSigned(lo) + ' to ' + fmtSigned(hi) + '.';
 }
 
-function resultMark(r) {
+/** A round's mark in FIG. 2's result row, in the words of the interface: 1 · ½ · 0, or ✓ · = · ✗ in Finance words. */
+function resultMark(r, words) {
   if (r.status === 'live') return '*';
-  if (r.result === 1) return '1';
-  if (r.result === 0.5) return '½';
-  if (r.result === 0) return '0';
+  if (r.result === 1 || r.result === 0.5 || r.result === 0) return resultText(r.result, words);
   return '·';
 }
 
@@ -500,8 +506,8 @@ function drawEdge(d, W, H, id) {
   const showKey = H >= 200 && W >= 250;
   const keyFig = fmtSigned(tot.kept);
   const keyH = d.moved > 0 ? 62 : 44;
-  const keyW = 8 + Math.max(21 + wFig(keyFig, 24) + (tot.final ? 0 : 24), wCaps('KEPT VS HABIT'),
-    d.moved > 0 ? 16 + wCaps('MOVED') + 8 + wNum(fmt(d.moved)) : 0) + 10;
+  const keyW = 8 + Math.max(21 + wFig(keyFig, 24) + (tot.final ? 0 : 24), wCaps(phrase('charts.key.edge', wordsNow())),
+    d.moved > 0 ? 16 + wCaps(phrase('charts.key.moved', wordsNow())) + 8 + wNum(fmt(d.moved)) : 0) + 10;
 
   const [lo, hi] = extent([0].concat(rounds.map((x) => x.cum)));
   let ticks = niceScale(lo, hi, H < 230 ? 3 : 4);
@@ -579,7 +585,7 @@ function drawEdge(d, W, H, id) {
     level = rounds[i].cum;
   }
   const habitUnder = under <= 3 || under <= over || y0 - t < 20;
-  out += txt('nwc-t', l + 6, habitUnder ? y0 + 14 : y0 - 7, 'HABIT LINE');
+  out += txt('nwc-t', l + 6, habitUnder ? y0 + 14 : y0 - 7, phrase('charts.key.habit', wordsNow()));
 
   if (tot.liveLast) {
     const today = rounds[N - 1];
@@ -601,10 +607,10 @@ function drawEdge(d, W, H, id) {
     out += '<rect x="' + kx + '" y="' + (ky + 5) + '" width="13" height="13" style="fill:url(#' + id + (tot.kept < 0 ? 'b' : 'a') + ')"/>' +
       '<rect class="nwc-swatch' + (tot.kept < 0 ? ' nwc-swatch-b' : '') + '" x="' + (kx + 0.5) + '" y="' + (ky + 5.5) + '" width="12" height="12"/>';
     out += fig('nwc-f nwc-big', kx + 21, ky + 19, keyFig, null, !tot.final);
-    out += txt('nwc-t', kx, ky + 37, 'KEPT VS HABIT');
+    out += txt('nwc-t', kx, ky + 37, phrase('charts.key.edge', wordsNow()));
     if (d.moved > 0) {
       out += '<rect class="nwc-moved nwc-moved-key" x="' + (kx + 0.5) + '" y="' + (ky + 45.5) + '" width="9" height="9"/>' +
-        txt('nwc-t', kx + 16, ky + 54, 'MOVED') + txt('nwc-n nwc-money', kx + 16 + wCaps('MOVED') + 8, ky + 54, fmt(d.moved));
+        txt('nwc-t', kx + 16, ky + 54, phrase('charts.key.moved', wordsNow())) + txt('nwc-n nwc-money', kx + 16 + wCaps(phrase('charts.key.moved', wordsNow())) + 8, ky + 54, fmt(d.moved));
     }
   }
 
@@ -617,7 +623,7 @@ function drawEdge(d, W, H, id) {
     for (let i = 0; i <= slots; i++) {
       if (sw >= 6 || i % 5 === 0 || i === slots) ax += 'M' + (i === slots ? hp(l + pw) - 1 : hp(l + i * sw)) + ' ' + ay + 'v5';
     }
-    text += txt('nwc-t', l - 7, rowN, 'ROUND', 'end');
+    text += txt('nwc-t', l - 7, rowN, phrase('charts.key.round', wordsNow()), 'end');
     if (showRes) text += txt('nwc-t', l - 7, rowR, 'RESULT', 'end');
     // round numbers: all of them when the slots are wide; else today's, then each month's first, then every fifth,
     // and a number that would touch one already set is left out
@@ -637,7 +643,7 @@ function drawEdge(d, W, H, id) {
       for (let i = 0; i < N; i++) {
         const rd = rounds[i];
         const cls = rd.status === 'live' ? 'nwc-n nwc-spot' : rd.status === 'final' ? 'nwc-n' : 'nwc-n nwc-est';
-        text += txt(cls + ' nwc-res', l + (i + 0.5) * sw, rowR, resultMark(rd), 'middle');
+        text += txt(cls + ' nwc-res', l + (i + 0.5) * sw, rowR, resultMark(rd, wordsNow()), 'middle');
       }
     }
   } else {
@@ -987,18 +993,23 @@ const COVER_NAMES = { worth: 'Net worth by day', edge: 'Kept versus habit by rou
 
 /** The text alternative while figures are covered: what the chart is, and no amounts. */
 function coverLabel(kind) {
-  return (COVER_NAMES[kind] || 'Chart') + '. Figures are covered.';
+  const name = kind === 'edge' ? phrase('charts.cover.edge', wordsNow()) : COVER_NAMES[kind];
+  return (name || 'Chart') + '. Figures are covered.';
 }
 
 let serial = 0;
 
-/* Charts on the page, told when an ancestor's data-cover comes or goes so their text alternative follows. */
+/* Charts on the page, told when an ancestor's data-cover comes or goes so their text alternative follows, and redrawn
+   when the words of the interface change (the root's data-words), since their keys and text alternatives say them. */
 const mounted = new Set();
 let coverWatch = null;
 function watchCover() {
   if (coverWatch || typeof MutationObserver !== 'function') return;
-  coverWatch = new MutationObserver(() => { for (const el of mounted) el._relabel(); });
-  coverWatch.observe(document.documentElement, { attributes: true, subtree: true, attributeFilter: ['data-cover'] });
+  coverWatch = new MutationObserver((records) => {
+    const words = records.some((r) => r.attributeName === 'data-words');
+    for (const el of mounted) { if (words) el._draw(); else el._relabel(); }
+  });
+  coverWatch.observe(document.documentElement, { attributes: true, subtree: true, attributeFilter: ['data-cover', 'data-words'] });
 }
 
 /** Build the SVG markup for one chart. Never throws. Returns { markup, height } (height only when the kind sizes itself). */

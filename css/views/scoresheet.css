@@ -159,6 +159,8 @@
 .tx-declined { color: var(--ink-2); }
 .tx-declined::before { content: "("; }
 .tx-declined::after { content: ")"; }
+[data-words="finance"] .tx-declined::before, [data-words="finance"] .tx-declined::after { content: none; }
+[data-words="finance"] .tx-declined { text-decoration: line-through; }
 .tx-raw { padding: 8px 0 9px; }
 .tx-raw .lab { display: block; font-size: .6875rem; letter-spacing: .13em; color: var(--ink-3); }
 .tx-raw-text { display: block; margin-top: 3px; color: var(--ink-2); overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }

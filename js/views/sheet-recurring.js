@@ -25,11 +25,13 @@ import { closeSheet } from '../router.js';
 import { context, toast } from '../runtime.js';
 import { fmt, toCents } from '../model/money.js';
 import { addDays, addMonthsYm, fmtDate, fmtMonth, isYmd, monthOf, relDay } from '../model/dates.js';
-import { ACCOUNT_TYPES, CADENCES, CATEGORIES, KLASSES, PURPOSES, accountLabel, makeRecurring } from '../model/schema.js';
+import { ACCOUNT_TYPES, CADENCES, CATEGORIES, KLASSES, PURPOSES, accountLabel, klassLabel, makeRecurring } from '../model/schema.js';
 import { annualCost, dailyCost, nextOccurrence } from '../model/book.js';
 import { merchantOf } from '../model/classify.js';
 import { refresh } from '../model/detect.js';
 import { addByHand, byHandMonth, editByHand, removeByHand } from '../model/byhand.js';
+import { sayHtml } from '../ui/say.js';
+import { phrase, say } from '../model/words.js';
 
 const VERDICTS = [['', 'None'], ['keep', 'Keep'], ['review', 'Review'], ['cut', 'Cut']];
 const KLASS_ORDER = ['book', 'need', 'want', 'oneoff', 'game'];
@@ -108,7 +110,7 @@ function offerUndo(message, label, undone) {
 export const label = (ctx, params) => {
   const rec = findEntry(ctx.state, params && params.id);
   if (rec ? rec.byHand : params && params.pay) return rec ? 'Payment you send: ' + (rec.name || 'unnamed payment') : 'New payment you send';
-  return rec ? 'Book entry: ' + (rec.name || 'unnamed line') : 'New Book entry';
+  return rec ? say('recurring.label', ctx.words, { name: rec.name || 'unnamed line' }) : phrase('recurring.label.new', ctx.words);
 };
 
 function facts(ctx, rec) {
@@ -120,16 +122,16 @@ function facts(ctx, rec) {
     ${rec.active
       ? html`<li class="row"><span class="row-label">Next expected</span><span class="row-value" data-cover-keep>${next ? fmtDate(next, 'dowshort') + ' · ' + relDay(next, ctx.today) : 'not known'}</span></li>
           <li class="row"><span class="row-label">Committed a year</span><span class="row-value fig est"><span class="approx">≈</span>${fmt(annualCost(rec))} <small>${fmt(Math.round(dailyCost(rec)))} a day</small></span></li>`
-      : html`<li class="row"><span class="row-label">Standing</span><span class="row-value" data-cover-keep>${hasLock(rec, 'active') ? 'taken out of the Book by you' : 'ended: not charged for a period and a half'}</span></li>`}
+      : html`<li class="row"><span class="row-label">Standing</span><span class="row-value" data-cover-keep>${hasLock(rec, 'active') ? phrase('recurring.removed', ctx.words) : 'ended: not charged for a period and a half'}</span></li>`}
     ${rec.active || count || !rec.anchor
       ? html`<li class="row"><span class="row-label">Charges seen</span><span class="row-value" data-cover-keep>${count ? count + ', the last on ' + fmtDate(last, 'medium') : 'none yet from the bank'}</span></li>`
       : html`<li class="row"><span class="row-label">Last charged</span><span class="row-value" data-cover-keep>${fmtDate(rec.anchor, 'medium')} · ${relDay(rec.anchor, ctx.today)}</span></li>`}
-    ${rec.source === 'manual' ? '' : html`<li class="row"><span class="row-label">Charged to</span><span class="row-value" data-cover-keep>${account ? accountLabel(account) : 'not known'}</span></li>`}
+    ${rec.source === 'manual' ? '' : html`<li class="row"><span class="row-label">Charged to</span><span class="row-value" data-cover-keep>${account ? accountLabel(account, ctx.words) : 'not known'}</span></li>`}
   </ul>`;
 }
 
-function categoryOptions(selected) {
-  return KLASS_ORDER.map((klass) => html`<optgroup label="${KLASSES[klass].label}">
+function categoryOptions(selected, words) {
+  return KLASS_ORDER.map((klass) => html`<optgroup label="${klassLabel(klass, words)}">
     ${Object.keys(CATEGORIES).filter((key) => CATEGORIES[key].klass === klass).map((key) => html`<option value="${key}" ${attrs({ selected: key === selected })}>${CATEGORIES[key].label}</option>`)}
   </optgroup>`);
 }
@@ -193,7 +195,7 @@ function renderPay(ctx, rec) {
     <p class="sheet-head lab"><b>Payment you send</b><i class="sep"></i>${isNew ? 'each month' : 'the ' + (day >= PAY_LAST_DAY ? 'last day' : ordinal(day)) + ' of each month'}</p>
     <h2 class="sheet-title">${isNew ? 'A payment to make each month.' : rec.name || 'Unnamed payment'}</h2>
     ${isNew
-      ? html`<p class="cap">For a payment you send yourself by Zelle or bank transfer. It is on the Board’s list each month and is ticked when the bank shows it or you tick it; until then it is taken off what is liquid. 3 fields; the bank’s own row ticks it from then on.</p>`
+      ? html`<p class="cap">${sayHtml('recurring.pay.new', ctx.words)}</p>`
       : payStanding(ctx, rec)}
 
     <label class="${cx('field', errors.name && 'is-invalid')}">
@@ -222,7 +224,7 @@ function renderPay(ctx, rec) {
       : html`A change of the amount or the day applies from ${fmtMonth(appliesFrom(ctx, rec))}. The bank ticks it by the exact amount.`}</p>
 
     ${isNew ? '' : html`<label class="switch switch-block bks-switch">
-      <span class="switch-text">Switched on <em>Off: it leaves the Board’s list and is not counted as due; its ${plural(Object.keys(rec.marks || {}).length, 'tick')} and its name are kept.</em></span>
+      <span class="switch-text">Switched on <em>${sayHtml('recurring.pay.off', ctx.words, { ticks: plural(Object.keys(rec.marks || {}).length, 'tick') })}</em></span>
       <input type="checkbox" role="switch" name="active" ${attrs({ checked: !!rec.active })}>
       <span class="switch-track" aria-hidden="true"></span>
     </label>`}
@@ -263,9 +265,9 @@ export function render(ctx, params) {
   if (rec ? rec.byHand : params && params.pay) return renderPay(ctx, rec);
   if (id && !rec) {
     return html`<div class="sheet-body">
-      <p class="sheet-head lab"><b>Book entry</b></p>
+      <p class="sheet-head lab"><b>${sayHtml('recurring.entry', ctx.words)}</b></p>
       <h2 class="sheet-title">This line is no longer in the document.</h2>
-      <p class="cap">It was removed since this sheet was opened. The Book lists the ${plural(ctx.state.recurring.length, 'line')} there are.</p>
+      <p class="cap">${sayHtml('recurring.gone', ctx.words, { lines: plural(ctx.state.recurring.length, 'line') })}</p>
       <div class="sheet-actions"><button class="btn" type="button" data-action="app.sheet-close">Close</button></div>
     </div>`;
   }
@@ -281,8 +283,8 @@ export function render(ctx, params) {
   const charges = isNew ? { count: 0, last: null } : chargesOf(ctx.state, v.id);
 
   return html`<form class="sheet-body" data-submit="recurring.save" data-input="recurring.touch" data-id="${id}" novalidate ${attrs({ 'data-cover': !!ctx.state.settings.cover })}>
-    <p class="sheet-head lab"><b>Book entry</b><i class="sep"></i>${isNew ? 'added by hand' : v.source === 'manual' ? 'entered by you' : 'found in the bank feed'}</p>
-    <h2 class="sheet-title">${isNew ? 'A line for the Book.' : v.name || 'Unnamed line'}</h2>
+    <p class="sheet-head lab"><b>${sayHtml('recurring.entry', ctx.words)}</b><i class="sep"></i>${isNew ? 'added by hand' : v.source === 'manual' ? 'entered by you' : 'found in the bank feed'}</p>
+    <h2 class="sheet-title">${isNew ? phrase('recurring.newTitle', ctx.words) : v.name || 'Unnamed line'}</h2>
     ${isNew
       ? html`<p class="cap">For a bill the feed has not shown yet. Give it a name as the bank will print it, an amount and one date; the bank’s own charges take the line over when they arrive.</p>`
       : facts(ctx, v)}
@@ -321,7 +323,7 @@ export function render(ctx, params) {
 
     <label class="field">
       <span class="field-label lab">Category</span>
-      <span class="select"><select name="category">${categoryOptions(CATEGORIES[v.category] ? v.category : 'other')}</select></span>
+      <span class="select"><select name="category">${categoryOptions(CATEGORIES[v.category] ? v.category : 'other', ctx.words)}</select></span>
     </label>
 
     <fieldset class="field">
@@ -332,7 +334,7 @@ export function render(ctx, params) {
     </fieldset>
 
     <label class="switch switch-block bks-switch">
-      <span class="switch-text">Essential <em>Rent, a loan payment, insurance: an only move, marked □ in the Book.</em></span>
+      <span class="switch-text">Essential <em>${sayHtml('recurring.essential', ctx.words)}</em></span>
       <input type="checkbox" role="switch" name="essential" ${attrs({ checked: !!v.essential })}>
       <span class="switch-track" aria-hidden="true"></span>
     </label>
@@ -342,25 +344,25 @@ export function render(ctx, params) {
       <div class="seg seg-block" role="radiogroup" aria-label="Verdict">
         ${VERDICTS.map(([key, text]) => html`<label class="seg-opt"><input type="radio" name="verdict" value="${key}" ${attrs({ checked: key === (v.verdict || '') })}><span>${text}</span></label>`)}
       </div>
-      <span class="field-help cap">A note to yourself. It changes no figure; review and cut are totalled at the top of the Book.</span>
+      <span class="field-help cap">${sayHtml('recurring.verdict', ctx.words)}</span>
     </fieldset>
 
     <label class="field">
       <span class="field-label lab">This pays down</span>
       <span class="select"><select name="toAccountId">
         <option value="" ${attrs({ selected: v.toAccountId == null })}>Nothing: it is a cost</option>
-        ${debts.map((a) => html`<option value="${a.id}" ${attrs({ selected: a.id === v.toAccountId })}>${accountLabel(a)}</option>`)}
+        ${debts.map((a) => html`<option value="${a.id}" ${attrs({ selected: a.id === v.toAccountId })}>${accountLabel(a, ctx.words)}</option>`)}
       </select></span>
       <span class="field-help cap">${debts.length
         ? 'A payment toward a debt leaves cash, so it stays in what is committed and in what is due before payday, but it is not a cost: it lowers what is owed.'
-        : 'No loan or card is known yet. One added under Material can be chosen here; its payment then counts as committed, not as a cost.'}</span>
+        : phrase('recurring.noDebt', ctx.words)}</span>
     </label>
 
     ${manual ? html`<label class="field">
       <span class="field-label lab">Charged to</span>
       <span class="select"><select name="accountId">
         <option value="" ${attrs({ selected: v.accountId == null })}>Not known yet</option>
-        ${paying.map((a) => html`<option value="${a.id}" ${attrs({ selected: a.id === v.accountId })}>${accountLabel(a)}</option>`)}
+        ${paying.map((a) => html`<option value="${a.id}" ${attrs({ selected: a.id === v.accountId })}>${accountLabel(a, ctx.words)}</option>`)}
       </select></span>
       <span class="field-help cap">A charge to a cash account, or to one not known, counts in what is due before payday.</span>
     </label>` : ''}
@@ -375,15 +377,15 @@ export function render(ctx, params) {
     ${isNew ? '' : v.active
       ? html`<div class="bks-quiet">
           <button class="btn-link" type="button" data-action="recurring.dismiss" data-id="${v.id}">This is not a recurring bill</button>
-          <p class="cap">Takes it out of the Book and keeps it out. ${charges.count ? html`Its ${plural(charges.count, 'charge')} ${charges.count === 1 ? 'goes' : 'go'} back to being ${charges.count === 1 ? 'an ordinary move' : 'ordinary moves'}.` : 'It has 0 charges from the bank to give back.'}</p>
+          <p class="cap">${sayHtml('recurring.dismiss', ctx.words)} ${charges.count ? html`Its ${plural(charges.count, 'charge')} ${charges.count === 1 ? 'goes' : 'go'} back to being ${phrase(charges.count === 1 ? 'recurring.ordinary.one' : 'recurring.ordinary.many', ctx.words)}.` : 'It has 0 charges from the bank to give back.'}</p>
         </div>`
       : html`<div class="bks-quiet">
           <button class="btn-link" type="button" data-action="recurring.restore" data-id="${v.id}">It recurs again</button>
-          <p class="cap">Lists it in the Book again${v.anchor ? ', counted from its last charge on ' + fmtDate(v.anchor, 'medium') : ''}, and keeps it there until you take it out.</p>
+          <p class="cap">${sayHtml('recurring.restore', ctx.words, { from: v.anchor ? ', counted from its last charge on ' + fmtDate(v.anchor, 'medium') : '' })}</p>
         </div>`}
 
     <div class="sheet-actions">
-      <button class="btn btn-solid" type="submit">${isNew ? 'Add to the Book' : 'Save'}</button>
+      <button class="btn btn-solid" type="submit">${isNew ? phrase('recurring.add', ctx.words) : 'Save'}</button>
     </div>
   </form>`;
 }
@@ -526,7 +528,7 @@ export const actions = {
     if (store.ui.recurringForm) store.setUi({ recurringForm: null });
 
     if (!rec) {
-      const undoLabel = 'Line added to the Book';
+      const undoLabel = phrase('recurring.undo.added', (context() || {}).words);
       store.update((s) => {
         const locks = ['name', 'category', 'purpose'];
         if (fields.toAccountId) locks.push('toAccountId');
@@ -537,13 +539,14 @@ export const actions = {
       closeSheet();
       // a date after today is the next charge itself; otherwise the next one on the cadence from today on
       const next = fields.anchor > ctx.today ? fields.anchor : nextOccurrence({ ...fields, since: ctx.today }, addDays(ctx.today, -1));
-      offerUndo(fields.name + ' is in the Book' + (next ? ', next expected ' + fmtDate(next, 'medium') + '.' : '.'), undoLabel, fields.name + ' is taken back out of the Book.');
+      const words = (context() || {}).words;
+      offerUndo(say('recurring.toast.added', words, { name: fields.name }) + (next ? ', next expected ' + fmtDate(next, 'medium') + '.' : '.'), undoLabel, say('recurring.toast.addedUndone', words, { name: fields.name }));
       return;
     }
 
     const changed = Object.keys(fields).filter((key) => (rec[key] ?? null) !== (fields[key] ?? null));
     if (!changed.length) { closeSheet(); return; }
-    const undoLabel = 'Book entry changed';
+    const undoLabel = phrase('recurring.undo.changed', (context() || {}).words);
     store.update((s) => {
       const entry = findEntry(s, id);
       if (!entry) return;
@@ -576,7 +579,7 @@ export const actions = {
     const ctx = context();
     const rec = findEntry(ctx.state, data.id);
     if (!rec) { closeSheet(); return; }
-    const undoLabel = 'Taken out of the Book';
+    const undoLabel = phrase('recurring.undo.out', (context() || {}).words);
     const name = rec.name || 'The line';
     const { count } = chargesOf(ctx.state, rec.id);
     store.update((s) => {
@@ -587,7 +590,7 @@ export const actions = {
       refresh(s, ctx.now);
     }, { undo: undoLabel });
     closeSheet();
-    offerUndo(name + ' is out of the Book' + (count ? '; ' + plural(count, 'charge') + ' ordinary again.' : '.'), undoLabel, name + ' is back in the Book.');
+    offerUndo(say('recurring.toast.out', (context() || {}).words, { name }) + (count ? '; ' + plural(count, 'charge') + ' ordinary again.' : '.'), undoLabel, say('recurring.toast.back', (context() || {}).words, { name }));
   },
 
   /** An ended or dismissed line recurs again: on, and locked so a lapse does not end it by itself. */
@@ -595,7 +598,7 @@ export const actions = {
     const ctx = context();
     const rec = findEntry(ctx.state, data.id);
     if (!rec) { closeSheet(); return; }
-    const undoLabel = 'Brought back into the Book';
+    const undoLabel = phrase('recurring.undo.back', (context() || {}).words);
     const name = rec.name || 'The line';
     store.update((s) => {
       const entry = findEntry(s, data.id);
@@ -605,6 +608,6 @@ export const actions = {
       refresh(s, ctx.now);
     }, { undo: undoLabel });
     closeSheet();
-    offerUndo(name + ' is back in the Book' + (rec.anchor ? ', last charged ' + fmtDate(rec.anchor, 'short') + '.' : '.'), undoLabel, name + ' is out of the Book again.');
+    offerUndo(say('recurring.toast.backIn', (context() || {}).words, { name }) + (rec.anchor ? ', last charged ' + fmtDate(rec.anchor, 'short') + '.' : '.'), undoLabel, say('recurring.toast.outAgain', (context() || {}).words, { name }));
   },
 };

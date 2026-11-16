@@ -1,7 +1,9 @@
 /**
  * Analysis: scenarios, the reserve goal, the income ladder. Everything here is a SCENARIO or a
  * measurement of the past — never a prediction — and the UI labels it so.
- * Pure. Imports: schema, dates, money, ledger, loans, cards.
+ * The functions that write words (projectNetWorth's line labels, purchaseImpact's sentence) take `opts.words`, the
+ * words of the interface ('chess' when absent, or 'finance': words.js).
+ * Pure. Imports: schema, dates, money, ledger, loans, cards, words.
  */
 
 import { CADENCES } from './schema.js';
@@ -10,6 +12,7 @@ import { fmt, ratio, roundCents } from './money.js';
 import { makeLedger } from './ledger.js';
 import { payoff, payoffSchedule, requiredGrowth } from './loans.js';
 import { allCardsMonths, cardsNow, firstTransactionDay } from './cards.js';
+import { phrase, say, wordsMode } from './words.js';
 
 /** The average month, in days (365.25 / 12). */
 const DAYS_PER_MONTH = 30.4375;
@@ -106,7 +109,7 @@ export function projectNetWorth(state, nowMs, opts) {
   const lines = [];
   if (measured) lines.push(line('pace', 'At this pace', measured.perDay * DAYS_PER_MONTH));
   lines.push(line('scenario', 'Scenario', finite(view.scenario.monthlyImprove)));
-  if (kept !== null) lines.push(line('habit', 'At habit', (measured.perDay - kept) * DAYS_PER_MONTH));
+  if (kept !== null) lines.push(line('habit', phrase('forecast.atHabit', wordsIn(opts)), (measured.perDay - kept) * DAYS_PER_MONTH));
   return { start, months, lines };
 }
 
@@ -233,7 +236,7 @@ export function purchaseImpact(state, nowMs, purchase, opts) {
   };
   // Ruling T5: before day 7 no pace is read, and a credit on the card absorbs the purchase first.
   const credit = onCard && impact.cardMonthChange === null ? creditOnCard(view, nowMs, purchase.accountId) : 0;
-  return { ...impact, sentence: purchaseSentence(amount, impact, clock, onCard, credit) };
+  return { ...impact, sentence: purchaseSentence(amount, impact, clock, onCard, credit, wordsIn(opts)) };
 }
 
 /* -------------------------------------------------------------------- view */
@@ -431,14 +434,14 @@ function creditOnCard(view, nowMs, accountId) {
   return Number.isFinite(value) && value > 0 ? roundCents(value) : 0;
 }
 
-function purchaseSentence(amount, impact, clock, onCard, credit = 0) {
+function purchaseSentence(amount, impact, clock, onCard, credit = 0, words = 'chess') {
   let text;
   if (onCard && impact.cardMonthChange === null) {
     const added = Math.max(0, amount - credit);
     text = fmt(amount) + ' on the card ' + (credit > 0 && added === 0 ? 'is covered by the ' + fmt(credit) + ' credit' : 'adds ' + fmt(added) + ' to what is owed')
       + '; a pace is read from day 7 of the month';
   } else if (impact.cardMonthChange === null) {
-    text = fmt(amount) + ' from cash leaves ' + fmt(impact.cashAfter) + ' on the clock';
+    text = say('forecast.fromCash', words, { amount: fmt(amount), cash: fmt(impact.cashAfter) });
     // With nothing due, cash below zero is a shortfall too, and the figure on the clock already says it.
     if (impact.shortfallAfter > 0 && clock.dueTotal > 0) {
       text += ', ≈' + fmt(impact.shortfallAfter) + ' short of what is due ' + dueWords(clock);
@@ -496,4 +499,9 @@ function sumOf(list, pick) {
   let total = 0;
   for (const item of list) total += pick(item);
   return total;
+}
+
+/** The words an options object asks for ('chess' when it names none). */
+function wordsIn(opts) {
+  return wordsMode(opts !== null && typeof opts === 'object' ? opts.words : undefined);
 }

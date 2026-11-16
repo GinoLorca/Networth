@@ -94,6 +94,9 @@ label.an-set { cursor: text; }
 .an-cardlink { white-space: normal; text-align: left; }
 .an-payoff-tally { margin-top: var(--s-4); justify-content: start; column-gap: var(--s-6); }
 .an-payoff-tally .cap, .an-opp-tally .cap, .an-income-tally .cap { max-width: 22ch; }
+/* Finance words: "under budget at $8 or less" runs longer than "win at $8 or less"; it wraps on two lines no wider
+   than the Chess caption, so the columns keep their Chess widths and the running total keeps its room */
+[data-words="finance"] .an-opp-tally .cap { max-width: 13ch; }
 @container (min-width: 600px) {
   .an-cards-grid { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
   .an-cards-grid .an-fig { margin-top: var(--s-4); }

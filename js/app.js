@@ -7,6 +7,7 @@
  *   ?demo=thin              a sample with only nine days of history: no match yet, no pay detected, nothing typed in
  *   ?now=2026-06-10T14:36   pretend it is this local time
  *   ?theme=paper|night      force a theme for this visit
+ *   ?words=chess|finance    force the words of the interface for this visit (model/words.js); nothing is saved
  *   ?ns=name                use a separate saved document (tests)
  *   ?share=owner            on a development host: share through that GitHub account's networth-data (off without it)
  *   ?standalone=1           behave as the installed app (pull to refresh, Command-R) in a browser tab (tests)
@@ -55,6 +56,8 @@ import { render as accountSheet, actions as accountActions, label as accountLabe
 import { render as recurringSheet, actions as recurringActions, label as recurringLabel } from './views/sheet-recurring.js';
 import { render as streamSheet, actions as streamActions, label as streamLabel } from './views/sheet-stream.js';
 import { render as habitSheet, actions as habitActions, label as habitLabel } from './views/sheet-habit.js';
+import { render as wordsSheet, label as wordsLabel } from './views/sheet-words.js';
+import { phrase, say as sayWords, wordsMode, wordsOf } from './model/words.js';
 
 const VIEWS = {
   board: { title: 'Board', render: boardView },
@@ -78,6 +81,7 @@ const SHEETS = {
   recurring: { render: recurringSheet, label: recurringLabel },
   stream: { render: streamSheet, label: streamLabel },
   habit: { render: habitSheet, label: habitLabel },
+  words: { render: wordsSheet, label: wordsLabel },
 };
 
 const NOTE_MEMORY_DAYS = 14;
@@ -86,11 +90,25 @@ const WIDE = '(min-width: 900px)';
 let els = null;
 let scheduled = false;
 let savedDocBeforeDemo = null;
+/** ?words= forces the words of the interface for this visit; null follows the record (settings.words). */
+let wordsForced = null;
+
+/** The words the interface speaks now: those the address forces, else the record's (model/words.js). */
+function currentWords() {
+  return wordsForced || wordsOf(store.state);
+}
+
+/** A page's title in the words of the interface (Board / Overview …); Settings and the first run keep theirs. */
+function pageTitle(id, words) {
+  return Object.hasOwn(VIEWS, id) && phrase('page.' + id, words) ? phrase('page.' + id, words) : VIEWS[id].title;
+}
 
 /* ------------------------------------------------------------------ boot */
 
 async function boot() {
   const search = new URLSearchParams(location.search);
+  const forcedWords = search.get('words');
+  if (forcedWords === 'chess' || forcedWords === 'finance') wordsForced = wordsMode(forcedWords);
   const pretend = search.get('now');
   if (pretend) {
     const t = Date.parse(pretend);
@@ -243,7 +261,11 @@ function thinDemoState(now) {
 function enterDemo(kind = 'full') {
   if (store.status.readonly) return;
   savedDocBeforeDemo = store.state;
-  store.load(kind === 'thin' ? thinDemoState(nowMs()) : buildDemoState(nowMs()), { readonly: true });
+  const sample = kind === 'thin' ? thinDemoState(nowMs()) : buildDemoState(nowMs());
+  // the sample game speaks the words the owner chose (a change made inside it is kept nowhere, like the rest of it)
+  sample.settings.words = wordsOf(savedDocBeforeDemo);
+  sample.settings.wordsAt = 0;
+  store.load(sample, { readonly: true });
   store.setUi({ seen: store.state.meta.lastSeen });
 }
 
@@ -308,7 +330,8 @@ async function runRefresh({ afterReload = false } = {}) {
   const at = fmtTime(nowMs());
   if (store.status.readonly) {
     if (lead) return say('', 'Updated \u00b7 ' + at);
-    return say(version === 'same' ? 'Sample game: Networth is the newest version, checked at ' + at + '.' : 'Sample game: checked at ' + at + '.', 'Sample game \u00b7 ' + at);
+    const words = currentWords();
+    return say(sayWords(version === 'same' ? 'app.sample.newest' : 'app.sample.checked', words, { at }), sayWords('app.sample.short', words, { at }));
   }
   let bank;
   if (!syncInfo().linked) bank = say('Checked at ' + at + '; no bank is linked on this device.', 'Checked \u00b7 ' + at);
@@ -355,13 +378,18 @@ function schedule() {
 function buildContext() {
   const state = store.state;
   const now = nowMs();
+  // the words of this render: the record's choice (Settings → Appearance), unless the address forces them
+  const words = currentWords();
   return {
     state,
     ui: store.ui,
     now,
+    words,
+    /** true when the address (?words=) sets the words for this visit, whatever the record holds */
+    wordsForced: !!wordsForced,
     today: gameDay(now, state.settings.rolloverHour),
     route: currentRoute(),
-    d: makeDerived(state, now),
+    d: makeDerived(state, now, { words }),
     demo: store.status.readonly,
     sync: syncInfo(),
     share: shareInfo(),
@@ -375,6 +403,8 @@ function render() {
   if (!els || !store.state) return;
   const ctx = buildContext();
   setContext(ctx);
+  // the words on the root element, for the few styles that differ by words (a skipped purchase struck through)
+  if (document.documentElement.getAttribute('data-words') !== ctx.words) document.documentElement.setAttribute('data-words', ctx.words);
 
   const ready = ctx.demo || (ctx.state.meta.origin === 'bank' && ctx.state.accounts.length > 0);
   const viewId = ready ? (VIEWS[ctx.route.view] ? ctx.route.view : 'board') : 'connect';
@@ -390,9 +420,9 @@ function render() {
   morph(els.banner, html`${updateLine()}${framed ? banner(ctx) : unsavedBanner()}`);
   morph(els.mast, framed ? masthead(ctx, viewId) : '');
   const redrawn = viewChanged(ctx, viewId);
-  if (redrawn) morph(els.view, guarded(() => view.render(ctx), view.title));
+  if (redrawn) morph(els.view, guarded(() => view.render(ctx), pageTitle(viewId, ctx.words)));
   morph(els.foot, framed ? footer(ctx) : '');
-  morph(els.tabs, framed ? tabbar(viewId) : '');
+  morph(els.tabs, framed ? tabbar(viewId, ctx.words) : '');
 
   const sheet = ctx.route.sheet && SHEETS[ctx.route.sheet.name];
   if (sheet) {
@@ -403,7 +433,7 @@ function render() {
     if (ctx.route.sheet) closeSheet();
   }
 
-  document.title = viewId === 'board' ? 'Networth' : 'Networth — ' + view.title;
+  document.title = viewId === 'board' ? 'Networth' : 'Networth — ' + pageTitle(viewId, ctx.words);
   if (viewId === 'board' && redrawn) rememberNotes(ctx);
   // an address that names no screen shows the Board, and the address bar says so (after this render, not inside it)
   if (ready && !VIEWS[ctx.route.view]) queueMicrotask(() => navigate('#/board', { replace: true }));
@@ -427,7 +457,7 @@ function viewChanged(ctx, viewId) {
   for (const k of Object.keys(ctx.ui)) if (!SHEET_UI.has(k)) ui[k] = ctx.ui[k];
   const sync = { ...ctx.sync, waitMs: Math.ceil((ctx.sync && ctx.sync.waitMs || 0) / 60000) };
   const key = JSON.stringify([viewId, ctx.route.view, ctx.route.segs || [], ctx.route.params || {}, ui, ctx.today, ctx.wide,
-    ctx.demo, !!ctx.state.settings.cover, sync, store.status]);
+    ctx.demo, !!ctx.state.settings.cover, ctx.words, sync, store.status]);
   if (ALWAYS_DRAWN.has(viewId)) { lastView = null; return true; }
   let cent = null;
   try { cent = Math.floor(ctx.d.position.live); } catch { cent = null; }
@@ -476,12 +506,12 @@ function timePhrase(ms) {
 
 function roundLine(ctx) {
   if (!ctx.state.meta.matchStart) return '';
-  return 'Round ' + parts(ctx.today).d + ' of ' + daysInMonth(monthOf(ctx.today));
+  return sayWords('app.round', ctx.words, { d: parts(ctx.today).d, days: daysInMonth(monthOf(ctx.today)) });
 }
 
 /** How fresh the bank data is: a state for the masthead's sync mark and one quiet line. */
 function syncStatus(ctx) {
-  if (ctx.demo) return { state: 'sample', lead: 'Sample game', rest: '' };
+  if (ctx.demo) return { state: 'sample', lead: phrase('app.sample', ctx.words), rest: '' };
   const s = ctx.sync;
   if (s.busy) return { state: 'syncing', lead: (s.step || 'Checking the bank') + '…', rest: '' };
   if (!s.linked || s.status === 'relink') return { state: 'reconnect', lead: 'Reconnect the bank', rest: '' };
@@ -526,7 +556,7 @@ function updateLine() {
 function banner(ctx) {
   if (!ctx.demo) return unsavedBanner();
   return html`<div class="shell-banner" role="note">
-    <span class="lab"><b>Sample game</b><i class="sep"></i>invented figures<i class="sep"></i>nothing is saved</span>
+    <span class="lab"><b>${phrase('app.sample', ctx.words)}</b><i class="sep"></i>invented figures<i class="sep"></i>nothing is saved</span>
     <button class="btn-link" type="button" data-action="app.leave-demo">Link your bank</button>
   </div>`;
 }
@@ -544,7 +574,7 @@ function masthead(ctx, viewId) {
         <span class="lab only-narrow">${rounds}</span>
       </p>
       <div class="mast-plate">
-        <a class="wordmark" href="#/board" aria-label="Networth, the board">Networth</a>
+        <a class="wordmark" href="#/board" aria-label="${phrase('app.wordmark', ctx.words)}">Networth</a>
         <span class="lab mast-sub">${fmtMonth(monthOf(ctx.today))}${rounds ? html`<i class="sep"></i><b>${rounds}</b>` : ''}</span>
       </div>
       <div class="rule-double mast-rule" aria-hidden="true"></div>
@@ -556,31 +586,37 @@ function masthead(ctx, viewId) {
     </div>
     <div class="mast-nav">
       <nav class="mast-links" aria-label="Sections">
-        ${NAV.map((id) => html`<a href="#/${id}" ${id === viewId ? html`aria-current="page"` : ''}>${VIEWS[id].title}</a>`)}
+        ${NAV.map((id) => html`<a href="#/${id}" ${id === viewId ? html`aria-current="page"` : ''}>${pageTitle(id, ctx.words)}</a>`)}
         <a href="#/settings" ${viewId === 'settings' ? html`aria-current="page"` : ''}>Settings</a>
       </nav>
       <div class="mast-tools">
         ${refreshButton}
         ${coverButton}
-        <button class="btn btn-solid btn-s" type="button" data-action="app.move"><span class="plus">+</span> Move</button>
+        <button class="btn btn-solid btn-s" type="button" data-action="app.move"><span class="plus">+</span> ${phrase('app.move', ctx.words)}</button>
       </div>
     </div>
   </header>`;
 }
 
-function tabbar(viewId) {
-  const link = (id) => html`<a href="#/${id}" ${id === viewId ? html`aria-current="page"` : ''}>${VIEWS[id].title}</a>`;
+/** A tab's label; a label of more than one word (Balance sheet) sets each word apart, so it can take a line each. */
+function tabLabel(text) {
+  const parts = String(text).split(' ');
+  return parts.length > 1 ? parts.map((part, i) => html`${i ? ' ' : ''}<span class="tabbar-word">${part}</span>`) : text;
+}
+
+function tabbar(viewId, words) {
+  const link = (id) => html`<a href="#/${id}" ${id === viewId ? html`aria-current="page"` : ''}>${tabLabel(pageTitle(id, words))}</a>`;
   return html`<nav class="tabbar" aria-label="Sections">
     ${link('board')}${link('scoresheet')}
-    <button class="tabbar-move" type="button" data-action="app.move"><span class="plus">+</span> Move</button>
+    <button class="tabbar-move" type="button" data-action="app.move"><span class="plus">+</span> ${phrase('app.move', words)}</button>
     ${link('material')}${link('book')}${link('analysis')}
   </nav>`;
 }
 
 function footer(ctx) {
   return html`<footer class="colophon">
-    <p>Networth is kept on this device only: no server, no account, no tracking. It asks your bank feed for
-      read-only updates and nothing else. Roman figures come from the bank; italic figures marked ≈ are estimates and are never presented as verified.${ctx.demo ? ' You are looking at a sample game with invented figures.' : ''}</p>
+    <p>${phrase('app.footer.device', ctx.words)} It asks your bank feed for
+      read-only updates and nothing else. Roman figures come from the bank; italic figures marked ≈ are estimates and are never presented as verified.${ctx.demo ? phrase('app.footer.sample', ctx.words) : ''}</p>
   </footer>`;
 }
 

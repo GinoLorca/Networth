@@ -12,6 +12,8 @@ import { html, attrs } from '../ui/dom.js';
 import { store } from '../store.js';
 import { closeSheet } from '../router.js';
 import { context, toast } from '../runtime.js';
+import { sayHtml } from '../ui/say.js';
+import { phrase } from '../model/words.js';
 import { fmt } from '../model/money.js';
 import { fmtDate, nowMs, relDay } from '../model/dates.js';
 import { CADENCES, STREAM_KINDS, accountLabel } from '../model/schema.js';
@@ -69,9 +71,9 @@ function explanation(ctx, stream) {
     <p><b>On.</b> ${isRegular
       ? html`Each day counts one day’s share of a deposit, <span class="est" data-fig><span class="approx">≈</span>${fmt(daily)}</span>, as earned. Net worth rises a little every day and does not jump on payday; what is earned and not yet received is printed in italics.`
       : html`It needs a cadence first: an irregular stream has no share for 1 day, so it is counted when it arrives.`}</p>
-    <p><b>Off.</b> The whole deposit is counted on the day it arrives. With no stream counted day by day, net worth is shown exactly as the bank reports it.</p>
+    <p><b>Off.</b> ${sayHtml('stream.off', ctx.words)}</p>
     ${receivable ? html`<p class="cap">Now: <span class="est" data-fig><span class="approx">≈</span>${fmt(Math.round(receivable.amount))}</span> earned since ${fmtDate(receivable.since, 'dowshort')} and not yet received.</p>` : ''}
-    ${settingOn ? '' : html`<p class="cap">Counting pay as it is earned is switched off in Settings, so this choice waits until that is on. <a class="btn-link" href="#/settings">Settings</a></p>`}
+    ${settingOn ? '' : html`<p class="cap">${sayHtml('stream.settingOff', ctx.words)} <a class="btn-link" href="#/settings">Settings</a></p>`}
   </div>`;
 }
 
@@ -81,7 +83,7 @@ export function render(ctx, params) {
     return html`<div class="sheet-body">
       <p class="sheet-head lab"><b>Income stream</b></p>
       <h2 class="sheet-title">This stream is not in the document.</h2>
-      <p class="cap">Streams are found by the bank feed, after a payer’s second deposit. The Book lists the ${plural(ctx.state.streams.length, 'stream')} there are.</p>
+      <p class="cap">${sayHtml('stream.book', ctx.words, { streams: plural(ctx.state.streams.length, 'stream') })}</p>
       <div class="sheet-actions"><button class="btn" type="button" data-action="app.sheet-close">Close</button></div>
     </div>`;
   }
@@ -99,7 +101,7 @@ export function render(ctx, params) {
       <li class="row"><span class="row-label">Typical deposit</span><span class="row-value fig est"><span class="approx">≈</span>${fmt(stream.amount)}</span></li>
       <li class="row"><span class="row-label">Last deposit</span><span class="row-value" data-cover-keep>${stream.anchor ? fmtDate(stream.anchor, 'dowshort') + ' · ' + relDay(stream.anchor, ctx.today) : 'not known'}</span></li>
       ${next ? html`<li class="row"><span class="row-label">Next expected</span><span class="row-value" data-cover-keep>${fmtDate(next, 'dowshort')} · ${next < ctx.today ? 'not on the bank’s record yet' : relDay(next, ctx.today)}</span></li>` : ''}
-      <li class="row"><span class="row-label">Deposits seen</span><span class="row-value" data-cover-keep>${deposits}${account ? ', into ' + accountLabel(account) : ''}${stream.active ? '' : ' · not seen lately'}</span></li>
+      <li class="row"><span class="row-label">Deposits seen</span><span class="row-value" data-cover-keep>${deposits}${account ? ', into ' + accountLabel(account, ctx.words) : ''}${stream.active ? '' : ' · not seen lately'}</span></li>
     </ul>
 
     <label class="field">
@@ -123,7 +125,7 @@ export function render(ctx, params) {
     </label>
 
     <label class="switch switch-block bks-switch">
-      <span class="switch-text">Count it as earned day by day <em>For regular pay, such as a salary.</em></span>
+      <span class="switch-text">${sayHtml('stream.switch', ctx.words)} <em>For regular pay, such as a salary.</em></span>
       <input type="checkbox" role="switch" name="accrue" ${attrs({ checked: !!stream.accrue })}>
       <span class="switch-track" aria-hidden="true"></span>
     </label>
@@ -185,7 +187,7 @@ export const actions = {
     const message = refused
       ? 'Saved: ' + fields.name + ', counted when it arrives. With no cadence it has no share for 1 day.'
       : changed.includes('accrue')
-        ? fields.name + (fields.accrue ? ' is now counted as earned day by day.' : ' is now counted on the day it arrives.')
+        ? fields.name + phrase(fields.accrue ? 'stream.toast.accrue' : 'stream.toast.arrives', (context() || {}).words)
         : plural(changed.length, 'field') + ' saved on ' + fields.name + '.';
     toast(message, {
       action: 'Undo',

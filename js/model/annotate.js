@@ -1,10 +1,13 @@
 /**
  * Annotation symbols for moves and rounds. See ARCHITECTURE.md section 7.
- * Pure. Imports: schema, money. It works on a Round (from ledger.round) — it does not compute one.
+ * Every function takes `words` in its options, the words of the interface ('chess' when absent, or 'finance':
+ * words.js), and writes the reasons (`why`) in them.
+ * Pure. Imports: schema, money, words. It works on a Round (from ledger.round) — it does not compute one.
  */
 
 import { CATEGORIES, GLYPHS, categoryLabel } from './schema.js';
 import { fmt } from './money.js';
+import { phrase, resultWords as resultIn, say, wordsMode } from './words.js';
 
 const BRILLIANT = '!!';
 const GOOD = '!';
@@ -22,7 +25,6 @@ const BUSINESS_MINIMUM = 5000;
 const PENALTY_CATEGORY = 'fees_interest';
 const FORCED_CATEGORIES = { housing: 'Housing payment', debt_service: 'Loan payment' };
 const PAYBACK_WORDS = { yes: [GOOD, 'paid back'], no: [MISTAKE, 'not paid back'] };
-const RESULT_WORDS = { 1: 'a win', 0.5: 'a draw', 0: 'a loss' };
 
 /*
  * How the specification is read where it leaves a choice:
@@ -67,13 +69,14 @@ const RESULT_WORDS = { 1: 'a win', 0.5: 'a draw', 0: 'a loss' };
  * The round itself gets '!!' for a clean-sheet workday (final or provisional), else '!' when it was played to
  * the morning plan (a plan exists, stops <= plan.stops, and the result is a win), else nothing.
  * @param {import('./ledger.js').Round} round
- * @param {{ sweepTxIds?: Set<string> }} [ctx]
+ * @param {{ sweepTxIds?: Set<string>, words?: 'chess'|'finance' }} [ctx]
  * @returns {{ moves: Map<string, Annotation>, round: Annotation|null }}  moves is keyed by Tx id
  */
 export function annotateRound(round, ctx) {
   if (!isObject(round)) return { moves: new Map(), round: null };
+  const words = wordsIn(ctx);
   const moves = movesOf(round);
-  const marks = { stops: stopMarks(round, moves), declines: declineMarks(moves), sweepIds: sweepIdsOf(ctx) };
+  const marks = { stops: stopMarks(round, moves), declines: declineMarks(moves, words), sweepIds: sweepIdsOf(ctx), words };
   const found = [];
   moves.forEach((tx, order) => {
     const annotation = typeof tx.id === 'string' ? annotationFor(tx, marks) : null;
@@ -82,14 +85,14 @@ export function annotateRound(round, ctx) {
   const kept = withinLimit(found, Math.max(1, Math.ceil(moves.length / MOVES_PER_ANNOTATION)));
   return {
     moves: new Map(kept.map((entry) => [entry.tx.id, entry.annotation])),
-    round: roundAnnotation(round),
+    round: roundAnnotation(round, words),
   };
 }
 
 /**
  * Counts of each glyph over many rounds (for the monthly review), plus the best and costliest moves.
  * @param {import('./ledger.js').Round[]} rounds
- * @param {{ sweepTxIds?: Set<string> }} [ctx]
+ * @param {{ sweepTxIds?: Set<string>, words?: 'chess'|'finance' }} [ctx]
  * @returns {{ counts: Object<string, number>, best: { day: string, text: string }|null, costliest: { day: string, text: string, amount: number }|null,
  *             stackedDays: number, stackedCost: number, prepared: { rounds: number, score: number }, unprepared: { rounds: number, score: number } }}
  *   stackedDays = rounds with 2 or more unplanned stops; stackedCost = what the 2nd and later unplanned stops cost;
@@ -120,7 +123,7 @@ export function reviewRounds(rounds, ctx) {
     side.score += round.result;
     if (Number.isFinite(round.kept) && (!best || round.kept > best.kept)) best = round;
   }
-  if (best) review.best = { day: best.day, text: bestText(best) };
+  if (best) review.best = { day: best.day, text: bestText(best, wordsIn(ctx)) };
   return review;
 }
 
@@ -128,12 +131,13 @@ export function reviewRounds(rounds, ctx) {
  * What playing a candidate move would do to today's round — for the candidate-move sheet, before buying.
  * @param {import('./ledger.js').Round} round   today's round as it stands
  * @param {{ amount: number, category: string, planned?: boolean }} move
+ * @param {{ words?: 'chess'|'finance' }} [opts]
  * @returns {{ keptBefore: number, keptAfter: number, resultBefore: 1|0.5|0, resultAfter: 1|0.5|0,
  *             stopNumber: number|null, glyph: string|null, why: string }}
  *   results are what the round would score if it ended now / after the move; stopNumber = which stop of the day
  *   this would be (null when the category is not a stop category)
  */
-export function previewMove(round, move) {
+export function previewMove(round, move, opts) {
   const lines = linesOf(round);
   const candidate = isObject(move) ? move : {};
   const amount = wholeCents(candidate.amount);
@@ -151,7 +155,8 @@ export function previewMove(round, move) {
     resultAfter,
     stopNumber,
     glyph: stopNumber === null || planned ? null : stackedGlyph(stopNumber),
-    why: previewWhy({ lines, amount, inGame, label: categoryLabel(candidate.category), stopNumber, planned, convAfter, resultBefore, resultAfter }),
+    why: previewWhy({ lines, amount, inGame, label: categoryLabel(candidate.category), stopNumber, planned, convAfter, resultBefore, resultAfter,
+      words: wordsIn(opts) }),
   };
 }
 
@@ -159,30 +164,30 @@ export function previewMove(round, move) {
 
 /** The first rule that speaks for a move decides it (rules 1–7, in order). */
 function annotationFor(tx, marks) {
-  return ownGlyph(tx)
+  return ownGlyph(tx, marks.words)
     || marks.declines.get(tx)
     || marks.stops.get(tx)
-    || paymentMark(tx, marks.sweepIds)
+    || paymentMark(tx, marks.sweepIds, marks.words)
     || businessMark(tx)
-    || forcedMark(tx)
+    || forcedMark(tx, marks.words)
     || null;
 }
 
 /** Rules 1 and 2: the glyph stored on the move — the classifier's '??' on a fee, else the owner's own. */
-function ownGlyph(tx) {
+function ownGlyph(tx, words) {
   if (typeof tx.glyph !== 'string' || !Object.hasOwn(GLYPHS, tx.glyph)) return null;
   if (tx.glyph === PENALTY && tx.kind === 'spend' && tx.category === PENALTY_CATEGORY) {
     return note(PENALTY, 'Fee of ' + fmt(amountOf(tx)) + ': an avoidable penalty');
   }
-  return { glyph: tx.glyph, why: 'Annotated by hand: ' + fmt(amountOf(tx)), manual: true };
+  return { glyph: tx.glyph, why: say('annotate.manual', words, { amount: fmt(amountOf(tx)) }), manual: true };
 }
 
 /** Rule 3: the first two declines of the day. */
-function declineMarks(moves) {
+function declineMarks(moves, words) {
   const marks = new Map();
   for (const tx of moves) {
     if (tx.kind !== 'decline' || marks.size >= DECLINES_MARKED) continue;
-    marks.set(tx, note(GOOD, 'Declined purchase: ' + fmt(amountOf(tx)) + ' not spent'));
+    marks.set(tx, note(GOOD, say('annotate.declined', words, { amount: fmt(amountOf(tx)) })));
   }
   return marks;
 }
@@ -220,12 +225,12 @@ function stackedGlyph(stopNumber) {
 }
 
 /** Rule 5: a recorded sweep, or a payment toward a card or loan that the Book did not expect. */
-function paymentMark(tx, sweepIds) {
-  if (sweepIds.has(tx.id)) return note(GOOD, 'Sweep of ' + fmt(amountOf(tx)) + ' recorded');
+function paymentMark(tx, sweepIds, words) {
+  if (sweepIds.has(tx.id)) return note(GOOD, say('annotate.sweep', words, { amount: fmt(amountOf(tx)) }));
   if (tx.kind !== 'payment' || tx.recurringId != null) return null;
   if (tx.flow === 'in' && tx.pairId != null) return null;
   const what = tx.category === 'card_payment' ? 'Card payment' : 'Debt payment';
-  return note(GOOD, what + ' of ' + fmt(amountOf(tx)) + ' outside the Book');
+  return note(GOOD, say('annotate.outsideBook', words, { what, amount: fmt(amountOf(tx)) }));
 }
 
 /** Rule 6: a business purchase, open until its return check is answered. */
@@ -238,11 +243,11 @@ function businessMark(tx) {
 }
 
 /** Rule 7: rent and loan payments in the Book. */
-function forcedMark(tx) {
+function forcedMark(tx, words) {
   const charge = (tx.kind === 'spend' || tx.kind === 'payment') && tx.flow !== 'in';
   const inBook = tx.recurringId != null || tx.klass === 'book';
   if (!charge || !inBook || !Object.hasOwn(FORCED_CATEGORIES, tx.category)) return null;
-  return note(BOX, FORCED_CATEGORIES[tx.category] + ' of ' + fmt(amountOf(tx)) + ': a forced move');
+  return note(BOX, say('annotate.forced', words, { what: FORCED_CATEGORIES[tx.category], amount: fmt(amountOf(tx)) }));
 }
 
 /**
@@ -265,15 +270,15 @@ function withinLimit(found, limit) {
 
 /* ------------------------------------------------------------------ rounds */
 
-function roundAnnotation(round) {
+function roundAnnotation(round, words) {
   if (!isScored(round)) return null;
   if (round.clean === true && round.type === 'work') {
-    return note(BRILLIANT, 'Clean sheet on a workday: ' + fmt(0) + ' against habit at ' + fmt(wholeCents(round.habit)));
+    return note(BRILLIANT, say('annotate.clean', words, { zero: fmt(0), habit: fmt(wholeCents(round.habit)) }));
   }
   const planned = isObject(round.plan) && Number.isFinite(round.plan.stops) ? round.plan.stops : null;
   const stops = wholeCount(round.stops);
   if (planned === null || stops > planned || round.result !== 1) return null;
-  return note(GOOD, 'Played to the morning plan: ' + countOf(planned, 'stop') + ' planned, ' + stops + ' made');
+  return note(GOOD, say('annotate.toPlan', words, { planned: countOf(planned, 'stop'), made: stops }));
 }
 
 /** Final or provisional: the bank has reported the day (ARCHITECTURE 4.6). */
@@ -292,12 +297,12 @@ function tallyStacked(review, round) {
   for (const stop of stacked) review.stackedCost += Math.round(amountOf(stop.tx));
 }
 
-function bestText(round) {
-  const dayKind = round.type === 'work' ? 'a workday' : 'a day off';
-  if (round.clean === true) return 'Clean sheet on ' + dayKind;
-  if (round.kept > 0) return 'Kept ' + fmt(round.kept) + ' against habit on ' + dayKind;
-  if (round.kept === 0) return 'Level with habit at ' + fmt(wholeCents(round.habit)) + ' on ' + dayKind;
-  return fmt(-round.kept) + ' over habit on ' + dayKind;
+function bestText(round, words) {
+  const kind = round.type === 'work' ? 'a workday' : 'a day off';
+  if (round.clean === true) return say('annotate.best.clean', words, { kind });
+  if (round.kept > 0) return say('annotate.best.kept', words, { amount: fmt(round.kept), kind });
+  if (round.kept === 0) return say('annotate.best.level', words, { habit: fmt(wholeCents(round.habit)), kind });
+  return say('annotate.best.over', words, { amount: fmt(-round.kept), kind });
 }
 
 /* ----------------------------------------------------------------- preview */
@@ -326,11 +331,10 @@ function resultAt(lines, conv) {
 function previewWhy(view) {
   const { lines, amount, stopNumber } = view;
   if (!view.inGame) {
-    return 'Outside the daily game (' + view.label + '): ' + fmt(amount) + ' leaves the round at ' + fmt(lines.conv)
-      + ' against habit at ' + fmt(lines.habit) + '.';
+    return say('annotate.preview.outside', view.words, { label: view.label, amount: fmt(amount), conv: fmt(lines.conv), habit: fmt(lines.habit) });
   }
   const stop = stopNumber === null ? '' : ordinal(stopNumber) + ' stop of the day' + stopNote(view) + '. ';
-  return stop + fmt(amount) + ' ' + resultWords(view) + ', ' + marginWords(lines, view.convAfter) + '.';
+  return stop + fmt(amount) + ' ' + resultWords(view) + ', ' + marginWords(lines, view.convAfter, view.words) + '.';
 }
 
 function stopNote(view) {
@@ -339,19 +343,25 @@ function stopNote(view) {
 }
 
 function resultWords(view) {
-  if (view.lines.bye) return 'leaves the bye at a draw';
-  if (view.resultBefore === view.resultAfter) return 'keeps the round ' + RESULT_WORDS[view.resultAfter];
-  return 'takes the round from ' + RESULT_WORDS[view.resultBefore] + ' to ' + RESULT_WORDS[view.resultAfter];
+  const words = view.words;
+  if (view.lines.bye) return phrase('annotate.preview.bye', words);
+  if (view.resultBefore === view.resultAfter) return say('annotate.preview.keeps', words, { result: resultIn(view.resultAfter, words) });
+  return say('annotate.preview.takes', words, { before: resultIn(view.resultBefore, words), after: resultIn(view.resultAfter, words) });
 }
 
 /** Where the day's spending would stand against the line that decides its result. */
-function marginWords(lines, conv) {
-  if (conv <= lines.winLine) return fmt(lines.winLine - conv) + ' inside the win line';
-  if (conv <= lines.lossLine) return fmt(lines.lossLine - conv) + ' inside the loss line';
-  return fmt(conv - lines.lossLine) + ' past the loss line';
+function marginWords(lines, conv, words) {
+  if (conv <= lines.winLine) return say('annotate.preview.inWin', words, { amount: fmt(lines.winLine - conv) });
+  if (conv <= lines.lossLine) return say('annotate.preview.inLoss', words, { amount: fmt(lines.lossLine - conv) });
+  return say('annotate.preview.pastLoss', words, { amount: fmt(conv - lines.lossLine) });
 }
 
 /* ------------------------------------------------------------ small helpers */
+
+/** The words an options object asks for ('chess' when it names none). */
+function wordsIn(opts) {
+  return wordsMode(isObject(opts) ? opts.words : undefined);
+}
 
 function note(glyph, why) {
   return { glyph, why, manual: false };

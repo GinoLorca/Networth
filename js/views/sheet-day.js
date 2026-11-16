@@ -24,6 +24,8 @@ import { store } from '../store.js';
 import { closeSheet } from '../router.js';
 import { context, toast } from '../runtime.js';
 import { statusLine, inlineMoney, spentUnposted } from './parts.js';
+import { sayHtml } from '../ui/say.js';
+import { phrase, say } from '../model/words.js';
 
 const NOTE_MAX = 280;
 const DAYS_AHEAD = 14;
@@ -86,7 +88,7 @@ function undoLast() {
 }
 
 export function label(ctx, params) {
-  return 'Round of ' + fmtDate(dayOf(ctx, params), 'long');
+  return say('day.sheet', ctx.words, { date: fmtDate(dayOf(ctx, params), 'long') });
 }
 
 /* ------------------------------------------------------------------ render */
@@ -103,7 +105,7 @@ export function render(ctx, params) {
   const dayLink = (to, before) => html`<button class="btn-link" type="button" data-action="app.sheet" data-sheet="day" data-day="${to}">${before ? icon('chevron-left') : ''}${fmtDate(to, 'dowshort')}${before ? '' : icon('chevron-right')}</button>`;
 
   return html`<form class="sheet-body dy-form" data-key="${'day-' + day}" data-submit="day.note" data-day="${day}" novalidate ${attrs({ 'data-cover': !!ctx.state.settings.cover })}>
-    <p class="sheet-head lab"><b>${prematch || !matchOn ? 'Day' : 'Round ' + round.n}</b><i class="sep"></i>${fmtDate(day, 'long')}</p>
+    <p class="sheet-head lab"><b>${prematch || !matchOn ? 'Day' : say('day.round', ctx.words, { n: round.n })}</b><i class="sep"></i>${fmtDate(day, 'long')}</p>
     <h2 class="sheet-title">${titleOf(ctx, round)}</h2>
     <nav class="dy-days" aria-label="Other days">${prev ? dayLink(prev, true) : html`<span></span>`}${next ? dayLink(next, false) : ''}</nav>
     ${standing(ctx, round, matchOn)}
@@ -112,7 +114,7 @@ export function render(ctx, params) {
     ${planBlock(ctx, day, round, record)}
     <label class="field">
       <span class="field-label lab">Note</span>
-      <textarea class="textarea dy-note" name="note" rows="2" maxlength="${NOTE_MAX}" placeholder="Printed under the round">${record.note || ''}</textarea>
+      <textarea class="textarea dy-note" name="note" rows="2" maxlength="${NOTE_MAX}" placeholder="${say('day.note.placeholder', ctx.words)}">${record.note || ''}</textarea>
     </label>
     <div class="sheet-actions"><button class="btn btn-solid" type="submit">Done</button></div>
   </form>`;
@@ -121,16 +123,17 @@ export function render(ctx, params) {
 function titleOf(ctx, round) {
   // a round in pencil or in progress states its margin as an estimate, as the tally below does
   const est = round.status === 'live' || round.status === 'provisional';
-  const over = html`${inlineMoney(-round.kept, { est })} over habit`;
-  const kept = html`${inlineMoney(round.kept, { est, signed: true })} kept`;
+  const w = ctx.words;
+  const over = sayHtml('day.over', w, { amount: inlineMoney(-round.kept, { est }) });
+  const kept = sayHtml('day.kept', w, { amount: inlineMoney(round.kept, { est, signed: true }) });
   switch (round.status) {
-    case 'future': return round.bye ? 'A half-point bye, declared ahead.' : 'Not yet played.';
+    case 'future': return round.bye ? phrase('day.title.byeAhead', w) : phrase('day.title.future', w);
     case 'awaiting': return 'Awaiting the bank.';
-    case 'live': return round.bye ? 'A half-point bye, in progress.' : html`In progress: ${round.kept >= 0 ? kept : over} so far.`;
-    case 'prematch': return ctx.state.meta.matchStart ? 'Before the match began.' : 'The match has not begun.';
+    case 'live': return round.bye ? phrase('day.title.byeLive', w) : html`In progress: ${round.kept >= 0 ? kept : over} so far.`;
+    case 'prematch': return ctx.state.meta.matchStart ? phrase('day.title.before', w) : phrase('day.title.notBegun', w);
     default: {
       if (round.result == null) return 'No result.';
-      const word = round.bye ? 'A half-point bye' : round.result === 1 ? 'A win' : round.result === 0 ? 'A loss' : 'A draw';
+      const word = phrase(round.bye ? 'day.title.bye' : round.result === 1 ? 'day.title.win' : round.result === 0 ? 'day.title.loss' : 'day.title.draw', w);
       return html`${word}: ${round.kept >= 0 ? kept : over}.`;
     }
   }
@@ -144,8 +147,8 @@ function standing(ctx, round, matchOn) {
   if (!round.habit) {
     return html`<div class="dy-standing">
       <p class="cap">${matchOn
-        ? 'No habit is in force on this day, so it is not played.'
-        : 'The match begins on day ' + ctx.d.matchFromDay + ' on record; ' + ctx.d.historyDays + ' so far. Until then a day has no result.'}
+        ? phrase('day.noHabit', ctx.words)
+        : say('day.notBegun', ctx.words, { day: ctx.d.matchFromDay, days: ctx.d.historyDays })}
         ${s === 'future' ? '' : html`Convenience spending on ${fmtDate(round.day, 'short')}: ${inlineMoney(round.conv, { est: spentUnposted(round) })}.`}</p>
     </div>`;
   }
@@ -155,19 +158,19 @@ function standing(ctx, round, matchOn) {
   const played = s !== 'future' && s !== 'awaiting';
   return html`<div class="dy-standing">
     <div class="tally tally-s">
-      <div class="tally-item"><span class="lab">Habit</span><span class="fig">${fmt(round.habit)}</span><span class="cap">on ${dayWord}</span></div>
-      <div class="tally-item"><span class="lab">Spent</span><span class="${cx('fig', played && spentUnposted(round) && 'est')}">${played ? html`${spentUnposted(round) ? html`<span class="approx">≈</span>` : ''}${fmt(round.conv)}` : '—'}</span><span class="cap">${played ? stops : s === 'awaiting' ? 'not reported' : 'not yet played'}</span></div>
-      <div class="tally-item"><span class="lab">${s === 'live' ? 'Standing' : 'Kept'}</span><span class="${cx('fig', pencil && 'est')}">${played ? html`${pencil ? html`<span class="approx">≈</span>` : ''}${fmtSigned(round.kept)}` : '—'}</span><span class="cap">${s === 'live' ? 'so far' : s === 'final' ? 'final' : s === 'provisional' ? 'in pencil' : s === 'prematch' ? 'not counted' : ''}</span></div>
+      <div class="tally-item"><span class="lab">${sayHtml('day.habit', ctx.words)}</span><span class="fig">${fmt(round.habit)}</span><span class="cap">on ${dayWord}</span></div>
+      <div class="tally-item"><span class="lab">Spent</span><span class="${cx('fig', played && spentUnposted(round) && 'est')}">${played ? html`${spentUnposted(round) ? html`<span class="approx">≈</span>` : ''}${fmt(round.conv)}` : '—'}</span><span class="cap">${played ? stops : s === 'awaiting' ? 'not reported' : phrase('day.future', ctx.words)}</span></div>
+      <div class="tally-item"><span class="lab">${phrase(s === 'live' ? 'day.standing' : 'day.keptLabel', ctx.words)}</span><span class="${cx('fig', pencil && 'est')}">${played ? html`${pencil ? html`<span class="approx">≈</span>` : ''}${fmtSigned(round.kept)}` : '—'}</span><span class="cap">${s === 'live' ? 'so far' : s === 'final' ? 'final' : s === 'provisional' ? phrase('day.inPencil', ctx.words) : s === 'prematch' ? 'not counted' : ''}</span></div>
     </div>
     ${played ? html`<figure class="split dy-split">
-      <figcaption class="split-labs"><span class="lab"><b>Kept</b></span><span class="lab"><b>Spent</b></span></figcaption>
+      <figcaption class="split-labs"><span class="lab"><b>${sayHtml('day.keptLabel', ctx.words)}</b></span><span class="lab"><b>Spent</b></span></figcaption>
       <nw-split data-island slim a="${Math.max(0, round.kept)}" b="${round.conv}"></nw-split>
     </figure>` : ''}
     <p class="dy-lines">
-      <span class="dy-mark">${resultMark(round.result, s, { glyph: ann ? ann.glyph : null })}</span>
-      <span class="cap">Win at <span data-fig>${fmt(round.winLine)}</span> or less; a loss above <span data-fig>${fmt(round.lossLine)}</span>. ${statusLine(round)}</span>
+      <span class="dy-mark">${resultMark(round.result, s, { glyph: ann ? ann.glyph : null, words: ctx.words })}</span>
+      <span class="cap">${sayHtml('day.lines', ctx.words, { win: html`<span data-fig>${fmt(round.winLine)}</span>`, loss: html`<span data-fig>${fmt(round.lossLine)}</span>` })} ${statusLine(round, ctx.words)}</span>
     </p>
-    ${ann ? html`<p class="cap dy-ann">${moveGlyph(ann.glyph)} ${figured(ann.why)}.</p>` : ''}
+    ${ann ? html`<p class="cap dy-ann">${moveGlyph(ann.glyph, { words: ctx.words })} ${figured(ann.why)}.</p>` : ''}
   </div>`;
 }
 
@@ -179,13 +182,13 @@ function typeField(ctx, day, round) {
   const def = defaultType(ctx.state, day);
   const usual = WEEKDAYS[dow(day)] + ' are ' + (def === 'work' ? 'workdays' : 'days off') + ' by default.';
   return html`<fieldset class="field">
-    <legend class="field-label lab">Play this day with</legend>
-    <div class="seg seg-block" role="radiogroup" aria-label="Play this day with">
-      <label class="seg-opt"><input type="radio" name="type" value="work" data-change="day.type" ${round.type === 'work' ? html`checked` : ''}><span>Black · a workday</span></label>
-      <label class="seg-opt"><input type="radio" name="type" value="off" data-change="day.type" ${round.type === 'off' ? html`checked` : ''}><span>White · a day off</span></label>
+    <legend class="field-label lab">${sayHtml('day.playWith', ctx.words)}</legend>
+    <div class="seg seg-block" role="radiogroup" aria-label="${say('day.playWith', ctx.words)}">
+      <label class="seg-opt"><input type="radio" name="type" value="work" data-change="day.type" ${round.type === 'work' ? html`checked` : ''}><span>${sayHtml('day.black', ctx.words)}</span></label>
+      <label class="seg-opt"><input type="radio" name="type" value="off" data-change="day.type" ${round.type === 'off' ? html`checked` : ''}><span>${sayHtml('day.white', ctx.words)}</span></label>
     </div>
     <p class="field-help cap">${seg
-      ? html`Habit plays <span data-fig>${fmt(seg.work)}</span> on a workday and <span data-fig>${fmt(seg.off)}</span> on a day off. ${usual}`
+      ? html`${sayHtml('day.habitPlays', ctx.words, { work: html`<span data-fig>${fmt(seg.work)}</span>`, off: html`<span data-fig>${fmt(seg.off)}</span>` })} ${usual}`
       : usual}${round.type !== def ? ' This day is set by hand.' : ''}</p>
   </fieldset>`;
 }
@@ -195,30 +198,30 @@ function typeField(ctx, day, round) {
 function byeBlock(ctx, day, round) {
   const bye = byeState(ctx, day, round);
   const month = fmtMonth(monthOf(day), 'name');
-  const count = html`<i data-cover-keep>${bye.remaining}</i> of ${bye.allowed} ${bye.allowed === 1 ? 'bye remains' : 'byes remain'} in ${month}`;
+  const count = html`<i data-cover-keep>${bye.remaining}</i> of ${bye.allowed} ${phrase(bye.allowed === 1 ? 'day.byes.remain.one' : 'day.byes.remain.many', ctx.words)} in ${month}`;
   let line;
   let button = '';
   if (!ctx.state.meta.matchStart) {
-    line = 'Byes begin with the match: ' + bye.allowed + ' a month, each declared ahead.';
+    line = say('day.byes.begin', ctx.words, { n: bye.allowed });
   } else if (bye.declared) {
     if (bye.open) {
-      line = html`A half-point bye is declared: the round scores ½ whatever is spent, and the dollars still count. ${count}.`;
-      button = html`<button class="btn btn-s" type="button" data-action="day.bye" data-day="${day}" data-set="off">Withdraw the bye</button>`;
+      line = sayHtml('day.bye.declared', ctx.words, { count });
+      button = html`<button class="btn btn-s" type="button" data-action="day.bye" data-day="${day}" data-set="off">${sayHtml('day.bye.withdraw', ctx.words)}</button>`;
     } else {
-      line = html`Played as a half-point bye, declared ahead. ${count}.`;
+      line = sayHtml('day.bye.played', ctx.words, { count });
     }
   } else if (bye.open && bye.remaining > 0) {
-    line = html`A bye scores ½ whatever is spent; the dollars still count. ${count}.`;
-    button = html`<button class="btn btn-s" type="button" data-action="day.bye" data-day="${day}" data-set="on">Take a half-point bye</button>`;
+    line = sayHtml('day.bye.scores', ctx.words, { count });
+    button = html`<button class="btn btn-s" type="button" data-action="day.bye" data-day="${day}" data-set="on">${sayHtml('day.bye.take', ctx.words)}</button>`;
   } else if (bye.open) {
-    line = html`The ${bye.allowed === 1 ? 'bye' : bye.allowed + ' byes'} of ${month} ${bye.allowed === 1 ? 'is' : 'are'} used${bye.taken.length ? ' (' + bye.taken.map((d) => fmtDate(d, 'short')).join(', ') + ')' : ''}.`;
+    line = say(bye.allowed === 1 ? 'day.bye.used.one' : 'day.bye.used.many', ctx.words, { n: bye.allowed, month, taken: bye.taken.length ? ' (' + bye.taken.map((d) => fmtDate(d, 'short')).join(', ') + ')' : '' });
   } else if (day === ctx.today) {
-    line = html`A bye is declared before the day’s first convenience purchase; ${bye.played === 1 ? 'one is' : bye.played + ' are'} already on today’s sheet. ${count}.`;
+    line = sayHtml('day.bye.before', ctx.words, { already: bye.played === 1 ? 'one is' : bye.played + ' are', count });
   } else {
-    line = html`A bye is declared ahead, so none can be added to a day already played. ${count}.`;
+    line = sayHtml('day.bye.ahead', ctx.words, { count });
   }
   return html`<div class="dy-block">
-    <p class="lab"><b>Half-point bye</b></p>
+    <p class="lab"><b>${sayHtml('day.bye.title', ctx.words)}</b></p>
     <p class="cap">${line}</p>
     ${button ? html`<p class="dy-block-action">${button}</p>` : ''}
   </div>`;
@@ -242,9 +245,9 @@ function planBlock(ctx, day, round, record) {
   return html`<div class="dy-block">
     <p class="lab"><b>Morning plan</b></p>
     <p class="cap">${round.plan
-      ? html`${words ? words.charAt(0).toUpperCase() + words.slice(1) : 'Set'}${at ? ', set at ' + fmtTime(at) : ''}. A planned stop is a book move and prints bare.`
+      ? html`${words ? words.charAt(0).toUpperCase() + words.slice(1) : 'Set'}${at ? ', set at ' + fmtTime(at) : ''}.${sayHtml('day.plan.bookMove', ctx.words)}`
       : html`No plan is set for ${fmtDate(day, 'short')}. Three taps: container, breakfast, planned stops.`}</p>
-    ${isToday ? html`<p class="dy-block-action"><button class="btn-link" type="button" data-action="app.sheet" data-sheet="plan">${round.plan ? 'Change the plan' : 'Opening preparation'}</button></p>` : ''}
+    ${isToday ? html`<p class="dy-block-action"><button class="btn-link" type="button" data-action="app.sheet" data-sheet="plan">${round.plan ? 'Change the plan' : phrase('day.plan.open', ctx.words)}</button></p>` : ''}
   </div>`;
 }
 
@@ -271,7 +274,7 @@ export const actions = {
         else record.type = type;
       });
     }, { undo: 'Day type changed' });
-    toast(fmtDate(day, 'dowshort') + ' is played with ' + (type === 'work' ? 'Black, a workday.' : 'White, a day off.'), { action: 'Undo', onAction: undoLast });
+    toast(say(type === 'work' ? 'day.toast.type.work' : 'day.toast.type.off', ctx.words, { day: fmtDate(day, 'dowshort') }), { action: 'Undo', onAction: undoLast });
   },
   /** Declare or withdraw a half-point bye, within the rules (checked again here, not trusted from the markup). */
   'day.bye': ({ data }) => {
@@ -286,8 +289,8 @@ export const actions = {
         if (on) record.bye = true;
         else delete record.bye;
       });
-    }, { undo: on ? 'Bye declared' : 'Bye withdrawn' });
-    toast(on ? 'A half-point bye is declared for ' + fmtDate(day, 'dowshort') + '.' : 'The bye of ' + fmtDate(day, 'dowshort') + ' is withdrawn.', { action: 'Undo', onAction: undoLast });
+    }, { undo: phrase(on ? 'day.undo.byeOn' : 'day.undo.byeOff', ctx.words) });
+    toast(say(on ? 'day.toast.byeOn' : 'day.toast.byeOff', ctx.words, { day: fmtDate(day, 'dowshort') }), { action: 'Undo', onAction: undoLast });
   },
   /** Done: save the note when it changed, then close. */
   'day.note': ({ values, data }) => {

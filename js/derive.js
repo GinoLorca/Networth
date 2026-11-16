@@ -1,7 +1,9 @@
 /**
  * Derived data for one render: every engine result a view may need, computed lazily and
  * at most once per render. Views read `ctx.d`; they never call the engine with their own clock.
+ * The words of the render (`opts.words`, as ctx.words: model/words.js) reach every model function that writes text.
  *
+ *   d.words                    'chess' | 'finance': the words this render's text is in
  *   d.today                    today's game day
  *   d.position                 ledger Position: cash, cards, liquid, assets, liabilities, bank, smooth, live, rate, receivables…
  *   d.clock                    ledger Clock: cash, nextPayday, due[], shortfall, runwayDays, milestones…
@@ -39,14 +41,17 @@ import { pace, paceMinDays, projectNetWorth, reserveGoal, incomeLadder, cardPayo
 import { topMerchants } from './model/classify.js';
 import { recentTransactions } from './model/recent.js';
 import { MATCH_FROM_DAY } from './model/detect.js';
+import { wordsMode } from './model/words.js';
 
 const LOOKBACK_FOR_LAST_ROUND = 10;
 
 /**
  * @param {object} state  the document
  * @param {number} now    timestamp of this render
+ * @param {{ words?: 'chess'|'finance' }} [opts]  the words of the render (Chess words when absent)
  */
-export function makeDerived(state, now) {
+export function makeDerived(state, now, opts) {
+  const words = wordsMode(opts && typeof opts === 'object' ? opts.words : undefined);
   const memo = new Map();
   const once = (key, compute) => {
     if (!memo.has(key)) memo.set(key, compute());
@@ -56,11 +61,12 @@ export function makeDerived(state, now) {
   // One ledger for the whole render: every figure of a pass is read from the same index of the
   // document. (Building it per question made a Board render cost tens of ledgers.)
   const led = () => once('ledger', () => makeLedger(state, now));
-  // The model functions that open a ledger of their own accept this one instead.
-  const shared = () => ({ ledger: led() });
+  // The model functions that open a ledger of their own accept this one instead (and the words they write in).
+  const shared = () => ({ ledger: led(), words });
 
   const d = {
     today,
+    words,
 
     get position() { return once('position', () => led().position()); },
     get clock() { return once('clock', () => led().clock()); },
@@ -89,7 +95,7 @@ export function makeDerived(state, now) {
       });
     },
     annotations(day) {
-      return once('ann:' + day, () => annotateRound(d.round(day), { sweepTxIds: d.sweepTxIds }));
+      return once('ann:' + day, () => annotateRound(d.round(day), { sweepTxIds: d.sweepTxIds, words }));
     },
 
     month(ym) { return once('month:' + ym, () => led().monthTable(ym)); },
@@ -109,7 +115,7 @@ export function makeDerived(state, now) {
     spending(from, to) { return once('spending:' + from + ':' + to, () => led().spendingByCategory(from, to)); },
 
     get assessment() { return once('assessment', () => assess(state, now, shared())); },
-    get notes() { return once('notes', () => coachNotes(state, now, { limit: 3, ledger: led() })); },
+    get notes() { return once('notes', () => coachNotes(state, now, { limit: 3, ledger: led(), words })); },
     review(ym) { return once('review:' + ym, () => monthReview(state, ym, now, shared())); },
 
     get cardsNow() { return once('cardsNow', () => cardsNow(state, now, shared())); },
