@@ -14,7 +14,6 @@ import { context, toast } from '../runtime.js';
 import { fmt } from '../model/money.js';
 import { fmtDate, relDay } from '../model/dates.js';
 import { CADENCES, STREAM_KINDS, accountLabel } from '../model/schema.js';
-import { nextOccurrence } from '../model/book.js';
 import { refresh } from '../model/detect.js';
 
 const NAME_MAX = 80;
@@ -87,7 +86,8 @@ export function render(ctx, params) {
   const isRegular = regular(stream);
   const account = stream.accountId ? ctx.d.account(stream.accountId) : null;
   const deposits = depositsOf(ctx.state, stream.id);
-  const next = isRegular && stream.anchor && stream.active ? nextOccurrence(stream, ctx.today) : null;
+  // the day its deposits usually land, the one the Board's payday countdown uses (book.usualSchedule)
+  const next = isRegular && stream.anchor && stream.active ? ctx.d.nextPayOf(stream.id) : null;
   const fed = Object.keys(FED_FIELDS).filter((field) => hasLock(stream, field));
 
   return html`<form class="sheet-body" data-submit="stream.save" data-id="${stream.id}" novalidate ${attrs({ 'data-cover': !!ctx.state.settings.cover })}>
@@ -96,7 +96,7 @@ export function render(ctx, params) {
     <ul class="rows bks-facts">
       <li class="row"><span class="row-label">Typical deposit</span><span class="row-value fig est"><span class="approx">≈</span>${fmt(stream.amount)}</span></li>
       <li class="row"><span class="row-label">Last deposit</span><span class="row-value" data-cover-keep>${stream.anchor ? fmtDate(stream.anchor, 'dowshort') + ' · ' + relDay(stream.anchor, ctx.today) : 'not known'}</span></li>
-      ${next ? html`<li class="row"><span class="row-label">Next expected</span><span class="row-value" data-cover-keep>${fmtDate(next, 'dowshort')} · ${relDay(next, ctx.today)}</span></li>` : ''}
+      ${next ? html`<li class="row"><span class="row-label">Next expected</span><span class="row-value" data-cover-keep>${fmtDate(next, 'dowshort')} · ${next < ctx.today ? 'not on the bank’s record yet' : relDay(next, ctx.today)}</span></li>` : ''}
       <li class="row"><span class="row-label">Deposits seen</span><span class="row-value" data-cover-keep>${deposits}${account ? ', into ' + accountLabel(account) : ''}${stream.active ? '' : ' · not seen lately'}</span></li>
     </ul>
 

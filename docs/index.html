@@ -8,8 +8,8 @@
 <meta name="description" content="Networth: a private net-worth board. It reads your bank feed itself; your data stays on your device.">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
-<meta name="networth-build" content="bc403bedf9db">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-ujzecORz84dhl+/UwC+8pQ7j30OMTyUkKhq2ZI6sXL4='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-rrcgv2y0KMkdT76+jAxvRcNQTlj6UpNB9oKKC0whQNA=' 'sha256-e/tbGNncdNoZz13l4nvoF3bB1VC0tPaMfOMw7T5fyIM=' 'sha256-+kkhchUCRBd+0VQYn43jlCAxw7wA5HMQjWisXKwaHnY=' 'sha256-bjsMTiPXO/fV7QJlhFnicz5k0INxLBT0hibL6mxaByc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-Emyu5cw7i4JN3GbUB61EyK9lHxxGx58pdLBCYR43F4c=' 'sha256-VzoPHmMbD+TfmkRekvrhksYUuT8rj+c4jA1P/9P6/qI=' 'sha256-DteyLvNz/HtxRqT86M19HgoZfGS3Vjh7g7Qv8sqoXaE=' 'sha256-Yq5LqpSuZYrQBiwZV3GIUKl7VztQyUyyTLeHF8RzYfM=' 'sha256-3slL6XKCxBUrVwsIn+pfLSFvsWrg1SlNV1OOfV1jrRE=' 'sha256-0Q0aqbibC2pJ+jg+2zSPosbIxN93hLKqymzq/mkX9B0=' 'sha256-niQW6BHsFCuf+mNMjOPiKJl0QACazn3cmhTykWBmDew='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://beta-bridge.simplefin.org https://bridge.simplefin.org https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="networth-build" content="5fd761c97e7e">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-208wvxBJMj+gs1gOCd/A/QSysXy2myZ8tihl3eKP3Jc='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-rrcgv2y0KMkdT76+jAxvRcNQTlj6UpNB9oKKC0whQNA=' 'sha256-e/tbGNncdNoZz13l4nvoF3bB1VC0tPaMfOMw7T5fyIM=' 'sha256-+kkhchUCRBd+0VQYn43jlCAxw7wA5HMQjWisXKwaHnY=' 'sha256-bjsMTiPXO/fV7QJlhFnicz5k0INxLBT0hibL6mxaByc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-Emyu5cw7i4JN3GbUB61EyK9lHxxGx58pdLBCYR43F4c=' 'sha256-VzoPHmMbD+TfmkRekvrhksYUuT8rj+c4jA1P/9P6/qI=' 'sha256-DteyLvNz/HtxRqT86M19HgoZfGS3Vjh7g7Qv8sqoXaE=' 'sha256-Yq5LqpSuZYrQBiwZV3GIUKl7VztQyUyyTLeHF8RzYfM=' 'sha256-3slL6XKCxBUrVwsIn+pfLSFvsWrg1SlNV1OOfV1jrRE=' 'sha256-0Q0aqbibC2pJ+jg+2zSPosbIxN93hLKqymzq/mkX9B0=' 'sha256-niQW6BHsFCuf+mNMjOPiKJl0QACazn3cmhTykWBmDew='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://beta-bridge.simplefin.org https://bridge.simplefin.org https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#F3EDE1" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#15130F" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
@@ -5558,6 +5558,42 @@ function occurrences(item, afterDay, untilDay) {
   return twiceMonthly(item.anchor, afterDay, untilDay);
 }
 
+const USUAL_PERIODS = 6;
+const USUAL_MIN_DEPOSITS = 3;
+const USUAL_MAX_SHIFT = 3;
+const USUAL_RUN_GAP_PERIODS = 1.6;
+
+function usualSchedule(item, depositDays) {
+  if (!hasSchedule(item) || !STEPS[item.cadence].days || !Array.isArray(depositDays)) return item;
+  if (Array.isArray(item.locks) && item.locks.includes('anchor')) return item;
+  const step = STEPS[item.cadence].days;
+  const days = [...new Set(depositDays.filter(isYmd))].sort();
+  if (days.length < USUAL_MIN_DEPOSITS) return item;
+  const latest = days[days.length - 1];
+  // the current run: back from the latest deposit to the first gap longer than a lapse
+  let runStart = 0;
+  for (let i = days.length - 1; i > 0; i--) {
+    if (diffDays(days[i - 1], days[i]) > USUAL_RUN_GAP_PERIODS * step) { runStart = i; break; }
+  }
+  const counts = new Map();
+  let counted = 0;
+  for (const day of days.slice(runStart)) {
+    const back = diffDays(day, latest);
+    const slot = Math.round(back / step);
+    if (slot >= USUAL_PERIODS) continue;
+    const offset = slot * step - back;
+    if (Math.abs(offset) > USUAL_MAX_SHIFT) continue;
+    counts.set(offset, (counts.get(offset) || 0) + 1);
+    counted += 1;
+  }
+  if (counted < USUAL_MIN_DEPOSITS) return item;
+  let best = 0;
+  let most = -1;
+  for (const [offset, n] of counts) if (n > most || (n === most && offset > best)) { best = offset; most = n; }
+  const anchor = addDays(latest, best);
+  return anchor === item.anchor ? item : { ...item, anchor };
+}
+
 function nextOccurrence(item, afterDay) {
   if (!hasSchedule(item) || !isYmd(afterDay)) return null;
   const first = firstDayOf(item);
@@ -5864,7 +5900,7 @@ function earlyDays(entry) {
   const cadence = entry && typeof entry.cadence === 'string' && Object.hasOwn(CADENCES, entry.cadence) ? CADENCES[entry.cadence] : null;
   return cadence && Number.isFinite(cadence.days) ? Math.min(5, Math.floor(cadence.days / 4)) : 0;
 }
-return { occurrences, nextOccurrence, lastOccurrence, annualCost, dailyCost, upcoming, bookTotals, renewals, BY_HAND_ARREARS, byHandStanding, byHandStandingOf, runsByHand, byHandUnpaid, BILL_LAPSE_PERIODS, entryLapsed, earlyDays };
+return { occurrences, usualSchedule, nextOccurrence, lastOccurrence, annualCost, dailyCost, upcoming, bookTotals, renewals, BY_HAND_ARREARS, byHandStanding, byHandStandingOf, runsByHand, byHandUnpaid, BILL_LAPSE_PERIODS, entryLapsed, earlyDays };
 })();
 
 // ---- js/model/loans.js
@@ -6043,7 +6079,7 @@ __mods["js/model/ledger.js"] = (function () {
 const { ACCOUNT_TYPES, CADENCES, CATEGORIES, accountLabel, klassOf } = __mods["js/model/schema.js"];
 const { addDays, addMonths, addMonthsYm, daysInMonth, diffDays, dow, gameDay, gameDayFraction, gameDayStartMs, isYmd, monthOf, parts, startOfMonth, weekStart } = __mods["js/model/dates.js"];
 const { roundCents } = __mods["js/model/money.js"];
-const { BILL_LAPSE_PERIODS, byHandStandingOf, byHandUnpaid, earlyDays, lastOccurrence, nextOccurrence, occurrences, runsByHand, upcoming } = __mods["js/model/book.js"];
+const { BILL_LAPSE_PERIODS, byHandStandingOf, byHandUnpaid, earlyDays, lastOccurrence, nextOccurrence, occurrences, runsByHand, upcoming, usualSchedule } = __mods["js/model/book.js"];
 const { dailyInterest, loanValueOn } = __mods["js/model/loans.js"];
 const EPOCH = '1970-01-01';
 const HOUR_MS = 3600000;
@@ -6114,6 +6150,7 @@ function makeLedger(state, nowMs) {
     edge: () => edgeOf(core),
     clock: () => clockOf(core),
     payStreams: () => payStreamsOf(core),
+    nextPayOf: (streamId) => nextPayOf(core, streamId),
     retention: (day) => retentionOf(core, day),
     spendingByCategory: (fromDay, toDay) => spendingBetween(core, fromDay, toDay),
   };
@@ -7319,6 +7356,17 @@ function cashAsOf(core) {
   return oldest;
 }
 
+function nextPayOf(core, streamId) {
+  const stream = listOf(core.doc.streams).find((s) => s && s.id === streamId);
+  if (!stream) return null;
+  // the main pay stream: the clock's own day, the one the Board counts down to (awaited: the day it was due)
+  const pay = paydayOf(core);
+  if (pay.mainId === stream.id) return pay.payAwaited || pay.nextPayday;
+  const deposits = core.index().payDays.get(stream.id) || [];
+  const schedule = usualSchedule(stream, deposits.map((n) => core.cal.day(n)));
+  return nextOccurrence(schedule, paidThrough(core, schedule, stream, deposits));
+}
+
 function payStreamsOf(core) {
   const payDays = core.index().payDays;
   return listOf(core.doc.streams).filter((stream) => isScheduled(core, stream)
@@ -7335,16 +7383,26 @@ function paydayOf(core) {
     if (!main || dailyOf(stream) > dailyOf(main)) main = stream;
   }
   if (!main) return { nextPayday: null, payAwaited: null, following: null };
-  const following = nextOccurrence(main, core.today);
   const deposits = payDays.get(main.id) || [];
-  if (!deposits.length) return { nextPayday: nextOccurrence(main, addDays(core.today, -1)), payAwaited: null, following };
-  const last = lastOccurrence(main, core.today);
+  // expected on the day its deposits usually land, not just where the latest one fell (book.usualSchedule)
+  const schedule = usualSchedule(main, deposits.map((n) => core.cal.day(n)));
+  const following = nextOccurrence(schedule, paidThrough(core, schedule, main, deposits));
+  if (!deposits.length) return { nextPayday: nextOccurrence(schedule, addDays(core.today, -1)), payAwaited: null, following, mainId: main.id };
+  const last = lastOccurrence(schedule, core.today);
   const lastN = last === null ? null : core.cal.num(last);
   const slack = CADENCES[main.cadence].days / 2;
   if (lastN !== null && !deposits.some((n) => n > lastN - slack)) {
-    return { nextPayday: core.today, payAwaited: last < core.today ? last : null, following };
+    return { nextPayday: core.today, payAwaited: last < core.today ? last : null, following, mainId: main.id };
   }
-  return { nextPayday: following, payAwaited: null, following };
+  return { nextPayday: following, payAwaited: null, following, mainId: main.id };
+}
+
+function paidThrough(core, schedule, stream, deposits) {
+  if (schedule === stream || !deposits.length) return core.today;
+  let latest = -Infinity;
+  for (const n of deposits) if (n > latest) latest = n;
+  const latestDay = core.cal.day(latest);
+  return schedule.anchor > latestDay && schedule.anchor > core.today ? schedule.anchor : core.today;
 }
 
 function payLapsed(core, stream, deposits) {
@@ -12321,6 +12379,7 @@ function makeDerived(state, now) {
     matchFromDay: MATCH_FROM_DAY,
     get ledger() { return led(); },
     get payStreams() { return once('payStreams', () => led().payStreams()); },
+    nextPayOf(streamId) { return once('nextPayOf:' + streamId, () => led().nextPayOf(streamId)); },
 
     round(day) { return once('round:' + day, () => led().round(day)); },
     get todayRound() { return d.round(today); },
@@ -27579,7 +27638,6 @@ const { context, toast } = __mods["js/runtime.js"];
 const { fmt } = __mods["js/model/money.js"];
 const { fmtDate, relDay } = __mods["js/model/dates.js"];
 const { CADENCES, STREAM_KINDS, accountLabel } = __mods["js/model/schema.js"];
-const { nextOccurrence } = __mods["js/model/book.js"];
 const { refresh } = __mods["js/model/detect.js"];
 const NAME_MAX = 80;
 const NOTE_MAX = 500;
@@ -27650,7 +27708,8 @@ function render(ctx, params) {
   const isRegular = regular(stream);
   const account = stream.accountId ? ctx.d.account(stream.accountId) : null;
   const deposits = depositsOf(ctx.state, stream.id);
-  const next = isRegular && stream.anchor && stream.active ? nextOccurrence(stream, ctx.today) : null;
+  // the day its deposits usually land, the one the Board's payday countdown uses (book.usualSchedule)
+  const next = isRegular && stream.anchor && stream.active ? ctx.d.nextPayOf(stream.id) : null;
   const fed = Object.keys(FED_FIELDS).filter((field) => hasLock(stream, field));
 
   return html`<form class="sheet-body" data-submit="stream.save" data-id="${stream.id}" novalidate ${attrs({ 'data-cover': !!ctx.state.settings.cover })}>
@@ -27659,7 +27718,7 @@ function render(ctx, params) {
     <ul class="rows bks-facts">
       <li class="row"><span class="row-label">Typical deposit</span><span class="row-value fig est"><span class="approx">≈</span>${fmt(stream.amount)}</span></li>
       <li class="row"><span class="row-label">Last deposit</span><span class="row-value" data-cover-keep>${stream.anchor ? fmtDate(stream.anchor, 'dowshort') + ' · ' + relDay(stream.anchor, ctx.today) : 'not known'}</span></li>
-      ${next ? html`<li class="row"><span class="row-label">Next expected</span><span class="row-value" data-cover-keep>${fmtDate(next, 'dowshort')} · ${relDay(next, ctx.today)}</span></li>` : ''}
+      ${next ? html`<li class="row"><span class="row-label">Next expected</span><span class="row-value" data-cover-keep>${fmtDate(next, 'dowshort')} · ${next < ctx.today ? 'not on the bank’s record yet' : relDay(next, ctx.today)}</span></li>` : ''}
       <li class="row"><span class="row-label">Deposits seen</span><span class="row-value" data-cover-keep>${deposits}${account ? ', into ' + accountLabel(account) : ''}${stream.active ? '' : ' · not seen lately'}</span></li>
     </ul>
 

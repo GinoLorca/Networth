@@ -50,6 +50,58 @@ export function occurrences(item, afterDay, untilDay) {
   return twiceMonthly(item.anchor, afterDay, untilDay);
 }
 
+/** How many of a stream's latest periods the usual day is read from, how many deposits it needs, and how far it moves. */
+const USUAL_PERIODS = 6;
+const USUAL_MIN_DEPOSITS = 3;
+const USUAL_MAX_SHIFT = 3;
+/** A gap between two deposits longer than this many periods starts a new run (the ledger's lapse, PAY_CAP_PERIODS). */
+const USUAL_RUN_GAP_PERIODS = 1.6;
+
+/**
+ * A pay schedule set on the day its deposits usually land (ARCHITECTURE 4.9). A schedule recurs from its anchor,
+ * the latest deposit's day, so one paycheck that came on a different day than usual (on its official day when it
+ * usually arrives a day early, say) would move every prediction after it. For a cadence counted in days (weekly,
+ * every 2 weeks), each deposit of the last USUAL_PERIODS rhythm slots is placed on the latest deposit's rhythm, and
+ * the most common offset moves the anchor (ties: the later day, which cash has to last until anyway). An offset of
+ * more than USUAL_MAX_SHIFT days (a holiday) is not counted, and neither is a deposit from before a gap of more than
+ * USUAL_RUN_GAP_PERIODS periods (a lapse: a stream that resumed keeps its new rhythm). Unchanged: with fewer than
+ * USUAL_MIN_DEPOSITS counted deposits, a cadence by the month, or an anchor the owner set. The latest deposit pays the
+ * occurrence on the moved anchor (see ledger.paidThrough).
+ * @param {object} item  a stream: cadence, anchor
+ * @param {string[]} depositDays  its deposits' days ('YYYY-MM-DD'), in any order
+ * @returns {object} the item itself, or a copy with its anchor moved
+ */
+export function usualSchedule(item, depositDays) {
+  if (!hasSchedule(item) || !STEPS[item.cadence].days || !Array.isArray(depositDays)) return item;
+  if (Array.isArray(item.locks) && item.locks.includes('anchor')) return item;
+  const step = STEPS[item.cadence].days;
+  const days = [...new Set(depositDays.filter(isYmd))].sort();
+  if (days.length < USUAL_MIN_DEPOSITS) return item;
+  const latest = days[days.length - 1];
+  // the current run: back from the latest deposit to the first gap longer than a lapse
+  let runStart = 0;
+  for (let i = days.length - 1; i > 0; i--) {
+    if (diffDays(days[i - 1], days[i]) > USUAL_RUN_GAP_PERIODS * step) { runStart = i; break; }
+  }
+  const counts = new Map();
+  let counted = 0;
+  for (const day of days.slice(runStart)) {
+    const back = diffDays(day, latest);
+    const slot = Math.round(back / step);
+    if (slot >= USUAL_PERIODS) continue;
+    const offset = slot * step - back;
+    if (Math.abs(offset) > USUAL_MAX_SHIFT) continue;
+    counts.set(offset, (counts.get(offset) || 0) + 1);
+    counted += 1;
+  }
+  if (counted < USUAL_MIN_DEPOSITS) return item;
+  let best = 0;
+  let most = -1;
+  for (const [offset, n] of counts) if (n > most || (n === most && offset > best)) { best = offset; most = n; }
+  const anchor = addDays(latest, best);
+  return anchor === item.anchor ? item : { ...item, anchor };
+}
+
 /** The first occurrence strictly after `afterDay` (searching up to two years ahead), or null. */
 export function nextOccurrence(item, afterDay) {
   if (!hasSchedule(item) || !isYmd(afterDay)) return null;

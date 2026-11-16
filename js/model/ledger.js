@@ -17,7 +17,7 @@ import {
   monthOf, parts, startOfMonth, weekStart,
 } from './dates.js';
 import { roundCents } from './money.js';
-import { BILL_LAPSE_PERIODS, byHandStandingOf, byHandUnpaid, earlyDays, lastOccurrence, nextOccurrence, occurrences, runsByHand, upcoming } from './book.js';
+import { BILL_LAPSE_PERIODS, byHandStandingOf, byHandUnpaid, earlyDays, lastOccurrence, nextOccurrence, occurrences, runsByHand, upcoming, usualSchedule } from './book.js';
 import { dailyInterest, loanValueOn } from './loans.js';
 
 const EPOCH = '1970-01-01';
@@ -229,6 +229,7 @@ export function makeLedger(state, nowMs) {
     edge: () => edgeOf(core),
     clock: () => clockOf(core),
     payStreams: () => payStreamsOf(core),
+    nextPayOf: (streamId) => nextPayOf(core, streamId),
     retention: (day) => retentionOf(core, day),
     spendingByCategory: (fromDay, toDay) => spendingBetween(core, fromDay, toDay),
   };
@@ -1635,6 +1636,23 @@ function cashAsOf(core) {
 }
 
 /**
+ * The next day a stream is expected to pay, on the day its deposits usually land (book.usualSchedule), or null
+ * without a schedule: the income stream's sheet shows it as "Next expected". For the main pay stream it is the
+ * clock's payday (today on payday until the deposit lands; the day it was due while it is awaited), so the sheet
+ * and the Board never disagree.
+ */
+function nextPayOf(core, streamId) {
+  const stream = listOf(core.doc.streams).find((s) => s && s.id === streamId);
+  if (!stream) return null;
+  // the main pay stream: the clock's own day, the one the Board counts down to (awaited: the day it was due)
+  const pay = paydayOf(core);
+  if (pay.mainId === stream.id) return pay.payAwaited || pay.nextPayday;
+  const deposits = core.index().payDays.get(stream.id) || [];
+  const schedule = usualSchedule(stream, deposits.map((n) => core.cal.day(n)));
+  return nextOccurrence(schedule, paidThrough(core, schedule, stream, deposits));
+}
+
+/**
  * The streams that count as pay: scheduled, not lapsed (ruling: no deposit for more than 1.6 periods),
  * and either counted day by day (`accrue`) or bringing in at least PAY_STREAM_MIN_MONTHLY a month.
  * A trickle that happens to be regular (20 cents of interest a month) is income, but it is never
@@ -1666,16 +1684,31 @@ function paydayOf(core) {
     if (!main || dailyOf(stream) > dailyOf(main)) main = stream;
   }
   if (!main) return { nextPayday: null, payAwaited: null, following: null };
-  const following = nextOccurrence(main, core.today);
   const deposits = payDays.get(main.id) || [];
-  if (!deposits.length) return { nextPayday: nextOccurrence(main, addDays(core.today, -1)), payAwaited: null, following };
-  const last = lastOccurrence(main, core.today);
+  // expected on the day its deposits usually land, not just where the latest one fell (book.usualSchedule)
+  const schedule = usualSchedule(main, deposits.map((n) => core.cal.day(n)));
+  const following = nextOccurrence(schedule, paidThrough(core, schedule, main, deposits));
+  if (!deposits.length) return { nextPayday: nextOccurrence(schedule, addDays(core.today, -1)), payAwaited: null, following, mainId: main.id };
+  const last = lastOccurrence(schedule, core.today);
   const lastN = last === null ? null : core.cal.num(last);
   const slack = CADENCES[main.cadence].days / 2;
   if (lastN !== null && !deposits.some((n) => n > lastN - slack)) {
-    return { nextPayday: core.today, payAwaited: last < core.today ? last : null, following };
+    return { nextPayday: core.today, payAwaited: last < core.today ? last : null, following, mainId: main.id };
   }
-  return { nextPayday: following, payAwaited: null, following };
+  return { nextPayday: following, payAwaited: null, following, mainId: main.id };
+}
+
+/**
+ * The day after which a stream's next payday is looked for. When the usual day (book.usualSchedule) lies after the
+ * latest deposit, that deposit came early and has already paid the occurrence on it: the next one follows that
+ * occurrence, even while today is still before it. Otherwise today.
+ */
+function paidThrough(core, schedule, stream, deposits) {
+  if (schedule === stream || !deposits.length) return core.today;
+  let latest = -Infinity;
+  for (const n of deposits) if (n > latest) latest = n;
+  const latestDay = core.cal.day(latest);
+  return schedule.anchor > latestDay && schedule.anchor > core.today ? schedule.anchor : core.today;
 }
 
 /**

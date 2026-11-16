@@ -74,6 +74,8 @@ export function makeDerived(state, now) {
     get ledger() { return led(); },
     /** The streams that count as pay: scheduled, not lapsed, not a trickle. */
     get payStreams() { return once('payStreams', () => led().payStreams()); },
+    /** The next day a stream is expected to pay after today, on the day its deposits usually land. */
+    nextPayOf(streamId) { return once('nextPayOf:' + streamId, () => led().nextPayOf(streamId)); },
 
     round(day) { return once('round:' + day, () => led().round(day)); },
     get todayRound() { return d.round(today); },
