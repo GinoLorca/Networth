@@ -25,6 +25,7 @@ import { initShare, shareInfo, autoShare, shareNow } from './share.js';
 import { autoInbox, inboxInfo } from './inbox.js';
 import { autoIncome, incomeInfo } from './income.js';
 import { restampByHand } from './model/byhand.js';
+import { restampCorrections, seedCorrections } from './model/corrections.js';
 import { buildDemoState, demoFeed } from './model/demo.js';
 import { mergeFeed } from './model/merge.js';
 import { followIncome, refresh } from './model/detect.js';
@@ -113,11 +114,15 @@ async function boot() {
   await initStorage({ ns: search.get('ns') || '' });
   let doc = await loadDoc();
   if (doc && checkDoc(doc)) doc = null;
-  store.load(doc ? migrate(doc) : defaultState(nowMs()));
+  const record = doc ? migrate(doc) : defaultState(nowMs());
+  // the corrections this record already holds travel from its first round, stamped 0, before the owner changes anything
+  // (3.8); the copy is saved with the next change
+  seedCorrections(record);
+  store.load(record);
   if (!search.get('theme')) applyTheme(store.state.settings.theme);
   await initSync();
   // an Undo makes what it put back the newest, so that the other devices take the Undo and do not bring the change back
-  store.onRestore((before, after) => { restampByHand(before, after, nowMs()); });
+  store.onRestore((before, after) => { restampByHand(before, after, nowMs()); restampCorrections(before, after); });
   // whatever a change (or an Undo) touched that the matching of reported payments reads (the pending switch, an account
   // left out or retyped, the rollover hour, a row reclassified, paired or claimed, an answer), the payments follow in the
   // same update (3.7); the rebuild changes nothing when its inputs did not change. When the bank rows reported payments

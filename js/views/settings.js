@@ -278,7 +278,9 @@ function bankSection(ctx) {
 
 /* ------------------------------------------------- sharing between devices */
 
-const SHARED_WHAT = 'Nothing the bank reported goes there: no balance, no transaction, no account. Only what you entered, your ticks, and an unreadable fingerprint of who each payment goes to, so every device recognises it the same way.';
+const SHARED_WHAT = 'Apart from the date of a corrected move, nothing the bank reported goes there: no balance, no transaction, no account. Only what you entered, your ticks, and an unreadable fingerprint of who each payment goes to, so every device recognises it the same way.';
+/** The owner's corrections travel in the same file (ARCHITECTURE 3.8). */
+const SHARED_CORRECTIONS = 'Corrections (categories, merchant names, income settings) reach your other devices too, each with an unreadable fingerprint of its merchant or move and, for a corrected move, its bank date, so that every device finds the same move.';
 
 function shareForm(ctx) {
   const busy = ctx.share.busy;
@@ -355,6 +357,7 @@ function shareSection(ctx) {
   const what = html`<section class="col col-5 set-sec" aria-label="What is shared">
     <div class="sec-head"><h3 class="lab"><b>What is shared</b><i class="sep"></i>1 private file</h3></div>
     <p class="set-lede">The payments you send yourself and their ticks, in the file networth-shared.json of ${sh.owner}/networth-data on your own GitHub.</p>
+    <p class="cap set-help">${SHARED_CORRECTIONS}</p>
     <p class="cap set-help">${SHARED_WHAT}</p>
   </section>`;
 
@@ -376,6 +379,7 @@ function shareSection(ctx) {
         <p class="title set-state">Not sharing. 1 paste on each device starts it.</p>
         <p class="set-lede">The payments you send yourself, and their ticks, are then kept in a private file on your own GitHub (${sh.owner}/networth-data):
           what is added or ticked on 1 device shows on the others within seconds of opening them, and nothing is typed twice.</p>
+        <p class="cap set-help">${SHARED_CORRECTIONS}</p>
         <p class="cap set-help">${SHARED_WHAT}</p>
       </section>
       <section class="col col-5 set-sec" aria-label="The key">
@@ -400,6 +404,7 @@ function shareSection(ctx) {
       <section class="col col-5 set-sec" aria-label="The key">
         <div class="sec-head"><h3 class="lab"><b>A new key</b><i class="sep"></i>3 steps</h3></div>
         ${shareSteps()}
+        <p class="cap set-help">${SHARED_CORRECTIONS}</p>
         <p class="cap set-help">${SHARED_WHAT}</p>
       </section>
     </div>`;

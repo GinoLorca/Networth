@@ -23,6 +23,7 @@ import { fmt, fmtPlain, toCents } from '../model/money.js';
 import { fmtDate, fmtTime, isYmd, nowMs } from '../model/dates.js';
 import { CATEGORIES, KLASSES, PURPOSES, GLYPHS, ACCOUNT_TYPES, accountLabel, categoryLabel, klassOf, makeAccount } from '../model/schema.js';
 import { learnRule, confirmMove } from '../model/classify.js';
+import { noteMove } from '../model/corrections.js';
 import { refresh } from '../model/detect.js';
 import { removeManual } from '../model/merge.js';
 import { skipRow } from '../model/byhand.js';
@@ -515,10 +516,15 @@ function save({ values, data }) {
 
   let result = { changed: 0 };
   let heldIn = '';
+  const at = nowMs(); // the moment of the correction: its stamp on every device (3.8)
   store.update((s) => {
     const row = findTx(s, tx.id);
     if (!row) return;
-    if (corrected) result = learnRule(s, row.id, fields, { onlyThis });
+    if (corrected) {
+      result = learnRule(s, row.id, fields, { onlyThis });
+      // the correction reaches the owner's other devices: this row's locked fields and its merchant's rule (3.8)
+      noteMove(s, row.id, at);
+    }
     // a save is the owner's reading of this move: on its own, or with the whole merchant
     confirmMove(s, row.id);
     for (const key of touched) {

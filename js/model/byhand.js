@@ -109,7 +109,7 @@ export function addByHand(state, fields, today, nowMs) {
  * Change a payment the owner sends. A change of the amount or of the day starts the schedule again:
  * from the first day of this month when this month's occurrence (under the terms before the change)
  * is not paid, else from the first day of next month. Switching it on again starts it from the first
- * day of this month. A change of the name alone changes nothing else. Sets `editedAt`.
+ * day of this month. A change of the name alone changes nothing else. Sets `editedAt`, above the stamp it replaces.
  * @returns {boolean} true when the entry was changed; false for an unknown id, an unacceptable field, or no change
  */
 export function editByHand(state, id, changes, today, nowMs) {
@@ -148,7 +148,7 @@ export function editByHand(state, id, changes, today, nowMs) {
     entry.since = since;
     entry.anchor = anchorFor(entry.dueDay, since);
   }
-  entry.editedAt = stamp(nowMs);
+  entry.editedAt = stampAbove(nowMs, entry.editedAt);
   return true;
 }
 
@@ -174,7 +174,7 @@ export function tickByHand(state, id, day, paid, nowMs) {
   if (!entry || !isYmd(day) || typeof paid !== 'boolean') return false;
   if (!occurrences(entry, addDays(day, -1), day).includes(day)) return false;
   if (!isObject(entry.marks)) entry.marks = {};
-  entry.marks[day] = { paid, at: stamp(nowMs) };
+  entry.marks[day] = { paid, at: stampAbove(nowMs, isObject(entry.marks[day]) ? entry.marks[day].at : null) };
   return true;
 }
 
@@ -191,13 +191,14 @@ export function skipRow(state, id, txId, nowMs) {
   const key = payeeKey(tx.mkey);
   if (key === '') return false;
   if (!isObject(entry.skips)) entry.skips = {};
-  entry.skips[tx.day + '|' + key] = { on: true, at: stamp(nowMs) };
+  const skip = tx.day + '|' + key;
+  entry.skips[skip] = { on: true, at: stampAbove(nowMs, isObject(entry.skips[skip]) ? entry.skips[skip].at : null) };
   if (entry.payee === key) {
     const accounts = accountsOf(state);
     const stays = listOf(state.txs).some((row) => row !== tx && isSent(accounts, row, FAR_DAY) && couldBeRowOf(entry, row, payeeKey(row.mkey)));
     if (!stays) {
       entry.payee = null;
-      entry.payeeAt = stamp(nowMs);
+      entry.payeeAt = stampAbove(nowMs, entry.payeeAt);
     }
   }
   return true;
@@ -403,7 +404,7 @@ function learnPayees(entries, open, keyOf, schedules, from, at) {
     const payee = fromThePast(entry, rows, keyOf, from) || (single === null ? null : keyOf(single));
     if (!payee) continue;
     entry.payee = payee;
-    entry.payeeAt = at;
+    entry.payeeAt = Math.max(at, Number.isFinite(entry.payeeAt) ? entry.payeeAt + 1 : 0);
     learned = true;
   }
   return learned;
@@ -540,7 +541,9 @@ function barredOf(entry) {
  * entry `before` lacks is stamped and its tomb deleted; an entry whose name, amount, day, `since` or
  * switch differ is stamped; every mark and skip that differs, or that `after` lacks, is written with
  * the present time (a missing one as paid false / on false); a payee that differs is stamped; an entry
- * `after` lacks gets a tomb.
+ * `after` lacks gets a tomb. What is stamped is stamped above the stamp either copy holds for it. The copy put back
+ * also keeps the stamps and tombs of the one before the Undo where they are higher (an earlier Undo's, when two
+ * Undos come with no round between), so that the second Undo never lets the file bring back what the first took back.
  * @returns {boolean} true when anything was written
  */
 export function restampByHand(before, after, nowMs) {
@@ -548,7 +551,18 @@ export function restampByHand(before, after, nowMs) {
   const at = stamp(nowMs);
   const was = new Map(byHandEntries(before).map((entry) => [entry.id, entry]));
   const now = new Map(byHandEntries(after).map((entry) => [entry.id, entry]));
+  const above = (...stamps) => Math.max(at, ...stamps.map((x) => (Number.isFinite(x) ? x + 1 : 0)));
   let wrote = false;
+  const tombsBefore = isObject(before) && isObject(before.share) && isObject(before.share.tombs) ? before.share.tombs : {};
+  for (const id of Object.keys(tombsBefore)) {
+    const t = tombsBefore[id];
+    if (now.has(id) || !Number.isFinite(t)) continue;
+    const tombs = tombsOf(after);
+    if (!(Number.isFinite(tombs[id]) && tombs[id] >= t)) {
+      tombs[id] = t;
+      wrote = true;
+    }
+  }
   for (const entry of now.values()) {
     const old = was.get(entry.id);
     if (!old) {
@@ -558,13 +572,19 @@ export function restampByHand(before, after, nowMs) {
       continue;
     }
     if (['name', 'amount', 'dueDay', 'since', 'active'].some((field) => entry[field] !== old[field])) {
-      entry.editedAt = at;
+      entry.editedAt = above(entry.editedAt, old.editedAt);
+      wrote = true;
+    } else if (Number.isFinite(old.editedAt) && !(entry.editedAt >= old.editedAt)) {
+      entry.editedAt = old.editedAt;
       wrote = true;
     }
     if (restampMap(entry, old, 'marks', 'paid', at)) wrote = true;
     if (restampMap(entry, old, 'skips', 'on', at)) wrote = true;
     if ((entry.payee || null) !== (old.payee || null)) {
-      entry.payeeAt = at;
+      entry.payeeAt = above(entry.payeeAt, old.payeeAt);
+      wrote = true;
+    } else if (Number.isFinite(old.payeeAt) && !(entry.payeeAt >= old.payeeAt)) {
+      entry.payeeAt = old.payeeAt;
       wrote = true;
     }
   }
@@ -841,6 +861,14 @@ function isDueDay(value) {
 
 function stamp(nowMs) {
   return Number.isFinite(nowMs) ? nowMs : 0;
+}
+
+/**
+ * The stamp of the owner's edit of something already stamped `prev`: now, and always above `prev`, so that a later
+ * edit wins even after an edit made on a device whose clock runs fast (as the corrections and income answers stamp).
+ */
+function stampAbove(nowMs, prev) {
+  return Math.max(Math.round(stamp(nowMs)), Number.isFinite(prev) ? prev + 1 : 0);
 }
 
 function copyOf(map) {

@@ -74,6 +74,7 @@
 .set-opt .switch { width: 100%; }
 .set-opt .switch-text { font-size: var(--t-lede); line-height: 1.3; }
 .set-help { margin-top: -2px; }
+.set-help + .set-help { margin-top: var(--s-2); }
 .set-help .spot, .set-lede .spot { font-style: normal; }
 .set-byes { margin-top: 2px; justify-self: start; align-self: flex-start; }
 

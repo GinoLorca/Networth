@@ -1,7 +1,8 @@
 /**
  * What travels between the owner's devices: the payments they send themselves, their ticks, and the
- * fingerprints that let every device recognise a payment the same way; and the answers about the
- * income another app of theirs reports (`income`, ARCHITECTURE 3.7). Nothing the bank reported.
+ * fingerprints that let every device recognise a payment the same way; the answers about the
+ * income another app of theirs reports (`income`, ARCHITECTURE 3.7); and the owner's corrections
+ * (`corrections`, 3.8: merchant rules, a row's locked fields, a stream's locked settings).
  * See ARCHITECTURE.md section 3.5.
  *
  * Pure: no clock, no DOM, no network. A round (`roundShared`) is handed the device and the transport.
@@ -12,6 +13,10 @@ import { makeByHand } from './byhand.js';
 import { isYmd } from './dates.js';
 import { refresh } from './detect.js';
 import { ensureIncome, exportIncomeShared, incomeOf, isBlankIncome, mergeIncomeShared, readIncomeShared, rebuildIncome } from './income.js';
+import {
+  applyCorrections, arrivedCorrections, exportCorrections, isBlankCorrections, mergeCorrections, pruneCorrections, readCorrections,
+  storeCorrections, storedCorrections,
+} from './corrections.js';
 
 const VERSION = 1;
 const APP = 'networth';
@@ -29,7 +34,7 @@ const MAX_DEPTH = 12;
 const TOMB_KEEP_MS = 400 * 86400000;
 /** How many times a round starts again when another device wrote the file meanwhile. */
 const RESTARTS = 3;
-const KNOWN = new Set(['v', 'app', 'savedAt', 'byHand', 'income']);
+const KNOWN = new Set(['v', 'app', 'savedAt', 'byHand', 'income', 'corrections']);
 const UNSAFE = new Set(['__proto__', 'constructor', 'prototype']);
 const ID = /^[A-Za-z0-9_.:-]{1,80}$/;
 const PAYEE = /^p[0-9a-f]{13}$/;
@@ -73,6 +78,12 @@ function fileOf(raw) {
     const income = readIncomeShared(raw.income);
     if (!income) return null;
     if (!isBlankIncome(income)) out.income = income;
+  }
+  if (raw.corrections !== undefined) {
+    // the owner's corrections (3.8): checked like the rest; an empty section is left out
+    const corrections = readCorrections(raw.corrections);
+    if (!corrections) return null;
+    if (!isBlankCorrections(corrections)) out.corrections = corrections;
   }
   for (const key of Object.keys(raw)) {
     if (!KNOWN.has(key) && !UNSAFE.has(key)) out[key] = plain(raw[key], 0);
@@ -148,6 +159,9 @@ export function exportShared(state, nowMs) {
   const out = { v: VERSION, app: APP, savedAt: isStamp(nowMs) ? nowMs : 0, byHand };
   const income = exportIncomeShared(doc);
   if (!isBlankIncome(income)) out.income = income;
+  // the owner's corrections; a row correction older than 400 days is no longer written (3.8)
+  const corrections = pruneCorrections(exportCorrections(doc));
+  if (!isBlankCorrections(corrections)) out.corrections = corrections;
   return out;
 }
 
@@ -184,6 +198,8 @@ export function mergeShared(a, b) {
   }
   const income = mergeIncomeShared(x.income, y.income);
   if (!isBlankIncome(income)) out.income = income;
+  const corrections = mergeCorrections(x.corrections, y.corrections);
+  if (!isBlankCorrections(corrections)) out.corrections = corrections;
   for (const key of union(x, y)) {
     if (KNOWN.has(key)) continue;
     const p = own(x, key);
@@ -280,12 +296,20 @@ export function applyShared(state, merged, nowMs) {
     ensureIncome(state).shared = mergeIncomeShared(fileOf(merged).income, null);
     rebuildIncome(state, nowMs);
   }
+  const corrected = ops.some((one) => one.op === 'corrections');
+  if (corrected) {
+    // the owner's corrections: the merged ones become this device's copy, and the record follows them through the
+    // owner's own paths (3.8); the caller's run of detection then re-reads the rows
+    const before = exportCorrections(state);
+    storeCorrections(state, mergeCorrections(fileOf(merged).corrections, null));
+    applyCorrections(state, nowMs, before);
+  }
   if (!Array.isArray(state.recurring)) state.recurring = [];
   if (!isObject(state.share)) state.share = { tombs: {} };
   if (!isObject(state.share.tombs)) state.share.tombs = {};
   const tombs = state.share.tombs;
   for (const { op, id, want } of ops) {
-    if (op === 'income') continue;
+    if (op === 'income' || op === 'corrections') continue;
     const at = state.recurring.findIndex((r) => isObject(r) && r.id === id);
     if (op === 'remove') {
       if (at >= 0) state.recurring.splice(at, 1);
@@ -308,7 +332,7 @@ export function applyShared(state, merged, nowMs) {
       delete tombs[id];
     }
   }
-  return { changed: true };
+  return corrected ? { changed: true, corrected } : { changed: true };
 }
 
 function planOf(state, merged) {
@@ -319,6 +343,7 @@ function planOf(state, merged) {
   const ops = [];
   const income = mergeIncomeShared(file.income, null);
   if (JSON.stringify(sortedCopy(incomeOf(state).shared)) !== JSON.stringify(sortedCopy(income))) ops.push({ op: 'income' });
+  if (canon(storedCorrections(state)) !== canon(mergeCorrections(file.corrections, null))) ops.push({ op: 'corrections' });
   for (const id of Object.keys(file.byHand)) {
     const want = file.byHand[id];
     const have = list.find((r) => isObject(r) && r.id === id);
@@ -365,7 +390,7 @@ export async function roundShared(device, transport, clock) {
     if (stale()) return { ok: false, skipped: true };
     const now = clock();
     const local = exportShared(device.state(), now);
-    let merged = mergeShared(local, file);
+    let merged = withoutOldCorrections(mergeShared(local, file));
     if (sharedChanges(device.state(), merged)) {
       // What the file brought that this device did not have: an earlier copy of the document (the one
       // Undo puts back) takes in the same entries of the file, merged with its own, so that an Undo
@@ -374,10 +399,14 @@ export async function roundShared(device, transport, clock) {
       for (const id of Object.keys(file.byHand)) {
         if (canon(own(local.byHand, id)) !== canon(merged.byHand[id])) arrived.byHand[id] = file.byHand[id];
       }
+      // the corrections likewise: only the entries that differ from this device's own (never its own edits, so
+      // that an Undo of them still takes them back)
+      const fresh = arrivedCorrections(local.corrections, merged.corrections);
+      if (isBlankCorrections(fresh)) delete arrived.corrections; else arrived.corrections = fresh;
       const all = merged;
       device.update(
         (s) => { if (applyShared(s, all, now).changed) refresh(s, now); },
-        (s) => { applyShared(s, mergeShared(exportShared(s, now), arrived), now); },
+        (s) => { if (applyShared(s, mergeShared(exportShared(s, now), arrived), now).corrected) refresh(s, now); },
       );
       changed = true;
       merged = mergeShared(exportShared(device.state(), now), merged); // a payee that run of detection learned
@@ -396,6 +425,15 @@ export async function roundShared(device, transport, clock) {
       if (!err || err.code !== 'conflict' || turn >= RESTARTS) throw err;
     }
   }
+}
+
+/** The file without the row corrections 400 days older than its newest one (by their days alone, never a clock: 3.8). */
+function withoutOldCorrections(file) {
+  if (!file.corrections) return file;
+  const out = { ...file };
+  const corrections = pruneCorrections(file.corrections);
+  if (isBlankCorrections(corrections)) delete out.corrections; else out.corrections = corrections;
+  return out;
 }
 
 /** The file without the removals older than 400 days (the device has already applied them). */
@@ -421,7 +459,7 @@ function blank() {
 }
 
 function isBlank(file) {
-  return Object.keys(file).every((key) => KNOWN.has(key)) && Object.keys(file.byHand).length === 0 && !file.income;
+  return Object.keys(file).every((key) => KNOWN.has(key)) && Object.keys(file.byHand).length === 0 && !file.income && !file.corrections;
 }
 
 /** A copy with every object's keys in order, so that equal content prints the same. */

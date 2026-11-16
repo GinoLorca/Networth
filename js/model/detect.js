@@ -13,6 +13,7 @@ import { makeLedger, todayOf } from './ledger.js';
 import { runsByHand } from './book.js';
 import { claimByHand, payeeKey, unpaidByPayee } from './byhand.js';
 import { incomeClaimedRows, rebuildIncome } from './income.js';
+import { applyCorrections } from './corrections.js';
 
 /*
  * How the specification is read where it leaves a choice (each is implemented where it is named):
@@ -313,19 +314,25 @@ export function detectSweeps(state, nowMs) {
 
 /**
  * The one call to make after every merge (and after the owner changes a rule or a setting that
- * affects detection): reclassify unlocked rows, detectRecurring, detectStreams, startMatch, detectSweeps.
+ * affects detection): the owner's corrections this device holds (3.8: a rule, a row, a stream, made here or on
+ * another device, for a row that may only now have arrived), reclassify unlocked rows, detectRecurring,
+ * detectStreams (and the corrections again, for a stream detected just now), startMatch, detectSweeps.
  * @param {object} state  (mutated)
  * @param {number} nowMs
  * @returns {{ reclassified: number, recurring: object, streams: object, matchStarted: boolean, sweeps: number }}
  */
 export function refresh(state, nowMs) {
+  applyCorrections(state, nowMs);
   const reclassified = isObject(state) ? reclassify(state) : 0;
   // the payments another app reported, matched to the bank rows just classified (ARCHITECTURE 3.7)
   rebuildIncome(state, nowMs);
+  const recurring = detectRecurring(state, nowMs);
+  const streams = detectStreams(state, nowMs);
+  applyCorrections(state, nowMs);
   return {
     reclassified,
-    recurring: detectRecurring(state, nowMs),
-    streams: detectStreams(state, nowMs),
+    recurring,
+    streams,
     matchStarted: startMatch(state, nowMs),
     sweeps: detectSweeps(state, nowMs),
   };

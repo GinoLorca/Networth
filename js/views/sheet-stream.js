@@ -2,7 +2,8 @@
  * The "Income stream" sheet (params.id): one payer the feed has seen at least twice.
  * The owner can rename it, set its kind and cadence, choose whether it is counted as earned day by
  * day (accrue — ARCHITECTURE 4.3) and leave a note. Every field changed is added to the stream's
- * `locks`, and detect.refresh runs in the same store.update.
+ * `locks`, written down for the owner's other devices (corrections.noteStream, ARCHITECTURE 3.8), and
+ * detect.refresh runs in the same store.update.
  *
  * Actions: stream.save (the form; with undo).
  */
@@ -12,9 +13,10 @@ import { store } from '../store.js';
 import { closeSheet } from '../router.js';
 import { context, toast } from '../runtime.js';
 import { fmt } from '../model/money.js';
-import { fmtDate, relDay } from '../model/dates.js';
+import { fmtDate, nowMs, relDay } from '../model/dates.js';
 import { CADENCES, STREAM_KINDS, accountLabel } from '../model/schema.js';
 import { refresh } from '../model/detect.js';
+import { noteStream } from '../model/corrections.js';
 
 const NAME_MAX = 80;
 const NOTE_MAX = 500;
@@ -167,6 +169,7 @@ export const actions = {
       return;
     }
     const undoLabel = 'Income stream changed';
+    const at = nowMs(); // the moment of the change: its stamp on every device (3.8)
     store.update((s) => {
       const item = findStream(s, data.id);
       if (!item) return;
@@ -174,6 +177,8 @@ export const actions = {
         item[key] = fields[key];
         addLock(item, key);
       }
+      // the name, kind, cadence and how it is counted reach the owner's other devices (3.8)
+      noteStream(s, item.id, at);
       refresh(s, ctx.now);
     }, { undo: undoLabel });
     closeSheet();

@@ -8,8 +8,8 @@
 <meta name="description" content="Networth: a private net-worth board. It reads your bank feed itself; your data stays on your device.">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
-<meta name="networth-build" content="5fd761c97e7e">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-208wvxBJMj+gs1gOCd/A/QSysXy2myZ8tihl3eKP3Jc='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-rrcgv2y0KMkdT76+jAxvRcNQTlj6UpNB9oKKC0whQNA=' 'sha256-e/tbGNncdNoZz13l4nvoF3bB1VC0tPaMfOMw7T5fyIM=' 'sha256-+kkhchUCRBd+0VQYn43jlCAxw7wA5HMQjWisXKwaHnY=' 'sha256-bjsMTiPXO/fV7QJlhFnicz5k0INxLBT0hibL6mxaByc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-Emyu5cw7i4JN3GbUB61EyK9lHxxGx58pdLBCYR43F4c=' 'sha256-VzoPHmMbD+TfmkRekvrhksYUuT8rj+c4jA1P/9P6/qI=' 'sha256-DteyLvNz/HtxRqT86M19HgoZfGS3Vjh7g7Qv8sqoXaE=' 'sha256-Yq5LqpSuZYrQBiwZV3GIUKl7VztQyUyyTLeHF8RzYfM=' 'sha256-3slL6XKCxBUrVwsIn+pfLSFvsWrg1SlNV1OOfV1jrRE=' 'sha256-0Q0aqbibC2pJ+jg+2zSPosbIxN93hLKqymzq/mkX9B0=' 'sha256-niQW6BHsFCuf+mNMjOPiKJl0QACazn3cmhTykWBmDew='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://beta-bridge.simplefin.org https://bridge.simplefin.org https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="networth-build" content="5de2e3500394">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-+ucaGq7Y9S9SklFd8j0fcmPwDLIO5FS6Yw0kzh1H5qc='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-rrcgv2y0KMkdT76+jAxvRcNQTlj6UpNB9oKKC0whQNA=' 'sha256-e/tbGNncdNoZz13l4nvoF3bB1VC0tPaMfOMw7T5fyIM=' 'sha256-+kkhchUCRBd+0VQYn43jlCAxw7wA5HMQjWisXKwaHnY=' 'sha256-bjsMTiPXO/fV7QJlhFnicz5k0INxLBT0hibL6mxaByc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-Emyu5cw7i4JN3GbUB61EyK9lHxxGx58pdLBCYR43F4c=' 'sha256-VzoPHmMbD+TfmkRekvrhksYUuT8rj+c4jA1P/9P6/qI=' 'sha256-DteyLvNz/HtxRqT86M19HgoZfGS3Vjh7g7Qv8sqoXaE=' 'sha256-Yq5LqpSuZYrQBiwZV3GIUKl7VztQyUyyTLeHF8RzYfM=' 'sha256-3slL6XKCxBUrVwsIn+pfLSFvsWrg1SlNV1OOfV1jrRE=' 'sha256-m7CkRXzuhIuYxbQgavmrerKe1DYy85zXr0vO0/u7PNM=' 'sha256-niQW6BHsFCuf+mNMjOPiKJl0QACazn3cmhTykWBmDew='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://beta-bridge.simplefin.org https://bridge.simplefin.org https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#F3EDE1" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#15130F" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2627,6 +2627,7 @@ label.an-set { cursor: text; }
 .set-opt .switch { width: 100%; }
 .set-opt .switch-text { font-size: var(--t-lede); line-height: 1.3; }
 .set-help { margin-top: -2px; }
+.set-help + .set-help { margin-top: var(--s-2); }
 .set-help .spot, .set-lede .spot { font-style: normal; }
 .set-byes { margin-top: 2px; justify-self: start; align-self: flex-start; }
 .set-rules { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-5); }
@@ -9346,7 +9347,7 @@ function editByHand(state, id, changes, today, nowMs) {
     entry.since = since;
     entry.anchor = anchorFor(entry.dueDay, since);
   }
-  entry.editedAt = stamp(nowMs);
+  entry.editedAt = stampAbove(nowMs, entry.editedAt);
   return true;
 }
 
@@ -9363,7 +9364,7 @@ function tickByHand(state, id, day, paid, nowMs) {
   if (!entry || !isYmd(day) || typeof paid !== 'boolean') return false;
   if (!occurrences(entry, addDays(day, -1), day).includes(day)) return false;
   if (!isObject(entry.marks)) entry.marks = {};
-  entry.marks[day] = { paid, at: stamp(nowMs) };
+  entry.marks[day] = { paid, at: stampAbove(nowMs, isObject(entry.marks[day]) ? entry.marks[day].at : null) };
   return true;
 }
 
@@ -9374,13 +9375,14 @@ function skipRow(state, id, txId, nowMs) {
   const key = payeeKey(tx.mkey);
   if (key === '') return false;
   if (!isObject(entry.skips)) entry.skips = {};
-  entry.skips[tx.day + '|' + key] = { on: true, at: stamp(nowMs) };
+  const skip = tx.day + '|' + key;
+  entry.skips[skip] = { on: true, at: stampAbove(nowMs, isObject(entry.skips[skip]) ? entry.skips[skip].at : null) };
   if (entry.payee === key) {
     const accounts = accountsOf(state);
     const stays = listOf(state.txs).some((row) => row !== tx && isSent(accounts, row, FAR_DAY) && couldBeRowOf(entry, row, payeeKey(row.mkey)));
     if (!stays) {
       entry.payee = null;
-      entry.payeeAt = stamp(nowMs);
+      entry.payeeAt = stampAbove(nowMs, entry.payeeAt);
     }
   }
   return true;
@@ -9534,7 +9536,7 @@ function learnPayees(entries, open, keyOf, schedules, from, at) {
     const payee = fromThePast(entry, rows, keyOf, from) || (single === null ? null : keyOf(single));
     if (!payee) continue;
     entry.payee = payee;
-    entry.payeeAt = at;
+    entry.payeeAt = Math.max(at, Number.isFinite(entry.payeeAt) ? entry.payeeAt + 1 : 0);
     learned = true;
   }
   return learned;
@@ -9651,7 +9653,18 @@ function restampByHand(before, after, nowMs) {
   const at = stamp(nowMs);
   const was = new Map(byHandEntries(before).map((entry) => [entry.id, entry]));
   const now = new Map(byHandEntries(after).map((entry) => [entry.id, entry]));
+  const above = (...stamps) => Math.max(at, ...stamps.map((x) => (Number.isFinite(x) ? x + 1 : 0)));
   let wrote = false;
+  const tombsBefore = isObject(before) && isObject(before.share) && isObject(before.share.tombs) ? before.share.tombs : {};
+  for (const id of Object.keys(tombsBefore)) {
+    const t = tombsBefore[id];
+    if (now.has(id) || !Number.isFinite(t)) continue;
+    const tombs = tombsOf(after);
+    if (!(Number.isFinite(tombs[id]) && tombs[id] >= t)) {
+      tombs[id] = t;
+      wrote = true;
+    }
+  }
   for (const entry of now.values()) {
     const old = was.get(entry.id);
     if (!old) {
@@ -9661,13 +9674,19 @@ function restampByHand(before, after, nowMs) {
       continue;
     }
     if (['name', 'amount', 'dueDay', 'since', 'active'].some((field) => entry[field] !== old[field])) {
-      entry.editedAt = at;
+      entry.editedAt = above(entry.editedAt, old.editedAt);
+      wrote = true;
+    } else if (Number.isFinite(old.editedAt) && !(entry.editedAt >= old.editedAt)) {
+      entry.editedAt = old.editedAt;
       wrote = true;
     }
     if (restampMap(entry, old, 'marks', 'paid', at)) wrote = true;
     if (restampMap(entry, old, 'skips', 'on', at)) wrote = true;
     if ((entry.payee || null) !== (old.payee || null)) {
-      entry.payeeAt = at;
+      entry.payeeAt = above(entry.payeeAt, old.payeeAt);
+      wrote = true;
+    } else if (Number.isFinite(old.payeeAt) && !(entry.payeeAt >= old.payeeAt)) {
+      entry.payeeAt = old.payeeAt;
       wrote = true;
     }
   }
@@ -9897,6 +9916,10 @@ function isDueDay(value) {
 
 function stamp(nowMs) {
   return Number.isFinite(nowMs) ? nowMs : 0;
+}
+
+function stampAbove(nowMs, prev) {
+  return Math.max(Math.round(stamp(nowMs)), Number.isFinite(prev) ? prev + 1 : 0);
 }
 
 function copyOf(map) {
@@ -11496,6 +11519,930 @@ function recentTransactions(state, today, opts = {}) {
 return { AHEAD_DAYS, recentTransactions };
 })();
 
+// ---- js/model/corrections.js
+__mods["js/model/corrections.js"] = (function () {
+const { CADENCES, CATEGORIES, FLOW_CATEGORIES, KLASSES, PURPOSES, STREAM_KINDS } = __mods["js/model/schema.js"];
+const { isYmd } = __mods["js/model/dates.js"];
+const { learnRule, reclassify } = __mods["js/model/classify.js"];
+const { payeeKey } = __mods["js/model/byhand.js"];
+const MAX_RULES = 1000;
+const MAX_MOVES = 1000;
+const MAX_STREAM_SETTINGS = 200;
+const MOVE_KEEP_DAYS = 400;
+
+const RULE_FIELDS = ['category', 'klass', 'purpose', 'merchant'];
+const MOVE_FIELDS = RULE_FIELDS;
+const STREAM_FIELDS = ['name', 'kind', 'cadence', 'accrue'];
+const MERCHANT_MAX = 48;
+const STREAM_NAME_MAX = 80;
+const MAX_STAMP = 1e14;
+const DAY_MS = 86400000;
+const UNSAFE = new Set(['__proto__', 'constructor', 'prototype']);
+const ROW_KEY = /^[if][0-9a-f]{13}$/;
+const FP_KEY = /^f[0-9a-f]{13}$/;
+const MERCHANT_KEY = /^p[0-9a-f]{13}$/;
+const STREAM_KEY = /^p[0-9a-f]{13}\|a[0-9a-f]{13}$/;
+const LEARNED_SHARED = 'learned:s';
+
+/* ------------------------------------------------------------------ reading */
+
+function readCorrections(raw) {
+  return sectionOf(raw, true);
+}
+
+function keptCorrections(raw) {
+  return sectionOf(raw, false) || blank();
+}
+
+function sectionOf(raw, strict) {
+  if (raw === undefined || raw === null) return blank();
+  if (!isObject(raw)) return strict ? null : blank();
+  const out = blank();
+  const parts = [['rules', isMerchantKey, ruleOf, MAX_RULES], ['moves', isRowKey, moveOf, MAX_MOVES], ['streams', isStreamKey, streamOf, MAX_STREAM_SETTINGS]];
+  for (const [name, keyOk, valueOf, max] of parts) {
+    const map = raw[name] === undefined ? {} : raw[name];
+    if (!isObject(map)) { if (strict) return null; continue; }
+    const keys = Object.keys(map);
+    if (strict && keys.length > max) return null;
+    for (const key of keys) {
+      const value = keyOk(key) ? valueOf(map[key], key) : null;
+      if (!value) { if (strict) return null; continue; }
+      out[name][key] = value;
+    }
+    out[name] = capped(out[name], max);
+  }
+  return out;
+}
+
+function ruleOf(raw) {
+  return isObject(raw) ? cellsOf(raw, RULE_FIELDS) : null;
+}
+
+function streamOf(raw) {
+  return isObject(raw) ? cellsOf(raw, STREAM_FIELDS) : null;
+}
+
+function moveOf(raw, key) {
+  if (!isObject(raw) || !isYmd(raw.day)) return null;
+  if (raw.fp !== undefined && !(typeof raw.fp === 'string' && FP_KEY.test(raw.fp))) return null;
+  if (raw.from !== undefined && !(typeof raw.from === 'string' && ROW_KEY.test(raw.from) && raw.from !== key)) return null;
+  const cells = cellsOf(raw, MOVE_FIELDS);
+  return cells ? { ...cells, ...placeOf(raw) } : null;
+}
+
+function cellsOf(raw, fields) {
+  const out = {};
+  if (raw.at !== undefined) {
+    // the first build's shape: one stamp for the whole entry
+    if (!isStamp(raw.at)) return null;
+    if (raw.deleted === true) {
+      for (const field of fields) out[field] = { deleted: true, at: raw.at };
+      return out;
+    }
+    if (raw.deleted !== undefined && raw.deleted !== false) return null;
+    for (const field of fields) {
+      if (raw[field] === undefined) continue;
+      if (!valueOk(field, raw[field])) return null;
+      out[field] = { v: raw[field], at: raw.at };
+    }
+    return Object.keys(out).length ? out : null;
+  }
+  for (const field of fields) {
+    if (raw[field] === undefined) continue;
+    const cell = cellOf(field, raw[field]);
+    if (!cell) return null;
+    out[field] = cell;
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+function cellOf(field, raw) {
+  if (!isObject(raw) || !isStamp(raw.at)) return null;
+  if (raw.undo !== undefined && typeof raw.undo !== 'boolean') return null;
+  if (raw.over !== undefined && !isStamp(raw.over)) return null;
+  const mark = { ...(raw.over !== undefined ? { over: raw.over } : {}), ...(raw.undo === true ? { undo: true } : {}) };
+  if (raw.deleted === true) return raw.v === undefined ? { deleted: true, at: raw.at, ...mark } : null;
+  if (raw.deleted !== undefined && raw.deleted !== false) return null;
+  return Object.hasOwn(raw, 'v') && valueOk(field, raw.v) ? { v: raw.v, at: raw.at, ...mark } : null;
+}
+
+function valueOk(field, v) {
+  switch (field) {
+    case 'category': return typeof v === 'string' && (Object.hasOwn(CATEGORIES, v) || Object.hasOwn(FLOW_CATEGORIES, v));
+    case 'klass': return typeof v === 'string' && Object.hasOwn(KLASSES, v);
+    case 'purpose': return PURPOSES.includes(v);
+    case 'merchant': return isText(v, MERCHANT_MAX);
+    case 'name': return isText(v, STREAM_NAME_MAX);
+    case 'kind': return typeof v === 'string' && Object.hasOwn(STREAM_KINDS, v);
+    case 'cadence': return v === null || (typeof v === 'string' && Object.hasOwn(CADENCES, v));
+    case 'accrue': return typeof v === 'boolean';
+    default: return false;
+  }
+}
+
+function placeOf(entry) {
+  const out = { day: entry.day };
+  if (entry.fp !== undefined) out.fp = entry.fp;
+  if (entry.from !== undefined) out.from = entry.from;
+  return out;
+}
+
+function classFields(raw) {
+  const out = {};
+  for (const field of RULE_FIELDS) {
+    if (raw[field] === undefined) continue;
+    if (!valueOk(field, raw[field])) return null;
+    out[field] = raw[field];
+  }
+  return out;
+}
+
+function streamFields(raw, has) {
+  const out = {};
+  for (const field of STREAM_FIELDS) {
+    if (!has(field)) continue;
+    if (!valueOk(field, raw[field])) return null;
+    out[field] = raw[field];
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------ merging */
+
+function mergeCorrections(a, b) {
+  const x = readCorrections(a) || blank();
+  const y = readCorrections(b) || blank();
+  return {
+    rules: capped(mergeMap(x.rules, y.rules, RULE_FIELDS, false), MAX_RULES),
+    moves: capped(mergeMap(x.moves, y.moves, MOVE_FIELDS, true), MAX_MOVES),
+    streams: capped(mergeMap(x.streams, y.streams, STREAM_FIELDS, false), MAX_STREAM_SETTINGS),
+  };
+}
+
+function isBlankCorrections(section) {
+  const s = readCorrections(section);
+  return !!s && !Object.keys(s.rules).length && !Object.keys(s.moves).length && !Object.keys(s.streams).length;
+}
+
+function pruneCorrections(section) {
+  const s = readCorrections(section) || blank();
+  const cutoff = cutoffOf(Object.values(s.moves).map((entry) => entry.day));
+  if (cutoff === null) return s;
+  const moves = {};
+  for (const key of Object.keys(s.moves)) if (s.moves[key].day >= cutoff) moves[key] = s.moves[key];
+  return { ...s, moves };
+}
+
+function cutoffOf(days) {
+  let newest = null;
+  for (const day of days) if (isYmd(day) && (newest === null || day > newest)) newest = day;
+  return newest === null ? null : new Date(Date.parse(newest + 'T00:00:00Z') - MOVE_KEEP_DAYS * DAY_MS).toISOString().slice(0, 10);
+}
+
+function arrivedCorrections(local, merged) {
+  const x = readCorrections(local) || blank();
+  const y = readCorrections(merged) || blank();
+  const out = blank();
+  for (const name of ['rules', 'moves', 'streams']) {
+    for (const key of Object.keys(y[name])) {
+      const mine = own(x[name], key);
+      const theirs = y[name][key];
+      if (canon(mine) === canon(theirs)) continue;
+      const cells = {};
+      for (const field of [...RULE_FIELDS, ...STREAM_FIELDS]) {
+        const cell = own(theirs, field);
+        if (cell && canon(cell) !== canon(own(mine, field))) cells[field] = cell;
+      }
+      if (!Object.keys(cells).length) continue;
+      out[name][key] = theirs.day === undefined ? cells : { ...cells, ...placeOf(theirs) };
+    }
+  }
+  return out;
+}
+
+function mergeMap(p, q, fields, placed) {
+  const out = {};
+  for (const key of [...new Set([...Object.keys(p), ...Object.keys(q)])].sort()) out[key] = mergeEntry(own(p, key), own(q, key), fields, placed);
+  return out;
+}
+
+function mergeEntry(p, q, fields, placed) {
+  if (!p) return q;
+  if (!q) return p;
+  const out = {};
+  for (const field of fields) {
+    const cell = laterCell(own(p, field), own(q, field));
+    if (cell) out[field] = cell;
+  }
+  if (!placed) return out;
+  const sp = entryAt(p);
+  const sq = entryAt(q);
+  const where = sp !== sq ? (sp > sq ? p : q) : canon(placeOf(p)) <= canon(placeOf(q)) ? p : q;
+  return { ...out, ...placeOf(where) };
+}
+
+function laterCell(p, q) {
+  if (!p) return q;
+  if (!q) return p;
+  if (p.at !== q.at) return p.at > q.at ? p : q;
+  if (!p.undo !== !q.undo) return p.undo ? q : p;
+  return canon(p) <= canon(q) ? p : q;
+}
+
+function entryAt(entry) {
+  let at = 0;
+  for (const field of [...RULE_FIELDS, ...STREAM_FIELDS]) {
+    const cell = own(entry, field);
+    if (isObject(cell) && cell.at > at) at = cell.at;
+  }
+  return at;
+}
+
+function capped(map, max) {
+  const keys = Object.keys(map);
+  if (keys.length <= max) return map;
+  const sorted = keys.sort((a, b) => entryAt(map[b]) - entryAt(map[a]) || (a < b ? -1 : a > b ? 1 : 0));
+  const last = sorted[max - 1];
+  const edge = entryAt(map[last]);
+  const out = {};
+  for (const key of sorted.slice(0, max).sort()) {
+    const entry = map[key];
+    const kept = {};
+    for (const field of [...RULE_FIELDS, ...STREAM_FIELDS]) {
+      const cell = own(entry, field);
+      if (isObject(cell) && (cell.at > edge || (cell.at === edge && key <= last))) kept[field] = cell;
+    }
+    out[key] = entry.day === undefined ? kept : { ...kept, ...placeOf(entry) };
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------ the document */
+
+function exportCorrections(state) {
+  const doc = isObject(state) ? state : {};
+  const held = isObject(doc.share) && isObject(doc.share.corrections) ? doc.share.corrections : null;
+  return held ? keptCorrections(held) : seedsOf(doc);
+}
+
+function storedCorrections(state) {
+  const doc = isObject(state) ? state : {};
+  return keptCorrections(isObject(doc.share) ? doc.share.corrections : null);
+}
+
+function storeCorrections(state, section) {
+  if (!isObject(state)) return;
+  if (!isObject(state.share)) state.share = { tombs: {} };
+  state.share.corrections = keptCorrections(section);
+}
+
+function seedsOf(state) {
+  const values = recordValues(state);
+  const out = blank();
+  for (const name of ['rules', 'moves', 'streams']) {
+    for (const key of Object.keys(values[name])) out[name][key] = seedOf(values[name][key]);
+  }
+  out.rules = capped(out.rules, MAX_RULES);
+  out.moves = capped(out.moves, MAX_MOVES);
+  out.streams = capped(out.streams, MAX_STREAM_SETTINGS);
+  return out;
+}
+
+function seedOf(value) {
+  const out = {};
+  for (const field of [...RULE_FIELDS, ...STREAM_FIELDS]) if (Object.hasOwn(value, field)) out[field] = { v: value[field], at: 0 };
+  return value.day === undefined ? out : { ...out, ...placeOf(value) };
+}
+
+function seedCorrections(state) {
+  if (!isObject(state)) return false;
+  if (isObject(state.share) && isObject(state.share.corrections)) return false;
+  if (!isObject(state.share)) state.share = { tombs: {} };
+  state.share.corrections = seedsOf(state);
+  return true;
+}
+
+function ensureSection(state, touched) {
+  if (seedCorrections(state)) {
+    for (const [name, key] of touched) if (key) delete state.share.corrections[name][key];
+  }
+  state.share.corrections = keptCorrections(state.share.corrections);
+  return state.share.corrections;
+}
+
+function recordValues(state) {
+  const out = { rules: {}, moves: {}, streams: {}, heldMerchants: new Set(), heldMoves: new Map(), heldStreams: new Set() };
+  const settings = isObject(state.settings) ? state.settings : {};
+  for (const rule of listOf(settings.rules)) {
+    const key = isObject(rule) ? merchantKeyOf(rule.mkey) : null;
+    if (!key || Object.hasOwn(out.rules, key)) continue;
+    const fields = pick(rule, RULE_FIELDS, (field) => rule[field] != null && rule[field] !== '');
+    if (fields) out.rules[key] = fields;
+  }
+  const accounts = accountKeys(state);
+  for (const tx of listOf(state.txs)) {
+    const merchant = isObject(tx) ? merchantKeyOf(tx.mkey) : null;
+    if (merchant) out.heldMerchants.add(merchant);
+    const where = rowWhere(tx, accounts);
+    if (!where) continue;
+    out.heldMoves.set(where.key, where.fp);
+    const locks = locksOf(tx);
+    const fields = pick(tx, MOVE_FIELDS, (field) => locks.has(field));
+    if (fields) out.moves[where.key] = where.fp ? { ...fields, day: tx.day, fp: where.fp } : { ...fields, day: tx.day };
+  }
+  for (const stream of listOf(state.streams)) {
+    const key = streamKeyOf(stream, accounts);
+    if (!key) continue;
+    out.heldStreams.add(key);
+    const locks = locksOf(stream);
+    const fields = streamFields(stream, (field) => locks.has(field));
+    if (fields && Object.keys(fields).length && !Object.hasOwn(out.streams, key)) out.streams[key] = fields;
+  }
+  return out;
+}
+
+function pick(item, fields, has) {
+  const out = {};
+  for (const field of fields) {
+    const one = has(field) ? classFields({ [field]: item[field] }) : null;
+    if (one && Object.hasOwn(one, field)) out[field] = one[field];
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+/* ----------------------------------------------------------------- the keys */
+
+function accountKeys(state) {
+  const out = new Map();
+  for (const account of listOf(state.accounts)) {
+    if (!isObject(account) || typeof account.id !== 'string' || !isObject(account.ext) || typeof account.ext.id !== 'string' || !account.ext.id) continue;
+    out.set(account.id, { ext: account.ext.id, key: 'a' + hash(account.ext.id) });
+  }
+  return out;
+}
+
+const whereMemo = new WeakMap();
+
+function rowWhere(tx, accounts) {
+  if (!isObject(tx) || tx.source !== 'bank' || !isYmd(tx.day) || typeof tx.accountId !== 'string') return null;
+  const account = accounts.get(tx.accountId);
+  if (!account) return null;
+  const local = tx.accountId + '|';
+  const id = isObject(tx.ext) && typeof tx.ext.id === 'string' && tx.ext.id ? tx.ext.id : null;
+  const print = typeof tx.fp === 'string' && tx.fp.startsWith(local) ? tx.fp.slice(local.length) : null;
+  const from = account.ext + '\n' + id + '\n' + print;
+  const memo = whereMemo.get(tx);
+  if (memo && memo.from === from) return memo.where;
+  const fp = print === null ? null : 'f' + hash(account.ext + '|' + print);
+  const where = id ? { key: 'i' + hash(account.ext + '\n' + id), fp } : fp ? { key: fp, fp } : null;
+  whereMemo.set(tx, { from, where });
+  return where;
+}
+
+function streamKeyOf(stream, accounts) {
+  const payer = isObject(stream) && typeof stream.accountId === 'string' ? merchantKeyOf(stream.mkey) : null;
+  const account = payer ? accounts.get(stream.accountId) : null;
+  return account ? payer + '|' + account.key : null;
+}
+
+function merchantKeyOf(mkey) {
+  return typeof mkey === 'string' && mkey ? payeeKey(mkey) : null;
+}
+
+function hash(text) {
+  return payeeKey(text).slice(1);
+}
+
+/* ------------------------------------------------------------- the owner's edits */
+
+function noteMove(state, txId, nowMs) {
+  if (!isObject(state) || !isStamp(nowMs)) return false;
+  const tx = listOf(state.txs).find((t) => isObject(t) && t.id === txId);
+  const where = tx ? rowWhere(tx, accountKeys(state)) : null;
+  const merchant = tx ? merchantKeyOf(tx.mkey) : null;
+  if (!where && !merchant) return false;
+  const section = ensureSection(state, [['moves', where && where.key], ['rules', merchant]]);
+  const values = recordValues(state);
+  let wrote = false;
+  if (where && values.moves[where.key]) {
+    wrote = write(section.moves, where.key, values.moves[where.key], nowMs) || wrote;
+    section.moves = capped(section.moves, MAX_MOVES);
+    remember(state, tx.id, where.key);
+  }
+  if (merchant && values.rules[merchant]) {
+    const was = own(own(section.rules, merchant), 'category');
+    wrote = write(section.rules, merchant, values.rules[merchant], nowMs, true) || wrote;
+    section.rules = capped(section.rules, MAX_RULES);
+    const now = own(own(section.rules, merchant), 'category');
+    if (isObject(now) && !now.deleted && canon(now) !== canon(was)) wrote = keepHeld(state, section, tx.mkey, now.v, nowMs) || wrote;
+  }
+  return wrote;
+}
+
+function keepHeld(state, section, mkey, category, nowMs) {
+  if (typeof mkey !== 'string' || !mkey) return false;
+  const accounts = accountKeys(state);
+  const held = [];
+  for (const tx of listOf(state.txs)) {
+    if (!isObject(tx) || tx.mkey !== mkey || (tx.streamId == null && tx.pairId == null) || tx.kind === 'decline') continue;
+    if (locksOf(tx).has('category') || tx.category === category || kindOf(category, tx.flow) === null || !valueOk('category', tx.category)) continue;
+    const where = rowWhere(tx, accounts);
+    if (!where) continue;
+    tx.locks = [...(Array.isArray(tx.locks) ? tx.locks : []), 'category'];
+    held.push([tx, where.key]);
+  }
+  if (!held.length) return false;
+  const values = recordValues(state);
+  let wrote = false;
+  for (const [tx, key] of held) {
+    if (!values.moves[key]) continue;
+    wrote = write(section.moves, key, values.moves[key], nowMs) || wrote;
+    remember(state, tx.id, key);
+  }
+  section.moves = capped(section.moves, MAX_MOVES);
+  return wrote;
+}
+
+function noteStream(state, streamId, nowMs) {
+  if (!isObject(state) || !isStamp(nowMs)) return false;
+  const stream = listOf(state.streams).find((s) => isObject(s) && s.id === streamId);
+  const key = stream ? streamKeyOf(stream, accountKeys(state)) : null;
+  if (!key) return false;
+  const section = ensureSection(state, [['streams', key]]);
+  const locks = locksOf(stream);
+  const fields = streamFields(stream, (field) => locks.has(field));
+  if (!fields || !Object.keys(fields).length) return false;
+  const wrote = write(section.streams, key, fields, nowMs);
+  section.streams = capped(section.streams, MAX_STREAM_SETTINGS);
+  return wrote;
+}
+
+function write(map, key, value, nowMs, rule = false) {
+  const current = own(map, key);
+  const next = current ? { ...current } : {};
+  let wrote = false;
+  for (const field of [...RULE_FIELDS, ...STREAM_FIELDS]) {
+    if (!Object.hasOwn(value, field)) continue;
+    const cell = own(current, field);
+    if (cell && !cell.deleted && canon(cell.v) === canon(value[field])) continue;
+    // a rule's category names the stamp of the cell it replaces here (0 for none, as a seed), so that a device that held
+    // another one knows (applyCorrections)
+    const over = rule && field === 'category' ? { over: isObject(cell) ? cell.at : 0 } : {};
+    next[field] = { v: value[field], at: editStamp(cell, nowMs), ...over };
+    wrote = true;
+  }
+  if (!wrote) return false;
+  if (value.day !== undefined) {
+    delete next.fp;
+    delete next.from;
+    Object.assign(next, placeOf({ ...value, from: current ? current.from : undefined }));
+  }
+  map[key] = order(next);
+  return true;
+}
+
+function editStamp(cell, nowMs) {
+  return Math.min(MAX_STAMP, Math.max(Math.round(nowMs), isObject(cell) && isStamp(cell.at) ? cell.at + 2 : 0));
+}
+
+function liveOf(entry) {
+  const out = {};
+  for (const field of [...RULE_FIELDS, ...STREAM_FIELDS]) {
+    const cell = own(entry, field);
+    if (isObject(cell) && !cell.deleted) out[field] = cell.v;
+  }
+  return out;
+}
+
+function deadOf(entry) {
+  return [...RULE_FIELDS, ...STREAM_FIELDS].filter((field) => { const cell = own(entry, field); return isObject(cell) && cell.deleted === true; });
+}
+
+function order(entry) {
+  const out = {};
+  for (const field of [...RULE_FIELDS, ...STREAM_FIELDS]) if (Object.hasOwn(entry, field)) out[field] = entry[field];
+  return entry.day === undefined ? out : { ...out, ...placeOf(entry) };
+}
+
+/* ------------------------------------------------------------------- Undo */
+
+function restampCorrections(before, after) {
+  if (!isObject(before) || !isObject(after)) return false;
+  const was = recordValues(before);
+  const now = recordValues(after);
+  const hadCopy = isObject(after.share) && isObject(after.share.corrections);
+  const kept = exportCorrections(after);
+  const section = mergeCorrections(exportCorrections(before), kept);
+  let wrote = false;
+  // `from`/`to`: the keys the row is held under before the Undo and in the record put back, when they differ
+  const restamp = (name, key, where, from = key, to = key) => {
+    const value = own(now[name], to) || {};
+    const prior = own(was[name], from) || {};
+    const entry = own(section[name], key);
+    const next = entry ? { ...entry } : {};
+    let touched = false;
+    for (const field of name === 'streams' ? STREAM_FIELDS : RULE_FIELDS) {
+      const has = Object.hasOwn(value, field);
+      if (has === Object.hasOwn(prior, field) && (!has || canon(value[field]) === canon(prior[field]))) continue;
+      const cell = own(entry, field);
+      const at = Math.min(MAX_STAMP, (isObject(cell) ? cell.at : 0) + 1);
+      next[field] = has ? { v: value[field], at, undo: true } : { deleted: true, at, undo: true };
+      touched = true;
+    }
+    if (!touched) return;
+    if (name === 'moves' && next.day === undefined) Object.assign(next, where(Object.keys(value).length ? value : prior));
+    section[name][key] = order(next);
+    wrote = true;
+  };
+  for (const key of union(was.rules, now.rules)) {
+    if (!was.heldMerchants.has(key) || !now.heldMerchants.has(key)) continue;
+    restamp('rules', key);
+  }
+  for (const key of union(was.moves, now.moves)) {
+    if (!was.heldMoves.has(key) || !now.heldMoves.has(key)) continue;
+    restamp('moves', key, (one) => placeOf(one));
+  }
+  // a row both records hold under different keys (this device's own reading posted a pending row, or the bank gave it
+  // a new id, after the change undone): compared as one row, and the Undo written under both keys
+  const keysBefore = rowKeysById(before);
+  for (const [id, key] of rowKeysById(after)) {
+    const from = keysBefore.get(id);
+    if (from === undefined || from === key) continue;
+    restamp('moves', from, (one) => placeOf(one), from, key);
+    restamp('moves', key, (one) => placeOf(one), from, key);
+  }
+  for (const key of union(was.streams, now.streams)) {
+    if (!was.heldStreams.has(key) || !now.heldStreams.has(key)) continue;
+    restamp('streams', key);
+  }
+  const out = { rules: capped(section.rules, MAX_RULES), moves: capped(section.moves, MAX_MOVES), streams: capped(section.streams, MAX_STREAM_SETTINGS) };
+  if (wrote || !hadCopy || canon(out) !== canon(kept)) storeCorrections(after, out);
+  return wrote;
+}
+
+function rowKeysById(state) {
+  const accounts = accountKeys(state);
+  const out = new Map();
+  for (const tx of listOf(state.txs)) {
+    const where = rowWhere(tx, accounts);
+    if (where && typeof tx.id === 'string') out.set(tx.id, where.key);
+  }
+  return out;
+}
+
+/* ----------------------------------------------------------------- applying */
+
+function applyCorrections(state, nowMs, before) {
+  if (!isObject(state) || !isObject(state.share) || !isObject(state.share.corrections)) return { changed: false };
+  const section = keptCorrections(state.share.corrections);
+  const carried = isStamp(nowMs) && carryStreams(state, section);
+  const rules = applyRules(state, section.rules, concurrentRules(before, section.rules));
+  const moves = applyMoves(state, section.moves);
+  const streams = applyStreams(state, section.streams);
+  const rekeyed = isStamp(nowMs) && rekey(state, section, nowMs);
+  return { changed: carried || rules || moves || streams || rekeyed };
+}
+
+function carryStreams(state, section) {
+  const accounts = accountKeys(state);
+  if (!isObject(state.share.streamKeys)) state.share.streamKeys = {};
+  const held = state.share.streamKeys;
+  const ids = new Set();
+  let wrote = false;
+  for (const stream of listOf(state.streams)) {
+    const key = streamKeyOf(stream, accounts);
+    if (!key || typeof stream.id !== 'string' || UNSAFE.has(stream.id)) continue;
+    ids.add(stream.id);
+    const old = own(held, stream.id);
+    if (typeof old === 'string' && old !== key && Object.hasOwn(section.streams, old)) {
+      const next = mergeEntry(own(section.streams, key), section.streams[old], STREAM_FIELDS, false);
+      if (canon(next) !== canon(own(section.streams, key))) {
+        section.streams[key] = order(next);
+        wrote = true;
+      }
+    }
+    held[stream.id] = key;
+  }
+  for (const id of Object.keys(held)) if (!ids.has(id)) delete held[id]; // streams this device no longer holds
+  if (wrote) storeCorrections(state, { ...section, streams: capped(section.streams, MAX_STREAM_SETTINGS) });
+  return wrote;
+}
+
+function rekey(state, section, nowMs) {
+  const accounts = accountKeys(state);
+  const covered = new Set(Object.keys(section.moves));
+  const fps = new Set(Object.values(section.moves).map((entry) => entry.fp).filter(Boolean));
+  const reached = reachedOf(state);
+  const ids = new Set(listOf(state.txs).map((tx) => isObject(tx) && tx.id));
+  for (const id of Object.keys(reached)) if (!ids.has(id)) delete reached[id]; // rows this device no longer holds
+  const rows = [];
+  for (const tx of listOf(state.txs)) {
+    const where = rowWhere(tx, accounts);
+    if (!where || covered.has(where.key) || (where.fp && fps.has(where.fp))) continue;
+    const locks = locksOf(tx);
+    const fields = pick(tx, MOVE_FIELDS, (field) => locks.has(field));
+    if (fields) rows.push({ tx, where, fields });
+  }
+  // the 400-day line as the file draws it (pruneCorrections), these rows in it
+  const cutoff = cutoffOf([...Object.values(section.moves).map((entry) => entry.day), ...rows.map((one) => one.tx.day)]);
+  let wrote = false;
+  for (const { tx, where, fields } of rows) {
+    if (covered.size >= MAX_MOVES) break;
+    if (covered.has(where.key) || (cutoff !== null && tx.day < cutoff)) continue;
+    const from = typeof reached[tx.id] === 'string' && ROW_KEY.test(reached[tx.id]) && reached[tx.id] !== where.key ? reached[tx.id] : undefined;
+    section.moves[where.key] = order({ ...seedOf(fields), ...placeOf({ day: tx.day, fp: where.fp || undefined, from }) });
+    covered.add(where.key);
+    wrote = true;
+  }
+  const streamKeys = new Set(Object.keys(section.streams));
+  for (const stream of listOf(state.streams)) {
+    if (streamKeys.size >= MAX_STREAM_SETTINGS) break;
+    const key = streamKeyOf(stream, accounts);
+    if (!key || streamKeys.has(key)) continue;
+    const locks = locksOf(stream);
+    const fields = streamFields(stream, (field) => locks.has(field));
+    if (!fields || !Object.keys(fields).length) continue;
+    section.streams[key] = seedOf(fields);
+    streamKeys.add(key);
+    wrote = true;
+  }
+  if (wrote) storeCorrections(state, { ...section, moves: capped(section.moves, MAX_MOVES), streams: capped(section.streams, MAX_STREAM_SETTINGS) });
+  return wrote;
+}
+
+function concurrentRules(before, rules) {
+  const out = new Set();
+  const was = readCorrections(before);
+  if (!was) return out;
+  for (const key of Object.keys(rules)) {
+    const cell = own(rules[key], 'category');
+    const held = own(own(was.rules, key), 'category');
+    if (!isObject(cell) || cell.over === undefined || !isObject(held) || canon(cell) === canon(held)) continue;
+    if (held.at !== cell.over) out.add(key);
+  }
+  return out;
+}
+
+function applyRules(state, entries, concurrent = new Set()) {
+  const keys = Object.keys(entries);
+  if (!keys.length) return false;
+  if (!isObject(state.settings)) state.settings = {};
+  if (!Array.isArray(state.settings.rules)) state.settings.rules = [];
+  const list = state.settings.rules;
+  // the merchant keys this device holds, by their fingerprint: its rules', its rows' and its streams'
+  const mkeys = new Map();
+  const seen = new Set();
+  for (const item of [...list, ...listOf(state.txs), ...listOf(state.streams)]) {
+    if (!isObject(item) || typeof item.mkey !== 'string' || seen.has(item.mkey)) continue;
+    seen.add(item.mkey);
+    const key = merchantKeyOf(item.mkey);
+    if (key && !mkeys.has(key)) mkeys.set(key, item.mkey);
+  }
+  let changed = false;
+  for (const key of keys) {
+    const mkey = mkeys.get(key);
+    if (mkey === undefined) continue; // no row of this merchant yet: the rule waits for the reading that brings one
+    const live = liveOf(entries[key]);
+    const dead = deadOf(entries[key]);
+    const undone = own(own(entries[key], 'category'), 'undo') === true;
+    const at = list.findIndex((rule) => isObject(rule) && rule.mkey === mkey);
+    const rule = at >= 0 ? list[at] : null;
+    if (!rule) {
+      if (!Object.keys(live).length) continue;
+      list.push({ id: LEARNED_SHARED + key.slice(1), mkey, ...live });
+      changed = true;
+      continue;
+    }
+    const next = { ...rule };
+    for (const field of RULE_FIELDS) {
+      if (Object.hasOwn(live, field)) next[field] = live[field];
+      else if (dead.includes(field)) delete next[field];
+    }
+    if (RULE_FIELDS.every((field) => (next[field] ?? null) === (rule[field] ?? null))) continue;
+    // a category taken back lets go of what the rule had filed; one put back by an Undo, or one that arrived over
+    // another value than this device held (two devices changed it, neither seeing the other's), files the rule's rows
+    // again as a device that never held the value replaced does (refile). An ordinary changed value does what
+    // learnRule does on the device that made it, where a deposit linked to a stream keeps its kind.
+    if (rule.category != null && next.category == null) release(state, mkey, rule);
+    else if (rule.category != null && (undone || concurrent.has(key)) && next.category !== rule.category) refile(state, mkey, rule);
+    if (RULE_FIELDS.every((field) => next[field] == null)) {
+      for (let i = list.length - 1; i >= 0; i--) if (isObject(list[i]) && list[i].mkey === mkey) list.splice(i, 1);
+    } else {
+      for (const field of RULE_FIELDS) {
+        if (next[field] == null) delete rule[field];
+        else rule[field] = next[field];
+      }
+    }
+    changed = true;
+  }
+  return changed;
+}
+
+function reachedOf(state) {
+  if (!isObject(state.share)) state.share = { tombs: {} };
+  if (!isObject(state.share.reached)) state.share.reached = {};
+  return state.share.reached;
+}
+
+function remember(state, txId, key) {
+  const reached = reachedOf(state);
+  if (typeof txId === 'string' && !Object.hasOwn(reached, txId) && !UNSAFE.has(txId)) reached[txId] = key;
+}
+
+function release(state, mkey, rule) {
+  const id = typeof rule.id === 'string' && rule.id ? (rule.id.startsWith('learned:') ? rule.id : 'learned:' + rule.id) : null;
+  for (const tx of listOf(state.txs)) {
+    if (!isObject(tx) || tx.mkey !== mkey || tx.streamId == null || locksOf(tx).has('category')) continue;
+    if (id === null || tx.ruleId === id) tx.streamId = null;
+  }
+}
+
+function refile(state, mkey, rule) {
+  const id = learnedIdOf(rule);
+  refileRows(state, listOf(state.txs).filter((tx) => isObject(tx) && tx.mkey === mkey && tx.streamId != null && !locksOf(tx).has('category')
+    && (id === null || tx.ruleId === id)), rule);
+}
+
+function refileRows(state, rows, rule) {
+  if (!rows.length) return;
+  const links = new Map(rows.map((tx) => [tx, tx.streamId]));
+  for (const tx of rows) tx.streamId = null;
+  const category = rule ? rule.category : undefined;
+  if (rule) delete rule.category; // read without the rule's category, its other fields kept
+  reclassify(state, rows.map((tx) => tx.id));
+  if (rule && category !== undefined) rule.category = category;
+  for (const tx of rows) if (tx.kind === 'income') tx.streamId = links.get(tx);
+}
+
+function learnedIdOf(rule) {
+  return typeof rule.id === 'string' && rule.id ? (rule.id.startsWith('learned:') ? rule.id : 'learned:' + rule.id) : null;
+}
+
+function applyMoves(state, entries) {
+  const keys = Object.keys(entries);
+  if (!keys.length) return false;
+  const accounts = accountKeys(state);
+  const byKey = new Map();
+  const byFp = new Map();
+  for (const tx of listOf(state.txs)) {
+    const where = rowWhere(tx, accounts);
+    if (!where) continue;
+    if (!byKey.has(where.key)) byKey.set(where.key, tx);
+    if (where.fp && !byFp.has(where.fp)) byFp.set(where.fp, tx);
+  }
+  // an entry that continues another (a row the bank re-keyed) reaches the row that one reaches, and back
+  const find = (key, want) => byKey.get(key) || (want.fp ? byFp.get(want.fp) : null);
+  // one entry per row: when a re-issued id or a re-keyed row put two keys on one row, they merge field by field
+  const chosen = new Map();
+  const reach = (tx, key, want) => {
+    if (!tx) return;
+    const had = chosen.get(tx);
+    chosen.set(tx, had ? { key: had.key <= key ? had.key : key, want: mergeEntry(had.want, want, MOVE_FIELDS, true) } : { key, want });
+  };
+  for (const key of keys.sort()) {
+    const want = entries[key];
+    const tx = find(key, want);
+    reach(tx, key, want);
+    if (want.from !== undefined && Object.hasOwn(entries, want.from)) {
+      // the entry it continues reaches this row too, and this one reaches that entry's row
+      const older = entries[want.from];
+      reach(tx, want.from, older);
+      reach(find(want.from, older), key, want);
+    }
+  }
+  let changed = false;
+  for (const [tx, { key, want }] of chosen) {
+    remember(state, tx.id, key);
+    const locks = Array.isArray(tx.locks) ? tx.locks : [];
+    const live = liveOf(want);
+    const dead = deadOf(want).filter((field) => locks.includes(field));
+    const set = {};
+    for (const field of Object.keys(live)) if (!locks.includes(field) || canon(tx[field]) !== canon(live[field])) set[field] = live[field];
+    if (dead.length) {
+      tx.locks = locks.filter((field) => !dead.includes(field));
+      // a deposit whose category goes back to the rules is read again as a device that never held the correction
+      // reads it: it keeps its link when classification without the merchant rule's category files it as income
+      if (dead.includes('category') && tx.streamId != null) {
+        const rule = listOf(isObject(state.settings) ? state.settings.rules : null).find((one) => isObject(one) && one.mkey === tx.mkey && one.category != null);
+        refileRows(state, [tx], rule || null);
+      }
+      changed = true;
+    }
+    // a category the row's frozen kind cannot follow (a deposit linked to a stream, a paired leg): the device that made
+    // the correction held the row free, so the link goes first, as for a category taken back, and the row takes it
+    if (set.category !== undefined && (tx.streamId != null || tx.pairId != null) && tx.kind !== 'decline' && !locks.includes('kind')) {
+      const kind = kindOf(set.category, tx.flow);
+      if (kind !== null && kind !== tx.kind) {
+        unlink(state, tx);
+        changed = true;
+      }
+    }
+    if (Object.keys(set).length && learnRule(state, tx.id, set, { onlyThis: true }).changed) changed = true;
+  }
+  return changed;
+}
+
+function kindOf(category, flow) {
+  if (category === 'transfer') return 'transfer';
+  if (category === 'card_payment') return 'payment';
+  if (category === 'income') return flow === 'in' ? 'income' : null;
+  return Object.hasOwn(CATEGORIES, category) ? (flow === 'in' ? 'refund' : 'spend') : null;
+}
+
+function unlink(state, tx) {
+  tx.streamId = null;
+  if (tx.pairId == null) return;
+  for (const other of listOf(state.txs)) if (isObject(other) && other !== tx && other.pairId === tx.id) other.pairId = null;
+  tx.pairId = null;
+}
+
+function applyStreams(state, entries) {
+  const keys = Object.keys(entries);
+  if (!keys.length) return false;
+  const accounts = accountKeys(state);
+  const byKey = new Map();
+  for (const stream of listOf(state.streams)) {
+    const key = streamKeyOf(stream, accounts);
+    if (!key) continue;
+    const have = byKey.get(key);
+    if (!have || (have.active === false && stream.active !== false)) byKey.set(key, stream);
+  }
+  let changed = false;
+  for (const key of keys) {
+    const stream = byKey.get(key);
+    if (!stream) continue;
+    const live = liveOf(entries[key]);
+    const dead = deadOf(entries[key]);
+    if (!Array.isArray(stream.locks)) stream.locks = [];
+    for (const field of STREAM_FIELDS) {
+      const locked = stream.locks.includes(field);
+      if (Object.hasOwn(live, field)) {
+        if (stream[field] !== live[field]) { stream[field] = live[field]; changed = true; }
+        if (!locked) { stream.locks.push(field); changed = true; }
+      } else if (locked && dead.includes(field)) {
+        stream.locks = stream.locks.filter((one) => one !== field);
+        changed = true;
+      }
+    }
+  }
+  return changed;
+}
+
+/* ------------------------------------------------------------------ helpers */
+
+function blank() {
+  return { rules: {}, moves: {}, streams: {} };
+}
+
+function isMerchantKey(key) {
+  return MERCHANT_KEY.test(key);
+}
+
+function isRowKey(key) {
+  return ROW_KEY.test(key);
+}
+
+function isStreamKey(key) {
+  return STREAM_KEY.test(key);
+}
+
+function isText(value, max) {
+  return typeof value === 'string' && value.length >= 1 && value.length <= max && value === value.trim() && !/[\u0000-\u001f\u007f]/.test(value)
+    && !/[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/.test(value); // no half of a pair: it is written as 6 characters
+}
+
+function isStamp(x) {
+  return Number.isFinite(x) && x >= 0 && x <= MAX_STAMP;
+}
+
+function locksOf(item) {
+  return new Set(Array.isArray(item.locks) ? item.locks : []);
+}
+
+function own(obj, key) {
+  return isObject(obj) && Object.hasOwn(obj, key) ? obj[key] : undefined;
+}
+
+function union(a, b) {
+  return [...new Set([...Object.keys(a), ...Object.keys(b)])].sort();
+}
+
+function canon(x) {
+  if (Array.isArray(x)) return '[' + x.map(canon).join(',') + ']';
+  if (isObject(x)) return '{' + Object.keys(x).sort().map((key) => JSON.stringify(key) + ':' + canon(x[key])).join(',') + '}';
+  return x === undefined ? 'null' : JSON.stringify(x);
+}
+
+function isObject(x) {
+  return x !== null && typeof x === 'object' && !Array.isArray(x);
+}
+
+function listOf(x) {
+  return Array.isArray(x) ? x : [];
+}
+return { MAX_RULES, MAX_MOVES, MAX_STREAM_SETTINGS, MOVE_KEEP_DAYS, readCorrections, mergeCorrections, isBlankCorrections, pruneCorrections, arrivedCorrections, exportCorrections, storedCorrections, storeCorrections, seedCorrections, noteMove, noteStream, restampCorrections, applyCorrections };
+})();
+
 // ---- js/model/detect.js
 __mods["js/model/detect.js"] = (function () {
 const { ACCOUNT_TYPES, CADENCES, CATEGORIES, PURPOSES, klassOf, makeRecurring, makeStream } = __mods["js/model/schema.js"];
@@ -11506,6 +12453,7 @@ const { makeLedger, todayOf } = __mods["js/model/ledger.js"];
 const { runsByHand } = __mods["js/model/book.js"];
 const { claimByHand, payeeKey, unpaidByPayee } = __mods["js/model/byhand.js"];
 const { incomeClaimedRows, rebuildIncome } = __mods["js/model/income.js"];
+const { applyCorrections } = __mods["js/model/corrections.js"];
 /*
  * How the specification is read where it leaves a choice (each is implemented where it is named):
  *  - A charge is money out as a spend, or as a payment from a cash account (a loan payment, a standing
@@ -11731,13 +12679,17 @@ function detectSweeps(state, nowMs) {
 }
 
 function refresh(state, nowMs) {
+  applyCorrections(state, nowMs);
   const reclassified = isObject(state) ? reclassify(state) : 0;
   // the payments another app reported, matched to the bank rows just classified (ARCHITECTURE 3.7)
   rebuildIncome(state, nowMs);
+  const recurring = detectRecurring(state, nowMs);
+  const streams = detectStreams(state, nowMs);
+  applyCorrections(state, nowMs);
   return {
     reclassified,
-    recurring: detectRecurring(state, nowMs),
-    streams: detectStreams(state, nowMs),
+    recurring,
+    streams,
     matchStarted: startMatch(state, nowMs),
     sweeps: detectSweeps(state, nowMs),
   };
@@ -14287,6 +15239,7 @@ const { makeByHand } = __mods["js/model/byhand.js"];
 const { isYmd } = __mods["js/model/dates.js"];
 const { refresh } = __mods["js/model/detect.js"];
 const { ensureIncome, exportIncomeShared, incomeOf, isBlankIncome, mergeIncomeShared, readIncomeShared, rebuildIncome } = __mods["js/model/income.js"];
+const { applyCorrections, arrivedCorrections, exportCorrections, isBlankCorrections, mergeCorrections, pruneCorrections, readCorrections, storeCorrections, storedCorrections } = __mods["js/model/corrections.js"];
 const VERSION = 1;
 const APP = 'networth';
 const MAX_ENTRIES = 200;
@@ -14300,7 +15253,7 @@ const MAX_STAMP = 1e14;
 const MAX_DEPTH = 12;
 const TOMB_KEEP_MS = 400 * 86400000;
 const RESTARTS = 3;
-const KNOWN = new Set(['v', 'app', 'savedAt', 'byHand', 'income']);
+const KNOWN = new Set(['v', 'app', 'savedAt', 'byHand', 'income', 'corrections']);
 const UNSAFE = new Set(['__proto__', 'constructor', 'prototype']);
 const ID = /^[A-Za-z0-9_.:-]{1,80}$/;
 const PAYEE = /^p[0-9a-f]{13}$/;
@@ -14338,6 +15291,12 @@ function fileOf(raw) {
     const income = readIncomeShared(raw.income);
     if (!income) return null;
     if (!isBlankIncome(income)) out.income = income;
+  }
+  if (raw.corrections !== undefined) {
+    // the owner's corrections (3.8): checked like the rest; an empty section is left out
+    const corrections = readCorrections(raw.corrections);
+    if (!corrections) return null;
+    if (!isBlankCorrections(corrections)) out.corrections = corrections;
   }
   for (const key of Object.keys(raw)) {
     if (!KNOWN.has(key) && !UNSAFE.has(key)) out[key] = plain(raw[key], 0);
@@ -14405,6 +15364,9 @@ function exportShared(state, nowMs) {
   const out = { v: VERSION, app: APP, savedAt: isStamp(nowMs) ? nowMs : 0, byHand };
   const income = exportIncomeShared(doc);
   if (!isBlankIncome(income)) out.income = income;
+  // the owner's corrections; a row correction older than 400 days is no longer written (3.8)
+  const corrections = pruneCorrections(exportCorrections(doc));
+  if (!isBlankCorrections(corrections)) out.corrections = corrections;
   return out;
 }
 
@@ -14429,6 +15391,8 @@ function mergeShared(a, b) {
   }
   const income = mergeIncomeShared(x.income, y.income);
   if (!isBlankIncome(income)) out.income = income;
+  const corrections = mergeCorrections(x.corrections, y.corrections);
+  if (!isBlankCorrections(corrections)) out.corrections = corrections;
   for (const key of union(x, y)) {
     if (KNOWN.has(key)) continue;
     const p = own(x, key);
@@ -14507,12 +15471,20 @@ function applyShared(state, merged, nowMs) {
     ensureIncome(state).shared = mergeIncomeShared(fileOf(merged).income, null);
     rebuildIncome(state, nowMs);
   }
+  const corrected = ops.some((one) => one.op === 'corrections');
+  if (corrected) {
+    // the owner's corrections: the merged ones become this device's copy, and the record follows them through the
+    // owner's own paths (3.8); the caller's run of detection then re-reads the rows
+    const before = exportCorrections(state);
+    storeCorrections(state, mergeCorrections(fileOf(merged).corrections, null));
+    applyCorrections(state, nowMs, before);
+  }
   if (!Array.isArray(state.recurring)) state.recurring = [];
   if (!isObject(state.share)) state.share = { tombs: {} };
   if (!isObject(state.share.tombs)) state.share.tombs = {};
   const tombs = state.share.tombs;
   for (const { op, id, want } of ops) {
-    if (op === 'income') continue;
+    if (op === 'income' || op === 'corrections') continue;
     const at = state.recurring.findIndex((r) => isObject(r) && r.id === id);
     if (op === 'remove') {
       if (at >= 0) state.recurring.splice(at, 1);
@@ -14535,7 +15507,7 @@ function applyShared(state, merged, nowMs) {
       delete tombs[id];
     }
   }
-  return { changed: true };
+  return corrected ? { changed: true, corrected } : { changed: true };
 }
 
 function planOf(state, merged) {
@@ -14546,6 +15518,7 @@ function planOf(state, merged) {
   const ops = [];
   const income = mergeIncomeShared(file.income, null);
   if (JSON.stringify(sortedCopy(incomeOf(state).shared)) !== JSON.stringify(sortedCopy(income))) ops.push({ op: 'income' });
+  if (canon(storedCorrections(state)) !== canon(mergeCorrections(file.corrections, null))) ops.push({ op: 'corrections' });
   for (const id of Object.keys(file.byHand)) {
     const want = file.byHand[id];
     const have = list.find((r) => isObject(r) && r.id === id);
@@ -14578,7 +15551,7 @@ async function roundShared(device, transport, clock) {
     if (stale()) return { ok: false, skipped: true };
     const now = clock();
     const local = exportShared(device.state(), now);
-    let merged = mergeShared(local, file);
+    let merged = withoutOldCorrections(mergeShared(local, file));
     if (sharedChanges(device.state(), merged)) {
       // What the file brought that this device did not have: an earlier copy of the document (the one
       // Undo puts back) takes in the same entries of the file, merged with its own, so that an Undo
@@ -14587,10 +15560,14 @@ async function roundShared(device, transport, clock) {
       for (const id of Object.keys(file.byHand)) {
         if (canon(own(local.byHand, id)) !== canon(merged.byHand[id])) arrived.byHand[id] = file.byHand[id];
       }
+      // the corrections likewise: only the entries that differ from this device's own (never its own edits, so
+      // that an Undo of them still takes them back)
+      const fresh = arrivedCorrections(local.corrections, merged.corrections);
+      if (isBlankCorrections(fresh)) delete arrived.corrections; else arrived.corrections = fresh;
       const all = merged;
       device.update(
         (s) => { if (applyShared(s, all, now).changed) refresh(s, now); },
-        (s) => { applyShared(s, mergeShared(exportShared(s, now), arrived), now); },
+        (s) => { if (applyShared(s, mergeShared(exportShared(s, now), arrived), now).corrected) refresh(s, now); },
       );
       changed = true;
       merged = mergeShared(exportShared(device.state(), now), merged); // a payee that run of detection learned
@@ -14609,6 +15586,14 @@ async function roundShared(device, transport, clock) {
       if (!err || err.code !== 'conflict' || turn >= RESTARTS) throw err;
     }
   }
+}
+
+function withoutOldCorrections(file) {
+  if (!file.corrections) return file;
+  const out = { ...file };
+  const corrections = pruneCorrections(file.corrections);
+  if (isBlankCorrections(corrections)) delete out.corrections; else out.corrections = corrections;
+  return out;
 }
 
 function withoutOldTombs(file, nowMs) {
@@ -14633,7 +15618,7 @@ function blank() {
 }
 
 function isBlank(file) {
-  return Object.keys(file).every((key) => KNOWN.has(key)) && Object.keys(file.byHand).length === 0 && !file.income;
+  return Object.keys(file).every((key) => KNOWN.has(key)) && Object.keys(file.byHand).length === 0 && !file.income && !file.corrections;
 }
 
 function sortedCopy(x) {
@@ -23363,7 +24348,8 @@ function bankSection(ctx) {
 
 /* ------------------------------------------------- sharing between devices */
 
-const SHARED_WHAT = 'Nothing the bank reported goes there: no balance, no transaction, no account. Only what you entered, your ticks, and an unreadable fingerprint of who each payment goes to, so every device recognises it the same way.';
+const SHARED_WHAT = 'Apart from the date of a corrected move, nothing the bank reported goes there: no balance, no transaction, no account. Only what you entered, your ticks, and an unreadable fingerprint of who each payment goes to, so every device recognises it the same way.';
+const SHARED_CORRECTIONS = 'Corrections (categories, merchant names, income settings) reach your other devices too, each with an unreadable fingerprint of its merchant or move and, for a corrected move, its bank date, so that every device finds the same move.';
 
 function shareForm(ctx) {
   const busy = ctx.share.busy;
@@ -23440,6 +24426,7 @@ function shareSection(ctx) {
   const what = html`<section class="col col-5 set-sec" aria-label="What is shared">
     <div class="sec-head"><h3 class="lab"><b>What is shared</b><i class="sep"></i>1 private file</h3></div>
     <p class="set-lede">The payments you send yourself and their ticks, in the file networth-shared.json of ${sh.owner}/networth-data on your own GitHub.</p>
+    <p class="cap set-help">${SHARED_CORRECTIONS}</p>
     <p class="cap set-help">${SHARED_WHAT}</p>
   </section>`;
 
@@ -23461,6 +24448,7 @@ function shareSection(ctx) {
         <p class="title set-state">Not sharing. 1 paste on each device starts it.</p>
         <p class="set-lede">The payments you send yourself, and their ticks, are then kept in a private file on your own GitHub (${sh.owner}/networth-data):
           what is added or ticked on 1 device shows on the others within seconds of opening them, and nothing is typed twice.</p>
+        <p class="cap set-help">${SHARED_CORRECTIONS}</p>
         <p class="cap set-help">${SHARED_WHAT}</p>
       </section>
       <section class="col col-5 set-sec" aria-label="The key">
@@ -23485,6 +24473,7 @@ function shareSection(ctx) {
       <section class="col col-5 set-sec" aria-label="The key">
         <div class="sec-head"><h3 class="lab"><b>A new key</b><i class="sep"></i>3 steps</h3></div>
         ${shareSteps()}
+        <p class="cap set-help">${SHARED_CORRECTIONS}</p>
         <p class="cap set-help">${SHARED_WHAT}</p>
       </section>
     </div>`;
@@ -25414,6 +26403,7 @@ const { fmt, fmtPlain, toCents } = __mods["js/model/money.js"];
 const { fmtDate, fmtTime, isYmd, nowMs } = __mods["js/model/dates.js"];
 const { CATEGORIES, KLASSES, PURPOSES, GLYPHS, ACCOUNT_TYPES, accountLabel, categoryLabel, klassOf, makeAccount } = __mods["js/model/schema.js"];
 const { learnRule, confirmMove } = __mods["js/model/classify.js"];
+const { noteMove } = __mods["js/model/corrections.js"];
 const { refresh } = __mods["js/model/detect.js"];
 const { removeManual } = __mods["js/model/merge.js"];
 const { skipRow } = __mods["js/model/byhand.js"];
@@ -25878,10 +26868,15 @@ function save({ values, data }) {
 
   let result = { changed: 0 };
   let heldIn = '';
+  const at = nowMs(); // the moment of the correction: its stamp on every device (3.8)
   store.update((s) => {
     const row = findTx(s, tx.id);
     if (!row) return;
-    if (corrected) result = learnRule(s, row.id, fields, { onlyThis });
+    if (corrected) {
+      result = learnRule(s, row.id, fields, { onlyThis });
+      // the correction reaches the owner's other devices: this row's locked fields and its merchant's rule (3.8)
+      noteMove(s, row.id, at);
+    }
     // a save is the owner's reading of this move: on its own, or with the whole merchant
     confirmMove(s, row.id);
     for (const key of touched) {
@@ -27636,9 +28631,10 @@ const { store } = __mods["js/store.js"];
 const { closeSheet } = __mods["js/router.js"];
 const { context, toast } = __mods["js/runtime.js"];
 const { fmt } = __mods["js/model/money.js"];
-const { fmtDate, relDay } = __mods["js/model/dates.js"];
+const { fmtDate, nowMs, relDay } = __mods["js/model/dates.js"];
 const { CADENCES, STREAM_KINDS, accountLabel } = __mods["js/model/schema.js"];
 const { refresh } = __mods["js/model/detect.js"];
+const { noteStream } = __mods["js/model/corrections.js"];
 const NAME_MAX = 80;
 const NOTE_MAX = 500;
 const FED_FIELDS = { name: 'name', kind: 'kind', cadence: 'cadence', accrue: 'how it is counted' };
@@ -27789,6 +28785,7 @@ const actions = {
       return;
     }
     const undoLabel = 'Income stream changed';
+    const at = nowMs(); // the moment of the change: its stamp on every device (3.8)
     store.update((s) => {
       const item = findStream(s, data.id);
       if (!item) return;
@@ -27796,6 +28793,8 @@ const actions = {
         item[key] = fields[key];
         addLock(item, key);
       }
+      // the name, kind, cadence and how it is counted reach the owner's other devices (3.8)
+      noteStream(s, item.id, at);
       refresh(s, ctx.now);
     }, { undo: undoLabel });
     closeSheet();
@@ -28043,6 +29042,7 @@ const { initShare, shareInfo, autoShare, shareNow } = __mods["js/share.js"];
 const { autoInbox, inboxInfo } = __mods["js/inbox.js"];
 const { autoIncome, incomeInfo } = __mods["js/income.js"];
 const { restampByHand } = __mods["js/model/byhand.js"];
+const { restampCorrections, seedCorrections } = __mods["js/model/corrections.js"];
 const { buildDemoState, demoFeed } = __mods["js/model/demo.js"];
 const { mergeFeed } = __mods["js/model/merge.js"];
 const { followIncome, refresh } = __mods["js/model/detect.js"];
@@ -28125,11 +29125,15 @@ async function boot() {
   await initStorage({ ns: search.get('ns') || '' });
   let doc = await loadDoc();
   if (doc && checkDoc(doc)) doc = null;
-  store.load(doc ? migrate(doc) : defaultState(nowMs()));
+  const record = doc ? migrate(doc) : defaultState(nowMs());
+  // the corrections this record already holds travel from its first round, stamped 0, before the owner changes anything
+  // (3.8); the copy is saved with the next change
+  seedCorrections(record);
+  store.load(record);
   if (!search.get('theme')) applyTheme(store.state.settings.theme);
   await initSync();
   // an Undo makes what it put back the newest, so that the other devices take the Undo and do not bring the change back
-  store.onRestore((before, after) => { restampByHand(before, after, nowMs()); });
+  store.onRestore((before, after) => { restampByHand(before, after, nowMs()); restampCorrections(before, after); });
   // whatever a change (or an Undo) touched that the matching of reported payments reads (the pending switch, an account
   // left out or retyped, the rollover hour, a row reclassified, paired or claimed, an answer), the payments follow in the
   // same update (3.7); the rebuild changes nothing when its inputs did not change. When the bank rows reported payments
