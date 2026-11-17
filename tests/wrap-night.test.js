@@ -11,7 +11,7 @@ process.env.TZ = 'America/New_York';
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { lstatSync, mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, unlinkSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -794,6 +794,33 @@ test('the night job: before the night key is made it does nothing and the run st
     assert.match(before.out, /not set up yet/);
     assert.equal(received.length, 0, 'nothing sent');
     assert.ok(!existsSync(join(dir, 'wrap', 'sent.json')), 'nothing written, so nothing to commit');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('the workflow saves sent.json on a runner that has no git identity, while a device writes to the repository', () => {
+  // GitHub's runner cannot guess an identity ("runner@...(none)"); a device writing during the run makes the pull a
+  // rebase, which needs a committer identity of its own, not only the commit: the step must set one for both
+  const yml = readFileSync(fileURLToPath(new URL('../night/wrap.yml.txt', import.meta.url)), 'utf8');
+  const step = yml.slice(yml.indexOf('- name: Keep what was sent'));
+  const script = step.slice(step.indexOf('run: |') + 'run: |'.length).split('\n').filter((line) => line.startsWith('          ')).map((line) => line.slice(10)).join('\n');
+  const dir = mkdtempSync(join(tmpdir(), 'wrap-keep-'));
+  const sh = (cmd, cwd, env = {}) => execFileSync('bash', ['-e', '-c', cmd], { cwd, env: { ...process.env, HOME: join(dir, 'home'), GIT_CONFIG_NOSYSTEM: '1', ...env }, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  try {
+    mkdirSync(join(dir, 'home'));
+    writeFileSync(join(dir, 'home', '.gitconfig'), '[user]\n\tuseConfigOnly = true\n[init]\n\tdefaultBranch = main\n'); // no guessing, as on the runner
+    const who = '-c user.name=dev -c user.email=dev@example.com';
+    sh('git init -q --bare origin.git', dir);
+    sh('git clone -q origin.git seed && cd seed && mkdir wrap && echo "{}" > wrap/a.json && git add -A && git ' + who + ' commit -q -m seed && git push -q origin HEAD:main', dir);
+    sh('git clone -q origin.git data', dir);
+    // a device writes while the job runs
+    sh('cd seed && echo "{\\"x\\":1}" > wrap/device.json && git add -A && git ' + who + ' commit -q -m device && git push -q origin HEAD:main', dir);
+    writeFileSync(join(dir, 'data', 'wrap', 'sent.json'), '{"format":"sent/1"}\n');
+    sh(script, join(dir, 'data'), { GITHUB_REF_NAME: 'main' });
+    const saved = sh('git --git-dir=origin.git log main --format="%an|%s" -- wrap/sent.json', dir).trim();
+    assert.match(saved, /^github-actions\[bot\]\|Update$/m, 'sent.json reached the repository');
+    assert.match(sh('git --git-dir=origin.git log main --format=%s', dir), /device/, 'and the device’s write is kept');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

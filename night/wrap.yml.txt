@@ -63,11 +63,16 @@ jobs:
         working-directory: data
         run: |
           if [ ! -f wrap/sent.json ] || [ -L wrap/sent.json ]; then exit 0; fi
+          # the runner cannot guess a git identity, and both the commit and the rebase need one (a device writing to the
+          # repository during the run makes the pull a rebase): it is set for the whole step
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898099+github-actions[bot]@users.noreply.github.com'
           git add wrap/sent.json
           if git diff --cached --quiet; then exit 0; fi
-          git -c user.name='github-actions[bot]' -c user.email='41898099+github-actions[bot]@users.noreply.github.com' commit --quiet -m 'Update'
+          git commit --quiet -m 'Update'
           for attempt in 1 2 3; do
-            git pull --rebase --quiet origin "$GITHUB_REF_NAME" && git push --quiet origin "HEAD:$GITHUB_REF_NAME" && exit 0
+            if git pull --rebase --quiet origin "$GITHUB_REF_NAME" && git push --quiet origin "HEAD:$GITHUB_REF_NAME"; then exit 0; fi
+            git rebase --abort 2>/dev/null || true
             sleep 5
           done
           exit 1
