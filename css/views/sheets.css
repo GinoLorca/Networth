@@ -99,3 +99,9 @@
 .wd-now { color: var(--ink); font-weight: 600; }
 .wd-dot { color: var(--ink-3); }
 .wd-meaning { margin: 2px 0 0; max-width: 60ch; color: var(--ink-2); }
+
+/* the day sheet's Money in and out (the nightly wrap) */
+.dy-wrap .tally { margin-top: var(--s-2); }
+.dy-wrap-sub { margin-top: var(--s-3); }
+.dy-wrap-rows .row-label { min-width: 0; overflow-wrap: anywhere; }
+.dy-wrap-missing { margin-top: var(--s-2); }

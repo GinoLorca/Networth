@@ -52,6 +52,8 @@ import { WORDS, phrase, say, shareToast, wordsMode, wordsOf } from '../model/wor
 import { sayHtml } from '../ui/say.js';
 import { answerPayer, askAgain, cashAccountOf, isIdleCash, ensureCashAccount, incomeLabel, incomeOf, incomePayments, incomeQuestions, payerAnswer } from '../model/income.js';
 import { againWords, beforeCountWords, countedWords, isCountedCash, listedPayers, payerWords, paymentState } from './income-words.js';
+import { forgetMadeKey, madeKey, makeNightKey, setWrapLock, turnOffWrap, turnOnWrap } from '../wrap.js';
+import { shareMessage } from '../github.js';
 
 const APP_VERSION = '1.0.0';
 const BRIDGE_URL = 'https://bridge.simplefin.org';
@@ -501,6 +503,152 @@ function alertSection(ctx) {
   </div>`;
 }
 
+/* ------------------------------------------------- the nightly wrap (ARCHITECTURE 3.10) */
+
+const WRAP_LOCKS = [['cover', 'Follow cover'], ['show', 'Show'], ['hide', 'Hide']];
+const WRAP_SECRET = 'VAPID_PRIVATE_KEY';
+
+/**
+ * The night key just made: its private half, shown once, with Copy, GitHub's secret page and what to do there: a first
+ * key adds the secret; a key that replaces one updates the secret GitHub already holds.
+ */
+function wrapMade(ctx, wr) {
+  const c = (text) => html`<code class="set-code">${text}</code>`;
+  // the first key goes to GitHub's form for a new secret; a replacement, or a key whose secret no run has checked yet,
+  // to the list of secrets, where the existing one is updated
+  const url = wr.replacing === false ? wr.secretUrl : wr.secretsUrl;
+  return html`<p class="title set-state">The night key is made. Its private half is shown this once.</p>
+    <ol class="set-share-steps set-wrap-steps">
+      <li><button class="btn btn-s" type="button" data-action="settings.wrap-copy">Copy private key</button>
+        <code class="set-code set-code-block set-wrap-secret">${wr.made}</code></li>
+      <li>Open <a class="btn-link" href="${url}" target="_blank" rel="noopener noreferrer">GitHub’s secret page</a>; it opens in a new tab.</li>
+      ${wr.replacing === null
+        ? html`<li>If ${c(WRAP_SECRET)} is listed, click its pencil, paste into <b>Value</b>, then <b>Update secret</b>. If it is not, click <b>New repository secret</b>, type ${c(WRAP_SECRET)} as <b>Name</b>, paste into <b>Secret</b>, then <b>Add secret</b>.</li>`
+        : wr.replacing
+          ? html`<li>Click ${c(WRAP_SECRET)}’s pencil, paste into <b>Value</b>, then <b>Update secret</b>.</li>`
+          : html`<li>Click <b>Name</b> and type ${c(WRAP_SECRET)}. Click <b>Secret</b>, paste, then <b>Add secret</b>.</li>`}
+    </ol>
+    <p class="cap set-help">Networth keeps no copy of it: once you tap Done, or close the app, it is gone from this device. Should it be lost, make a new key.</p>
+    <p class="cluster set-wrap-go"><button class="btn btn-solid" type="button" data-action="settings.wrap-done">Done</button></p>`;
+}
+
+/** This device: Turn on (installed app only), Turn off, the lock screen. */
+function wrapDevice(ctx, wr) {
+  const busy = !!wr.busy;
+  if (!wr.standalone) {
+    return html`<p class="cap set-help">Turn it on in the installed app: on the iPhone and iPad from the Home Screen, on the Mac from the Dock. Only the installed app receives it.</p>`;
+  }
+  if (!wr.pushable) return html`<p class="cap set-help">This app cannot receive notifications here.</p>`;
+  if (wr.subscribed && !wr.status.dead && !wr.status.refused) {
+    return html`<p class="cluster cluster-center set-refresh">
+        <span class="cap grow">On for this device.</span>
+        <button class="btn btn-s" type="button" data-action="settings.wrap-off" ${busy ? html`disabled` : ''}>Turn off</button>
+      </p>
+      <fieldset class="field set-wrap-lock">
+        <legend class="field-label lab">Amounts on the lock screen</legend>
+        <div class="seg seg-block" role="radiogroup" aria-label="Amounts on the lock screen">
+          ${WRAP_LOCKS.map(([value, label]) => html`<label class="seg-opt"><input type="radio" name="wrapLock" value="${value}" data-change="settings.wrap-lock" ${
+            wr.lock === value ? html`checked` : ''}><span>${label}</span></label>`)}
+        </div>
+        <p class="cap field-help">Follow cover hides them while this device’s cover is on.</p>
+      </fieldset>`;
+  }
+  const again = wr.gone || wr.status.dead || wr.status.refused;
+  // turned off, or refused, by the push service: the notice above says so, so the line beside the button only says the tap
+  const said = !again ? '1 tap here, then Allow.' : wr.status.dead || wr.status.refused ? '1 tap turns it back on.' : 'It was turned off on this device. 1 tap turns it back on.';
+  return html`<p class="cluster cluster-center set-wrap-go">
+    <button class="btn btn-solid" type="button" data-action="settings.wrap-on" ${busy ? html`disabled` : ''}>${again ? 'Turn back on' : 'Turn on the nightly wrap'}</button>
+    <span class="cap grow">${said}</span>
+  </p>`;
+}
+
+/** A status the night job recorded for this device, in words: never a raw token. */
+function wrapProblem(problem) {
+  if (problem === 0) return 'its push service did not answer';
+  if (Number.isInteger(problem)) return 'its push service answered ' + problem;
+  return '';
+}
+
+/** What the night job last did for this device (wrap/sent.json). */
+function wrapStatusLines(ctx, wr) {
+  const st = wr.status;
+  const lines = [];
+  // a key problem of a run before this night key was made is about the key it replaced: it is not said
+  const stale = !!(wr.vapid && Number.isFinite(wr.vapid.madeAt) && Number.isFinite(st.lastAt) && wr.vapid.madeAt > st.lastAt);
+  if (st.noKey && !stale) {
+    const page = wr.secretsUrl || '';
+    // the backup schedule runs a full run when the first one sent nothing: tonight's, if that was tonight's first run
+    const next = st.nextRun === 'backup' && st.lastDay === ctx.today ? '10:13 PM' : '9:33 PM';
+    lines.push(html`<p class="notice is-error"><i class="notice-mark"></i><span><b>Not sent</b>The last run found no secret named ${WRAP_SECRET} on GitHub, so it sent nothing. On ${page
+      ? html`<a class="btn-link" href="${page}" target="_blank" rel="noopener noreferrer">GitHub’s secret page</a>` : 'GitHub’s secret page'}, check that its name is exactly ${WRAP_SECRET}. If the private key is no longer at hand, make a new night key below and paste it there. The next run checks again at ${next}.</span></p>`);
+  } else if (st.keyProblem && !stale) {
+    lines.push(html`<p class="notice is-error"><i class="notice-mark"></i><span><b>Not sent</b>The night key GitHub holds (${WRAP_SECRET}) is not the one your repository publishes, so the last run sent nothing. Make a new night key below, and paste it into GitHub.</span></p>`);
+  }
+  if (st.dead) {
+    lines.push(html`<p class="notice is-error"><i class="notice-mark"></i><span><b>Turned off</b>This device was turned off by the push service${st.lastAt ? ' on ' + fmtDate(gameDay(st.lastAt, ctx.state.settings.rolloverHour), 'short') : ''}.</span></p>`);
+  } else if (st.got && st.lastDay) {
+    lines.push(html`<p class="cap set-wrap-last" role="status">Last wrap: ${say('board.today.round', ctx.words, { n: String(Number(st.lastDay.slice(8))) })}, sent ${whenText(st.lastAt, ctx)}.</p>`);
+  } else if (st.refused) {
+    lines.push(html`<p class="notice is-error"><i class="notice-mark"></i><span><b>Not reaching</b>The wrap cannot reach this device: its push service refused the last one (${String(st.problem)}).</span></p>`);
+  } else if (st.problem === 'file' || st.problem === 'subscription' || st.problem === 'endpoint') {
+    lines.push(html`<p class="cap set-wrap-last" role="status">The last wrap did not reach this device: this device’s push file could not be used. To fix it, turn the wrap off and on again here.</p>`);
+  } else if (st.problem !== null) {
+    const why = wrapProblem(st.problem);
+    const next = !Number.isInteger(st.problem) || !(st.problem === 0 || st.problem === 429 || (st.problem >= 500 && st.problem <= 599)) ? ''
+      // the backup run is promised only while it is still to come: tonight's, after tonight's first run
+      : st.retry && st.lastDay === ctx.today ? ' The backup run tries again.' : ' The next wrap tries again.';
+    lines.push(html`<p class="cap set-wrap-last" role="status">The last wrap did not reach this device${why ? ': ' + why : ''}.${next}</p>`);
+  }
+  return lines;
+}
+
+function wrapSection(ctx) {
+  const sh = ctx.share;
+  const wr = ctx.wrap;
+  if (!sh || !sh.available || ctx.demo || !wr) return '';
+  const state = !sh.on ? 'Needs the key' : wr.subscribed ? 'On' : wr.status.dead || wr.status.refused || wr.gone ? 'Turned off' : 'Off';
+  let body;
+  if (!sh.on) {
+    body = html`<p class="title set-state">Start sharing between devices first: the wrap uses the same key.</p>`;
+  } else if (wr.made) {
+    body = wrapMade(ctx, wr);
+  } else if (wr.vapid === undefined) {
+    body = wr.code
+      ? html`<p class="notice is-error"><i class="notice-mark"></i><span><b>Not read</b>The night key could not be read. ${shareMessage(wr.code)}</span></p>`
+      : html`<p class="sync set-busy" data-state="syncing" role="status"><i class="sync-mark"></i><span class="sync-text"><b>Reading the night key</b>…</span></p>`;
+  } else if (wr.vapid === null) {
+    body = html`<p class="title set-state">No night key yet.</p>
+      <p class="cluster cluster-center set-wrap-go">
+        <button class="btn btn-solid" type="button" data-action="settings.wrap-key" ${wr.busy ? html`disabled` : ''}>Make the night key</button>
+        <span class="cap grow">Once, on 1 device.</span>
+      </p>
+      <p class="cap set-help">It is made in this browser. Its public half goes to push/vapid.json in your repository; its private half is shown once, for you to paste into GitHub as the secret <code class="set-code">${WRAP_SECRET}</code>. Networth keeps no copy.</p>`;
+  } else {
+    body = html`<p class="title set-state">Night key made${wr.vapid.madeAt ? ' ' + whenText(wr.vapid.madeAt, ctx) : ''}.</p>
+      ${wrapStatusLines(ctx, wr)}
+      ${wrapDevice(ctx, wr)}
+      <div class="set-dangers">
+        ${dangerous(ctx, 'wrap-key', { ask: 'Make a new night key', action: 'settings.wrap-key', go: 'Make a new key',
+          sentence: 'The new key replaces this one: paste it into GitHub again, and every device must then turn the wrap on again (1 tap each).' })}
+      </div>`;
+  }
+  return html`<div class="cols">
+    <section class="col col-7 set-sec" aria-label="Nightly wrap">
+      <div class="sec-head">
+        <h2 class="lab"><b>Nightly wrap</b><i class="sep"></i>money in and out, each night</h2>
+        <span class="lab">${state}</span>
+      </div>
+      <p class="set-lede">${phrase('wrap.set.lede', ctx.words)}</p>
+      ${body}
+    </section>
+    <section class="col col-5 set-sec" aria-label="What the wrap holds">
+      <div class="sec-head"><h3 class="lab"><b>What it holds</b><i class="sep"></i>no names</h3></div>
+      <p class="cap set-help">${phrase('wrap.set.files', ctx.words)}</p>
+      <p class="cap set-help">Each device may hide the amounts on its lock screen. Apple carries the message encrypted.</p>
+    </section>
+  </div>`;
+}
+
 /* ------------------------------------------------- income your other apps report */
 
 /**
@@ -873,9 +1021,9 @@ export function render(ctx) {
       </div>
       <div class="set-top-row">
         <h1 class="title title-l set-title">Settings</h1>
-        <p class="cap set-top-note">The bank link, ${shared ? (ctx.demo ? 'sharing between devices, ' : 'sharing between devices, card purchases within minutes, income your other apps report, ') : ''}how a day is counted, appearance, your own rules and the record. ${ctx.demo
+        <p class="cap set-top-note">The bank link, ${shared ? (ctx.demo ? 'sharing between devices, ' : 'sharing between devices, card purchases within minutes, income your other apps report, the nightly wrap, ') : ''}how a day is counted, appearance, your own rules and the record. ${ctx.demo
           ? phrase('settings.top.sample', ctx.words)
-          : 'Every control saves the moment it changes'}${sayHtml('settings.top.complete', ctx.words, { n: shared ? (ctx.demo ? 7 : 9) : 6 })}</p>
+          : 'Every control saves the moment it changes'}${sayHtml('settings.top.complete', ctx.words, { n: shared ? (ctx.demo ? 7 : 10) : 6 })}</p>
       </div>
     </section>
     <div class="cols">
@@ -885,6 +1033,7 @@ export function render(ctx) {
     ${shareSection(ctx)}
     ${alertSection(ctx)}
     ${incomeSection(ctx)}
+    ${wrapSection(ctx)}
     <div class="cols">
       ${appearanceSection(ctx)}
       ${rulesSection(ctx)}
@@ -1003,7 +1152,7 @@ async function link({ el, values }) {
 
 function ask({ data }) {
   const what = data.what;
-  if (what !== 'unlink' && what !== 'unlink-erase' && what !== 'erase' && what !== 'share-forget') return;
+  if (what !== 'unlink' && what !== 'unlink-erase' && what !== 'erase' && what !== 'share-forget' && what !== 'wrap-key') return;
   store.setUi({ settingsConfirm: store.ui.settingsConfirm === what ? null : what });
 }
 
@@ -1281,6 +1430,28 @@ export const actions = {
   'settings.unlink': unlink,
   'settings.erase': erase,
   'settings.share-start': shareStart,
+  'settings.wrap-key': () => {
+    store.setUi({ settingsConfirm: null });
+    makeNightKey().then((r) => { if (!r.ok && r.code !== 'busy') toast('The night key was not made. ' + shareMessage(r.code)); });
+  },
+  'settings.wrap-copy': () => {
+    const key = madeKey();
+    if (!key || !navigator.clipboard) return;
+    navigator.clipboard.writeText(key).then(() => toast('Private key copied. Paste it into GitHub’s secret page.'), () => toast('It could not be copied: select it and copy it.'));
+  },
+  'settings.wrap-done': () => forgetMadeKey(),
+  // straight from the tap: the permission request and the subscription start before anything is awaited
+  'settings.wrap-on': () => {
+    turnOnWrap().then((r) => {
+      if (r.ok || r.code === 'busy') return;
+      toast(r.code === 'push' ? 'The wrap was not turned on: notifications were not allowed.'
+        : r.code === 'worker' ? 'The app is still starting. Try again in a moment.' : 'The wrap was not turned on. ' + shareMessage(r.code));
+    });
+  },
+  'settings.wrap-off': () => {
+    turnOffWrap().then((r) => { if (!r.ok && r.code !== 'busy') toast('The wrap was turned off here, but its file could not be removed. ' + shareMessage(r.code)); });
+  },
+  'settings.wrap-lock': ({ el }) => setWrapLock(el.value),
   'settings.share-now': shareRound,
   'settings.share-forget': shareForgetKey,
   'settings.export': exportCopy,

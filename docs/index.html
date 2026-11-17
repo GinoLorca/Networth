@@ -8,8 +8,8 @@
 <meta name="description" content="Networth: a private net-worth board. It reads your bank feed itself; your data stays on your device.">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
-<meta name="networth-build" content="8a7887ce78bc">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-lMofkZ9hroGdReIdcbeVdQGX7AUwUt1et+JodIw7aHM='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-rrcgv2y0KMkdT76+jAxvRcNQTlj6UpNB9oKKC0whQNA=' 'sha256-e/tbGNncdNoZz13l4nvoF3bB1VC0tPaMfOMw7T5fyIM=' 'sha256-vtvTQgOF8REo4/7OrXt7r27xnMQOfrRm0glwTaEf6mQ=' 'sha256-bjsMTiPXO/fV7QJlhFnicz5k0INxLBT0hibL6mxaByc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-KJiTeF/M4lGFKztBQaJXk0LHMtyiPjUf0BfwznxqC/I=' 'sha256-+ElYrGma4N+3tSxwcOSe/XcF2qrL5kwmS0kdm0bwZb0=' 'sha256-DteyLvNz/HtxRqT86M19HgoZfGS3Vjh7g7Qv8sqoXaE=' 'sha256-Yq5LqpSuZYrQBiwZV3GIUKl7VztQyUyyTLeHF8RzYfM=' 'sha256-QXrKt++6Wq3yvYcbzGuV1ppzsGlag9M5t4FO07674+s=' 'sha256-m7CkRXzuhIuYxbQgavmrerKe1DYy85zXr0vO0/u7PNM=' 'sha256-AGcpoa0ZYLgE02mpnLEjsFszHyvUV1/tw2UnNfpPQks='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://beta-bridge.simplefin.org https://bridge.simplefin.org https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="networth-build" content="b39716fe6b1a">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-pgHFDdiIKwPcX6BnBry6Zvi/l+hsHu/o8S3QzLMZL6o='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-rrcgv2y0KMkdT76+jAxvRcNQTlj6UpNB9oKKC0whQNA=' 'sha256-e/tbGNncdNoZz13l4nvoF3bB1VC0tPaMfOMw7T5fyIM=' 'sha256-vtvTQgOF8REo4/7OrXt7r27xnMQOfrRm0glwTaEf6mQ=' 'sha256-bjsMTiPXO/fV7QJlhFnicz5k0INxLBT0hibL6mxaByc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-KJiTeF/M4lGFKztBQaJXk0LHMtyiPjUf0BfwznxqC/I=' 'sha256-+ElYrGma4N+3tSxwcOSe/XcF2qrL5kwmS0kdm0bwZb0=' 'sha256-DteyLvNz/HtxRqT86M19HgoZfGS3Vjh7g7Qv8sqoXaE=' 'sha256-Yq5LqpSuZYrQBiwZV3GIUKl7VztQyUyyTLeHF8RzYfM=' 'sha256-QXrKt++6Wq3yvYcbzGuV1ppzsGlag9M5t4FO07674+s=' 'sha256-eEeOYy22sdI6xurJjOLf6BpvLIG767+l4tB9zPSzXoo=' 'sha256-BH7SwzknVEcXg6G2n2ASkZcok2VcMPa1l1UiQf3zCeU='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://beta-bridge.simplefin.org https://bridge.simplefin.org https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#F3EDE1" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#15130F" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2752,6 +2752,10 @@ label.an-set { cursor: text; }
 .set-income-gone { list-style: none; margin: 4px 0 0; padding: 0; }
 .set-income-gone li { margin: 2px 0; }
 .set-income-name { min-width: 0; overflow-wrap: anywhere; }
+.set-wrap-secret { white-space: normal; overflow-wrap: anywhere; word-break: break-all; margin-top: var(--s-2); user-select: all; }
+.set-wrap-steps .btn { vertical-align: middle; }
+.set-wrap-lock { margin-top: var(--s-3); }
+.set-wrap-last { margin-top: var(--s-2); }
 
 </style>
 <style data-src="css/views/sheets.css">
@@ -2813,6 +2817,10 @@ label.an-set { cursor: text; }
 .wd-now { color: var(--ink); font-weight: 600; }
 .wd-dot { color: var(--ink-3); }
 .wd-meaning { margin: 2px 0 0; max-width: 60ch; color: var(--ink-2); }
+.dy-wrap .tally { margin-top: var(--s-2); }
+.dy-wrap-sub { margin-top: var(--s-3); }
+.dy-wrap-rows .row-label { min-width: 0; overflow-wrap: anywhere; }
+.dy-wrap-missing { margin-top: var(--s-2); }
 
 </style>
 <script>
@@ -4425,7 +4433,7 @@ const PHRASES = Object.freeze({
   'settings.alerts.only': { chess: "The shortcut sends no text that holds a code word or no dollar figure, and the app turns only a completed purchase into a move: any other text is deleted.", finance: "The shortcut sends no text that holds a code word or no dollar figure, and the app turns only a completed purchase into a transaction: any other text is deleted." },
   'settings.income.cash': { chess: "Cash in hand:", finance: "Physical cash:" },
   'settings.storage.kept': { chess: "Kept on this device only,", finance: "Stored on this device only," },
-  'settings.shared.what': { chess: "Apart from the date of a corrected move, nothing the bank reported goes there: no balance, no transaction, no account. Only what you entered (payments, notes, morning plans, tag names, your principles and what you did instead), your ticks, Habit’s figures and the amount of each week you moved, and an unreadable fingerprint of who each payment goes to, so every device recognises it the same way.", finance: "Apart from the date of a corrected transaction, nothing the bank reported goes there: no balance, no other transaction, no account. Only what you entered (payments, notes, morning plans, tag names, your spending rules and what you did instead), your ticks, the baseline’s figures and the amount of each week you transferred, and an unreadable fingerprint of who each payment goes to, so every device recognises it the same way." },
+  'settings.shared.what': { chess: "Apart from the date of a corrected move, and the nightly wrap’s figures (each round’s money in and out, and the amounts and days of recent bank rows, in files of their own beside it), nothing the bank reported goes there: no balance, no merchant, no account. Only what you entered (payments, notes, morning plans, tag names, your principles and what you did instead), your ticks, Habit’s figures and the amount of each week you moved, and an unreadable fingerprint of who each payment goes to, so every device recognises it the same way.", finance: "Apart from the date of a corrected transaction, and the nightly wrap’s figures (each day’s money in and out, and the amounts and days of recent bank rows, in files of their own beside it), nothing the bank reported goes there: no balance, no merchant, no account. Only what you entered (payments, notes, morning plans, tag names, your spending rules and what you did instead), your ticks, the baseline’s figures and the amount of each week you transferred, and an unreadable fingerprint of who each payment goes to, so every device recognises it the same way." },
   'settings.shared.corrections': { chess: "Corrections (categories, merchant names, income settings) reach your other devices too, each with an unreadable fingerprint of its merchant or move and, for a corrected move, its bank date, so that every device finds the same move. So does the daily game: its settings, each round’s colour, byes, notes and morning plans, Habit and the weeks you moved or set aside, so that every device scores each round the same way.", finance: "Corrections (categories, merchant names, income settings) reach your other devices too, each with an unreadable fingerprint of its merchant or transaction and, for a corrected transaction, its bank date, so that every device finds the same transaction. So does the daily budget: its settings, each day’s type, exempt days, notes and morning plans, the baseline and the weeks you transferred or skipped, so that every device counts each day the same way." },
   'settings.sample.bank': { chess: "Sample game — nothing is linked.", finance: "Sample data — nothing is linked." },
   'settings.sample.share': { chess: "Sample game — nothing is shared.", finance: "Sample data — nothing is shared." },
@@ -4517,6 +4525,37 @@ const PHRASES = Object.freeze({
   'account.kind.workedDown': { chess: "works the balance down", finance: "amortizes the balance" },
   'account.count.failed': { chess: "This count could not be kept. Type the cash you have now, for example 120.00.", finance: "This count could not be saved. Type the cash you have now, for example 120.00." },
   'settings.undo.cash': { chess: "Cash in hand added", finance: "Physical cash added" },
+  // the nightly wrap (3.10): the notification (model/wrap.js and the night job), at most 40 characters of title and 80 of
+  // body; {round} is "Round 16" / "Day 16" (board.today.round) and amounts arrive formatted, the sign included
+  'wrap.title': { chess: "{round} · cash {net} so far", finance: "{round} · net cash {net} so far" },
+  'wrap.title.still': { chess: "{round} · no money in or out so far", finance: "{round} · no money in or out so far" },
+  'wrap.title.hidden': { chess: "{round} · tonight’s wrap", finance: "{round} · tonight’s wrap" },
+  'wrap.body.hidden': { chess: "Tap to see money in and out.", finance: "Tap to see money in and out." },
+  'wrap.flows': { chess: "{in} · {out}.", finance: "{in} · {out}." },
+  'wrap.in': { chess: "in {amount}", finance: "in {amount}" },
+  'wrap.out': { chess: "out {amount}", finance: "out {amount}" },
+  'wrap.in.none': { chess: "nothing in", finance: "nothing in" },
+  'wrap.out.none': { chess: "nothing out", finance: "nothing out" },
+  'wrap.noBank': { chess: "Bank not read today: {flows}", finance: "Bank not read today: {flows}" },
+  'wrap.noBank.still': { chess: "Bank not read today.", finance: "Bank not read today." },
+  'wrap.pencil': { chess: "{round} now {net}, in pencil.", finance: "{round} now {net}, provisional." },
+  'wrap.ink': { chess: "{round} in ink: {net}.", finance: "{round} final: {net}." },
+  // the day sheet's Money in and out
+  'wrap.day.lede': { chess: "What the nightly wrap counts for this round: money that reached you, and money that left you.", finance: "What the nightly wrap counts for this day: money that reached you, and money that left you." },
+  'wrap.day.counted': { chess: "Counted", finance: "Counted" },
+  'wrap.day.left': { chess: "Not counted", finance: "Not counted" },
+  'wrap.day.none': { chess: "Nothing came in or went out.", finance: "Nothing came in or went out." },
+  'wrap.day.kind.in': { chess: "in", finance: "in" },
+  'wrap.day.kind.out': { chess: "out", finance: "out" },
+  'wrap.day.kind.back': { chess: "refund", finance: "refund" },
+  'wrap.day.kind.sent': { chess: "sent to someone", finance: "sent to someone" },
+  'wrap.day.why.payment': { chess: "a card or loan payment: its purchases were counted on the day they were made", finance: "a card or loan payment: its purchases were counted on the day they were made" },
+  'wrap.day.why.own': { chess: "between your own accounts", finance: "between your own accounts" },
+  'wrap.day.missing.live': { chess: "So far: spending on checking and debit since the bank last reported, purchases on a card that sends no alert, tips and refunds may still be missing until the round ends.", finance: "So far: spending on checking and debit since the bank last reported, purchases on a card that sends no alert, tips and refunds may still be missing until the day ends." },
+  'wrap.day.missing.pencil': { chess: "In pencil: the bank may still add or change what it reported for this round.", finance: "Provisional: the bank may still add or change what it reported for this day." },
+  // Settings → Nightly wrap
+  'wrap.set.lede': { chess: "Each night, one notification with the round’s money in and out, and a change to an earlier round when there is one. A tap opens the round.", finance: "Each night, one notification with the day’s money in and out, and a change to an earlier day when there is one. A tap opens the day." },
+  'wrap.set.files': { chess: "Each device writes today and the 7 days before to the same private repository: money in and out per round, the ids of the card alerts and payments it has counted, and the amounts and days of recent bank rows, so that a late card alert or payment is not counted twice. No merchant, account or balance. A job there sends the wrap, encrypted for each device.", finance: "Each device writes today and the 7 days before to the same private repository: money in and out per day, the ids of the card alerts and payments it has counted, and the amounts and days of recent bank rows, so that a late card alert or payment is not counted twice. No merchant, account or balance. A job there sends the wrap, encrypted for each device." },
 });
 
 function phrase(key, mode) {
@@ -6653,7 +6692,7 @@ function isObject(x) {
 function listOf(x) {
   return Array.isArray(x) ? x : [];
 }
-return { INCOME_FORMAT, INCOME_MAX_BYTES, SINCE_BACK_MS, LATE_MS, WAIT_MS, MAX_PAYER_ANSWERS, MAX_ITEM_ANSWERS, MAX_COUNTS, COUNT_MAX_CENTS, RECHECK_MS, CASH_ROLE, CASH_NAME, readIncomeFile, sourceIdOf, ensureIncome, incomeOf, applyIncomeReading, roundIncome, knownSha, howOf, payerAnswer, incomePayments, incomeLabel, floorCuts, matchIncome, isIncomeMove, incomeMoveId, isIdleCash, cashAccountOf, rebuildIncome, incomeClaimedRows, cashFigure, incomeQuestions, answerPayer, answerItem, answerItems, askAgain, rowPayments, itemAnswer, ensureCashAccount, countCash, removeCount, liveCounts, incomeRowLabels, readIncomeShared, mergeIncomeShared, exportIncomeShared, isBlankIncome };
+return { INCOME_FORMAT, INCOME_MAX_BYTES, SINCE_BACK_MS, LATE_MS, WAIT_MS, MATCH_BEFORE_DAYS, MAX_PAYER_ANSWERS, MAX_ITEM_ANSWERS, MAX_COUNTS, COUNT_MAX_CENTS, RECHECK_MS, CASH_ROLE, CASH_NAME, readIncomeFile, sourceIdOf, ensureIncome, incomeOf, applyIncomeReading, roundIncome, knownSha, howOf, payerAnswer, incomePayments, incomeLabel, floorCuts, matchIncome, isIncomeMove, incomeMoveId, isIdleCash, cashAccountOf, rebuildIncome, isClaimant, incomeClaimedRows, isMatchableRow, cashFigure, incomeQuestions, answerPayer, answerItem, answerItems, askAgain, rowPayments, itemAnswer, ensureCashAccount, countCash, removeCount, liveCounts, incomeRowLabels, readIncomeShared, mergeIncomeShared, exportIncomeShared, isBlankIncome };
 })();
 
 // ---- js/model/money.js
@@ -7406,6 +7445,7 @@ function makeLedger(state, nowMs) {
     nextPayOf: (streamId) => nextPayOf(core, streamId),
     retention: (day) => retentionOf(core, day),
     spendingByCategory: (fromDay, toDay) => spendingBetween(core, fromDay, toDay),
+    dataStatus: (day) => { const n = core.cal.num(day); return n === null ? null : dataStatusOf(core, n, bucketOn(core, n)); },
   };
 }
 
@@ -16440,7 +16480,7 @@ function pruneRemovedAlerts(state, nowMs) {
   if (Array.isArray(state.alertsRemoved) && kept.length !== list.length) state.alertsRemoved = kept;
   return kept;
 }
-return { PROVISIONAL_STALE_DAYS, ALERT_REMOVED_DAYS, isStaleProvisional, fingerprint, confirmStored, mergeFeed, addProvisional, addDecline, removeManual, rememberRemovedAlert, pruneRemovedAlerts };
+return { PROVISIONAL_STALE_DAYS, ALERT_CONFIRM_DAYS, ALERT_REMOVED_DAYS, isStaleProvisional, fingerprint, confirmGap, confirmStored, mergeFeed, addProvisional, addDecline, removeManual, rememberRemovedAlert, pruneRemovedAlerts };
 })();
 
 // ---- js/sync.js
@@ -18390,7 +18430,71 @@ async function readIncomeText(owner, key, name, doFetch) {
   }
   return body && body.encoding === 'base64' ? fromBase64(body.content) : null;
 }
-return { ShareError, shareMessage, isShareKey, shareOwner, sharedUrl, toBase64, fromBase64, readSharedText, writeSharedText, inboxUrl, listInbox, readInboxFile, deleteInboxFile, incomeUrl, listIncome, readIncomeText };
+
+/* ------------------------------------------------------------------------------------- the nightly wrap (3.10) */
+
+const REPO_FILE = /^(push|wrap)\/[A-Za-z0-9_-]{1,40}\.json$/;
+const REPO_MESSAGE = 'Networth: nightly wrap';
+const REPO_RETRIES = 3;
+
+function repoFileUrl(owner, path) {
+  if (typeof owner !== 'string' || !OWNER.test(owner)) throw new ShareError('missing');
+  if (typeof path !== 'string' || !REPO_FILE.test(path)) throw new ShareError('file');
+  return API + '/repos/' + owner + '/' + REPOSITORY + '/contents/' + path;
+}
+
+async function readRepoFile(owner, key, path, doFetch) {
+  const url = repoFileUrl(owner, path);
+  let body = null;
+  try {
+    body = await call(owner, key, { method: 'GET' }, doFetch, url);
+  } catch (err) {
+    if (err instanceof ShareError && err.code === 'missing') return { text: null, sha: null };
+    throw err;
+  }
+  const sha = body && typeof body.sha === 'string' && SHA.test(body.sha) ? body.sha : null;
+  const text = body && body.encoding === 'base64' ? fromBase64(body.content) : null;
+  if (text === null || !sha) throw new ShareError('file');
+  return { text, sha };
+}
+
+async function writeRepoFile(owner, key, path, text, sha, doFetch) {
+  const url = repoFileUrl(owner, path);
+  const payload = { message: REPO_MESSAGE, content: toBase64(text) };
+  if (typeof sha === 'string' && SHA.test(sha)) payload.sha = sha;
+  const body = await call(owner, key, { method: 'PUT', body: JSON.stringify(payload) }, doFetch, url);
+  return { sha: body && body.content && typeof body.content.sha === 'string' ? body.content.sha : null };
+}
+
+async function putRepoFile(owner, key, path, make, doFetch) {
+  for (let turn = 0; ; turn++) {
+    const { text, sha } = await readRepoFile(owner, key, path, doFetch);
+    const next = make(text);
+    if (typeof next !== 'string') return { written: false, text };
+    try {
+      await writeRepoFile(owner, key, path, next, sha, doFetch);
+      return { written: true, text: next };
+    } catch (err) {
+      if (!(err instanceof ShareError && err.code === 'conflict') || turn >= REPO_RETRIES) throw err;
+    }
+  }
+}
+
+async function deleteRepoFile(owner, key, path, doFetch) {
+  const url = repoFileUrl(owner, path);
+  for (let turn = 0; ; turn++) {
+    const { sha } = await readRepoFile(owner, key, path, doFetch);
+    if (!sha) return false;
+    try {
+      await call(owner, key, { method: 'DELETE', body: JSON.stringify({ message: REPO_MESSAGE, sha }) }, doFetch, url);
+      return true;
+    } catch (err) {
+      if (err instanceof ShareError && err.code === 'missing') return false;
+      if (!(err instanceof ShareError && err.code === 'conflict') || turn >= REPO_RETRIES) throw err;
+    }
+  }
+}
+return { ShareError, shareMessage, isShareKey, shareOwner, sharedUrl, toBase64, fromBase64, readSharedText, writeSharedText, inboxUrl, listInbox, readInboxFile, deleteInboxFile, incomeUrl, listIncome, readIncomeText, repoFileUrl, readRepoFile, writeRepoFile, putRepoFile, deleteRepoFile };
 })();
 
 // ---- js/share.js
@@ -19042,6 +19146,1172 @@ function incomeInfo() {
   return { readAt: live.readAt, code: live.code, busy: live.busy, folder: live.folder };
 }
 return { autoIncome, incomeInfo };
+})();
+
+// ---- js/model/wrap.js
+__mods["js/model/wrap.js"] = (function () {
+const { ACCOUNT_TYPES } = __mods["js/model/schema.js"];
+const { addDays, isYmd, parts } = __mods["js/model/dates.js"];
+const { fmt, fmtSigned } = __mods["js/model/money.js"];
+const { makeLedger } = __mods["js/model/ledger.js"];
+const { ALERT_CONFIRM_DAYS, confirmGap } = __mods["js/model/merge.js"];
+const { ALERT_MAX_BYTES, alertDay, alertFile, parseAlert } = __mods["js/model/alerts.js"];
+const { MATCH_BEFORE_DAYS, floorCuts, incomeClaimedRows, incomeOf, incomePayments, isClaimant, isIncomeMove, isMatchableRow, matchIncome } = __mods["js/model/income.js"];
+const { say, wordsMode } = __mods["js/model/words.js"];
+const WRAP_FORMAT = 'wrap/1';
+const WRAP_DAYS_BACK = 7;
+const TITLE_MAX = 40;
+const BODY_MAX = 80;
+const PAYLOAD_MAX = 3993;
+const DECLARATIVE = 8030;
+
+const WRAP_MAX_BYTES = 200000;
+const WRAP_MAX_DAYS = 10;
+const LIST_MAX = 500;
+const KEY_MAX = 170;
+const MAX_CENTS = 1e14;
+const DEVICE = /^[A-Za-z0-9_-]{1,40}$/;
+const STEM = /^\d{8}-\d{6}-\d{3}$/;
+const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/;
+const STATUSES = new Set(['live', 'awaiting', 'provisional', 'final']);
+const PARTS = ['bank', 'marked', 'cash', 'spent', 'alerts', 'sent', 'back'];
+const UNSAFE = new Set(['__proto__', 'constructor', 'prototype']);
+
+function words(key, mode, vars) {
+  return say(key, mode, vars);
+}
+
+/* ------------------------------------------------------------------------------------------ the counting rule */
+
+function groupOf(account) {
+  return account && Object.hasOwn(ACCOUNT_TYPES, account.type) ? ACCOUNT_TYPES[account.type].group : null;
+}
+
+function wrapFlowOf(tx, accountOf, pairOf) {
+  if (!tx || typeof tx !== 'object' || tx.kind === 'decline' || !(tx.amount > 0)) return null;
+  const group = tx.accountId == null || typeof accountOf !== 'function' ? null : groupOf(accountOf(tx.accountId));
+  const spendable = group === null || group === 'cash' || group === 'card' || group === 'debt';
+  switch (tx.kind) {
+    case 'income':
+      return tx.flow === 'in' ? 'in' : null;
+    case 'spend':
+      return tx.flow === 'out' && spendable ? 'out' : null;
+    case 'refund':
+      return tx.flow === 'in' && spendable ? 'back' : null;
+    case 'transfer': {
+      if (tx.flow !== 'out' || !(group === null || group === 'cash')) return null;
+      const otherLeg = tx.pairId != null && (typeof pairOf !== 'function' || !!pairOf(tx.pairId));
+      return otherLeg ? null : 'out';
+    }
+    default:
+      return null; // a card or loan payment (both legs), an investment move, anything else
+  }
+}
+
+/* ------------------------------------------------------------------------------------------- the day figure */
+
+function emptyDay(status) {
+  return {
+    status, in: 0, out: 0,
+    parts: { bank: 0, marked: 0, cash: 0, spent: 0, alerts: 0, sent: 0, back: 0 },
+    pending: 0,
+    seen: { alerts: [], income: [] },
+    open: { charges: [], deposits: [] },
+  };
+}
+
+function rolloverOf(state) {
+  const hour = isObject(state) && isObject(state.settings) ? state.settings.rolloverHour : undefined;
+  return Number.isInteger(hour) && hour >= 0 && hour <= 23 ? hour : 4;
+}
+
+function wrapDays(state, nowMs) {
+  return daysOf(state, nowMs, makeLedger(state, nowMs));
+}
+
+function countingOf(state) {
+  const txs = listOf(state && state.txs).filter(isObject);
+  const accounts = new Map(listOf(state && state.accounts).filter(isObject).map((a) => [a.id, a]));
+  const byId = new Map(txs.map((tx) => [tx.id, tx]));
+  const accountOf = (id) => accounts.get(id) || null;
+  const pairOf = (id) => byId.get(id) || null;
+  // a bank row a provisional move met counts on the earlier of their two days (owner decision 3)
+  const metOn = new Map();
+  for (const tx of txs) {
+    if (tx.source !== 'manual' || typeof tx.matchId !== 'string' || !isYmd(tx.day)) continue;
+    const had = metOn.get(tx.matchId);
+    if (!had || tx.day < had) metOn.set(tx.matchId, tx.day);
+  }
+  const dayOf = (tx) => {
+    const met = tx.source === 'bank' ? metOn.get(tx.id) : null;
+    return met && met < tx.day ? met : tx.day;
+  };
+  return { txs, accounts, accountOf, pairOf, dayOf };
+}
+
+function wrapDay(state, nowMs, day) {
+  const ledger = makeLedger(state, nowMs);
+  const today = ledger.today;
+  const out = { day, status: day > today ? 'future' : day === today ? 'live' : ledger.dataStatus(day), in: 0, out: 0, counted: [], left: [] };
+  if (!isYmd(day) || day > today) return out;
+  const { accountOf, pairOf, dayOf } = countingOf(state);
+  // the day's live moves, and the later ones counted on it (a bank row dated up to 5 days after the alert it met, a
+  // deposit up to 30 days after the payment it met): every round from the day to the 2 days ahead a bank may date a row to
+  for (let d = day, last = addDays(today, 2); d <= last; d = addDays(d, 1)) {
+    for (const tx of ledger.round(d).moves) {
+      if (dayOf(tx) !== day || tx.kind === 'decline') continue;
+      const amount = Math.round(tx.amount);
+      const way = wrapFlowOf(tx, accountOf, pairOf);
+      if (way) {
+        out.counted.push({ tx, way, amount, sent: way === 'out' && tx.kind === 'transfer' });
+        if (way === 'in') out.in += amount;
+        else if (way === 'out') out.out += amount;
+        else out.out -= amount;
+      } else if (tx.kind === 'payment') {
+        out.left.push({ tx, why: 'payment', amount });
+      } else if (tx.kind === 'transfer' && tx.pairId != null && pairOf(tx.pairId)) {
+        out.left.push({ tx, why: 'own', amount });
+      }
+    }
+  }
+  return out;
+}
+
+function daysOf(state, nowMs, ledger) {
+  const today = ledger.today;
+  const rollover = rolloverOf(state);
+  const countPending = !(isObject(state) && isObject(state.settings) && state.settings.countPending === false);
+  const { txs, accounts, accountOf, pairOf, dayOf } = countingOf(state);
+  const first = addDays(today, -WRAP_DAYS_BACK);
+  const days = {};
+  for (let d = first; d <= today; d = addDays(d, 1)) days[d] = emptyDay(d === today ? 'live' : ledger.dataStatus(d));
+
+  // the live moves of the window, and of the 2 days ahead a bank may date a row to
+  for (let d = first, last = addDays(today, 2); d <= last; d = addDays(d, 1)) {
+    for (const tx of ledger.round(d).moves) {
+      const way = wrapFlowOf(tx, accountOf, pairOf);
+      const fig = way ? days[dayOf(tx)] : null;
+      if (fig) tally(fig, tx, way, accountOf);
+    }
+  }
+  // pending bank rows, counted or not (countPending says which)
+  for (const tx of txs) {
+    if (tx.source !== 'bank' || !tx.pending || !shownBank(accountOf(tx.accountId))) continue;
+    const fig = wrapFlowOf(tx, accountOf, pairOf) ? days[dayOf(tx)] : null;
+    if (fig) fig.pending += 1;
+  }
+
+  // seen: the card alerts this device made a move of or removed, by the day of their inbox file
+  const stems = new Set();
+  for (const tx of txs) if (tx.via === 'alert' && typeof tx.id === 'string' && tx.id.startsWith('alert_')) stems.add(tx.id.slice(6));
+  for (const gone of listOf(state && state.alertsRemoved)) if (isObject(gone) && typeof gone.id === 'string' && gone.id.startsWith('alert_')) stems.add(gone.id.slice(6));
+  for (const stem of [...stems].sort()) {
+    const file = alertFile(stem + '.txt');
+    const fig = file ? days[alertDay(state, file, today)] : null;
+    if (fig) fig.seen.alerts.push(stem);
+  }
+  // seen: every payment it knows, whatever became of it, by its marked day
+  for (const p of incomePayments(state, rollover)) if (days[p.marked]) days[p.marked].seen.income.push(p.key);
+  for (const fig of Object.values(days)) fig.seen.income.sort();
+
+  // open: card charges no alert took, which a late alert of the day could be (merge.confirmGap); a pending one too,
+  // counted or not, as the device's own matching meets an alert with it (and the alert then counts no more)
+  const taken = new Set(txs.filter((tx) => typeof tx.matchId === 'string').map((tx) => tx.matchId));
+  const charges = txs.filter((tx) => tx.source === 'bank' && tx.kind === 'spend' && tx.flow === 'out' && !tx.matchId
+    && !taken.has(tx.id) && tx.amount > 0 && isYmd(tx.day)
+    && shownBank(accountOf(tx.accountId)) && groupOf(accountOf(tx.accountId)) === 'card')
+    .map((tx) => [Math.round(tx.amount), tx.day]).sort(byDayThenCents);
+  // open: deposits no payment claimed, which a late payment of the day could be (income.isMatchableRow, matchIncome)
+  const claimed = new Set(txs.filter((tx) => tx.matchId && !isIncomeMove(tx)).map((tx) => tx.matchId));
+  const byPayments = incomeClaimedRows(state);
+  const deposits = txs.filter((tx) => isMatchableRow(tx, accounts, claimed, addDays(today, 2), countPending) && !byPayments.has(tx.id))
+    .map((tx) => [Math.round(tx.amount), tx.day]).sort(byDayThenCents);
+  for (const [day, fig] of Object.entries(days)) {
+    // a late alert meets a charge dated on its day or up to 5 days after; a late payment a deposit from 10 days before
+    const until = addDays(day, ALERT_CONFIRM_DAYS);
+    const from = addDays(day, -MATCH_BEFORE_DAYS);
+    fig.open.charges = charges.filter(([, d]) => d >= day && d <= until).slice(0, LIST_MAX);
+    fig.open.deposits = deposits.filter(([, d]) => d >= from).slice(0, LIST_MAX);
+  }
+  return { today, rollover, countPending, days };
+}
+
+function tally(fig, tx, way, accountOf) {
+  const amount = Math.round(tx.amount);
+  if (way === 'in') {
+    fig.in += amount;
+    if (tx.source === 'manual' && tx.via === 'income') {
+      const account = accountOf(tx.accountId);
+      fig.parts[account && account.role === 'cash-in-hand' ? 'cash' : 'marked'] += amount;
+    } else {
+      fig.parts.bank += amount;
+    }
+  } else if (way === 'out') {
+    fig.out += amount;
+    fig.parts[tx.source === 'manual' ? 'alerts' : tx.kind === 'transfer' ? 'sent' : 'spent'] += amount;
+  } else {
+    fig.out -= amount;
+    fig.parts.back += amount;
+  }
+}
+
+function shownBank(account) {
+  return !!account && account.source === 'bank' && !account.hidden;
+}
+
+function byDayThenCents(a, b) {
+  return a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : a[0] - b[0];
+}
+
+/* ------------------------------------------------------------------------------------------ the device file */
+
+function exportWrap(state, nowMs, device) {
+  const ledger = makeLedger(state, nowMs);
+  const { rollover, countPending, days } = daysOf(state, nowMs, ledger);
+  const lastOk = isObject(state) && isObject(state.sync) ? state.sync.lastOk : null;
+  const dataAt = ledger.position().dataAt;
+  return {
+    format: WRAP_FORMAT,
+    device,
+    writtenAt: isoOf(nowMs),
+    readAt: Number.isFinite(lastOk) && lastOk > 0 ? isoOf(lastOk) : null,
+    dataAt: Number.isFinite(dataAt) && dataAt > 0 ? isoOf(dataAt) : null,
+    rollover,
+    countPending,
+    days,
+  };
+}
+
+function readWrapFile(text) {
+  const no = (problem) => ({ ok: false, problem });
+  if (typeof text !== 'string') return no('The file could not be read.');
+  if (text.length > WRAP_MAX_BYTES) return no('The file is too large.');
+  let raw;
+  try { raw = JSON.parse(text); } catch { return no('The file is not JSON.'); }
+  if (!isObject(raw) || hasUnsafeKey(raw)) return no('The file is not a wrap file.');
+  if (raw.format !== WRAP_FORMAT) return no('The file is not in the format ' + WRAP_FORMAT + '.');
+  if (typeof raw.device !== 'string' || !DEVICE.test(raw.device)) return no('The device id is not usable.');
+  if (!isIso(raw.writtenAt)) return no('The time it was written is not a time.');
+  if (!(raw.readAt === null || isIso(raw.readAt))) return no('The time of the bank reading is not a time.');
+  if (!(raw.dataAt === null || isIso(raw.dataAt))) return no('The balance date is not a time.');
+  if (!Number.isInteger(raw.rollover) || raw.rollover < 0 || raw.rollover > 23) return no('The hour the day turns is not an hour.');
+  if (typeof raw.countPending !== 'boolean') return no('Whether pending rows count is not said.');
+  if (!isObject(raw.days)) return no('The file has no days.');
+  const keys = Object.keys(raw.days);
+  if (keys.length > WRAP_MAX_DAYS) return no('The file holds too many days.');
+  const days = {};
+  for (const day of keys.sort()) {
+    if (!isYmd(day)) return no('A day is not a date.');
+    const fig = readDay(raw.days[day]);
+    if (!fig) return no('The figures of ' + day + ' are not usable.');
+    days[day] = fig;
+  }
+  return {
+    ok: true,
+    file: {
+      format: WRAP_FORMAT, device: raw.device, writtenAt: raw.writtenAt, readAt: raw.readAt, dataAt: raw.dataAt,
+      rollover: raw.rollover, countPending: raw.countPending, days,
+    },
+  };
+}
+
+function readDay(raw) {
+  if (!isObject(raw) || !STATUSES.has(raw.status) || !isCents(raw.in) || !isCents(raw.out)) return null;
+  if (!isObject(raw.parts) || !Number.isInteger(raw.pending) || raw.pending < 0) return null;
+  const partsOut = {};
+  for (const name of PARTS) {
+    if (!isCents(raw.parts[name]) || raw.parts[name] < 0) return null;
+    partsOut[name] = raw.parts[name];
+  }
+  if (!isObject(raw.seen) || !isObject(raw.open)) return null;
+  const alerts = raw.seen.alerts;
+  const income = raw.seen.income;
+  if (!Array.isArray(alerts) || alerts.length > LIST_MAX || !alerts.every((s) => typeof s === 'string' && STEM.test(s))) return null;
+  if (!Array.isArray(income) || income.length > 5000 || !income.every(isIncomeKey)) return null;
+  const charges = readPairs(raw.open.charges);
+  const deposits = readPairs(raw.open.deposits);
+  if (!charges || !deposits) return null;
+  return {
+    status: raw.status, in: raw.in, out: raw.out, parts: partsOut, pending: raw.pending,
+    seen: { alerts: alerts.slice(), income: income.slice() }, open: { charges, deposits },
+  };
+}
+
+function readPairs(list) {
+  if (!Array.isArray(list) || list.length > LIST_MAX) return null;
+  const out = [];
+  for (const pair of list) {
+    if (!Array.isArray(pair) || pair.length !== 2 || !isCents(pair[0]) || pair[0] <= 0 || !isYmd(pair[1])) return null;
+    out.push([pair[0], pair[1]]);
+  }
+  return out;
+}
+
+function isIncomeKey(key) {
+  if (typeof key !== 'string' || key.length > KEY_MAX) return false;
+  const parts2 = key.split('/');
+  return parts2.length === 2 && parts2.every((p) => /^[A-Za-z0-9_.:-]{1,80}$/.test(p) && !UNSAFE.has(p));
+}
+
+function hasUnsafeKey(value, depth = 0) {
+  if (depth > 6 || !value || typeof value !== 'object') return false;
+  for (const key of Object.keys(value)) {
+    if (UNSAFE.has(key) || hasUnsafeKey(value[key], depth + 1)) return true;
+  }
+  return false;
+}
+
+function pickDay(files, day) {
+  let best = null;
+  for (const file of listOf(files)) {
+    if (!isObject(file) || !isObject(file.days) || !Object.hasOwn(file.days, day)) continue;
+    if (!best || later(file, best)) best = file;
+  }
+  return best;
+}
+
+function later(a, b) {
+  const ra = msOf(a.readAt);
+  const rb = msOf(b.readAt);
+  if (ra !== rb) return ra > rb;
+  return msOf(a.writtenAt) > msOf(b.writtenAt);
+}
+
+function msOf(text) {
+  const ms = typeof text === 'string' ? Date.parse(text) : NaN;
+  return Number.isFinite(ms) ? ms : -Infinity;
+}
+
+/* ------------------------------------------------------------------------------------------------ late items */
+
+function addLate(fig, day, late) {
+  const out = fig ? copyDay(fig) : emptyDay(day === late.today ? 'live' : 'awaiting');
+  const result = { fig: out, alerts: 0, payments: 0 };
+  // what met an open row of the file across the night's window (nightFigures), else this day's own rows
+  const pool = isObject(late.met) ? late.met : null;
+
+  // card alerts
+  const alerts = lateAlerts(out, day, late);
+  const metAlerts = pool ? pool.alerts : alertsMet(alerts, out.open.charges);
+  for (const alert of alerts) {
+    if (metAlerts.has(alert.stem)) continue;
+    out.out += alert.amount;
+    out.parts.alerts += alert.amount;
+    result.alerts += 1;
+  }
+
+  // marked payments
+  const fresh = latePayments(out, day, late);
+  const met = pool ? pool.payments : paymentsMet(fresh, out.open.deposits, late);
+  for (const p of fresh) {
+    if (met.has(p.key) || p.how === 'history') continue;
+    if (p.how === 'cash') {
+      out.in += p.cents;
+      out.parts.cash += p.cents;
+    } else if (!floorCuts(p)) {
+      out.in += p.cents;
+      out.parts.marked += p.cents;
+    } else {
+      continue;
+    }
+    result.payments += 1;
+  }
+  return result;
+}
+
+function lateAlerts(fig, day, late) {
+  const elsewhere = isObject(late.seen) ? late.seen : {};
+  const seenAlerts = new Set([...listOf(fig && fig.seen && fig.seen.alerts), ...iterable(elsewhere.alerts)]);
+  const asRecord = { settings: { rolloverHour: late.rollover } };
+  const files = listOf(late.inbox).filter((entry) => isObject(entry) && alertFile(entry.name))
+    .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+  const out = [];
+  for (const entry of files) {
+    if (!(Number.isFinite(entry.size) && entry.size >= 0 && entry.size <= ALERT_MAX_BYTES)) continue;
+    const file = alertFile(entry.name);
+    if (alertDay(asRecord, file, late.today) !== day || seenAlerts.has(file.stem)) continue;
+    const alert = parseAlert(entry.text);
+    if (alert) out.push({ stem: file.stem, amount: alert.amount, day });
+  }
+  return out;
+}
+
+function latePayments(fig, day, late) {
+  const elsewhere = isObject(late.seen) ? late.seen : {};
+  const record = { income: isObject(late.income) ? late.income : {} };
+  const seenIncome = new Set([...listOf(fig && fig.seen && fig.seen.income), ...iterable(elsewhere.income)]);
+  return incomePayments(record, late.rollover).filter((p) => p.marked === day && !seenIncome.has(p.key) && p.how !== 'gone');
+}
+
+function alertsMet(alerts, charges) {
+  const pool = listOf(charges).map(([amount, d]) => ({ amount, day: d, used: false }));
+  const pairs = [];
+  for (const alert of alerts) {
+    for (const charge of pool) {
+      const fit = confirmGap({ via: 'alert', amount: alert.amount, day: alert.day }, charge);
+      if (fit) pairs.push({ alert, charge, ...fit });
+    }
+  }
+  pairs.sort((a, b) => a.days - b.days || a.gap - b.gap || (a.alert.stem < b.alert.stem ? -1 : a.alert.stem > b.alert.stem ? 1 : 0));
+  const met = new Set();
+  for (const { alert, charge } of pairs) {
+    if (met.has(alert.stem) || charge.used) continue;
+    charge.used = true;
+    met.add(alert.stem);
+  }
+  return met;
+}
+
+function paymentsMet(payments, deposits, late) {
+  const { shared } = incomeOf({ income: isObject(late.income) ? late.income : {} });
+  const rows = listOf(deposits).map(([amount, d], i) => ({ id: 'open' + i, day: d, amount }));
+  return new Set(matchIncome(rows, payments.filter((p) => isClaimant(shared, p))).keys());
+}
+
+function poolOf(lists) {
+  const most = new Map();
+  for (const list of lists) {
+    const count = new Map();
+    for (const [amount, d] of listOf(list)) count.set(amount + ' ' + d, (count.get(amount + ' ' + d) || 0) + 1);
+    for (const [key, n] of count) if (n > (most.get(key) || 0)) most.set(key, n);
+  }
+  const out = [];
+  for (const [key, n] of most) {
+    const [amount, d] = key.split(' ');
+    for (let i = 0; i < n; i++) out.push([Number(amount), d]);
+  }
+  return out.sort(byDayThenCents);
+}
+
+function seenInWindow(files, days) {
+  const alerts = new Set();
+  const income = new Set();
+  for (const day of listOf(days)) {
+    const file = pickDay(files, day);
+    const fig = file ? file.days[day] : null;
+    if (!isObject(fig) || !isObject(fig.seen)) continue;
+    for (const stem of listOf(fig.seen.alerts)) alerts.add(stem);
+    for (const key of listOf(fig.seen.income)) income.add(key);
+  }
+  return { alerts, income };
+}
+
+function nightFigures(files, late) {
+  const days = [];
+  for (let d = addDays(late.today, -WRAP_DAYS_BACK); d <= late.today; d = addDays(d, 1)) days.push(d);
+  const seen = seenInWindow(files, days);
+  // a file picked for several days: its open rows are one pool for all of them, each row met by one late item at most
+  const picked = new Map();
+  for (const day of days) {
+    const file = pickDay(files, day);
+    if (file) picked.set(file, [...(picked.get(file) || []), day]);
+  }
+  const pools = new Map();
+  for (const [file, its] of picked) {
+    const alertsLate = its.flatMap((day) => lateAlerts(file.days[day], day, { ...late, seen }));
+    const paymentsLate = its.flatMap((day) => latePayments(file.days[day], day, { ...late, seen }));
+    const met = {
+      alerts: alertsMet(alertsLate, poolOf(its.map((day) => file.days[day].open && file.days[day].open.charges))),
+      payments: paymentsMet(paymentsLate, poolOf(its.map((day) => file.days[day].open && file.days[day].open.deposits)), late),
+    };
+    for (const day of its) pools.set(day, met);
+  }
+  const figs = {};
+  let alerts = 0;
+  let payments = 0;
+  for (const day of days) {
+    const file = pickDay(files, day);
+    const added = addLate(file ? file.days[day] : null, day, { ...late, seen, met: pools.get(day) || null });
+    figs[day] = added.fig;
+    alerts += added.alerts;
+    payments += added.payments;
+  }
+  return { figs, alerts, payments };
+}
+
+function iterable(x) {
+  return x instanceof Set || Array.isArray(x) ? x : [];
+}
+
+function copyDay(fig) {
+  return {
+    status: fig.status, in: fig.in, out: fig.out, parts: { ...emptyDay().parts, ...fig.parts }, pending: fig.pending || 0,
+    seen: { alerts: listOf(fig.seen && fig.seen.alerts).slice(), income: listOf(fig.seen && fig.seen.income).slice() },
+    open: { charges: listOf(fig.open && fig.open.charges).slice(), deposits: listOf(fig.open && fig.open.deposits).slice() },
+  };
+}
+
+/* ------------------------------------------------------------------------------------- the revision clause */
+
+function revisionOf(today, figs, sent) {
+  const said = isObject(sent) && isObject(sent.days) ? sent.days : null;
+  if (!said || !isObject(figs)) return null;
+  const yesterday = addDays(today, -1);
+  const clause = (day) => ({ day, net: figs[day].in - figs[day].out, final: figs[day].status === 'final' });
+  const known = (d) => d < today && isObject(figs[d]) && isObject(said[d]) && Number.isInteger(said[d].in) && Number.isInteger(said[d].out);
+  const changed = (d) => known(d) && figs[d].in - figs[d].out !== said[d].in - said[d].out;
+  // the day leaving the window tonight has no later night, while yesterday's change can still be told on the next five:
+  // so a change to the leaving day comes first, and every change is told by its last night in the window
+  const leaving = addDays(today, -WRAP_DAYS_BACK);
+  if (changed(leaving)) return clause(leaving);
+  if (changed(yesterday)) return clause(yesterday);
+  const days = Object.keys(figs).filter((d) => d < yesterday).sort();
+  // a changed day outranks one that only turned final, so that a day turning final every night never starves a change
+  const moved = days.filter(changed);
+  if (moved.length) return clause(moved[moved.length - 1]);
+  // an empty day turned final says nothing the night that told it "no money in or out" did not
+  const empty = (d) => figs[d].in === 0 && figs[d].out === 0 && said[d].in - said[d].out === 0;
+  const turned = Object.keys(figs).filter((d) => known(d) && figs[d].status === 'final' && said[d].status !== 'final' && !empty(d)).sort();
+  return turned.length ? clause(turned[turned.length - 1]) : null;
+}
+
+/* -------------------------------------------------------------------------------------------- the words */
+
+function wrapText(fig, revision, wordMode, lock) {
+  const mode = wordsMode(wordMode);
+  const round = roundOf(fig.day, mode);
+  const hidden = { title: words('wrap.title.hidden', mode, { round }), body: words('wrap.body.hidden', mode), revised: false };
+  if (lock !== 'show') return hidden;
+  const moved = fig.in !== 0 || fig.out !== 0;
+  const title = moved ? words('wrap.title', mode, { round, net: '≈' + fmtSigned(fig.in - fig.out) }) : words('wrap.title.still', mode, { round });
+  let main = '';
+  if (fig.noBank) main = moved ? words('wrap.noBank', mode, { flows: flowsOf(fig, mode) }) : words('wrap.noBank.still', mode);
+  else if (moved) main = upperFirst(flowsOf(fig, mode));
+  const clause = revision ? revisionWords(revision, mode) : '';
+  let body = [main, clause].filter(Boolean).join(' ');
+  let revised = !!clause;
+  if (body.length > BODY_MAX) {
+    body = main;
+    revised = false;
+  }
+  if (body.length > BODY_MAX) body = hidden.body;
+  return { title: title.length > TITLE_MAX ? hidden.title : title, body, revised };
+}
+
+function roundOf(day, mode) {
+  return say('board.today.round', mode, { n: String(parts(day).d) });
+}
+
+function flowsOf(fig, mode) {
+  const inWords = fig.in === 0 ? words('wrap.in.none', mode) : words('wrap.in', mode, { amount: '≈' + fmt(fig.in) });
+  const outWords = fig.out === 0 ? words('wrap.out.none', mode) : words('wrap.out', mode, { amount: '≈' + fmt(fig.out) });
+  return words('wrap.flows', mode, { in: inWords, out: outWords });
+}
+
+function revisionWords(revision, mode) {
+  const round = roundOf(revision.day, mode);
+  if (revision.final) return words('wrap.ink', mode, { round, net: fmtSigned(revision.net) });
+  return words('wrap.pencil', mode, { round, net: '≈' + fmtSigned(revision.net) });
+}
+
+function upperFirst(text) {
+  return text ? text[0].toUpperCase() + text.slice(1) : text;
+}
+
+/* ------------------------------------------------------------------------------------------- the message */
+
+function pushPayload(fig, revision, device) {
+  const { title, body } = wrapText(fig, revision, device.words, device.lock);
+  const notification = { title };
+  if (body) notification.body = body;
+  notification.navigate = dayLink(device.appUrl, fig.day);
+  notification.lang = 'en-US';
+  notification.tag = 'wrap-' + fig.day;
+  return { web_push: DECLARATIVE, notification };
+}
+
+function dayLink(appUrl, day) {
+  const url = new URL(appUrl);
+  url.hash = '';
+  return url.href.replace(/#$/, '') + '#/board?sheet=day&s.day=' + encodeURIComponent(day);
+}
+
+/* ------------------------------------------------------------------------------------------------- helpers */
+
+function isObject(x) {
+  return x !== null && typeof x === 'object' && !Array.isArray(x);
+}
+
+function listOf(x) {
+  return Array.isArray(x) ? x : [];
+}
+
+function isCents(x) {
+  return Number.isInteger(x) && Math.abs(x) <= MAX_CENTS;
+}
+
+function isIso(text) {
+  return typeof text === 'string' && ISO.test(text) && Number.isFinite(Date.parse(text));
+}
+
+function isoOf(ms) {
+  return new Date(ms).toISOString();
+}
+return { WRAP_FORMAT, WRAP_DAYS_BACK, TITLE_MAX, BODY_MAX, PAYLOAD_MAX, DECLARATIVE, wrapFlowOf, emptyDay, wrapDays, wrapDay, exportWrap, readWrapFile, pickDay, addLate, seenInWindow, nightFigures, revisionOf, wrapText, pushPayload, dayLink };
+})();
+
+// ---- js/wrap.js
+__mods["js/wrap.js"] = (function () {
+const { store } = __mods["js/store.js"];
+const { loadShareKey } = __mods["js/db.js"];
+const { nowMs } = __mods["js/model/dates.js"];
+const { exportWrap } = __mods["js/model/wrap.js"];
+const { wordsOf } = __mods["js/model/words.js"];
+const { ShareError, deleteRepoFile, isShareKey, putRepoFile, readRepoFile } = __mods["js/github.js"];
+const { shareGeneration, shareInfo } = __mods["js/share.js"];
+const SPACING_MS = 2000;
+const READ_EVERY_MS = 5 * 60 * 1000;
+const DEVICE_SLOT = 'networth.device';
+const LOCK_SLOT = 'networth.wrapLock';
+const SUB_SLOT = 'networth.wrapSub';
+const OFF_SLOT = 'networth.wrapOffAt';
+const REMOVE_SLOT = 'networth.wrapRemove';
+const DEVICE = /^[A-Za-z0-9_-]{16}$/;
+const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+const PUBLIC_KEY = /^B[A-Za-z0-9_-]{86}$/;
+const LOCKS = ['cover', 'show', 'hide'];
+const STAMPS = new Set(['writtenAt', 'updatedAt']);
+const REPOSITORY = 'networth-data';
+
+/* ------------------------------------------------------------------------------------------- pure helpers */
+
+function newDeviceId(random) {
+  const bytes = new Uint8Array(16);
+  if (typeof random === 'function') for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(random() * 256) & 255;
+  else crypto.getRandomValues(bytes);
+  let id = '';
+  for (const b of bytes) id += ALPHABET[b & 63];
+  return id;
+}
+
+function lockOf(choice, state) {
+  if (choice === 'show' || choice === 'hide') return choice;
+  return state && state.settings && state.settings.cover ? 'hide' : 'show';
+}
+
+function pushFileOf({ device, appUrl, subscription, words, lock, nowMs: at }) {
+  const keys = subscription && subscription.keys ? subscription.keys : {};
+  return {
+    format: 'push/1',
+    device,
+    appUrl,
+    subscription: { endpoint: subscription.endpoint, keys: { p256dh: keys.p256dh, auth: keys.auth } },
+    words: words === 'finance' ? 'finance' : 'chess',
+    lock: lock === 'show' ? 'show' : 'hide',
+    updatedAt: new Date(at).toISOString(),
+  };
+}
+
+function sameContent(a, b) {
+  return canonical(a) === canonical(b);
+}
+
+function canonical(value, top = true) {
+  if (Array.isArray(value)) return '[' + value.map((v) => canonical(v, false)).join(',') + ']';
+  if (value && typeof value === 'object') {
+    const keys = Object.keys(value).filter((k) => !(top && STAMPS.has(k))).sort();
+    return '{' + keys.map((k) => JSON.stringify(k) + ':' + canonical(value[k], false)).join(',') + '}';
+  }
+  return JSON.stringify(value === undefined ? null : value);
+}
+
+function delivered(status) {
+  return status === 200 || status === 201 || status === 202;
+}
+
+function transient(status) {
+  return status === 0 || status === 429 || (Number.isInteger(status) && status >= 500 && status <= 599);
+}
+
+function wrapStatus(sent, device) {
+  const none = { lastAt: null, lastDay: null, got: false, dead: false, keyProblem: false, noKey: false, problem: null, retry: false, refused: false, nextRun: 'night' };
+  let raw = sent;
+  if (typeof raw === 'string') {
+    try { raw = JSON.parse(raw); } catch { return none; }
+  }
+  const last = raw && typeof raw === 'object' && raw.format === 'sent/1' && raw.last && typeof raw.last === 'object' ? raw.last : null;
+  if (!last) return none;
+  const at = typeof last.at === 'string' ? Date.parse(last.at) : NaN;
+  const devices = last.devices && typeof last.devices === 'object' ? last.devices : {};
+  const status = Object.hasOwn(devices, device) ? devices[device] : null;
+  const dead = Array.isArray(last.dead) && last.dead.includes(device);
+  const problems = Array.isArray(last.problems) ? last.problems : [];
+  const event = last.event === 'manual' ? 'manual' : 'schedule';
+  const schedules = Number.isInteger(last.schedules) ? last.schedules : event === 'schedule' ? 1 : 0;
+  const problem = status === null || delivered(status) || dead || status === 404 || status === 410 ? null : status;
+  return {
+    lastAt: Number.isFinite(at) ? at : null,
+    lastDay: typeof last.day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(last.day) ? last.day : null,
+    got: delivered(status),
+    dead,
+    keyProblem: problems.some((p) => p && p.device === null && p.status === 'key'),
+    noKey: problems.some((p) => p && p.device === null && p.status === 'nokey'),
+    problem,
+    retry: problem !== null && transient(problem) && event === 'schedule' && schedules === 1,
+    refused: Number.isInteger(problem) && problem >= 400 && problem <= 499 && problem !== 429,
+    nextRun: schedules === 1 ? 'backup' : 'night',
+  };
+}
+
+function stillDead(status, kept, offAt) {
+  if (!status || !(status.dead || status.refused)) return false;
+  const at = kept && Number.isFinite(kept.at) ? kept.at : null;
+  if (at === null && Number.isFinite(offAt)) return false;
+  return at === null || !Number.isFinite(status.lastAt) || at < status.lastAt;
+}
+
+function makeRemover({ pending, remove, done }) {
+  let running = null;
+  function poke() {
+    if (running) return running;
+    let due = false;
+    try { due = pending(); } catch { due = false; }
+    if (!due) return Promise.resolve();
+    running = (async () => {
+      try {
+        await remove();
+        done();
+      } catch { /* tried again on open and at the next change */ }
+    })().finally(() => { running = null; });
+    return running;
+  }
+  async function idle() {
+    while (running) await running;
+  }
+  return { poke, idle };
+}
+
+function offAt() {
+  const ms = Number(slot(OFF_SLOT));
+  return Number.isFinite(ms) && ms > 0 ? ms : null;
+}
+
+function readVapid(text) {
+  let raw = null;
+  try { raw = JSON.parse(text); } catch { return null; }
+  if (!raw || typeof raw !== 'object' || raw.format !== 'vapid/1' || typeof raw.publicKey !== 'string' || !PUBLIC_KEY.test(raw.publicKey)) return null;
+  const madeAt = typeof raw.madeAt === 'string' && Number.isFinite(Date.parse(raw.madeAt)) ? Date.parse(raw.madeAt) : null;
+  return { publicKey: raw.publicKey, madeAt };
+}
+
+function makeExporter({ content, write, spacingMs = SPACING_MS }) {
+  let timer = null;
+  let running = null;
+  let again = false;
+  let last = null;
+  function poke() {
+    if (running) { again = true; return; }
+    if (timer !== null) return;
+    timer = setTimeout(() => {
+      timer = null;
+      running = run().finally(() => {
+        running = null;
+        if (again) { again = false; poke(); }
+      });
+    }, spacingMs);
+  }
+  async function run() {
+    let next = null;
+    try { next = content(); } catch { next = null; }
+    if (!next || (last && sameContent(last, next))) return;
+    try {
+      await write(next);
+      last = next;
+    } catch { /* tried again at the next change */ }
+  }
+  async function idle() {
+    while (running) await running;
+  }
+  return { poke, idle, forget: () => { last = null; } };
+}
+
+/* -------------------------------------------------------------------------------------------- the device */
+
+const live = {
+  device: null,
+  vapid: undefined,
+  sent: null,
+  readAt: 0,
+  reading: false,
+  code: null,
+  busy: null,
+  made: null,
+  replacing: false,
+  reg: null,
+  sub: undefined,
+  gone: false,
+  lock: 'cover',
+};
+
+let seenRev = -1;
+let seenDoc = null;
+
+function doFetch(url, init) {
+  return fetch(url, init);
+}
+
+function poke() {
+  store.setUi({ wrapTick: (store.ui.wrapTick || 0) + 1 });
+}
+
+function slot(name, value) {
+  try {
+    if (value === undefined) return localStorage.getItem(name);
+    if (value === null) localStorage.removeItem(name);
+    else localStorage.setItem(name, value);
+  } catch { /* storage may be unavailable: the value then lasts this visit */ }
+  return null;
+}
+
+function deviceId() {
+  if (live.device) return live.device;
+  const kept = slot(DEVICE_SLOT);
+  live.device = typeof kept === 'string' && DEVICE.test(kept) ? kept : newDeviceId();
+  if (kept !== live.device) slot(DEVICE_SLOT, live.device);
+  return live.device;
+}
+
+function storedSub() {
+  try {
+    const raw = JSON.parse(slot(SUB_SLOT) || 'null');
+    return raw && typeof raw.endpoint === 'string' && raw.keys && typeof raw.keys.p256dh === 'string' ? raw : null;
+  } catch { return null; }
+}
+
+function appUrl() {
+  return location.origin + location.pathname;
+}
+
+function standalone() {
+  if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('standalone') === '1') return true;
+  if (typeof navigator !== 'undefined' && navigator.standalone === true) return true;
+  return typeof matchMedia === 'function' && matchMedia('(display-mode: standalone)').matches;
+}
+
+function pushable() {
+  return typeof navigator !== 'undefined' && 'serviceWorker' in navigator && typeof PushManager !== 'undefined';
+}
+
+function usable() {
+  const sh = shareInfo();
+  return sh.available && sh.on && sh.code !== 'key' && !sh.retryAt && !!store.state && !store.status.readonly;
+}
+
+async function keyFor(gen) {
+  const key = await loadShareKey();
+  if (!isShareKey(key) || gen !== shareGeneration()) throw new ShareError('key');
+  return key;
+}
+
+function wrapFileContent(state, at, device, { sharing, vapid }) {
+  return sharing && vapid ? exportWrap(state, at, device) : null;
+}
+
+const wrapFile = makeExporter({
+  content: () => wrapFileContent(store.state, nowMs(), deviceId(), { sharing: usable(), vapid: live.vapid }),
+  write: async (file) => {
+    const gen = shareGeneration();
+    const key = await keyFor(gen);
+    const path = 'wrap/' + file.device + '.json';
+    await putRepoFile(shareInfo().owner, key, path, (text) => (sameContent(parsed(text), file) ? null : JSON.stringify(file, null, 1) + '\n'), doFetch);
+  },
+});
+
+const pushFile = makeExporter({
+  content: () => {
+    const sub = storedSub();
+    if (!usable() || !sub || live.gone) return null;
+    return pushFileOf({ device: deviceId(), appUrl: appUrl(), subscription: sub, words: wordsOf(store.state), lock: lockOf(live.lock, store.state), nowMs: nowMs() });
+  },
+  write: async (file) => {
+    const gen = shareGeneration();
+    const key = await keyFor(gen);
+    await putRepoFile(shareInfo().owner, key, 'push/' + file.device + '.json', (text) => (sameContent(parsed(text), file) ? null : JSON.stringify(file, null, 1) + '\n'), doFetch);
+  },
+});
+
+function parsed(text) {
+  try { return JSON.parse(text); } catch { return null; }
+}
+
+const pushRemoval = makeRemover({
+  pending: () => slot(REMOVE_SLOT) === '1' && !storedSub() && !live.busy && usable(),
+  remove: async () => {
+    const key = await keyFor(shareGeneration());
+    if (storedSub() || live.busy) return; // turned on again meanwhile: the file is this device's again
+    await deleteRepoFile(shareInfo().owner, key, 'push/' + deviceId() + '.json', doFetch);
+  },
+  done: () => { if (!storedSub()) slot(REMOVE_SLOT, null); },
+});
+
+function watch() {
+  if (store.rev === seenRev && store.state === seenDoc) return;
+  seenRev = store.rev;
+  seenDoc = store.state;
+  wrapFile.poke();
+  pushFile.poke();
+  pushRemoval.poke();
+}
+
+async function readWrapFiles(maxAgeMs = READ_EVERY_MS) {
+  if (live.reading || !usable() || nowMs() - live.readAt < maxAgeMs) return;
+  live.reading = true;
+  poke();
+  const gen = shareGeneration();
+  try {
+    const key = await keyFor(gen);
+    const owner = shareInfo().owner;
+    const [vapid, sent] = await Promise.all([readRepoFile(owner, key, 'push/vapid.json', doFetch), readRepoFile(owner, key, 'wrap/sent.json', doFetch)]);
+    if (gen !== shareGeneration()) return;
+    live.vapid = vapid.text === null ? null : readVapid(vapid.text);
+    live.sent = sent.text;
+    live.readAt = nowMs();
+    live.code = null;
+    wrapFile.poke();
+    await checkSubscription();
+  } catch (err) {
+    live.code = err && typeof err.code === 'string' ? err.code : 'other';
+  } finally {
+    live.reading = false;
+    poke();
+  }
+}
+
+async function checkSubscription() {
+  if (!standalone() || !pushable()) return;
+  try {
+    live.reg = live.reg || (await navigator.serviceWorker.getRegistration()) || null;
+    if (!live.reg) {
+      // the first load registers the worker after this: it is kept when ready, without waiting here (on a page with no
+      // worker, ready never comes)
+      navigator.serviceWorker.ready.then((reg) => { live.reg = reg; poke(); }, () => {});
+      return;
+    }
+    if (!live.reg.pushManager) return;
+    const sub = await live.reg.pushManager.getSubscription();
+    const kept = storedSub();
+    live.sub = sub;
+    if (!sub) {
+      live.gone = !!kept;
+      return;
+    }
+    const json = sub.toJSON();
+    if (stillDead(wrapStatus(live.sent, deviceId()), kept, offAt())) {
+      // the push service dropped it, or refused the wrap: it is ended now, so that Turn back on makes a new one
+      // (subscribing again with the same key would give back this one)
+      await sub.unsubscribe().catch(() => false);
+      live.sub = null;
+      live.gone = true;
+      return;
+    }
+    if (live.vapid && kept && kept.serverKey && kept.serverKey !== live.vapid.publicKey) {
+      // made with a night key since replaced: the push service would refuse every message to it
+      await sub.unsubscribe().catch(() => false);
+      live.sub = null;
+      live.gone = true;
+      return;
+    }
+    if (!kept || kept.endpoint !== json.endpoint || kept.keys.p256dh !== json.keys.p256dh || kept.keys.auth !== json.keys.auth) {
+      slot(SUB_SLOT, JSON.stringify({ endpoint: json.endpoint, keys: { p256dh: json.keys.p256dh, auth: json.keys.auth }, serverKey: kept ? kept.serverKey : (live.vapid ? live.vapid.publicKey : null), at: nowMs() }));
+      pushFile.poke();
+    }
+    live.gone = false;
+  } catch { /* the browser said nothing: asked again at the next open */ }
+}
+
+function initWrap() {
+  deviceId();
+  const lock = slot(LOCK_SLOT);
+  live.lock = LOCKS.includes(lock) ? lock : 'cover';
+  store.subscribe(watch);
+  if (typeof addEventListener === 'function') addEventListener('pagehide', () => { live.made = null; });
+}
+
+function autoWrap() {
+  readWrapFiles().catch(() => {});
+  checkSubscription().catch(() => {});
+  pushRemoval.poke();
+}
+
+function bytesOf(text) {
+  const binary = atob(text.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - (text.length % 4)) % 4));
+  const out = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
+  return out;
+}
+
+function base64url(bytes) {
+  let binary = '';
+  for (const b of bytes) binary += String.fromCharCode(b);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+async function makeNightKey() {
+  if (live.busy || !usable()) return { ok: false, code: 'busy' };
+  live.busy = 'key';
+  poke();
+  const gen = shareGeneration();
+  try {
+    const pair = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
+    const publicKey = base64url(new Uint8Array(await crypto.subtle.exportKey('raw', pair.publicKey)));
+    const privateKey = (await crypto.subtle.exportKey('jwk', pair.privateKey)).d;
+    const madeAt = nowMs();
+    // Whether GitHub holds a secret of that name, to be updated rather than added, is known only once a run after the
+    // current key was made has checked: true when it found one (a mismatched key is still a secret), false when it
+    // found none or no key existed, null (unknown: both ways are shown) when no run has checked the current key yet
+    const status = wrapStatus(live.sent, deviceId());
+    const checked = !!live.vapid && Number.isFinite(live.vapid.madeAt) && Number.isFinite(status.lastAt) && status.lastAt > live.vapid.madeAt;
+    const replacing = !live.vapid ? false : checked ? !status.noKey : null;
+    const key = await keyFor(gen);
+    const file = { format: 'vapid/1', publicKey, madeAt: new Date(madeAt).toISOString() };
+    await putRepoFile(shareInfo().owner, key, 'push/vapid.json', () => JSON.stringify(file, null, 1) + '\n', doFetch);
+    live.vapid = { publicKey, madeAt };
+    live.made = privateKey;
+    live.replacing = replacing;
+    live.code = null;
+    // a subscription made with the old key no longer works: this device turns the wrap on again, like the others
+    if (storedSub()) live.gone = true;
+    if (live.reg && live.reg.pushManager) {
+      const sub = await live.reg.pushManager.getSubscription().catch(() => null);
+      if (sub) await sub.unsubscribe().catch(() => false);
+      live.sub = null;
+    }
+    wrapFile.poke();
+    return { ok: true };
+  } catch (err) {
+    live.code = err && typeof err.code === 'string' ? err.code : 'other';
+    return { ok: false, code: live.code };
+  } finally {
+    live.busy = null;
+    poke();
+  }
+}
+
+function madeKey() {
+  return live.made;
+}
+
+function forgetMadeKey() {
+  live.made = null;
+  poke();
+}
+
+function turnOnWrap() {
+  const vapid = live.vapid;
+  const reg = live.reg;
+  if (live.busy) return Promise.resolve({ ok: false, code: 'busy' });
+  if (!vapid || !reg || !reg.pushManager) return Promise.resolve({ ok: false, code: 'worker' });
+  const asked = typeof Notification !== 'undefined' && typeof Notification.requestPermission === 'function'
+    ? Promise.resolve(Notification.requestPermission()).catch(() => 'default') : Promise.resolve('default');
+  const subscribing = reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytesOf(vapid.publicKey) });
+  return finishOn(asked, subscribing, vapid);
+}
+
+async function finishOn(asked, subscribing, vapid) {
+  live.busy = 'on';
+  poke();
+  let subscribed = false;
+  try {
+    await asked;
+    let sub = null;
+    try { sub = await subscribing; } catch { throw Object.assign(new Error('push'), { code: 'push' }); }
+    const json = sub.toJSON();
+    slot(SUB_SLOT, JSON.stringify({ endpoint: json.endpoint, keys: { p256dh: json.keys.p256dh, auth: json.keys.auth }, serverKey: vapid.publicKey, at: nowMs() }));
+    slot(OFF_SLOT, null);
+    slot(REMOVE_SLOT, null);
+    live.sub = sub;
+    live.gone = false;
+    subscribed = true;
+    pushFile.forget();
+    await pushRemoval.idle(); // a removal left from Turn off never runs after this write
+    const file = pushFileOf({ device: deviceId(), appUrl: appUrl(), subscription: json, words: wordsOf(store.state), lock: lockOf(live.lock, store.state), nowMs: nowMs() });
+    const key = await keyFor(shareGeneration());
+    await putRepoFile(shareInfo().owner, key, 'push/' + file.device + '.json', () => JSON.stringify(file, null, 1) + '\n', doFetch);
+    live.code = null;
+    wrapFile.poke();
+    return { ok: true };
+  } catch (err) {
+    live.code = err && typeof err.code === 'string' ? err.code : 'other';
+    // subscribed, but the push file was not written: it is written again 2 seconds from now, and at each change after
+    if (subscribed) pushFile.poke();
+    return { ok: false, code: live.code };
+  } finally {
+    live.busy = null;
+    poke();
+  }
+}
+
+async function turnOffWrap() {
+  if (live.busy) return { ok: false, code: 'busy' };
+  live.busy = 'off';
+  poke();
+  try {
+    const sub = live.reg && live.reg.pushManager ? await live.reg.pushManager.getSubscription().catch(() => null) : null;
+    if (sub) await sub.unsubscribe().catch(() => false);
+    slot(SUB_SLOT, null);
+    // turned off by the owner: not "turned off by the push service", whatever the last run said
+    slot(OFF_SLOT, String(nowMs()));
+    live.sub = null;
+    live.gone = false;
+    pushFile.forget();
+    // until GitHub answers, the removal is tried again on open and at each change
+    slot(REMOVE_SLOT, '1');
+    const key = await keyFor(shareGeneration());
+    await deleteRepoFile(shareInfo().owner, key, 'push/' + deviceId() + '.json', doFetch);
+    slot(REMOVE_SLOT, null);
+    live.code = null;
+    return { ok: true };
+  } catch (err) {
+    live.code = err && typeof err.code === 'string' ? err.code : 'other';
+    return { ok: false, code: live.code };
+  } finally {
+    live.busy = null;
+    poke();
+  }
+}
+
+function setWrapLock(choice) {
+  live.lock = LOCKS.includes(choice) ? choice : 'cover';
+  slot(LOCK_SLOT, live.lock === 'cover' ? null : live.lock);
+  pushFile.poke();
+  poke();
+}
+
+function wrapInfo() {
+  const sh = shareInfo();
+  const sub = storedSub();
+  const device = deviceId();
+  const status = wrapStatus(live.sent, device);
+  // turned off, or refused, by the push service only until this device turns the wrap back on
+  const cut = stillDead(status, sub, offAt());
+  status.dead = cut && status.dead;
+  status.refused = cut && !status.dead && status.refused;
+  // a problem of a run before this device's subscription was made, or after the owner turned the wrap off here, is
+  // about a subscription that is no more: it is not said
+  const newer = sub && Number.isFinite(sub.at) && Number.isFinite(status.lastAt) && sub.at > status.lastAt;
+  if (newer || (!sub && offAt() !== null)) Object.assign(status, { problem: null, refused: false, retry: false });
+  return {
+    available: !!sh.available,
+    on: !!sh.on,
+    standalone: standalone(),
+    pushable: pushable(),
+    device,
+    owner: sh.owner,
+    vapid: live.vapid,
+    reading: live.reading,
+    busy: live.busy,
+    code: live.code,
+    made: live.made,
+    subscribed: !!sub && !live.gone && !status.dead && !status.refused,
+    gone: live.gone,
+    lock: live.lock,
+    status,
+    replacing: live.replacing,
+    secretUrl: sh.owner ? 'https://github.com/' + sh.owner + '/' + REPOSITORY + '/settings/secrets/actions/new' : null,
+    secretsUrl: sh.owner ? 'https://github.com/' + sh.owner + '/' + REPOSITORY + '/settings/secrets/actions' : null,
+  };
+}
+return { newDeviceId, lockOf, pushFileOf, sameContent, wrapStatus, stillDead, makeRemover, readVapid, makeExporter, deviceId, wrapFileContent, readWrapFiles, initWrap, autoWrap, makeNightKey, madeKey, forgetMadeKey, turnOnWrap, turnOffWrap, setWrapLock, wrapInfo };
 })();
 
 // ---- js/model/demo.js
@@ -26676,6 +27946,8 @@ const { WORDS, phrase, say, shareToast, wordsMode, wordsOf } = __mods["js/model/
 const { sayHtml } = __mods["js/ui/say.js"];
 const { answerPayer, askAgain, cashAccountOf, isIdleCash, ensureCashAccount, incomeLabel, incomeOf, incomePayments, incomeQuestions, payerAnswer } = __mods["js/model/income.js"];
 const { againWords, beforeCountWords, countedWords, isCountedCash, listedPayers, payerWords, paymentState } = __mods["js/views/income-words.js"];
+const { forgetMadeKey, madeKey, makeNightKey, setWrapLock, turnOffWrap, turnOnWrap } = __mods["js/wrap.js"];
+const { shareMessage } = __mods["js/github.js"];
 const APP_VERSION = '1.0.0';
 const BRIDGE_URL = 'https://bridge.simplefin.org';
 const TOKEN_URL = 'https://github.com/settings/personal-access-tokens/new';
@@ -27116,6 +28388,145 @@ function alertSection(ctx) {
   </div>`;
 }
 
+/* ------------------------------------------------- the nightly wrap (ARCHITECTURE 3.10) */
+
+const WRAP_LOCKS = [['cover', 'Follow cover'], ['show', 'Show'], ['hide', 'Hide']];
+const WRAP_SECRET = 'VAPID_PRIVATE_KEY';
+
+function wrapMade(ctx, wr) {
+  const c = (text) => html`<code class="set-code">${text}</code>`;
+  // the first key goes to GitHub's form for a new secret; a replacement, or a key whose secret no run has checked yet,
+  // to the list of secrets, where the existing one is updated
+  const url = wr.replacing === false ? wr.secretUrl : wr.secretsUrl;
+  return html`<p class="title set-state">The night key is made. Its private half is shown this once.</p>
+    <ol class="set-share-steps set-wrap-steps">
+      <li><button class="btn btn-s" type="button" data-action="settings.wrap-copy">Copy private key</button>
+        <code class="set-code set-code-block set-wrap-secret">${wr.made}</code></li>
+      <li>Open <a class="btn-link" href="${url}" target="_blank" rel="noopener noreferrer">GitHub’s secret page</a>; it opens in a new tab.</li>
+      ${wr.replacing === null
+        ? html`<li>If ${c(WRAP_SECRET)} is listed, click its pencil, paste into <b>Value</b>, then <b>Update secret</b>. If it is not, click <b>New repository secret</b>, type ${c(WRAP_SECRET)} as <b>Name</b>, paste into <b>Secret</b>, then <b>Add secret</b>.</li>`
+        : wr.replacing
+          ? html`<li>Click ${c(WRAP_SECRET)}’s pencil, paste into <b>Value</b>, then <b>Update secret</b>.</li>`
+          : html`<li>Click <b>Name</b> and type ${c(WRAP_SECRET)}. Click <b>Secret</b>, paste, then <b>Add secret</b>.</li>`}
+    </ol>
+    <p class="cap set-help">Networth keeps no copy of it: once you tap Done, or close the app, it is gone from this device. Should it be lost, make a new key.</p>
+    <p class="cluster set-wrap-go"><button class="btn btn-solid" type="button" data-action="settings.wrap-done">Done</button></p>`;
+}
+
+function wrapDevice(ctx, wr) {
+  const busy = !!wr.busy;
+  if (!wr.standalone) {
+    return html`<p class="cap set-help">Turn it on in the installed app: on the iPhone and iPad from the Home Screen, on the Mac from the Dock. Only the installed app receives it.</p>`;
+  }
+  if (!wr.pushable) return html`<p class="cap set-help">This app cannot receive notifications here.</p>`;
+  if (wr.subscribed && !wr.status.dead && !wr.status.refused) {
+    return html`<p class="cluster cluster-center set-refresh">
+        <span class="cap grow">On for this device.</span>
+        <button class="btn btn-s" type="button" data-action="settings.wrap-off" ${busy ? html`disabled` : ''}>Turn off</button>
+      </p>
+      <fieldset class="field set-wrap-lock">
+        <legend class="field-label lab">Amounts on the lock screen</legend>
+        <div class="seg seg-block" role="radiogroup" aria-label="Amounts on the lock screen">
+          ${WRAP_LOCKS.map(([value, label]) => html`<label class="seg-opt"><input type="radio" name="wrapLock" value="${value}" data-change="settings.wrap-lock" ${
+            wr.lock === value ? html`checked` : ''}><span>${label}</span></label>`)}
+        </div>
+        <p class="cap field-help">Follow cover hides them while this device’s cover is on.</p>
+      </fieldset>`;
+  }
+  const again = wr.gone || wr.status.dead || wr.status.refused;
+  // turned off, or refused, by the push service: the notice above says so, so the line beside the button only says the tap
+  const said = !again ? '1 tap here, then Allow.' : wr.status.dead || wr.status.refused ? '1 tap turns it back on.' : 'It was turned off on this device. 1 tap turns it back on.';
+  return html`<p class="cluster cluster-center set-wrap-go">
+    <button class="btn btn-solid" type="button" data-action="settings.wrap-on" ${busy ? html`disabled` : ''}>${again ? 'Turn back on' : 'Turn on the nightly wrap'}</button>
+    <span class="cap grow">${said}</span>
+  </p>`;
+}
+
+function wrapProblem(problem) {
+  if (problem === 0) return 'its push service did not answer';
+  if (Number.isInteger(problem)) return 'its push service answered ' + problem;
+  return '';
+}
+
+function wrapStatusLines(ctx, wr) {
+  const st = wr.status;
+  const lines = [];
+  // a key problem of a run before this night key was made is about the key it replaced: it is not said
+  const stale = !!(wr.vapid && Number.isFinite(wr.vapid.madeAt) && Number.isFinite(st.lastAt) && wr.vapid.madeAt > st.lastAt);
+  if (st.noKey && !stale) {
+    const page = wr.secretsUrl || '';
+    // the backup schedule runs a full run when the first one sent nothing: tonight's, if that was tonight's first run
+    const next = st.nextRun === 'backup' && st.lastDay === ctx.today ? '10:13 PM' : '9:33 PM';
+    lines.push(html`<p class="notice is-error"><i class="notice-mark"></i><span><b>Not sent</b>The last run found no secret named ${WRAP_SECRET} on GitHub, so it sent nothing. On ${page
+      ? html`<a class="btn-link" href="${page}" target="_blank" rel="noopener noreferrer">GitHub’s secret page</a>` : 'GitHub’s secret page'}, check that its name is exactly ${WRAP_SECRET}. If the private key is no longer at hand, make a new night key below and paste it there. The next run checks again at ${next}.</span></p>`);
+  } else if (st.keyProblem && !stale) {
+    lines.push(html`<p class="notice is-error"><i class="notice-mark"></i><span><b>Not sent</b>The night key GitHub holds (${WRAP_SECRET}) is not the one your repository publishes, so the last run sent nothing. Make a new night key below, and paste it into GitHub.</span></p>`);
+  }
+  if (st.dead) {
+    lines.push(html`<p class="notice is-error"><i class="notice-mark"></i><span><b>Turned off</b>This device was turned off by the push service${st.lastAt ? ' on ' + fmtDate(gameDay(st.lastAt, ctx.state.settings.rolloverHour), 'short') : ''}.</span></p>`);
+  } else if (st.got && st.lastDay) {
+    lines.push(html`<p class="cap set-wrap-last" role="status">Last wrap: ${say('board.today.round', ctx.words, { n: String(Number(st.lastDay.slice(8))) })}, sent ${whenText(st.lastAt, ctx)}.</p>`);
+  } else if (st.refused) {
+    lines.push(html`<p class="notice is-error"><i class="notice-mark"></i><span><b>Not reaching</b>The wrap cannot reach this device: its push service refused the last one (${String(st.problem)}).</span></p>`);
+  } else if (st.problem === 'file' || st.problem === 'subscription' || st.problem === 'endpoint') {
+    lines.push(html`<p class="cap set-wrap-last" role="status">The last wrap did not reach this device: this device’s push file could not be used. To fix it, turn the wrap off and on again here.</p>`);
+  } else if (st.problem !== null) {
+    const why = wrapProblem(st.problem);
+    const next = !Number.isInteger(st.problem) || !(st.problem === 0 || st.problem === 429 || (st.problem >= 500 && st.problem <= 599)) ? ''
+      // the backup run is promised only while it is still to come: tonight's, after tonight's first run
+      : st.retry && st.lastDay === ctx.today ? ' The backup run tries again.' : ' The next wrap tries again.';
+    lines.push(html`<p class="cap set-wrap-last" role="status">The last wrap did not reach this device${why ? ': ' + why : ''}.${next}</p>`);
+  }
+  return lines;
+}
+
+function wrapSection(ctx) {
+  const sh = ctx.share;
+  const wr = ctx.wrap;
+  if (!sh || !sh.available || ctx.demo || !wr) return '';
+  const state = !sh.on ? 'Needs the key' : wr.subscribed ? 'On' : wr.status.dead || wr.status.refused || wr.gone ? 'Turned off' : 'Off';
+  let body;
+  if (!sh.on) {
+    body = html`<p class="title set-state">Start sharing between devices first: the wrap uses the same key.</p>`;
+  } else if (wr.made) {
+    body = wrapMade(ctx, wr);
+  } else if (wr.vapid === undefined) {
+    body = wr.code
+      ? html`<p class="notice is-error"><i class="notice-mark"></i><span><b>Not read</b>The night key could not be read. ${shareMessage(wr.code)}</span></p>`
+      : html`<p class="sync set-busy" data-state="syncing" role="status"><i class="sync-mark"></i><span class="sync-text"><b>Reading the night key</b>…</span></p>`;
+  } else if (wr.vapid === null) {
+    body = html`<p class="title set-state">No night key yet.</p>
+      <p class="cluster cluster-center set-wrap-go">
+        <button class="btn btn-solid" type="button" data-action="settings.wrap-key" ${wr.busy ? html`disabled` : ''}>Make the night key</button>
+        <span class="cap grow">Once, on 1 device.</span>
+      </p>
+      <p class="cap set-help">It is made in this browser. Its public half goes to push/vapid.json in your repository; its private half is shown once, for you to paste into GitHub as the secret <code class="set-code">${WRAP_SECRET}</code>. Networth keeps no copy.</p>`;
+  } else {
+    body = html`<p class="title set-state">Night key made${wr.vapid.madeAt ? ' ' + whenText(wr.vapid.madeAt, ctx) : ''}.</p>
+      ${wrapStatusLines(ctx, wr)}
+      ${wrapDevice(ctx, wr)}
+      <div class="set-dangers">
+        ${dangerous(ctx, 'wrap-key', { ask: 'Make a new night key', action: 'settings.wrap-key', go: 'Make a new key',
+          sentence: 'The new key replaces this one: paste it into GitHub again, and every device must then turn the wrap on again (1 tap each).' })}
+      </div>`;
+  }
+  return html`<div class="cols">
+    <section class="col col-7 set-sec" aria-label="Nightly wrap">
+      <div class="sec-head">
+        <h2 class="lab"><b>Nightly wrap</b><i class="sep"></i>money in and out, each night</h2>
+        <span class="lab">${state}</span>
+      </div>
+      <p class="set-lede">${phrase('wrap.set.lede', ctx.words)}</p>
+      ${body}
+    </section>
+    <section class="col col-5 set-sec" aria-label="What the wrap holds">
+      <div class="sec-head"><h3 class="lab"><b>What it holds</b><i class="sep"></i>no names</h3></div>
+      <p class="cap set-help">${phrase('wrap.set.files', ctx.words)}</p>
+      <p class="cap set-help">Each device may hide the amounts on its lock screen. Apple carries the message encrypted.</p>
+    </section>
+  </div>`;
+}
+
 /* ------------------------------------------------- income your other apps report */
 
 const GONE_SHOWN = 10;
@@ -27469,9 +28880,9 @@ function render(ctx) {
       </div>
       <div class="set-top-row">
         <h1 class="title title-l set-title">Settings</h1>
-        <p class="cap set-top-note">The bank link, ${shared ? (ctx.demo ? 'sharing between devices, ' : 'sharing between devices, card purchases within minutes, income your other apps report, ') : ''}how a day is counted, appearance, your own rules and the record. ${ctx.demo
+        <p class="cap set-top-note">The bank link, ${shared ? (ctx.demo ? 'sharing between devices, ' : 'sharing between devices, card purchases within minutes, income your other apps report, the nightly wrap, ') : ''}how a day is counted, appearance, your own rules and the record. ${ctx.demo
           ? phrase('settings.top.sample', ctx.words)
-          : 'Every control saves the moment it changes'}${sayHtml('settings.top.complete', ctx.words, { n: shared ? (ctx.demo ? 7 : 9) : 6 })}</p>
+          : 'Every control saves the moment it changes'}${sayHtml('settings.top.complete', ctx.words, { n: shared ? (ctx.demo ? 7 : 10) : 6 })}</p>
       </div>
     </section>
     <div class="cols">
@@ -27481,6 +28892,7 @@ function render(ctx) {
     ${shareSection(ctx)}
     ${alertSection(ctx)}
     ${incomeSection(ctx)}
+    ${wrapSection(ctx)}
     <div class="cols">
       ${appearanceSection(ctx)}
       ${rulesSection(ctx)}
@@ -27599,7 +29011,7 @@ async function link({ el, values }) {
 
 function ask({ data }) {
   const what = data.what;
-  if (what !== 'unlink' && what !== 'unlink-erase' && what !== 'erase' && what !== 'share-forget') return;
+  if (what !== 'unlink' && what !== 'unlink-erase' && what !== 'erase' && what !== 'share-forget' && what !== 'wrap-key') return;
   store.setUi({ settingsConfirm: store.ui.settingsConfirm === what ? null : what });
 }
 
@@ -27863,6 +29275,28 @@ const actions = {
   'settings.unlink': unlink,
   'settings.erase': erase,
   'settings.share-start': shareStart,
+  'settings.wrap-key': () => {
+    store.setUi({ settingsConfirm: null });
+    makeNightKey().then((r) => { if (!r.ok && r.code !== 'busy') toast('The night key was not made. ' + shareMessage(r.code)); });
+  },
+  'settings.wrap-copy': () => {
+    const key = madeKey();
+    if (!key || !navigator.clipboard) return;
+    navigator.clipboard.writeText(key).then(() => toast('Private key copied. Paste it into GitHub’s secret page.'), () => toast('It could not be copied: select it and copy it.'));
+  },
+  'settings.wrap-done': () => forgetMadeKey(),
+  // straight from the tap: the permission request and the subscription start before anything is awaited
+  'settings.wrap-on': () => {
+    turnOnWrap().then((r) => {
+      if (r.ok || r.code === 'busy') return;
+      toast(r.code === 'push' ? 'The wrap was not turned on: notifications were not allowed.'
+        : r.code === 'worker' ? 'The app is still starting. Try again in a moment.' : 'The wrap was not turned on. ' + shareMessage(r.code));
+    });
+  },
+  'settings.wrap-off': () => {
+    turnOffWrap().then((r) => { if (!r.ok && r.code !== 'busy') toast('The wrap was turned off here, but its file could not be removed. ' + shareMessage(r.code)); });
+  },
+  'settings.wrap-lock': ({ el }) => setWrapLock(el.value),
   'settings.share-now': shareRound,
   'settings.share-forget': shareForgetKey,
   'settings.export': exportCopy,
@@ -29609,7 +31043,8 @@ const { icon } = __mods["js/ui/icons.js"];
 const { store } = __mods["js/store.js"];
 const { closeSheet } = __mods["js/router.js"];
 const { context, toast } = __mods["js/runtime.js"];
-const { statusLine, inlineMoney, spentUnposted } = __mods["js/views/parts.js"];
+const { statusLine, inlineMoney, spentUnposted, txName } = __mods["js/views/parts.js"];
+const { wrapDay } = __mods["js/model/wrap.js"];
 const { sayHtml } = __mods["js/ui/say.js"];
 const { phrase, say } = __mods["js/model/words.js"];
 const { NOTE_MAX: GAME_NOTE_MAX } = __mods["js/model/game.js"];
@@ -29692,6 +31127,7 @@ function render(ctx, params) {
     ${typeField(ctx, day, round)}
     ${byeBlock(ctx, day, round)}
     ${planBlock(ctx, day, round, record)}
+    ${wrapBlock(ctx, day)}
     <label class="field">
       <span class="field-label lab">Note</span>
       <textarea class="textarea dy-note" name="note" rows="2" maxlength="${NOTE_MAX}" placeholder="${say('day.note.placeholder', ctx.words)}">${record.note || ''}</textarea>
@@ -29828,6 +31264,38 @@ function planBlock(ctx, day, round, record) {
       ? html`${words ? words.charAt(0).toUpperCase() + words.slice(1) : 'Set'}${at ? ', set at ' + fmtTime(at) : ''}.${sayHtml('day.plan.bookMove', ctx.words)}`
       : html`No plan is set for ${fmtDate(day, 'short')}. Three taps: container, breakfast, planned stops.`}</p>
     ${isToday ? html`<p class="dy-block-action"><button class="btn-link" type="button" data-action="app.sheet" data-sheet="plan">${round.plan ? 'Change the plan' : phrase('day.plan.open', ctx.words)}</button></p>` : ''}
+  </div>`;
+}
+
+/* ------------------------------------------------------------ money in and out */
+
+function wrapBlock(ctx, day) {
+  const fig = wrapDay(ctx.state, ctx.now, day);
+  if (fig.status === 'future') return '';
+  const w = ctx.words;
+  const est = fig.status !== 'final';
+  const kind = (c) => phrase(c.way === 'in' ? 'wrap.day.kind.in' : c.way === 'back' ? 'wrap.day.kind.back' : c.sent ? 'wrap.day.kind.sent' : 'wrap.day.kind.out', w);
+  const signed = (c) => (c.way === 'out' ? -c.amount : c.amount);
+  const missing = fig.status === 'live' ? 'wrap.day.missing.live' : fig.status === 'provisional' || fig.status === 'awaiting' ? 'wrap.day.missing.pencil' : null;
+  return html`<div class="dy-block dy-wrap">
+    <p class="lab"><b>Money in and out</b></p>
+    <p class="cap">${phrase('wrap.day.lede', w)}</p>
+    <div class="tally tally-s">
+      <div class="tally-item"><span class="lab">In</span><span class="${cx('fig', est && 'est')}" data-fig>${est ? html`<span class="approx">≈</span>` : ''}${fmt(fig.in)}</span></div>
+      <div class="tally-item"><span class="lab">Out</span><span class="${cx('fig', est && 'est')}" data-fig>${est ? html`<span class="approx">≈</span>` : ''}${fmt(fig.out)}</span></div>
+      <div class="tally-item"><span class="lab">Net</span><span class="${cx('fig', est && 'est')}" data-fig>${est ? html`<span class="approx">≈</span>` : ''}${fmtSigned(fig.in - fig.out)}</span></div>
+    </div>
+    ${fig.counted.length ? html`<p class="lab dy-wrap-sub">${phrase('wrap.day.counted', w)}</p>
+    <ul class="rows dy-wrap-rows">${fig.counted.map((c) => html`<li class="row">
+      <span class="row-label">${txName(c.tx)} <em class="row-note">${kind(c)}</em></span>
+      <span class="row-value">${inlineMoney(signed(c), { signed: true })}</span>
+    </li>`)}</ul>` : html`<p class="cap">${phrase('wrap.day.none', w)}</p>`}
+    ${fig.left.length ? html`<p class="lab dy-wrap-sub">${phrase('wrap.day.left', w)}</p>
+    <ul class="rows dy-wrap-rows">${fig.left.map((l) => html`<li class="row">
+      <span class="row-label">${txName(l.tx)} <em class="row-note">${phrase(l.why === 'payment' ? 'wrap.day.why.payment' : 'wrap.day.why.own', w)}</em></span>
+      <span class="row-value">${inlineMoney(l.amount)}</span>
+    </li>`)}</ul>` : ''}
+    ${missing ? html`<p class="cap dy-wrap-missing">${phrase(missing, w)}</p>` : ''}
   </div>`;
 }
 
@@ -31718,6 +33186,7 @@ const { initSync, syncInfo, autoSync, syncNow } = __mods["js/sync.js"];
 const { initShare, shareInfo, autoShare, shareNow } = __mods["js/share.js"];
 const { autoInbox, inboxInfo } = __mods["js/inbox.js"];
 const { autoIncome, incomeInfo } = __mods["js/income.js"];
+const { autoWrap, initWrap, readWrapFiles, wrapInfo } = __mods["js/wrap.js"];
 const { restampByHand } = __mods["js/model/byhand.js"];
 const { restampCorrections, seedCorrections } = __mods["js/model/corrections.js"];
 const { noteGame, restampGame, seedGame } = __mods["js/model/game.js"];
@@ -31836,6 +33305,8 @@ async function boot() {
   // and whatever the owner changed of the daily game is stamped in its copy, so that it travels (3.9)
   store.onUpdate((s) => { followIncome(s, nowMs()); noteGame(s, nowMs()); });
   await initShare(location);
+  // the nightly wrap (3.10): this device's wrap file follows the record; its subscription is checked at each open
+  initWrap();
 
   registerActions({ ...appActions, ...boardActions, ...scoresheetActions, ...materialActions, ...bookActions, ...analysisActions,
     ...settingsActions, ...connectActions, ...moveActions, ...planActions, ...sweepActions, ...txActions, ...dayActions,
@@ -31851,6 +33322,8 @@ async function boot() {
   onRoute(schedule);
   // a hand-kept account's field errors belong to the sheet they were made on: they go whenever a sheet opens or closes
   onRoute(() => { if (store.ui.accountErrors) store.setUi({ accountErrors: null }); });
+  // Settings reads the night key as it opens, so that a tap on Turn on subscribes with no wait (3.10)
+  onRoute(() => { if (currentRoute().view === 'settings') readWrapFiles(30000).catch(() => {}); });
   store.subscribe(schedule);
   if (typeof matchMedia === 'function') matchMedia(WIDE).addEventListener('change', schedule);
   setInterval(schedule, 30000);
@@ -31862,6 +33335,7 @@ async function boot() {
   autoShare();
   autoInbox();
   autoIncome();
+  autoWrap();
   registerWorker();
   initUpdate({ isIdle, save: async () => { store.mirror(); await store.flush(); }, poke: schedule });
   // in a browser tab no touch listener is added at all: the page scrolls and bounces exactly as before
@@ -31918,6 +33392,7 @@ function onVisibility() {
     autoShare();
     autoInbox();
     autoIncome();
+    autoWrap();
     schedule();
   }
 }
@@ -32070,6 +33545,7 @@ function buildContext() {
     share: shareInfo(),
     inbox: inboxInfo(),
     income: incomeInfo(),
+    wrap: wrapInfo(),
     wide: typeof matchMedia === 'function' ? matchMedia(WIDE).matches : true,
   };
 }

@@ -8,6 +8,8 @@
  *                    later day; at most settings.byesPerMonth in a month, counted from state.days
  *   the plan         today's morning plan as it stands, with a link to the plan sheet (edited there)
  *   a note           saved with Done
+ *   money in and out the nightly wrap's figure for the day (model/wrap.js wrapDay): what counted, what did not and why,
+ *                    and for today or a day in pencil what may still be missing (ARCHITECTURE 3.10)
  *
  * Cover mode: the sheet body carries data-cover itself (the sheet host is outside the covered page).
  *
@@ -23,7 +25,8 @@ import { icon } from '../ui/icons.js';
 import { store } from '../store.js';
 import { closeSheet } from '../router.js';
 import { context, toast } from '../runtime.js';
-import { statusLine, inlineMoney, spentUnposted } from './parts.js';
+import { statusLine, inlineMoney, spentUnposted, txName } from './parts.js';
+import { wrapDay } from '../model/wrap.js';
 import { sayHtml } from '../ui/say.js';
 import { phrase, say } from '../model/words.js';
 import { NOTE_MAX as GAME_NOTE_MAX } from '../model/game.js';
@@ -114,6 +117,7 @@ export function render(ctx, params) {
     ${typeField(ctx, day, round)}
     ${byeBlock(ctx, day, round)}
     ${planBlock(ctx, day, round, record)}
+    ${wrapBlock(ctx, day)}
     <label class="field">
       <span class="field-label lab">Note</span>
       <textarea class="textarea dy-note" name="note" rows="2" maxlength="${NOTE_MAX}" placeholder="${say('day.note.placeholder', ctx.words)}">${record.note || ''}</textarea>
@@ -250,6 +254,39 @@ function planBlock(ctx, day, round, record) {
       ? html`${words ? words.charAt(0).toUpperCase() + words.slice(1) : 'Set'}${at ? ', set at ' + fmtTime(at) : ''}.${sayHtml('day.plan.bookMove', ctx.words)}`
       : html`No plan is set for ${fmtDate(day, 'short')}. Three taps: container, breakfast, planned stops.`}</p>
     ${isToday ? html`<p class="dy-block-action"><button class="btn-link" type="button" data-action="app.sheet" data-sheet="plan">${round.plan ? 'Change the plan' : phrase('day.plan.open', ctx.words)}</button></p>` : ''}
+  </div>`;
+}
+
+/* ------------------------------------------------------------ money in and out */
+
+/** The nightly wrap's figure for the day: in, out and net, each move that counted and each that did not, with why. */
+function wrapBlock(ctx, day) {
+  const fig = wrapDay(ctx.state, ctx.now, day);
+  if (fig.status === 'future') return '';
+  const w = ctx.words;
+  const est = fig.status !== 'final';
+  const kind = (c) => phrase(c.way === 'in' ? 'wrap.day.kind.in' : c.way === 'back' ? 'wrap.day.kind.back' : c.sent ? 'wrap.day.kind.sent' : 'wrap.day.kind.out', w);
+  const signed = (c) => (c.way === 'out' ? -c.amount : c.amount);
+  const missing = fig.status === 'live' ? 'wrap.day.missing.live' : fig.status === 'provisional' || fig.status === 'awaiting' ? 'wrap.day.missing.pencil' : null;
+  return html`<div class="dy-block dy-wrap">
+    <p class="lab"><b>Money in and out</b></p>
+    <p class="cap">${phrase('wrap.day.lede', w)}</p>
+    <div class="tally tally-s">
+      <div class="tally-item"><span class="lab">In</span><span class="${cx('fig', est && 'est')}" data-fig>${est ? html`<span class="approx">≈</span>` : ''}${fmt(fig.in)}</span></div>
+      <div class="tally-item"><span class="lab">Out</span><span class="${cx('fig', est && 'est')}" data-fig>${est ? html`<span class="approx">≈</span>` : ''}${fmt(fig.out)}</span></div>
+      <div class="tally-item"><span class="lab">Net</span><span class="${cx('fig', est && 'est')}" data-fig>${est ? html`<span class="approx">≈</span>` : ''}${fmtSigned(fig.in - fig.out)}</span></div>
+    </div>
+    ${fig.counted.length ? html`<p class="lab dy-wrap-sub">${phrase('wrap.day.counted', w)}</p>
+    <ul class="rows dy-wrap-rows">${fig.counted.map((c) => html`<li class="row">
+      <span class="row-label">${txName(c.tx)} <em class="row-note">${kind(c)}</em></span>
+      <span class="row-value">${inlineMoney(signed(c), { signed: true })}</span>
+    </li>`)}</ul>` : html`<p class="cap">${phrase('wrap.day.none', w)}</p>`}
+    ${fig.left.length ? html`<p class="lab dy-wrap-sub">${phrase('wrap.day.left', w)}</p>
+    <ul class="rows dy-wrap-rows">${fig.left.map((l) => html`<li class="row">
+      <span class="row-label">${txName(l.tx)} <em class="row-note">${phrase(l.why === 'payment' ? 'wrap.day.why.payment' : 'wrap.day.why.own', w)}</em></span>
+      <span class="row-value">${inlineMoney(l.amount)}</span>
+    </li>`)}</ul>` : ''}
+    ${missing ? html`<p class="cap dy-wrap-missing">${phrase(missing, w)}</p>` : ''}
   </div>`;
 }
 

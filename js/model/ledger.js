@@ -232,6 +232,8 @@ export function makeLedger(state, nowMs) {
     nextPayOf: (streamId) => nextPayOf(core, streamId),
     retention: (day) => retentionOf(core, day),
     spendingByCategory: (fromDay, toDay) => spendingBetween(core, fromDay, toDay),
+    /** How completely the bank has reported a day (4.6, `dataStatusOf`): 'awaiting' | 'provisional' | 'final'; null for no day. */
+    dataStatus: (day) => { const n = core.cal.num(day); return n === null ? null : dataStatusOf(core, n, bucketOn(core, n)); },
   };
 }
 

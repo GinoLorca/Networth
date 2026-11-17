@@ -43,7 +43,7 @@ const CONFIRM_AMOUNT_TOLERANCE = 0.15;
 const CONFIRM_DAY_WINDOW = 3;
 /** A bank spend confirms a card alert's move from its amount up to 35% more (a tip raises a charge), dated on its day or up to 5 days after. */
 const ALERT_CONFIRM_RISE = 35;
-const ALERT_CONFIRM_DAYS = 5;
+export const ALERT_CONFIRM_DAYS = 5;
 /** On a card the bank gives no rows of, an alert's move is taken in by a balance dated this many days after it at the latest. */
 const BALANCE_ONLY_DAYS = 4;
 /** An alert move the owner removed is remembered this many days (state.alertsRemoved). */
@@ -839,7 +839,7 @@ function pairTransfers(state, summary) {
 /* ---------------------------------------------------------- provisional moves */
 
 /** How well a bank spend fits a provisional move, or null when it does not confirm it. */
-function confirmGap(move, tx) {
+export function confirmGap(move, tx) {
   if (move.accountId && move.accountId !== tx.accountId) return null;
   // a card alert names the merchant its own way: it is matched on the card, the amount and the day
   if (move.mkey && move.via !== 'alert' && move.mkey !== tx.mkey) return null;

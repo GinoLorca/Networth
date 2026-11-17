@@ -913,7 +913,7 @@ export const PHRASES = Object.freeze({
   'settings.alerts.only': { chess: "The shortcut sends no text that holds a code word or no dollar figure, and the app turns only a completed purchase into a move: any other text is deleted.", finance: "The shortcut sends no text that holds a code word or no dollar figure, and the app turns only a completed purchase into a transaction: any other text is deleted." },
   'settings.income.cash': { chess: "Cash in hand:", finance: "Physical cash:" },
   'settings.storage.kept': { chess: "Kept on this device only,", finance: "Stored on this device only," },
-  'settings.shared.what': { chess: "Apart from the date of a corrected move, nothing the bank reported goes there: no balance, no transaction, no account. Only what you entered (payments, notes, morning plans, tag names, your principles and what you did instead), your ticks, Habit’s figures and the amount of each week you moved, and an unreadable fingerprint of who each payment goes to, so every device recognises it the same way.", finance: "Apart from the date of a corrected transaction, nothing the bank reported goes there: no balance, no other transaction, no account. Only what you entered (payments, notes, morning plans, tag names, your spending rules and what you did instead), your ticks, the baseline’s figures and the amount of each week you transferred, and an unreadable fingerprint of who each payment goes to, so every device recognises it the same way." },
+  'settings.shared.what': { chess: "Apart from the date of a corrected move, and the nightly wrap’s figures (each round’s money in and out, and the amounts and days of recent bank rows, in files of their own beside it), nothing the bank reported goes there: no balance, no merchant, no account. Only what you entered (payments, notes, morning plans, tag names, your principles and what you did instead), your ticks, Habit’s figures and the amount of each week you moved, and an unreadable fingerprint of who each payment goes to, so every device recognises it the same way.", finance: "Apart from the date of a corrected transaction, and the nightly wrap’s figures (each day’s money in and out, and the amounts and days of recent bank rows, in files of their own beside it), nothing the bank reported goes there: no balance, no merchant, no account. Only what you entered (payments, notes, morning plans, tag names, your spending rules and what you did instead), your ticks, the baseline’s figures and the amount of each week you transferred, and an unreadable fingerprint of who each payment goes to, so every device recognises it the same way." },
   'settings.shared.corrections': { chess: "Corrections (categories, merchant names, income settings) reach your other devices too, each with an unreadable fingerprint of its merchant or move and, for a corrected move, its bank date, so that every device finds the same move. So does the daily game: its settings, each round’s colour, byes, notes and morning plans, Habit and the weeks you moved or set aside, so that every device scores each round the same way.", finance: "Corrections (categories, merchant names, income settings) reach your other devices too, each with an unreadable fingerprint of its merchant or transaction and, for a corrected transaction, its bank date, so that every device finds the same transaction. So does the daily budget: its settings, each day’s type, exempt days, notes and morning plans, the baseline and the weeks you transferred or skipped, so that every device counts each day the same way." },
   'settings.sample.bank': { chess: "Sample game — nothing is linked.", finance: "Sample data — nothing is linked." },
   'settings.sample.share': { chess: "Sample game — nothing is shared.", finance: "Sample data — nothing is shared." },
@@ -1005,6 +1005,37 @@ export const PHRASES = Object.freeze({
   'account.kind.workedDown': { chess: "works the balance down", finance: "amortizes the balance" },
   'account.count.failed': { chess: "This count could not be kept. Type the cash you have now, for example 120.00.", finance: "This count could not be saved. Type the cash you have now, for example 120.00." },
   'settings.undo.cash': { chess: "Cash in hand added", finance: "Physical cash added" },
+  // the nightly wrap (3.10): the notification (model/wrap.js and the night job), at most 40 characters of title and 80 of
+  // body; {round} is "Round 16" / "Day 16" (board.today.round) and amounts arrive formatted, the sign included
+  'wrap.title': { chess: "{round} · cash {net} so far", finance: "{round} · net cash {net} so far" },
+  'wrap.title.still': { chess: "{round} · no money in or out so far", finance: "{round} · no money in or out so far" },
+  'wrap.title.hidden': { chess: "{round} · tonight’s wrap", finance: "{round} · tonight’s wrap" },
+  'wrap.body.hidden': { chess: "Tap to see money in and out.", finance: "Tap to see money in and out." },
+  'wrap.flows': { chess: "{in} · {out}.", finance: "{in} · {out}." },
+  'wrap.in': { chess: "in {amount}", finance: "in {amount}" },
+  'wrap.out': { chess: "out {amount}", finance: "out {amount}" },
+  'wrap.in.none': { chess: "nothing in", finance: "nothing in" },
+  'wrap.out.none': { chess: "nothing out", finance: "nothing out" },
+  'wrap.noBank': { chess: "Bank not read today: {flows}", finance: "Bank not read today: {flows}" },
+  'wrap.noBank.still': { chess: "Bank not read today.", finance: "Bank not read today." },
+  'wrap.pencil': { chess: "{round} now {net}, in pencil.", finance: "{round} now {net}, provisional." },
+  'wrap.ink': { chess: "{round} in ink: {net}.", finance: "{round} final: {net}." },
+  // the day sheet's Money in and out
+  'wrap.day.lede': { chess: "What the nightly wrap counts for this round: money that reached you, and money that left you.", finance: "What the nightly wrap counts for this day: money that reached you, and money that left you." },
+  'wrap.day.counted': { chess: "Counted", finance: "Counted" },
+  'wrap.day.left': { chess: "Not counted", finance: "Not counted" },
+  'wrap.day.none': { chess: "Nothing came in or went out.", finance: "Nothing came in or went out." },
+  'wrap.day.kind.in': { chess: "in", finance: "in" },
+  'wrap.day.kind.out': { chess: "out", finance: "out" },
+  'wrap.day.kind.back': { chess: "refund", finance: "refund" },
+  'wrap.day.kind.sent': { chess: "sent to someone", finance: "sent to someone" },
+  'wrap.day.why.payment': { chess: "a card or loan payment: its purchases were counted on the day they were made", finance: "a card or loan payment: its purchases were counted on the day they were made" },
+  'wrap.day.why.own': { chess: "between your own accounts", finance: "between your own accounts" },
+  'wrap.day.missing.live': { chess: "So far: spending on checking and debit since the bank last reported, purchases on a card that sends no alert, tips and refunds may still be missing until the round ends.", finance: "So far: spending on checking and debit since the bank last reported, purchases on a card that sends no alert, tips and refunds may still be missing until the day ends." },
+  'wrap.day.missing.pencil': { chess: "In pencil: the bank may still add or change what it reported for this round.", finance: "Provisional: the bank may still add or change what it reported for this day." },
+  // Settings → Nightly wrap
+  'wrap.set.lede': { chess: "Each night, one notification with the round’s money in and out, and a change to an earlier round when there is one. A tap opens the round.", finance: "Each night, one notification with the day’s money in and out, and a change to an earlier day when there is one. A tap opens the day." },
+  'wrap.set.files': { chess: "Each device writes today and the 7 days before to the same private repository: money in and out per round, the ids of the card alerts and payments it has counted, and the amounts and days of recent bank rows, so that a late card alert or payment is not counted twice. No merchant, account or balance. A job there sends the wrap, encrypted for each device.", finance: "Each device writes today and the 7 days before to the same private repository: money in and out per day, the ids of the card alerts and payments it has counted, and the amounts and days of recent bank rows, so that a late card alert or payment is not counted twice. No merchant, account or balance. A job there sends the wrap, encrypted for each device." },
 });
 
 /**

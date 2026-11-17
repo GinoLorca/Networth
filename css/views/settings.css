@@ -190,3 +190,9 @@
 .set-income-gone { list-style: none; margin: 4px 0 0; padding: 0; }
 .set-income-gone li { margin: 2px 0; }
 .set-income-name { min-width: 0; overflow-wrap: anywhere; }
+
+/* the nightly wrap: the private key shown once wraps inside the column at any width */
+.set-wrap-secret { white-space: normal; overflow-wrap: anywhere; word-break: break-all; margin-top: var(--s-2); user-select: all; }
+.set-wrap-steps .btn { vertical-align: middle; }
+.set-wrap-lock { margin-top: var(--s-3); }
+.set-wrap-last { margin-top: var(--s-2); }

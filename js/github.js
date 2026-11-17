@@ -333,3 +333,89 @@ export async function readIncomeText(owner, key, name, doFetch) {
   }
   return body && body.encoding === 'base64' ? fromBase64(body.content) : null;
 }
+
+/* ------------------------------------------------------------------------------------- the nightly wrap (3.10) */
+
+/** A file of the nightly wrap: push/<device or vapid>.json or wrap/<device or sent>.json, and nothing else. */
+const REPO_FILE = /^(push|wrap)\/[A-Za-z0-9_-]{1,40}\.json$/;
+const REPO_MESSAGE = 'Networth: nightly wrap';
+/** A write GitHub refused because another device wrote meanwhile starts again from the read, at most this many more times. */
+const REPO_RETRIES = 3;
+
+/** The address of one file of the nightly wrap (push/ or wrap/) in the owner's private repository. */
+export function repoFileUrl(owner, path) {
+  if (typeof owner !== 'string' || !OWNER.test(owner)) throw new ShareError('missing');
+  if (typeof path !== 'string' || !REPO_FILE.test(path)) throw new ShareError('file');
+  return API + '/repos/' + owner + '/' + REPOSITORY + '/contents/' + path;
+}
+
+/**
+ * Read one file of the nightly wrap by path.
+ * @returns {Promise<{ text: string|null, sha: string|null }>} text null when there is no file (GitHub's 404)
+ */
+export async function readRepoFile(owner, key, path, doFetch) {
+  const url = repoFileUrl(owner, path);
+  let body = null;
+  try {
+    body = await call(owner, key, { method: 'GET' }, doFetch, url);
+  } catch (err) {
+    if (err instanceof ShareError && err.code === 'missing') return { text: null, sha: null };
+    throw err;
+  }
+  const sha = body && typeof body.sha === 'string' && SHA.test(body.sha) ? body.sha : null;
+  const text = body && body.encoding === 'base64' ? fromBase64(body.content) : null;
+  if (text === null || !sha) throw new ShareError('file');
+  return { text, sha };
+}
+
+/**
+ * Write one file of the nightly wrap by path, with the sha just read (null when there was no file).
+ * @returns {Promise<{ sha: string|null }>}
+ */
+export async function writeRepoFile(owner, key, path, text, sha, doFetch) {
+  const url = repoFileUrl(owner, path);
+  const payload = { message: REPO_MESSAGE, content: toBase64(text) };
+  if (typeof sha === 'string' && SHA.test(sha)) payload.sha = sha;
+  const body = await call(owner, key, { method: 'PUT', body: JSON.stringify(payload) }, doFetch, url);
+  return { sha: body && body.content && typeof body.content.sha === 'string' ? body.content.sha : null };
+}
+
+/**
+ * Read a file, make its new text from what is there, and write it with that sha, as the shared file's round does: when
+ * GitHub answers that another device wrote meanwhile (409, 422), it starts again from the read, at most 3 more times.
+ * `make(text|null)` gives the new text, or null when there is nothing to write (then no request is sent but the read).
+ * @returns {Promise<{ written: boolean, text: string|null }>} text: what the file now holds
+ */
+export async function putRepoFile(owner, key, path, make, doFetch) {
+  for (let turn = 0; ; turn++) {
+    const { text, sha } = await readRepoFile(owner, key, path, doFetch);
+    const next = make(text);
+    if (typeof next !== 'string') return { written: false, text };
+    try {
+      await writeRepoFile(owner, key, path, next, sha, doFetch);
+      return { written: true, text: next };
+    } catch (err) {
+      if (!(err instanceof ShareError && err.code === 'conflict') || turn >= REPO_RETRIES) throw err;
+    }
+  }
+}
+
+/**
+ * Remove one file of the nightly wrap by path (read for its sha first, again after a conflict, at most 3 more times).
+ * A file already gone is not an error.
+ * @returns {Promise<boolean>} whether a file was removed
+ */
+export async function deleteRepoFile(owner, key, path, doFetch) {
+  const url = repoFileUrl(owner, path);
+  for (let turn = 0; ; turn++) {
+    const { sha } = await readRepoFile(owner, key, path, doFetch);
+    if (!sha) return false;
+    try {
+      await call(owner, key, { method: 'DELETE', body: JSON.stringify({ message: REPO_MESSAGE, sha }) }, doFetch, url);
+      return true;
+    } catch (err) {
+      if (err instanceof ShareError && err.code === 'missing') return false;
+      if (!(err instanceof ShareError && err.code === 'conflict') || turn >= REPO_RETRIES) throw err;
+    }
+  }
+}

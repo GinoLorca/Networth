@@ -25,6 +25,7 @@ import { initSync, syncInfo, autoSync, syncNow } from './sync.js';
 import { initShare, shareInfo, autoShare, shareNow } from './share.js';
 import { autoInbox, inboxInfo } from './inbox.js';
 import { autoIncome, incomeInfo } from './income.js';
+import { autoWrap, initWrap, readWrapFiles, wrapInfo } from './wrap.js';
 import { restampByHand } from './model/byhand.js';
 import { restampCorrections, seedCorrections } from './model/corrections.js';
 import { noteGame, restampGame, seedGame } from './model/game.js';
@@ -152,6 +153,8 @@ async function boot() {
   // and whatever the owner changed of the daily game is stamped in its copy, so that it travels (3.9)
   store.onUpdate((s) => { followIncome(s, nowMs()); noteGame(s, nowMs()); });
   await initShare(location);
+  // the nightly wrap (3.10): this device's wrap file follows the record; its subscription is checked at each open
+  initWrap();
 
   registerActions({ ...appActions, ...boardActions, ...scoresheetActions, ...materialActions, ...bookActions, ...analysisActions,
     ...settingsActions, ...connectActions, ...moveActions, ...planActions, ...sweepActions, ...txActions, ...dayActions,
@@ -167,6 +170,8 @@ async function boot() {
   onRoute(schedule);
   // a hand-kept account's field errors belong to the sheet they were made on: they go whenever a sheet opens or closes
   onRoute(() => { if (store.ui.accountErrors) store.setUi({ accountErrors: null }); });
+  // Settings reads the night key as it opens, so that a tap on Turn on subscribes with no wait (3.10)
+  onRoute(() => { if (currentRoute().view === 'settings') readWrapFiles(30000).catch(() => {}); });
   store.subscribe(schedule);
   if (typeof matchMedia === 'function') matchMedia(WIDE).addEventListener('change', schedule);
   setInterval(schedule, 30000);
@@ -178,6 +183,7 @@ async function boot() {
   autoShare();
   autoInbox();
   autoIncome();
+  autoWrap();
   registerWorker();
   initUpdate({ isIdle, save: async () => { store.mirror(); await store.flush(); }, poke: schedule });
   // in a browser tab no touch listener is added at all: the page scrolls and bounces exactly as before
@@ -238,6 +244,7 @@ function onVisibility() {
     autoShare();
     autoInbox();
     autoIncome();
+    autoWrap();
     schedule();
   }
 }
@@ -400,6 +407,7 @@ function buildContext() {
     share: shareInfo(),
     inbox: inboxInfo(),
     income: incomeInfo(),
+    wrap: wrapInfo(),
     wide: typeof matchMedia === 'function' ? matchMedia(WIDE).matches : true,
   };
 }

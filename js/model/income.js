@@ -47,7 +47,7 @@ export const LATE_MS = 96 * HOUR_MS;
 /** "Still coming" asks again after this. */
 export const WAIT_MS = 4 * DAY_MS;
 
-const MATCH_BEFORE_DAYS = 10;
+export const MATCH_BEFORE_DAYS = 10;
 /** A row may lie at most this many days before the session's own day (or the marked day, for a session paid ahead). */
 const SESSION_BEFORE_DAYS = 3;
 const MATCH_AFTER_DAYS = 30;
@@ -698,7 +698,7 @@ function makeCashAccount(state) {
  * yet) and following its payer's cash answer all do; one whose own answer is cash or gone never does. A payer's
  * answer therefore never changes who takes part.
  */
-function isClaimant(shared, p) {
+export function isClaimant(shared, p) {
   if (p.how === 'gone') return false;
   return p.how !== 'cash' || !itemAnswer(shared, p.key);
 }
@@ -721,7 +721,7 @@ export function incomeClaimedRows(state) {
 }
 
 /** A bank row that can confirm a payment sent by transfer: live (a pending row only while pending rows count). */
-function isMatchableRow(tx, accounts, claimed, latest, countPending) {
+export function isMatchableRow(tx, accounts, claimed, latest, countPending) {
   if (!isObject(tx) || tx.source !== 'bank' || typeof tx.id !== 'string') return false;
   if (tx.flow !== 'in' || tx.kind !== 'income' || tx.matchId || tx.pairId != null || claimed.has(tx.id)) return false;
   if (tx.pending && !countPending) return false;

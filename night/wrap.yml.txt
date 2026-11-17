@@ -1,0 +1,73 @@
+# The nightly wrap. This text becomes .github/workflows/wrap.yml in the private data repository (networth-data);
+# it is kept here as text so that it never runs in this repository.
+#
+# It checks out the data repository into data/ and this repository into app/, and runs only app/night/wrap.mjs:
+# no script stored in the data repository ever runs, and the device keys cannot change this file (writing a workflow
+# needs the Workflows permission). It writes one file, wrap/sent.json, and prints counts only, never a figure. A night
+# key that does not parse, or is not the one in push/vapid.json, fails the run (red, and GitHub emails the owner).
+# The time zone is the owner's: the schedules below and TZ (the game day reads local time) must name the same zone.
+# Actions are pinned to a full commit: actions/checkout v7.0.1, actions/setup-node v7.1.0.
+
+name: wrap
+
+on:
+  schedule:
+    # the wrap; odd minutes, since GitHub delays runs most at the top of the hour
+    - cron: '33 21 * * *'
+      timezone: America/New_York
+    # the backup: when the wrap already went out today, it sends again only to devices whose push service failed for
+    # a while (no answer, 429 or 5xx), and exits at once when there are none
+    - cron: '13 22 * * *'
+      timezone: America/New_York
+  workflow_dispatch:
+
+concurrency: wrap
+
+permissions:
+  contents: write
+
+jobs:
+  wrap:
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
+    env:
+      TZ: America/New_York
+    steps:
+      - name: Check out the data
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: data
+
+      - name: Check out the app
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ github.repository_owner }}/Networth
+          path: app
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - name: Send the wrap
+        env:
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+        run: node app/night/wrap.mjs data
+
+      # always, also after a failed send (no night key, or one that does not match, fails the run): sent.json then tells
+      # the devices why, and records any device that already got the wrap, so the backup run never sends it twice; the
+      # run still shows red
+      - name: Keep what was sent
+        if: ${{ always() }}
+        working-directory: data
+        run: |
+          if [ ! -f wrap/sent.json ] || [ -L wrap/sent.json ]; then exit 0; fi
+          git add wrap/sent.json
+          if git diff --cached --quiet; then exit 0; fi
+          git -c user.name='github-actions[bot]' -c user.email='41898099+github-actions[bot]@users.noreply.github.com' commit --quiet -m 'Update'
+          for attempt in 1 2 3; do
+            git pull --rebase --quiet origin "$GITHUB_REF_NAME" && git push --quiet origin "HEAD:$GITHUB_REF_NAME" && exit 0
+            sleep 5
+          done
+          exit 1
