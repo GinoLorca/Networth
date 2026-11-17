@@ -15,6 +15,7 @@ import { clock } from '../js/model/ledger.js';
 import { addByHand, editByHand, payeeKey, restampByHand, skipRow, tickByHand } from '../js/model/byhand.js';
 import { addDays } from '../js/model/dates.js';
 import { exportShared, mergeShared, readSharedFile, roundShared } from '../js/model/share.js';
+import { shareMessage } from '../js/github.js';
 import {
   MAX_MOVES, MAX_RULES, MAX_STREAM_SETTINGS, MOVE_KEEP_DAYS, applyCorrections, exportCorrections, mergeCorrections, noteMove,
   noteStream, pruneCorrections, readCorrections, restampCorrections,
@@ -619,14 +620,64 @@ test('worst case: income, payments by hand and corrections at their limits stay 
 
 test('the words: Settings says, in one plain line, that corrections reach the other devices', async () => {
   // the two sentences are phrases of the vocabulary (model/words.js); in Chess words they are exactly the wording pinned here
-  const { phrase } = await import('../js/model/words.js');
+  const { phrase, say, shareToast } = await import('../js/model/words.js');
   const corrections = phrase('settings.shared.corrections', 'chess');
   const what = phrase('settings.shared.what', 'chess');
-  assert.equal(corrections, 'Corrections (categories, merchant names, income settings) reach your other devices too, each with an unreadable fingerprint of its merchant or move and, for a corrected move, its bank date, so that every device finds the same move.');
-  assert.equal(what, 'Apart from the date of a corrected move, nothing the bank reported goes there: no balance, no transaction, no account. Only what you entered, your ticks, and an unreadable fingerprint of who each payment goes to, so every device recognises it the same way.');
+  // grown for the daily game (3.9): what of it travels, and that the owner's notes and lines are in their private file
+  assert.equal(corrections, 'Corrections (categories, merchant names, income settings) reach your other devices too, each with an unreadable fingerprint of its merchant or move and, for a corrected move, its bank date, so that every device finds the same move. So does the daily game: its settings, each round’s colour, byes, notes and morning plans, Habit and the weeks you moved or set aside, so that every device scores each round the same way.');
+  assert.equal(what, 'Apart from the date of a corrected move, nothing the bank reported goes there: no balance, no transaction, no account. Only what you entered (payments, notes, morning plans, tag names, your principles and what you did instead), your ticks, Habit’s figures and the amount of each week you moved, and an unreadable fingerprint of who each payment goes to, so every device recognises it the same way.');
+  // and in Finance words, with the same figures named
+  assert.equal(phrase('settings.shared.what', 'finance'), 'Apart from the date of a corrected transaction, nothing the bank reported goes there: no balance, no other transaction, no account. Only what you entered (payments, notes, morning plans, tag names, your spending rules and what you did instead), your ticks, the baseline’s figures and the amount of each week you transferred, and an unreadable fingerprint of who each payment goes to, so every device recognises it the same way.');
+  // the heading and the ledes name the main things the file carries, in both word modes
+  assert.equal(phrase('settings.share.head', 'chess'), 'payments, corrections and the daily game');
+  assert.equal(phrase('settings.share.head', 'finance'), 'payments, corrections and the daily budget');
+  // the ledes name everything the file holds: the word mode and how each payer pays as well (3.9)
+  assert.equal(say('settings.share.onLede', 'chess', { owner: 'quill' }), 'The payments you send yourself and their ticks, your corrections, your daily game, your choice of Chess or Finance words and how each payer pays, in the file networth-shared.json of quill/networth-data on your own GitHub.');
+  assert.equal(say('settings.share.onLede', 'finance', { owner: 'quill' }), 'The payments you send yourself and their ticks, your corrections, your daily budget, your choice of Chess or Finance words and how each payer pays, in the file networth-shared.json of quill/networth-data on your own GitHub.');
+  assert.equal(say('settings.share.offLede', 'chess', { owner: 'quill' }), 'The payments you send yourself and their ticks, your corrections, your daily game, your choice of Chess or Finance words and how each payer pays are then kept in a private file on your own GitHub (quill/networth-data):');
+  assert.equal(say('settings.share.offLede', 'finance', { owner: 'quill' }), 'The payments you send yourself and their ticks, your corrections, your daily budget, your choice of Chess or Finance words and how each payer pays are then stored in a private file on your own GitHub (quill/networth-data):');
+  assert.equal(phrase('settings.share.sampleLede', 'chess'), 'With your own record, 1 paste on each device keeps the payments you send and their ticks, your corrections, your daily game, your choice of words and how each payer pays the same on all of them.');
+  assert.equal(phrase('settings.share.sampleLede', 'finance'), 'With your own record, 1 paste on each device keeps the payments you send and their ticks, your corrections, your daily budget, your choice of words and how each payer pays the same on all of them.');
+  // forgetting the key keeps everything already here, not only the payments; the facts speak of the whole file
+  assert.equal(phrase('settings.share.forgetGo', 'chess'), 'Forget — all stays');
+  assert.equal(phrase('settings.share.forgetGo', 'finance'), 'Forget — all stays');
+  assert.equal(phrase('settings.share.forget', 'chess'), 'The key is removed from this 1 device and nothing more is shared from it. Everything already here stays (the payments and their ticks, corrections, the daily game, your words and how each payer pays), the file on GitHub stays as it is, and the other devices carry on.');
+  assert.equal(phrase('settings.share.forget', 'finance'), 'The key is removed from this 1 device and nothing more is shared from it. Everything already here stays (the payments and their ticks, corrections, the daily budget, your words and how each payer pays), the file on GitHub stays as it is, and the other devices carry on.');
+  assert.equal(phrase('settings.share.agreed', 'chess'), 'this device and the shared file held exactly the same');
+  assert.equal(phrase('settings.share.agreed', 'finance'), 'this device and the shared file held exactly the same');
+  assert.equal(phrase('settings.share.payments', 'chess'), 'in the shared file');
+  assert.equal(phrase('settings.share.payments', 'finance'), 'in the shared file');
+  assert.equal(phrase('settings.share.comparing', 'chess'), 'Comparing with the shared file');
+  assert.equal(phrase('settings.share.comparing', 'finance'), 'Comparing with the shared file');
+  // the toasts and the other lines of sharing speak of the shared file too, and agree with "everything already here stays"
+  for (const mode of ['chess', 'finance']) {
+    assert.equal(say('settings.share.forgotten', mode, { when: 'at 9:41' }), 'Key forgotten at 9:41. Everything already here stays on this device, and the shared file stays on GitHub.');
+    assert.equal(say('settings.share.since', mode, { time: '9:41', count: '3 payments' }), 'Sharing since 9:41: 3 payments in the shared file.');
+    assert.equal(say('settings.share.agreedAt', mode, { time: '9:41', count: '3 payments' }), 'Agreed with the shared file at 9:41: 3 payments.');
+    // the toasts after sharing starts and after Share now leave out a count of none: never "0 payments"
+    assert.equal(shareToast('settings.share.since', mode, '9:41', 0), 'Sharing since 9:41: this device and the shared file agree.');
+    assert.equal(shareToast('settings.share.agreedAt', mode, '9:41', 0), 'Agreed with the shared file at 9:41.');
+    assert.equal(shareToast('settings.share.since', mode, '9:41', 1), 'Sharing since 9:41: 1 payment in the shared file.');
+    assert.equal(shareToast('settings.share.agreedAt', mode, '9:41', 3), 'Agreed with the shared file at 9:41: 3 payments.');
+    for (const count of [0, null, undefined, NaN, -1]) {
+      for (const key of ['settings.share.since', 'settings.share.agreedAt']) assert.doesNotMatch(shareToast(key, mode, '9:41', count), /\b0 payments?\b|payments?\.$|\{|NaN|-1/, key + ' with ' + count);
+    }
+    assert.equal(phrase('settings.share.refusedLede', mode), 'Everything on this device is intact, and the shared file on GitHub was not changed. A new key takes the same 3 steps.');
+    assert.equal(phrase('settings.share.noFile', mode), 'GitHub shows this key no shared file yet; it is written with the first change to share');
+    assert.equal(phrase('words.help', mode), 'Chess words is the app’s own way of speaking; Finance words gives each term its standard finance or accounting name. Only words change, never a figure or a rule. With sharing on, your other devices follow through the shared file.');
+  }
+  for (const mode of ['chess', 'finance']) {
+    for (const key of ['settings.share.onLede', 'settings.share.offLede', 'settings.share.sampleLede', 'settings.share.forget', 'settings.share.forgetGo', 'settings.share.agreed', 'settings.share.payments', 'settings.share.comparing',
+      'settings.share.forgotten', 'settings.share.since', 'settings.share.sinceNone', 'settings.share.agreedAt', 'settings.share.agreedAtNone', 'settings.share.refusedLede', 'settings.share.noFile', 'words.help']) {
+      assert.doesNotMatch(phrase(key, mode), /\blist\b/, key + ' speaks of more than a list');
+    }
+  }
+  // and so does every message of the transport, the commit message it writes included
+  for (const code of ['key', 'missing', 'conflict', 'network', 'server', 'rate', 'file', 'large', 'unknown']) assert.doesNotMatch(shareMessage(code), /\blist\b/, code);
+  assert.equal(shareMessage('conflict'), 'Another device wrote the shared file at the same moment, 4 times in a row.');
   assert.match(corrections, /^Corrections \(categories, merchant names, income settings\) reach your other devices too/);
   // exactly what travels with them: a fingerprint, and a corrected move's bank date, so every device finds the same move
-  assert.match(corrections, /an unreadable fingerprint of its merchant or move and, for a corrected move, its bank date, so that every device finds the same move\.$/);
+  assert.match(corrections, /an unreadable fingerprint of its merchant or move and, for a corrected move, its bank date, so that every device finds the same move\. /);
   // and the sentence after it stays true: the bank date is the one thing the bank reported that goes there
   assert.match(what, /^Apart from the date of a corrected move, nothing the bank reported goes there: no balance, no transaction, no account\./);
   // Settings with sharing set up shows that wording in Chess words, in the section whether sharing is on, off or refused

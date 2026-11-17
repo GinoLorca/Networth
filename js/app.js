@@ -27,6 +27,7 @@ import { autoInbox, inboxInfo } from './inbox.js';
 import { autoIncome, incomeInfo } from './income.js';
 import { restampByHand } from './model/byhand.js';
 import { restampCorrections, seedCorrections } from './model/corrections.js';
+import { noteGame, restampGame, seedGame } from './model/game.js';
 import { buildDemoState, demoFeed } from './model/demo.js';
 import { mergeFeed } from './model/merge.js';
 import { followIncome, refresh } from './model/detect.js';
@@ -136,16 +137,20 @@ async function boot() {
   // the corrections this record already holds travel from its first round, stamped 0, before the owner changes anything
   // (3.8); the copy is saved with the next change
   seedCorrections(record);
+  // so does the daily game (3.9): its settings that differ from the defaults, every day record, segment and transfer the
+  // owner recorded, stamped 0 (the weeks detected from the bank stay with this device)
+  seedGame(record);
   store.load(record);
   if (!search.get('theme')) applyTheme(store.state.settings.theme);
   await initSync();
   // an Undo makes what it put back the newest, so that the other devices take the Undo and do not bring the change back
-  store.onRestore((before, after) => { restampByHand(before, after, nowMs()); restampCorrections(before, after); });
+  store.onRestore((before, after) => { restampByHand(before, after, nowMs()); restampCorrections(before, after); restampGame(before, after); });
   // whatever a change (or an Undo) touched that the matching of reported payments reads (the pending switch, an account
   // left out or retyped, the rollover hour, a row reclassified, paired or claimed, an answer), the payments follow in the
   // same update (3.7); the rebuild changes nothing when its inputs did not change. When the bank rows reported payments
   // claim changed, a payer's stream is decided again in the same update (accrual off, or back on)
-  store.onUpdate((s) => { followIncome(s, nowMs()); });
+  // and whatever the owner changed of the daily game is stamped in its copy, so that it travels (3.9)
+  store.onUpdate((s) => { followIncome(s, nowMs()); noteGame(s, nowMs()); });
   await initShare(location);
 
   registerActions({ ...appActions, ...boardActions, ...scoresheetActions, ...materialActions, ...bookActions, ...analysisActions,

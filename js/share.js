@@ -271,7 +271,7 @@ export async function shareNow() {
   return shareInfo();
 }
 
-/** Forget the key on this device. The list stays on the device and the file stays on GitHub. */
+/** Forget the key on this device. Everything already here stays on the device and the file stays on GitHub. */
 export async function forgetShare() {
   generation++; // a running round stops at its next step: nothing more is sent with this key
   if (timer !== null) { clearTimeout(timer); timer = null; }

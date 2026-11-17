@@ -292,8 +292,8 @@ export const PHRASES = Object.freeze({
   'words.option.chess': { chess: 'Chess', finance: 'Chess' },
   'words.option.finance': { chess: 'Finance', finance: 'Finance' },
   'words.help': {
-    chess: 'Chess words is the app’s own way of speaking; Finance words gives each term its standard finance or accounting name. Only words change, never a figure or a rule. With the list shared, your other devices follow.',
-    finance: 'Chess words is the app’s own way of speaking; Finance words gives each term its standard finance or accounting name. Only words change, never a figure or a rule. With the list shared, your other devices follow.',
+    chess: 'Chess words is the app’s own way of speaking; Finance words gives each term its standard finance or accounting name. Only words change, never a figure or a rule. With sharing on, your other devices follow through the shared file.',
+    finance: 'Chess words is the app’s own way of speaking; Finance words gives each term its standard finance or accounting name. Only words change, never a figure or a rule. With sharing on, your other devices follow through the shared file.',
   },
   'words.open': { chess: 'See every term', finance: 'See every term' },
   'words.forced': { chess: 'This visit’s address sets {mode} words; later visits use {saved} words, chosen below.', finance: 'This visit’s address sets {mode} words; later visits use {saved} words, chosen below.' },
@@ -893,13 +893,28 @@ export const PHRASES = Object.freeze({
   'settings.unlinked': { chess: "Not linked. The record is kept.", finance: "Not linked. The record stays on this device." },
   'settings.share.offLedeMore': { chess: "what is added or ticked on 1 device shows on the others within seconds of opening them, and nothing is typed twice.", finance: "what is added or ticked on 1 device shows on the others within seconds of launching them, and nothing is typed twice." },
   'settings.alerts.sameKey': { chess: "the same key as pasted here; if it was not kept, make a new one the same way and paste it here on every device too", finance: "the same key as pasted here; if it was not saved, make a new one the same way and paste it here on every device too" },
-  'settings.share.offLede': { chess: "The payments you send yourself, and their ticks, are then kept in a private file on your own GitHub ({owner}/networth-data):", finance: "The payments you send yourself, and their ticks, are then stored in a private file on your own GitHub ({owner}/networth-data):" },
+  'settings.share.offLede': { chess: "The payments you send yourself and their ticks, your corrections, your daily game, your choice of Chess or Finance words and how each payer pays are then kept in a private file on your own GitHub ({owner}/networth-data):", finance: "The payments you send yourself and their ticks, your corrections, your daily budget, your choice of Chess or Finance words and how each payer pays are then stored in a private file on your own GitHub ({owner}/networth-data):" },
+  'settings.share.head': { chess: "payments, corrections and the daily game", finance: "payments, corrections and the daily budget" },
+  'settings.share.onLede': { chess: "The payments you send yourself and their ticks, your corrections, your daily game, your choice of Chess or Finance words and how each payer pays, in the file networth-shared.json of {owner}/networth-data on your own GitHub.", finance: "The payments you send yourself and their ticks, your corrections, your daily budget, your choice of Chess or Finance words and how each payer pays, in the file networth-shared.json of {owner}/networth-data on your own GitHub." },
+  'settings.share.sampleLede': { chess: "With your own record, 1 paste on each device keeps the payments you send and their ticks, your corrections, your daily game, your choice of words and how each payer pays the same on all of them.", finance: "With your own record, 1 paste on each device keeps the payments you send and their ticks, your corrections, your daily budget, your choice of words and how each payer pays the same on all of them." },
+  'settings.share.forgetGo': { chess: "Forget — all stays", finance: "Forget — all stays" },
+  'settings.share.forget': { chess: "The key is removed from this 1 device and nothing more is shared from it. Everything already here stays (the payments and their ticks, corrections, the daily game, your words and how each payer pays), the file on GitHub stays as it is, and the other devices carry on.", finance: "The key is removed from this 1 device and nothing more is shared from it. Everything already here stays (the payments and their ticks, corrections, the daily budget, your words and how each payer pays), the file on GitHub stays as it is, and the other devices carry on." },
+  'settings.share.agreed': { chess: "this device and the shared file held exactly the same", finance: "this device and the shared file held exactly the same" },
+  'settings.share.payments': { chess: "in the shared file", finance: "in the shared file" },
+  'settings.share.comparing': { chess: "Comparing with the shared file", finance: "Comparing with the shared file" },
+  'settings.share.forgotten': { chess: "Key forgotten {when}. Everything already here stays on this device, and the shared file stays on GitHub.", finance: "Key forgotten {when}. Everything already here stays on this device, and the shared file stays on GitHub." },
+  'settings.share.since': { chess: "Sharing since {time}: {count} in the shared file.", finance: "Sharing since {time}: {count} in the shared file." },
+  'settings.share.agreedAt': { chess: "Agreed with the shared file at {time}: {count}.", finance: "Agreed with the shared file at {time}: {count}." },
+  'settings.share.sinceNone': { chess: "Sharing since {time}: this device and the shared file agree.", finance: "Sharing since {time}: this device and the shared file agree." },
+  'settings.share.agreedAtNone': { chess: "Agreed with the shared file at {time}.", finance: "Agreed with the shared file at {time}." },
+  'settings.share.refusedLede': { chess: "Everything on this device is intact, and the shared file on GitHub was not changed. A new key takes the same 3 steps.", finance: "Everything on this device is intact, and the shared file on GitHub was not changed. A new key takes the same 3 steps." },
+  'settings.share.noFile': { chess: "GitHub shows this key no shared file yet; it is written with the first change to share", finance: "GitHub shows this key no shared file yet; it is written with the first change to share" },
   'settings.alerts.lede': { chess: "Each charge on your card lowers the net worth on every device within a minute or two of your card’s bank texting you, shown like a move tapped in.", finance: "Each charge on your card lowers the net worth on every device within a minute or two of your card’s bank texting you, shown like a purchase tapped in." },
   'settings.alerts.only': { chess: "The shortcut sends no text that holds a code word or no dollar figure, and the app turns only a completed purchase into a move: any other text is deleted.", finance: "The shortcut sends no text that holds a code word or no dollar figure, and the app turns only a completed purchase into a transaction: any other text is deleted." },
   'settings.income.cash': { chess: "Cash in hand:", finance: "Physical cash:" },
   'settings.storage.kept': { chess: "Kept on this device only,", finance: "Stored on this device only," },
-  'settings.shared.what': { chess: "Apart from the date of a corrected move, nothing the bank reported goes there: no balance, no transaction, no account. Only what you entered, your ticks, and an unreadable fingerprint of who each payment goes to, so every device recognises it the same way.", finance: "Apart from the date of a corrected transaction, nothing the bank reported goes there: no balance, no other transaction, no account. Only what you entered, your ticks, and an unreadable fingerprint of who each payment goes to, so every device recognises it the same way." },
-  'settings.shared.corrections': { chess: "Corrections (categories, merchant names, income settings) reach your other devices too, each with an unreadable fingerprint of its merchant or move and, for a corrected move, its bank date, so that every device finds the same move.", finance: "Corrections (categories, merchant names, income settings) reach your other devices too, each with an unreadable fingerprint of its merchant or transaction and, for a corrected transaction, its bank date, so that every device finds the same transaction." },
+  'settings.shared.what': { chess: "Apart from the date of a corrected move, nothing the bank reported goes there: no balance, no transaction, no account. Only what you entered (payments, notes, morning plans, tag names, your principles and what you did instead), your ticks, Habit’s figures and the amount of each week you moved, and an unreadable fingerprint of who each payment goes to, so every device recognises it the same way.", finance: "Apart from the date of a corrected transaction, nothing the bank reported goes there: no balance, no other transaction, no account. Only what you entered (payments, notes, morning plans, tag names, your spending rules and what you did instead), your ticks, the baseline’s figures and the amount of each week you transferred, and an unreadable fingerprint of who each payment goes to, so every device recognises it the same way." },
+  'settings.shared.corrections': { chess: "Corrections (categories, merchant names, income settings) reach your other devices too, each with an unreadable fingerprint of its merchant or move and, for a corrected move, its bank date, so that every device finds the same move. So does the daily game: its settings, each round’s colour, byes, notes and morning plans, Habit and the weeks you moved or set aside, so that every device scores each round the same way.", finance: "Corrections (categories, merchant names, income settings) reach your other devices too, each with an unreadable fingerprint of its merchant or transaction and, for a corrected transaction, its bank date, so that every device finds the same transaction. So does the daily budget: its settings, each day’s type, exempt days, notes and morning plans, the baseline and the weeks you transferred or skipped, so that every device counts each day the same way." },
   'settings.sample.bank': { chess: "Sample game — nothing is linked.", finance: "Sample data — nothing is linked." },
   'settings.sample.share': { chess: "Sample game — nothing is shared.", finance: "Sample data — nothing is shared." },
   'settings.income.pencil': { chess: "A payment by Zelle or transfer counts in pencil until the bank’s row takes its place; a payment in cash counts in Cash in hand.", finance: "A payment by Zelle or transfer counts as provisional until the bank’s row takes its place; a payment in cash counts in Physical cash." },
@@ -977,7 +992,7 @@ export const PHRASES = Object.freeze({
   'app.footer.device': { chess: "Networth is kept on this device only: no server, no account, no tracking.", finance: "Networth is stored on this device only: no server, no account, no tracking." },
   'charts.key.moved': { chess: "MOVED", finance: "TRANSFERRED" },
   'settings.unlink': { chess: "The key is forgotten on this device and nothing new arrives. Every account, move and round already here stays.", finance: "The key is forgotten on this device and nothing new arrives. Every account, transaction and day already here stays." },
-  'settings.erase': { chess: "The bank key, the key of the shared list if this device has one, every account, move and round, and the daily snapshots (up to 14) are removed from this device. A saved copy is the only way back.", finance: "The bank key, the key of the shared list if this device has one, every account, transaction and day, and the daily snapshots (up to 14) are removed from this device. A saved copy is the only way back." },
+  'settings.erase': { chess: "The bank key, the key of the shared file if this device has one, every account, move and round, and the daily snapshots (up to 14) are removed from this device. A saved copy is the only way back.", finance: "The bank key, the key of the shared file if this device has one, every account, transaction and day, and the daily snapshots (up to 14) are removed from this device. A saved copy is the only way back." },
   'settings.share.failed': { chess: "The last round did not go through.", finance: "The last sync did not go through." },
   'settings.share.first': { chess: "Sharing: the first round has not run yet.", finance: "Sharing: the first sync has not run yet." },
   'settings.payOff': { chess: "Switched off, net worth moves only on the day money moves.", finance: "Switched off, net worth changes only on the day money arrives or leaves." },
@@ -1015,6 +1030,21 @@ export function say(key, mode, vars) {
   const template = phrase(key, mode);
   if (!vars || typeof vars !== 'object') return template;
   return template.replace(/\{(\w+)\}/g, (whole, name) => (Object.hasOwn(vars, name) ? String(vars[name]) : whole));
+}
+
+/**
+ * The toast after sharing starts ('settings.share.since') or after Share now ('settings.share.agreedAt'), at `time`:
+ * with the payments the shared file holds when there is at least 1, else the phrase without a count (never "0 payments").
+ * @param {'settings.share.since'|'settings.share.agreedAt'} key
+ * @param {*} mode
+ * @param {string} time
+ * @param {number} count
+ * @returns {string}
+ */
+export function shareToast(key, mode, time, count) {
+  const n = Number.isInteger(count) && count > 0 ? count : 0;
+  if (!n) return say(key + 'None', mode, { time });
+  return say(key, mode, { time, count: n.toLocaleString('en-US') + (n === 1 ? ' payment' : ' payments') });
 }
 
 /** The placeholders a template takes, sorted: 'Kept {amount} on {kind}' -> ['amount', 'kind']. */

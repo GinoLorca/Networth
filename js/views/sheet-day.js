@@ -26,8 +26,10 @@ import { context, toast } from '../runtime.js';
 import { statusLine, inlineMoney, spentUnposted } from './parts.js';
 import { sayHtml } from '../ui/say.js';
 import { phrase, say } from '../model/words.js';
+import { NOTE_MAX as GAME_NOTE_MAX } from '../model/game.js';
 
-const NOTE_MAX = 280;
+/** The longest note: what the shared file carries of a day's note (model/game.js), so the sheet keeps no copy of its own. */
+const NOTE_MAX = GAME_NOTE_MAX;
 const DAYS_AHEAD = 14;
 const WEEKDAYS = ['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays'];
 const MONEY = /[+−-]?\$\d[\d,]*(?:\.\d+)?/g;

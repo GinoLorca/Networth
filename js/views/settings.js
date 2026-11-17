@@ -48,7 +48,7 @@ import { makeDerived } from '../derive.js';
 import { coverText, inlineMoney } from './parts.js';
 import { alertStatus } from '../model/alerts.js';
 import { chooseWords } from '../model/prefs.js';
-import { WORDS, phrase, say, wordsMode, wordsOf } from '../model/words.js';
+import { WORDS, phrase, say, shareToast, wordsMode, wordsOf } from '../model/words.js';
 import { sayHtml } from '../ui/say.js';
 import { answerPayer, askAgain, cashAccountOf, isIdleCash, ensureCashAccount, incomeLabel, incomeOf, incomePayments, incomeQuestions, payerAnswer } from '../model/income.js';
 import { againWords, beforeCountWords, countedWords, isCountedCash, listedPayers, payerWords, paymentState } from './income-words.js';
@@ -318,11 +318,11 @@ function shareFacts(ctx) {
   const sh = ctx.share;
   return html`<ul class="rows set-facts">
     <li class="row">
-      <span class="row-label">Last agreed <em class="row-note">this device and the shared file held the same list</em></span>
+      <span class="row-label">Last agreed <em class="row-note">${phrase('settings.share.agreed', ctx.words)}</em></span>
       <span class="row-value" data-cover-keep>${sh.agreedAt ? whenText(sh.agreedAt, ctx) : 'not yet'}</span>
     </li>
     <li class="row">
-      <span class="row-label">Payments you send <em class="row-note">${sh.file ? 'on the shared list' : 'GitHub shows this key no shared file yet; it is written with the first payment'}</em></span>
+      <span class="row-label">Payments you send <em class="row-note">${phrase(sh.file ? 'settings.share.payments' : 'settings.share.noFile', ctx.words)}</em></span>
       <span class="row-value" data-cover-keep>${sh.agreedAt ? sh.count : '—'}</span>
     </li>
     <li class="row">
@@ -335,7 +335,7 @@ function shareFacts(ctx) {
 function shareNowRow(ctx) {
   const sh = ctx.share;
   if (sh.busy) {
-    return html`<p class="sync set-busy" data-state="syncing" role="status"><i class="sync-mark"></i><span class="sync-text"><b>Comparing with the shared list</b>…</span></p>`;
+    return html`<p class="sync set-busy" data-state="syncing" role="status"><i class="sync-mark"></i><span class="sync-text"><b>${phrase('settings.share.comparing', ctx.words)}</b>…</span></p>`;
   }
   const note = sh.retryAt ? 'GitHub asked for a pause. Ready again at ' + fmtTime(sh.retryAt) + '.'
     : sh.code === 'key' ? 'Nothing is shared by itself until a new key is pasted or Share now is tapped.'
@@ -348,8 +348,8 @@ function shareNowRow(ctx) {
 
 function shareForget(ctx) {
   return html`<div class="set-dangers">
-    ${dangerous(ctx, 'share-forget', { ask: 'Forget the key on this device', action: 'settings.share-forget', go: 'Forget — the list stays',
-      sentence: 'The key is removed from this 1 device and nothing more is shared from it. The payments already here stay, the file on GitHub stays as it is, and the other devices carry on.' })}
+    ${dangerous(ctx, 'share-forget', { ask: 'Forget the key on this device', action: 'settings.share-forget', go: phrase('settings.share.forgetGo', ctx.words),
+      sentence: phrase('settings.share.forget', ctx.words) })}
   </div>`;
 }
 
@@ -357,12 +357,12 @@ function shareSection(ctx) {
   const sh = ctx.share;
   if (!sh || !sh.available) return '';
   const head = (state) => html`<div class="sec-head">
-    <h2 class="lab"><b>Share between devices</b><i class="sep"></i>the payments you send</h2>
+    <h2 class="lab"><b>Share between devices</b><i class="sep"></i>${phrase('settings.share.head', ctx.words)}</h2>
     <span class="lab">${state}</span>
   </div>`;
   const what = html`<section class="col col-5 set-sec" aria-label="What is shared">
     <div class="sec-head"><h3 class="lab"><b>What is shared</b><i class="sep"></i>1 private file</h3></div>
-    <p class="set-lede">The payments you send yourself and their ticks, in the file networth-shared.json of ${sh.owner}/networth-data on your own GitHub.</p>
+    <p class="set-lede">${say('settings.share.onLede', ctx.words, { owner: sh.owner })}</p>
     <p class="cap set-help">${sharedCorrections(ctx)}</p>
     <p class="cap set-help">${sharedWhat(ctx)}</p>
   </section>`;
@@ -372,7 +372,7 @@ function shareSection(ctx) {
       <section class="col col-7 set-sec" aria-label="Share between devices">
         ${head(phrase('settings.sample', ctx.words))}
         <p class="title set-state">${sayHtml('settings.sample.share', ctx.words)}</p>
-        <p class="set-lede">With your own record, 1 paste on each device keeps the payments you send, and their ticks, the same on all of them.</p>
+        <p class="set-lede">${phrase('settings.share.sampleLede', ctx.words)}</p>
       </section>
       ${what}
     </div>`;
@@ -402,7 +402,7 @@ function shareSection(ctx) {
         ${head('Refused')}
         <p class="title set-state">GitHub refused the key.</p>
         <p class="notice is-error"><i class="notice-mark"></i><span><b>Not shared</b>${sh.message}${sh.failedAt ? ' Tried ' + whenText(sh.failedAt, ctx) + '.' : ''}</span></p>
-        <p class="set-lede">The list on this device is intact and nothing was changed on GitHub. A new key takes the same 3 steps.</p>
+        <p class="set-lede">${phrase('settings.share.refusedLede', ctx.words)}</p>
         ${shareForm(ctx)}
         ${shareNowRow(ctx)}
         ${shareForget(ctx)}
@@ -1036,7 +1036,7 @@ async function erase() {
   pendingRestore = null;
   store.setUi({ settingsConfirm: null, settingsRestore: null, settingsRestoreError: null, settingsLinkError: null, settingsShareError: null });
   try {
-    await forgetShare(); // the key of the shared list goes first: nothing of the erasing is sent to the other devices
+    await forgetShare(); // the key of the shared file goes first: nothing of the erasing is sent to the other devices
     await unlinkBank({ erase: true }); // forgets the key and installs an empty record
     await store.flush(); // a save still on its way finishes first, so it cannot land after the wipe
     await wipeStorage({ all: true }); // the daily snapshots too: "everything" means everything
@@ -1067,7 +1067,7 @@ async function shareStart({ el, values }) {
   }
   const info = shareInfo();
   if (res && res.ok) {
-    toast('Sharing since ' + fmtTime(info.agreedAt || Date.now()) + ': ' + plural(info.count, 'payment', 'payments') + ' on the shared list.');
+    toast(shareToast('settings.share.since', (context() || {}).words, fmtTime(info.agreedAt || Date.now()), info.count));
     return;
   }
   // once the key is kept, the section itself says what the round met
@@ -1080,7 +1080,7 @@ async function shareRound() {
   try { info = await shareNow(); } catch { info = shareInfo(); }
   if (info.busy) return;
   if (info.code) toast(info.message);
-  else if (info.agreedAt) toast('Agreed with the shared list at ' + fmtTime(info.agreedAt) + ': ' + plural(info.count, 'payment', 'payments') + '.');
+  else if (info.agreedAt) toast(shareToast('settings.share.agreedAt', (context() || {}).words, fmtTime(info.agreedAt), info.count));
 }
 
 async function shareForgetKey() {
@@ -1088,7 +1088,7 @@ async function shareForgetKey() {
   store.setUi({ settingsConfirm: null, settingsShareError: null });
   try {
     await forgetShare();
-    toast('Key forgotten ' + whenSaid() + '. The list stays on this device and the file stays on GitHub.');
+    toast(say('settings.share.forgotten', (context() || {}).words, { when: whenSaid() }));
   } catch {
     toast('The key could not be removed. Try again.');
   }

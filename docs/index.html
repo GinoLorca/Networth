@@ -1,15 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- Networth single-file build 2026-11-16 -->
+<!-- Networth single-file build 2026-11-17 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Networth</title>
 <meta name="description" content="Networth: a private net-worth board. It reads your bank feed itself; your data stays on your device.">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
-<meta name="networth-build" content="b4a868568b6d">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-j5/8H0zlJrcIQ1uAy4M8Hbf9V9WAnS+3yMKDef4myf0='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-rrcgv2y0KMkdT76+jAxvRcNQTlj6UpNB9oKKC0whQNA=' 'sha256-e/tbGNncdNoZz13l4nvoF3bB1VC0tPaMfOMw7T5fyIM=' 'sha256-vtvTQgOF8REo4/7OrXt7r27xnMQOfrRm0glwTaEf6mQ=' 'sha256-bjsMTiPXO/fV7QJlhFnicz5k0INxLBT0hibL6mxaByc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-KJiTeF/M4lGFKztBQaJXk0LHMtyiPjUf0BfwznxqC/I=' 'sha256-+ElYrGma4N+3tSxwcOSe/XcF2qrL5kwmS0kdm0bwZb0=' 'sha256-DteyLvNz/HtxRqT86M19HgoZfGS3Vjh7g7Qv8sqoXaE=' 'sha256-Yq5LqpSuZYrQBiwZV3GIUKl7VztQyUyyTLeHF8RzYfM=' 'sha256-QXrKt++6Wq3yvYcbzGuV1ppzsGlag9M5t4FO07674+s=' 'sha256-m7CkRXzuhIuYxbQgavmrerKe1DYy85zXr0vO0/u7PNM=' 'sha256-AGcpoa0ZYLgE02mpnLEjsFszHyvUV1/tw2UnNfpPQks='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://beta-bridge.simplefin.org https://bridge.simplefin.org https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="networth-build" content="8a7887ce78bc">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-lMofkZ9hroGdReIdcbeVdQGX7AUwUt1et+JodIw7aHM='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-rrcgv2y0KMkdT76+jAxvRcNQTlj6UpNB9oKKC0whQNA=' 'sha256-e/tbGNncdNoZz13l4nvoF3bB1VC0tPaMfOMw7T5fyIM=' 'sha256-vtvTQgOF8REo4/7OrXt7r27xnMQOfrRm0glwTaEf6mQ=' 'sha256-bjsMTiPXO/fV7QJlhFnicz5k0INxLBT0hibL6mxaByc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-KJiTeF/M4lGFKztBQaJXk0LHMtyiPjUf0BfwznxqC/I=' 'sha256-+ElYrGma4N+3tSxwcOSe/XcF2qrL5kwmS0kdm0bwZb0=' 'sha256-DteyLvNz/HtxRqT86M19HgoZfGS3Vjh7g7Qv8sqoXaE=' 'sha256-Yq5LqpSuZYrQBiwZV3GIUKl7VztQyUyyTLeHF8RzYfM=' 'sha256-QXrKt++6Wq3yvYcbzGuV1ppzsGlag9M5t4FO07674+s=' 'sha256-m7CkRXzuhIuYxbQgavmrerKe1DYy85zXr0vO0/u7PNM=' 'sha256-AGcpoa0ZYLgE02mpnLEjsFszHyvUV1/tw2UnNfpPQks='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://beta-bridge.simplefin.org https://bridge.simplefin.org https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#F3EDE1" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#15130F" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
@@ -3804,8 +3804,8 @@ const PHRASES = Object.freeze({
   'words.option.chess': { chess: 'Chess', finance: 'Chess' },
   'words.option.finance': { chess: 'Finance', finance: 'Finance' },
   'words.help': {
-    chess: 'Chess words is the app’s own way of speaking; Finance words gives each term its standard finance or accounting name. Only words change, never a figure or a rule. With the list shared, your other devices follow.',
-    finance: 'Chess words is the app’s own way of speaking; Finance words gives each term its standard finance or accounting name. Only words change, never a figure or a rule. With the list shared, your other devices follow.',
+    chess: 'Chess words is the app’s own way of speaking; Finance words gives each term its standard finance or accounting name. Only words change, never a figure or a rule. With sharing on, your other devices follow through the shared file.',
+    finance: 'Chess words is the app’s own way of speaking; Finance words gives each term its standard finance or accounting name. Only words change, never a figure or a rule. With sharing on, your other devices follow through the shared file.',
   },
   'words.open': { chess: 'See every term', finance: 'See every term' },
   'words.forced': { chess: 'This visit’s address sets {mode} words; later visits use {saved} words, chosen below.', finance: 'This visit’s address sets {mode} words; later visits use {saved} words, chosen below.' },
@@ -4405,13 +4405,28 @@ const PHRASES = Object.freeze({
   'settings.unlinked': { chess: "Not linked. The record is kept.", finance: "Not linked. The record stays on this device." },
   'settings.share.offLedeMore': { chess: "what is added or ticked on 1 device shows on the others within seconds of opening them, and nothing is typed twice.", finance: "what is added or ticked on 1 device shows on the others within seconds of launching them, and nothing is typed twice." },
   'settings.alerts.sameKey': { chess: "the same key as pasted here; if it was not kept, make a new one the same way and paste it here on every device too", finance: "the same key as pasted here; if it was not saved, make a new one the same way and paste it here on every device too" },
-  'settings.share.offLede': { chess: "The payments you send yourself, and their ticks, are then kept in a private file on your own GitHub ({owner}/networth-data):", finance: "The payments you send yourself, and their ticks, are then stored in a private file on your own GitHub ({owner}/networth-data):" },
+  'settings.share.offLede': { chess: "The payments you send yourself and their ticks, your corrections, your daily game, your choice of Chess or Finance words and how each payer pays are then kept in a private file on your own GitHub ({owner}/networth-data):", finance: "The payments you send yourself and their ticks, your corrections, your daily budget, your choice of Chess or Finance words and how each payer pays are then stored in a private file on your own GitHub ({owner}/networth-data):" },
+  'settings.share.head': { chess: "payments, corrections and the daily game", finance: "payments, corrections and the daily budget" },
+  'settings.share.onLede': { chess: "The payments you send yourself and their ticks, your corrections, your daily game, your choice of Chess or Finance words and how each payer pays, in the file networth-shared.json of {owner}/networth-data on your own GitHub.", finance: "The payments you send yourself and their ticks, your corrections, your daily budget, your choice of Chess or Finance words and how each payer pays, in the file networth-shared.json of {owner}/networth-data on your own GitHub." },
+  'settings.share.sampleLede': { chess: "With your own record, 1 paste on each device keeps the payments you send and their ticks, your corrections, your daily game, your choice of words and how each payer pays the same on all of them.", finance: "With your own record, 1 paste on each device keeps the payments you send and their ticks, your corrections, your daily budget, your choice of words and how each payer pays the same on all of them." },
+  'settings.share.forgetGo': { chess: "Forget — all stays", finance: "Forget — all stays" },
+  'settings.share.forget': { chess: "The key is removed from this 1 device and nothing more is shared from it. Everything already here stays (the payments and their ticks, corrections, the daily game, your words and how each payer pays), the file on GitHub stays as it is, and the other devices carry on.", finance: "The key is removed from this 1 device and nothing more is shared from it. Everything already here stays (the payments and their ticks, corrections, the daily budget, your words and how each payer pays), the file on GitHub stays as it is, and the other devices carry on." },
+  'settings.share.agreed': { chess: "this device and the shared file held exactly the same", finance: "this device and the shared file held exactly the same" },
+  'settings.share.payments': { chess: "in the shared file", finance: "in the shared file" },
+  'settings.share.comparing': { chess: "Comparing with the shared file", finance: "Comparing with the shared file" },
+  'settings.share.forgotten': { chess: "Key forgotten {when}. Everything already here stays on this device, and the shared file stays on GitHub.", finance: "Key forgotten {when}. Everything already here stays on this device, and the shared file stays on GitHub." },
+  'settings.share.since': { chess: "Sharing since {time}: {count} in the shared file.", finance: "Sharing since {time}: {count} in the shared file." },
+  'settings.share.agreedAt': { chess: "Agreed with the shared file at {time}: {count}.", finance: "Agreed with the shared file at {time}: {count}." },
+  'settings.share.sinceNone': { chess: "Sharing since {time}: this device and the shared file agree.", finance: "Sharing since {time}: this device and the shared file agree." },
+  'settings.share.agreedAtNone': { chess: "Agreed with the shared file at {time}.", finance: "Agreed with the shared file at {time}." },
+  'settings.share.refusedLede': { chess: "Everything on this device is intact, and the shared file on GitHub was not changed. A new key takes the same 3 steps.", finance: "Everything on this device is intact, and the shared file on GitHub was not changed. A new key takes the same 3 steps." },
+  'settings.share.noFile': { chess: "GitHub shows this key no shared file yet; it is written with the first change to share", finance: "GitHub shows this key no shared file yet; it is written with the first change to share" },
   'settings.alerts.lede': { chess: "Each charge on your card lowers the net worth on every device within a minute or two of your card’s bank texting you, shown like a move tapped in.", finance: "Each charge on your card lowers the net worth on every device within a minute or two of your card’s bank texting you, shown like a purchase tapped in." },
   'settings.alerts.only': { chess: "The shortcut sends no text that holds a code word or no dollar figure, and the app turns only a completed purchase into a move: any other text is deleted.", finance: "The shortcut sends no text that holds a code word or no dollar figure, and the app turns only a completed purchase into a transaction: any other text is deleted." },
   'settings.income.cash': { chess: "Cash in hand:", finance: "Physical cash:" },
   'settings.storage.kept': { chess: "Kept on this device only,", finance: "Stored on this device only," },
-  'settings.shared.what': { chess: "Apart from the date of a corrected move, nothing the bank reported goes there: no balance, no transaction, no account. Only what you entered, your ticks, and an unreadable fingerprint of who each payment goes to, so every device recognises it the same way.", finance: "Apart from the date of a corrected transaction, nothing the bank reported goes there: no balance, no other transaction, no account. Only what you entered, your ticks, and an unreadable fingerprint of who each payment goes to, so every device recognises it the same way." },
-  'settings.shared.corrections': { chess: "Corrections (categories, merchant names, income settings) reach your other devices too, each with an unreadable fingerprint of its merchant or move and, for a corrected move, its bank date, so that every device finds the same move.", finance: "Corrections (categories, merchant names, income settings) reach your other devices too, each with an unreadable fingerprint of its merchant or transaction and, for a corrected transaction, its bank date, so that every device finds the same transaction." },
+  'settings.shared.what': { chess: "Apart from the date of a corrected move, nothing the bank reported goes there: no balance, no transaction, no account. Only what you entered (payments, notes, morning plans, tag names, your principles and what you did instead), your ticks, Habit’s figures and the amount of each week you moved, and an unreadable fingerprint of who each payment goes to, so every device recognises it the same way.", finance: "Apart from the date of a corrected transaction, nothing the bank reported goes there: no balance, no other transaction, no account. Only what you entered (payments, notes, morning plans, tag names, your spending rules and what you did instead), your ticks, the baseline’s figures and the amount of each week you transferred, and an unreadable fingerprint of who each payment goes to, so every device recognises it the same way." },
+  'settings.shared.corrections': { chess: "Corrections (categories, merchant names, income settings) reach your other devices too, each with an unreadable fingerprint of its merchant or move and, for a corrected move, its bank date, so that every device finds the same move. So does the daily game: its settings, each round’s colour, byes, notes and morning plans, Habit and the weeks you moved or set aside, so that every device scores each round the same way.", finance: "Corrections (categories, merchant names, income settings) reach your other devices too, each with an unreadable fingerprint of its merchant or transaction and, for a corrected transaction, its bank date, so that every device finds the same transaction. So does the daily budget: its settings, each day’s type, exempt days, notes and morning plans, the baseline and the weeks you transferred or skipped, so that every device counts each day the same way." },
   'settings.sample.bank': { chess: "Sample game — nothing is linked.", finance: "Sample data — nothing is linked." },
   'settings.sample.share': { chess: "Sample game — nothing is shared.", finance: "Sample data — nothing is shared." },
   'settings.income.pencil': { chess: "A payment by Zelle or transfer counts in pencil until the bank’s row takes its place; a payment in cash counts in Cash in hand.", finance: "A payment by Zelle or transfer counts as provisional until the bank’s row takes its place; a payment in cash counts in Physical cash." },
@@ -4489,7 +4504,7 @@ const PHRASES = Object.freeze({
   'app.footer.device': { chess: "Networth is kept on this device only: no server, no account, no tracking.", finance: "Networth is stored on this device only: no server, no account, no tracking." },
   'charts.key.moved': { chess: "MOVED", finance: "TRANSFERRED" },
   'settings.unlink': { chess: "The key is forgotten on this device and nothing new arrives. Every account, move and round already here stays.", finance: "The key is forgotten on this device and nothing new arrives. Every account, transaction and day already here stays." },
-  'settings.erase': { chess: "The bank key, the key of the shared list if this device has one, every account, move and round, and the daily snapshots (up to 14) are removed from this device. A saved copy is the only way back.", finance: "The bank key, the key of the shared list if this device has one, every account, transaction and day, and the daily snapshots (up to 14) are removed from this device. A saved copy is the only way back." },
+  'settings.erase': { chess: "The bank key, the key of the shared file if this device has one, every account, move and round, and the daily snapshots (up to 14) are removed from this device. A saved copy is the only way back.", finance: "The bank key, the key of the shared file if this device has one, every account, transaction and day, and the daily snapshots (up to 14) are removed from this device. A saved copy is the only way back." },
   'settings.share.failed': { chess: "The last round did not go through.", finance: "The last sync did not go through." },
   'settings.share.first': { chess: "Sharing: the first round has not run yet.", finance: "Sharing: the first sync has not run yet." },
   'settings.payOff': { chess: "Switched off, net worth moves only on the day money moves.", finance: "Switched off, net worth changes only on the day money arrives or leaves." },
@@ -4513,6 +4528,12 @@ function say(key, mode, vars) {
   const template = phrase(key, mode);
   if (!vars || typeof vars !== 'object') return template;
   return template.replace(/\{(\w+)\}/g, (whole, name) => (Object.hasOwn(vars, name) ? String(vars[name]) : whole));
+}
+
+function shareToast(key, mode, time, count) {
+  const n = Number.isInteger(count) && count > 0 ? count : 0;
+  if (!n) return say(key + 'None', mode, { time });
+  return say(key, mode, { time, count: n.toLocaleString('en-US') + (n === 1 ? ' payment' : ' payments') });
 }
 
 function placeholders(template) {
@@ -4723,7 +4744,7 @@ function term(key, mode) {
 function termsByGroup() {
   return TERM_GROUPS.map((group) => ({ group, terms: TERMS.filter((one) => one.group === group.key) }));
 }
-return { WORDS, DEFAULT_WORDS, wordsMode, wordsOf, GLYPH_NAMES, EVAL_NAMES, glyphName, evalName, resultText, resultName, resultWords, lowerFirst, PHRASES, phrase, say, placeholders, TERM_GROUPS, TERMS, term, termsByGroup };
+return { WORDS, DEFAULT_WORDS, wordsMode, wordsOf, GLYPH_NAMES, EVAL_NAMES, glyphName, evalName, resultText, resultName, resultWords, lowerFirst, PHRASES, phrase, say, shareToast, placeholders, TERM_GROUPS, TERMS, term, termsByGroup };
 })();
 
 // ---- js/model/schema.js
@@ -16839,6 +16860,759 @@ function canon(x) {
 return { readPrefs, mergePrefs, isBlankPrefs, exportPrefs, prefsDiffer, applyPrefs, prefsUnseen, noteSeenPrefs, chooseWords };
 })();
 
+// ---- js/model/game.js
+__mods["js/model/game.js"] = (function () {
+const { defaultState } = __mods["js/model/schema.js"];
+const { addDays, feedDay, isYmd } = __mods["js/model/dates.js"];
+const MAX_STAMP = 1e14;
+const GAME_KEEP_DAYS = 400;
+const GAME_CAPS = { type: 150, bye: 60, plan: 30, note: 20, sweeps: 60, habits: 12 };
+const GAME_AHEAD_DAYS = 15;
+const GAME_NOTE_DAYS = 30;
+const READ_MAX = { days: 500, sweeps: 200, habits: 60 };
+const NO_MAX = { days: Infinity, sweeps: Infinity, habits: Infinity };
+const NOTE_MAX = 280;
+const LINE_MAX = 120;
+const LINES_MAX = 12;
+const PURPOSE_MAX = 60;
+const AMOUNT_MAX = 1e10;
+const FIGURE_MAX = 1e12;
+const COUNT_MAX = 1e6;
+const UNSAFE = new Set(['__proto__', 'constructor', 'prototype']);
+const SECTIONS = new Set(['settings', 'purposes', 'days', 'start', 'habits', 'sweeps']);
+const PARTS = ['settings', 'purposes', 'days', 'start', 'habits', 'sweeps'];
+const GAME_SETTINGS = ['workdays', 'rolloverHour', 'byesPerMonth', 'smoothing', 'countPending', 'principles', 'insteads'];
+const DAY_FIELDS = ['type', 'bye', 'note', 'plan'];
+const DEFAULTS = defaultState(0).settings;
+const PURPOSE_KEYS = Object.keys(DEFAULTS.purposes);
+const UNFIT = Symbol('unfit');
+
+/* ------------------------------------------------------------------ values */
+
+const SETTING_VALUE = {
+  workdays: (v) => (Array.isArray(v) && v.length <= 7 && v.every((d, i) => Number.isInteger(d) && d >= 0 && d <= 6 && (i === 0 || d > v[i - 1]))
+    ? v.slice() : null),
+  rolloverHour: (v) => (Number.isInteger(v) && v >= 0 && v <= 23 ? v : null),
+  byesPerMonth: (v) => (Number.isInteger(v) && v >= 0 && v <= 31 ? v : null),
+  smoothing: (v) => (typeof v === 'boolean' ? v : null),
+  countPending: (v) => (typeof v === 'boolean' ? v : null),
+  principles: (v) => linesOf(v),
+  insteads: (v) => linesOf(v),
+};
+
+const PURPOSE_VALUE = (v) => (isText(v, PURPOSE_MAX, false) ? v : null);
+
+const DAY_VALUE = {
+  type: (v) => (v === 'work' || v === 'off' ? v : null),
+  bye: (v) => (v === true ? true : null),
+  note: (v) => (isText(v, NOTE_MAX, true) ? v : null),
+  plan: (v) => {
+    if (!isObject(v) || !sameKeys(v, ['container', 'breakfast', 'stops', 'at'])) return null;
+    const yn = (x) => x === true || x === false || x === null;
+    if (!yn(v.container) || !yn(v.breakfast) || !isStamp(v.at)) return null;
+    if (!(v.stops === null || (Number.isInteger(v.stops) && v.stops >= 0 && v.stops <= 9))) return null;
+    return { container: v.container, breakfast: v.breakfast, stops: v.stops, at: v.at };
+  },
+};
+
+function linesOf(v) {
+  if (!Array.isArray(v) || v.length > LINES_MAX || !v.every((line) => isText(line, LINE_MAX, false))) return null;
+  return v.slice();
+}
+
+function segmentOf(v) {
+  if (!isObject(v)) return null;
+  if (Object.keys(v).some((key) => !['from', 'work', 'off', 'winWork', 'winOff', 'basis', 'window', 'backtest'].includes(key))) return null;
+  const figure = (x) => Number.isFinite(x) && x >= 0 && x <= FIGURE_MAX;
+  const count = (x) => Number.isInteger(x) && x >= 0 && x <= COUNT_MAX;
+  if (!figure(v.work) || !figure(v.off) || !figure(v.winWork) || !figure(v.winOff)) return null;
+  const basis = v.basis === undefined ? 'computed' : v.basis;
+  if (basis !== 'computed' && basis !== 'manual') return null;
+  let window = null;
+  if (v.window != null) {
+    const w = v.window;
+    if (!isObject(w) || !sameKeys(w, ['from', 'to', 'workDays', 'offDays']) || !isYmd(w.from) || !isYmd(w.to) || !count(w.workDays) || !count(w.offDays)) return null;
+    window = { from: w.from, to: w.to, workDays: w.workDays, offDays: w.offDays };
+  }
+  let backtest = null;
+  if (v.backtest != null) {
+    const b = v.backtest;
+    if (!isObject(b) || !sameKeys(b, ['score', 'rounds']) || !(Number.isFinite(b.score) && b.score >= 0 && b.score <= COUNT_MAX) || !count(b.rounds)) return null;
+    backtest = { score: b.score, rounds: b.rounds };
+  }
+  return { work: v.work, off: v.off, winWork: v.winWork, winOff: v.winOff, basis, window, backtest };
+}
+
+function startOf(v) {
+  if (!isObject(v) || !sameKeys(v, ['day', 'seg']) || !isYmd(v.day)) return null;
+  const seg = segmentOf(v.seg);
+  return seg ? { day: v.day, seg } : null;
+}
+
+function sweepOf(v) {
+  if (!isObject(v) || !sameKeys(v, ['amount', 'day']) || !Number.isInteger(v.amount) || v.amount < 0 || v.amount > AMOUNT_MAX || !isYmd(v.day)) return null;
+  return { amount: v.amount, day: v.day };
+}
+
+/* ------------------------------------------------------------------ reading */
+
+function readGame(raw) {
+  return parseGame(raw, READ_MAX);
+}
+
+function parseGame(raw, max) {
+  if (!isObject(raw) || Object.keys(raw).some((key) => !SECTIONS.has(key))) return null;
+  const out = {};
+  if (raw.settings !== undefined) {
+    if (!isObject(raw.settings)) return null;
+    const settings = {};
+    for (const name of Object.keys(raw.settings)) {
+      if (!Object.hasOwn(SETTING_VALUE, name)) return null;
+      const cell = cellOf(raw.settings[name], SETTING_VALUE[name], false);
+      if (!cell) return null;
+      settings[name] = cell;
+    }
+    out.settings = settings;
+  }
+  if (raw.purposes !== undefined) {
+    if (!isObject(raw.purposes)) return null;
+    const purposes = {};
+    for (const tag of Object.keys(raw.purposes)) {
+      if (!PURPOSE_KEYS.includes(tag)) return null;
+      const cell = cellOf(raw.purposes[tag], PURPOSE_VALUE, false);
+      if (!cell) return null;
+      purposes[tag] = cell;
+    }
+    out.purposes = purposes;
+  }
+  if (raw.days !== undefined) {
+    const days = mapOf(raw.days, max.days, (entry) => {
+      if (!isObject(entry) || !Object.keys(entry).length) return null;
+      const fields = {};
+      for (const field of Object.keys(entry)) {
+        if (!Object.hasOwn(DAY_VALUE, field)) return null;
+        const cell = cellOf(entry[field], DAY_VALUE[field], true);
+        if (!cell) return null;
+        fields[field] = cell;
+      }
+      return fields;
+    });
+    if (!days) return null;
+    out.days = days;
+  }
+  if (raw.start !== undefined) {
+    const start = cellOf(raw.start, startOf, false);
+    if (!start) return null;
+    out.start = start;
+  }
+  if (raw.habits !== undefined) {
+    const habits = mapOf(raw.habits, max.habits, (cell) => cellOf(cell, segmentOf, true));
+    if (!habits) return null;
+    out.habits = habits;
+  }
+  if (raw.sweeps !== undefined) {
+    const sweeps = mapOf(raw.sweeps, max.sweeps, (cell) => cellOf(cell, sweepOf, true));
+    if (!sweeps) return null;
+    out.sweeps = sweeps;
+  }
+  return tidy(out);
+}
+
+function mapOf(raw, max, entryOf) {
+  if (!isObject(raw)) return null;
+  const keys = Object.keys(raw);
+  if (keys.length > max) return null;
+  const out = {};
+  for (const key of keys) {
+    if (UNSAFE.has(key) || !isYmd(key)) return null;
+    const entry = entryOf(raw[key]);
+    if (!entry) return null;
+    out[key] = entry;
+  }
+  return out;
+}
+
+function cellOf(raw, valueOf, removable) {
+  if (!isObject(raw) || !isStamp(raw.at)) return null;
+  if (raw.undo !== undefined && typeof raw.undo !== 'boolean') return null;
+  const undo = raw.undo === true;
+  if (raw.deleted !== undefined) {
+    if (raw.deleted !== true || !removable || !sameKeys(raw, ['deleted', 'at', 'undo'])) return null;
+    return undo ? { deleted: true, at: raw.at, undo: true } : { deleted: true, at: raw.at };
+  }
+  if (!sameKeys(raw, ['v', 'at', 'undo']) || !Object.hasOwn(raw, 'v')) return null;
+  const v = valueOf(raw.v);
+  if (v === null) return null;
+  return undo ? { v, at: raw.at, undo: true } : { v, at: raw.at };
+}
+
+function isBlankGame(section) {
+  return !isObject(section) || Object.keys(tidy(section)).length === 0;
+}
+
+/* ------------------------------------------------------------------ merging */
+
+function mergeGame(a, b) {
+  return pruneGame(joinGame(a, b));
+}
+
+function joinGame(a, b) {
+  const x = sectionOf(a);
+  const y = sectionOf(b);
+  const out = {};
+  out.settings = joinMap(x.settings, y.settings, laterCell);
+  out.purposes = joinMap(x.purposes, y.purposes, laterCell);
+  out.days = joinMap(x.days, y.days, (p, q) => (!p ? q : !q ? p : joinMap(p, q, laterCell)));
+  const start = laterCell(x.start || null, y.start || null);
+  if (start) out.start = start;
+  out.habits = joinMap(x.habits, y.habits, laterCell);
+  out.sweeps = joinMap(x.sweeps, y.sweeps, laterCell);
+  return tidy(out);
+}
+
+function joinMap(a, b, pick) {
+  const x = a || {};
+  const y = b || {};
+  const out = {};
+  for (const key of union(x, y)) out[key] = pick(own(x, key) || null, own(y, key) || null);
+  return out;
+}
+
+function pruneGame(section) {
+  const game = sectionOf(section);
+  const days = game.days || {};
+  const sweeps = game.sweeps || {};
+  const keys = union(days, sweeps).reverse();
+  const anchors = new Set(keys.slice(0, 2));
+  const reference = keys.length > 1 && keys[0] > addDays(keys[1], GAME_AHEAD_DAYS) ? keys[1] : keys[0];
+  const line = reference ? addDays(reference, -GAME_KEEP_DAYS) : null;
+  const out = { ...game };
+  const kept = {};
+  for (const field of DAY_FIELDS) {
+    const holding = Object.keys(days).filter((day) => Object.hasOwn(days[day], field));
+    for (const day of capped(holding, (day) => days[day][field], GAME_CAPS[field], line, anchors)) (kept[day] || (kept[day] = {}))[field] = days[day][field];
+  }
+  out.days = {};
+  for (const day of Object.keys(kept).sort()) out.days[day] = ordered(kept[day], DAY_FIELDS);
+  out.sweeps = picked(sweeps, capped(Object.keys(sweeps), (key) => sweeps[key], GAME_CAPS.sweeps, line, anchors));
+  const habits = game.habits || {};
+  out.habits = picked(habits, capped(Object.keys(habits), (key) => habits[key], GAME_CAPS.habits, null, new Set()));
+  return tidy(out);
+}
+
+function capped(keys, cellAt, cap, line, anchors) {
+  const ranked = keys.filter((key) => line === null || key >= line || cellAt(key).at > 0)
+    .sort((p, q) => (cellAt(q).at - cellAt(p).at) || (p < q ? 1 : p > q ? -1 : 0));
+  const out = new Set(ranked.slice(0, cap));
+  for (const key of keys) if (anchors.has(key)) out.add(key);
+  return out;
+}
+
+function picked(map, keys) {
+  const out = {};
+  for (const key of [...keys].sort()) out[key] = map[key];
+  return out;
+}
+
+function laterCell(p, q) {
+  if (!p) return q;
+  if (!q) return p;
+  if (p.at !== q.at) return p.at > q.at ? p : q;
+  if (!!p.undo !== !!q.undo) return p.undo ? q : p;
+  return canon(p) <= canon(q) ? p : q;
+}
+
+/* ------------------------------------------------------------------ the device */
+
+function recordValues(state) {
+  const doc = isObject(state) ? state : {};
+  const settings = {};
+  const s = isObject(doc.settings) ? doc.settings : {};
+  for (const name of GAME_SETTINGS) {
+    if (!Object.hasOwn(s, name)) continue;
+    // the weekdays in order and once each, as Settings writes them
+    const raw = name === 'workdays' && Array.isArray(s.workdays) ? [...new Set(s.workdays)].sort((a, b) => a - b) : s[name];
+    const v = SETTING_VALUE[name](raw);
+    settings[name] = v === null ? UNFIT : v;
+  }
+  // each purpose tag this version knows, its default name when the record has none
+  const purposes = {};
+  for (const tag of PURPOSE_KEYS) {
+    const raw = isObject(s.purposes) && Object.hasOwn(s.purposes, tag) ? s.purposes[tag] : DEFAULTS.purposes[tag];
+    const v = PURPOSE_VALUE(raw);
+    purposes[tag] = v === null ? UNFIT : v;
+  }
+  const days = {};
+  const recordDays = isObject(doc.days) ? doc.days : {};
+  for (const day of Object.keys(recordDays)) {
+    const record = recordDays[day];
+    if (!isYmd(day) || !isObject(record)) continue;
+    const fields = {};
+    for (const field of DAY_FIELDS) {
+      const raw = record[field];
+      if (raw === undefined || raw === null || raw === false || raw === '') continue;
+      const v = DAY_VALUE[field](raw);
+      fields[field] = v === null ? UNFIT : v;
+    }
+    if (Object.keys(fields).length) days[day] = fields;
+  }
+  const meta = isObject(doc.meta) ? doc.meta : {};
+  const matchStart = isYmd(meta.matchStart) ? meta.matchStart : null;
+  const segments = Array.isArray(doc.habits) ? doc.habits.filter((seg) => isObject(seg) && isYmd(seg.from)) : [];
+  let start = null;
+  const first = matchStart ? segments.find((seg) => seg.from === matchStart) : null;
+  if (first) start = startOf({ day: matchStart, seg: first }) || UNFIT;
+  const habits = {};
+  for (const seg of segments) {
+    if (seg.from === matchStart) continue;
+    const v = segmentOf(seg);
+    habits[seg.from] = v === null ? UNFIT : v;
+  }
+  const sweeps = {};
+  for (const sweep of Array.isArray(doc.sweeps) ? doc.sweeps : []) {
+    if (!isOwnSweep(sweep) || Object.hasOwn(sweeps, sweep.weekOf)) continue;
+    const v = sweepOf({ amount: sweep.amount, day: sweep.day });
+    sweeps[sweep.weekOf] = v === null ? UNFIT : v;
+  }
+  return { settings, purposes, days, start, habits, sweeps, matchStart };
+}
+
+function limitOf(state, copy) {
+  const doc = isObject(state) ? state : {};
+  let newest = '';
+  for (const tx of Array.isArray(doc.txs) ? doc.txs : []) if (isObject(tx) && isYmd(tx.day) && tx.source !== 'manual' && tx.day > newest) newest = tx.day;
+  const rollover = rolloverOf(doc);
+  const served = serverDay(doc, rollover);
+  if (served && served > newest) newest = served;
+  for (const account of Array.isArray(doc.accounts) ? doc.accounts : []) {
+    if (!isObject(account) || account.source !== 'bank' || !isObject(account.feed)) continue;
+    const { asOf } = account;
+    const readAt = account.feed.readAt;
+    if (!Number.isFinite(asOf) || asOf <= 0 || !Number.isFinite(readAt) || asOf >= readAt) continue;
+    const day = feedDay(asOf / 1000, rollover);
+    if (isYmd(day) && day > newest) newest = day;
+  }
+  for (const day of Object.keys((copy && copy.days) || {})) if (day > newest) newest = day;
+  return newest ? addDays(newest, GAME_NOTE_DAYS) : null;
+}
+
+function serverDay(doc, rollover) {
+  const at = isObject(doc.share) ? doc.share.serverAt : null;
+  if (!Number.isFinite(at) || at <= 0 || at > MAX_STAMP) return '';
+  const day = feedDay(at / 1000, rollover);
+  return isYmd(day) ? day : '';
+}
+
+function hearServer(state, serverMs) {
+  if (!hearsServer(state, serverMs)) return false;
+  if (!isObject(state.share)) state.share = { tombs: {} };
+  state.share.serverAt = Math.round(serverMs);
+  return true;
+}
+
+function hearsServer(state, serverMs) {
+  if (!isObject(state) || !Number.isFinite(serverMs) || serverMs <= 0 || serverMs > MAX_STAMP) return false;
+  const rollover = rolloverOf(state);
+  const day = feedDay(serverMs / 1000, rollover);
+  return isYmd(day) && day > serverDay(state, rollover);
+}
+
+function rolloverOf(doc) {
+  const settings = isObject(doc.settings) ? doc.settings : {};
+  return Number.isInteger(settings.rolloverHour) && settings.rolloverHour >= 0 && settings.rolloverHour <= 23 ? settings.rolloverHour : 0;
+}
+
+function gameLimit(state) {
+  return limitOf(state, hasCopy(state) ? sectionOf(state.share.game) : null);
+}
+
+function within(limit, key) {
+  return limit === null || key <= limit;
+}
+
+function isOwnSweep(sweep) {
+  return isObject(sweep) && sweep.via === 'tap' && isYmd(sweep.weekOf);
+}
+
+function seedsOf(state) {
+  const values = recordValues(state);
+  const limit = limitOf(state, null);
+  const out = { settings: {}, purposes: {}, days: {}, habits: {}, sweeps: {} };
+  for (const name of Object.keys(values.settings)) {
+    const v = values.settings[name];
+    if (v !== UNFIT && canon(v) !== canon(DEFAULTS[name])) out.settings[name] = { v, at: 0 };
+  }
+  // a purpose tag only where its name differs from its default, so a rename on one device is the only cell and wins
+  for (const tag of Object.keys(values.purposes)) {
+    const v = values.purposes[tag];
+    if (v !== UNFIT && v !== DEFAULTS.purposes[tag]) out.purposes[tag] = { v, at: 0 };
+  }
+  for (const day of Object.keys(values.days)) {
+    if (!within(limit, day)) continue;
+    const fields = {};
+    for (const field of DAY_FIELDS) {
+      const v = values.days[day][field];
+      if (v !== undefined && v !== UNFIT) fields[field] = { v, at: 0 };
+    }
+    if (Object.keys(fields).length) out.days[day] = fields;
+  }
+  if (values.start && values.start !== UNFIT) out.start = { v: values.start, at: 0 };
+  for (const [name, map] of [['habits', values.habits], ['sweeps', values.sweeps]]) {
+    for (const key of Object.keys(map)) if (map[key] !== UNFIT && within(limit, key)) out[name][key] = { v: map[key], at: 0 };
+  }
+  return sectionOf(tidy(out));
+}
+
+function seedGame(state) {
+  if (!isObject(state) || hasCopy(state)) return false;
+  storeCopy(state, seedsOf(state));
+  return true;
+}
+
+function storedGame(state) {
+  return hasCopy(state) ? sectionOf(state.share.game) : seedsOf(state);
+}
+
+function exportGame(state) {
+  return pruneGame(storedGame(state));
+}
+
+function noteGame(state, nowMs) {
+  if (!isObject(state)) return false;
+  if (!hasCopy(state)) seedGame(state);
+  const values = recordValues(state);
+  const now = Math.round(Number.isFinite(nowMs) ? nowMs : 0);
+  let copy = sectionOf(state.share.game);
+  let noted = false;
+  // A key noted can move the limit (the newest day the copy holds), so the pass runs again until the limit stands: a
+  // choice within the limit releases the others in the same update. Bounded by the keys, as the limit only moves forward.
+  for (let limit = limitOf(state, copy); ;) {
+    const pass = notePass(copy, values, limit, now);
+    if (!pass) break;
+    noted = true;
+    copy = pass;
+    const next = limitOf(state, copy);
+    if (next === limit) break;
+    limit = next;
+  }
+  const start = copy.start || null;
+  if (!noted) {
+    if (start && canon(start.v) !== canon(values.start)) syncStart(state, start);
+    return false;
+  }
+  storeCopy(state, copy);
+  if (start && canon(start.v) !== canon(values.start)) syncStart(state, start);
+  return true;
+}
+
+function notePass(copy, values, limit, now) {
+  const stamp = (cell) => Math.min(MAX_STAMP, Math.max(now, (cell ? cell.at : 0) + 2));
+  let noted = false;
+  const settings = { ...(copy.settings || {}) };
+  for (const name of Object.keys(values.settings)) {
+    const v = values.settings[name];
+    if (v === UNFIT) continue;
+    const cell = own(settings, name);
+    if (canon(v) === canon(cell ? cell.v : DEFAULTS[name])) continue;
+    settings[name] = { v, at: stamp(cell) };
+    noted = true;
+  }
+  const purposes = { ...(copy.purposes || {}) };
+  for (const tag of Object.keys(values.purposes)) {
+    const v = values.purposes[tag];
+    if (v === UNFIT) continue;
+    const cell = own(purposes, tag);
+    if (v === (cell ? cell.v : DEFAULTS.purposes[tag])) continue;
+    purposes[tag] = { v, at: stamp(cell) };
+    noted = true;
+  }
+  const note = (map, key, v) => {
+    // one field of a map: the record's value (undefined: none) against the copy's cell
+    if (v === UNFIT) return map;
+    const cell = own(map, key);
+    const held = cell && !cell.deleted ? cell.v : undefined;
+    if (canon(v) === canon(held)) return map;
+    if (v === undefined && (!cell || cell.deleted)) return map;
+    noted = true;
+    return { ...map, [key]: v === undefined ? { deleted: true, at: stamp(cell) } : { v, at: stamp(cell) } };
+  };
+  const days = { ...(copy.days || {}) };
+  for (const day of union(values.days, days)) {
+    if (!within(limit, day)) continue;
+    let fields = own(days, day) || {};
+    for (const field of DAY_FIELDS) fields = note(fields, field, own(values.days[day] || {}, field));
+    if (Object.keys(fields).length) days[day] = fields;
+  }
+  let habits = { ...(copy.habits || {}) };
+  const startDay = copy.start ? copy.start.v.day : values.matchStart;
+  for (const key of union(values.habits, habits)) {
+    if (key === startDay || key === values.matchStart || !within(limit, key)) continue;
+    habits = note(habits, key, own(values.habits, key));
+  }
+  let sweeps = { ...(copy.sweeps || {}) };
+  for (const key of union(values.sweeps, sweeps)) if (within(limit, key)) sweeps = note(sweeps, key, own(values.sweeps, key));
+  let start = copy.start || null;
+  if (values.start && values.start !== UNFIT && (!start || canon(start.v) !== canon(values.start))) {
+    const won = laterCell(start, { v: values.start, at: 0 });
+    if (won !== start) noted = true;
+    start = won;
+  }
+  return noted ? tidy({ settings, purposes, days, start, habits, sweeps }) : null;
+}
+
+function restampGame(before, after) {
+  if (!isObject(before) || !isObject(after)) return false;
+  const was = recordValues(before);
+  const now = recordValues(after);
+  const section = joinGame(storedGame(before), storedGame(after));
+  const bump = (cell) => Math.min(MAX_STAMP, (cell ? cell.at : 0) + 1);
+  let wrote = false;
+  const restamp = (map, key, prior, value) => {
+    if (prior === UNFIT || value === UNFIT) return map;
+    if (canon(prior) === canon(value)) return map;
+    const cell = own(map, key);
+    wrote = true;
+    return { ...map, [key]: value === undefined ? { deleted: true, at: bump(cell), undo: true } : { v: value, at: bump(cell), undo: true } };
+  };
+  let settings = section.settings || {};
+  for (const name of GAME_SETTINGS) {
+    const prior = own(was.settings, name);
+    const value = own(now.settings, name);
+    if (prior === undefined || value === undefined) continue;
+    settings = restamp(settings, name, prior, value);
+  }
+  let purposes = section.purposes || {};
+  for (const tag of PURPOSE_KEYS) purposes = restamp(purposes, tag, was.purposes[tag], now.purposes[tag]);
+  let out = tidy({ ...section, settings, purposes });
+  const startDay = section.start ? section.start.v.day : null;
+  // A key restamped can move the limit (the newest day the copy holds), so the pass runs again over the keys the moved
+  // limit lets through, until it stands (each key once; bounded, as the limit only moves forward).
+  let done; // the limit of the passes run so far (undefined: none yet)
+  for (let limit = limitOf(after, out); ;) {
+    const fresh = (key) => within(limit, key) && (done === undefined || key > done);
+    const days = { ...(out.days || {}) };
+    for (const day of union(was.days, now.days)) {
+      if (!fresh(day)) continue;
+      let fields = own(days, day) || {};
+      for (const field of DAY_FIELDS) fields = restamp(fields, field, own(was.days[day] || {}, field), own(now.days[day] || {}, field));
+      if (Object.keys(fields).length) days[day] = fields;
+    }
+    let habits = out.habits || {};
+    for (const key of union(was.habits, now.habits)) {
+      if (key === startDay || key === was.matchStart || key === now.matchStart || !fresh(key)) continue;
+      habits = restamp(habits, key, own(was.habits, key), own(now.habits, key));
+    }
+    let sweeps = out.sweeps || {};
+    for (const key of union(was.sweeps, now.sweeps)) if (fresh(key)) sweeps = restamp(sweeps, key, own(was.sweeps, key), own(now.sweeps, key));
+    out = tidy({ ...out, days, habits, sweeps });
+    const next = limitOf(after, out);
+    if (limit === null || next === limit) break;
+    done = limit;
+    limit = next;
+  }
+  storeCopy(after, out);
+  if (out.start && canon(out.start.v) !== canon(now.start)) syncStart(after, out.start);
+  return wrote;
+}
+
+function gameDiffers(state, section) {
+  const copy = storedGame(state);
+  return canon(joinGame(copy, section)) !== canon(copy);
+}
+
+function applyGame(state, section) {
+  if (!isObject(state)) return false;
+  if (!gameDiffers(state, section) && hasCopy(state)) return false;
+  const copy = joinGame(storedGame(state), section);
+  storeCopy(state, copy);
+  syncRecord(state, copy);
+  return true;
+}
+
+function arrivedGame(local, merged) {
+  const x = sectionOf(local);
+  const y = sectionOf(merged);
+  const out = { settings: {}, purposes: {}, days: {}, habits: {}, sweeps: {} };
+  const differs = (p, q) => canon(p || null) !== canon(q || null);
+  for (const name of Object.keys(y.settings || {})) if (differs(own(x.settings || {}, name), y.settings[name])) out.settings[name] = y.settings[name];
+  for (const tag of Object.keys(y.purposes || {})) if (differs(own(x.purposes || {}, tag), y.purposes[tag])) out.purposes[tag] = y.purposes[tag];
+  for (const day of Object.keys(y.days || {})) {
+    const mine = own(x.days || {}, day) || {};
+    for (const field of Object.keys(y.days[day])) {
+      if (differs(own(mine, field), y.days[day][field])) (out.days[day] || (out.days[day] = {}))[field] = y.days[day][field];
+    }
+  }
+  if (y.start && differs(x.start, y.start)) out.start = y.start;
+  for (const name of ['habits', 'sweeps']) {
+    for (const key of Object.keys(y[name] || {})) if (differs(own(x[name] || {}, key), y[name][key])) out[name][key] = y[name][key];
+  }
+  return tidy(out);
+}
+
+/* ------------------------------------------------------------------ the record follows the copy */
+
+function syncRecord(state, copy) {
+  if (!isObject(state.settings)) state.settings = {};
+  for (const name of Object.keys(copy.settings || {})) {
+    const v = copy.settings[name].v;
+    if (canon(state.settings[name]) !== canon(v)) state.settings[name] = clone(v);
+  }
+  const tags = Object.keys(copy.purposes || {});
+  if (tags.length) {
+    const names = isObject(state.settings.purposes) ? state.settings.purposes : {};
+    if (tags.some((tag) => names[tag] !== copy.purposes[tag].v)) {
+      state.settings.purposes = { ...names };
+      for (const tag of tags) state.settings.purposes[tag] = copy.purposes[tag].v;
+    }
+  }
+  if (!isObject(state.days)) state.days = {};
+  for (const day of Object.keys(copy.days || {})) {
+    const cells = copy.days[day];
+    const record = isObject(state.days[day]) ? state.days[day] : {};
+    for (const field of DAY_FIELDS) {
+      const cell = own(cells, field);
+      if (!cell) continue;
+      if (cell.deleted) delete record[field];
+      else if (canon(record[field]) !== canon(cell.v)) record[field] = clone(cell.v);
+    }
+    if (Object.keys(record).length) state.days[day] = record;
+    else delete state.days[day];
+  }
+  if (copy.start) syncStart(state, copy.start);
+  syncHabits(state, copy);
+  syncSweeps(state, copy);
+}
+
+function syncStart(state, start) {
+  if (!isObject(state.meta)) state.meta = {};
+  const was = isYmd(state.meta.matchStart) ? state.meta.matchStart : null;
+  const day = start.v.day;
+  const list = Array.isArray(state.habits) ? state.habits : [];
+  const first = list.find((seg) => isObject(seg) && seg.from === day);
+  if (was === day && first && canon(segmentOf(first)) === canon(start.v.seg)) return;
+  const habits = (Array.isArray(state.habits) ? state.habits : []).filter((seg) => !(isObject(seg) && (seg.from === was || seg.from === day)));
+  habits.push({ from: day, ...clone(start.v.seg) });
+  state.meta.matchStart = day;
+  state.habits = sortedSegments(habits);
+}
+
+function syncHabits(state, copy) {
+  const cells = copy.habits || {};
+  if (!Object.keys(cells).length) return;
+  const startDay = isObject(state.meta) && isYmd(state.meta.matchStart) ? state.meta.matchStart : null;
+  const byDay = new Map();
+  for (const seg of Array.isArray(state.habits) ? state.habits : []) if (isObject(seg)) byDay.set(seg.from, seg);
+  for (const key of Object.keys(cells)) {
+    if (key === startDay) continue;
+    const cell = cells[key];
+    if (cell.deleted) byDay.delete(key);
+    else if (!byDay.has(key) || canon(segmentOf(byDay.get(key))) !== canon(cell.v)) byDay.set(key, { from: key, ...clone(cell.v) });
+  }
+  const next = sortedSegments([...byDay.values()]);
+  if (canon(next) !== canon(state.habits)) state.habits = next;
+}
+
+function syncSweeps(state, copy) {
+  const cells = copy.sweeps || {};
+  if (!Object.keys(cells).length) return;
+  let sweeps = Array.isArray(state.sweeps) ? state.sweeps.slice() : [];
+  let changed = false;
+  for (const weekOf of Object.keys(cells)) {
+    const cell = cells[weekOf];
+    const mine = sweeps.find((sweep) => isOwnSweep(sweep) && sweep.weekOf === weekOf);
+    if (cell.deleted) {
+      // opened again: the owner's entry goes, as sweep.reopen takes it (one detected from the bank stays)
+      if (mine) { sweeps = sweeps.filter((sweep) => !(isOwnSweep(sweep) && sweep.weekOf === weekOf)); changed = true; }
+      continue;
+    }
+    const alone = sweeps.filter((sweep) => isObject(sweep) && sweep.weekOf === weekOf).length === 1;
+    if (mine && alone && mine.amount === cell.v.amount && mine.day === cell.v.day && mine.txId == null) continue;
+    // the owner's word for the week stands in place of whatever this device recorded or detected for it
+    sweeps = sweeps.filter((sweep) => !(isObject(sweep) && sweep.weekOf === weekOf));
+    sweeps.push({ weekOf, amount: cell.v.amount, day: cell.v.day, txId: null, via: 'tap' });
+    changed = true;
+  }
+  if (changed) state.sweeps = sweeps;
+}
+
+function sortedSegments(list) {
+  return list.slice().sort((a, b) => (a.from < b.from ? -1 : a.from > b.from ? 1 : 0));
+}
+
+/* ------------------------------------------------------------------ helpers */
+
+function sectionOf(raw) {
+  return parseGame(raw === undefined || raw === null ? {} : raw, NO_MAX) || {};
+}
+
+function hasCopy(state) {
+  return isObject(state) && isObject(state.share) && isObject(state.share.game);
+}
+
+function storeCopy(state, section) {
+  if (!isObject(state.share)) state.share = { tombs: {} };
+  state.share.game = tidy(section);
+}
+
+function tidy(section) {
+  const out = {};
+  for (const key of PARTS) {
+    const part = section[key];
+    if (part === undefined || part === null) continue;
+    if (key === 'start') { out.start = part; continue; }
+    if (!isObject(part) || !Object.keys(part).length) continue;
+    const sorted = {};
+    for (const k of Object.keys(part).sort()) sorted[k] = part[k];
+    out[key] = sorted;
+  }
+  return out;
+}
+
+function ordered(entry, keys) {
+  const out = {};
+  for (const key of keys) if (Object.hasOwn(entry, key)) out[key] = entry[key];
+  return out;
+}
+
+function isText(v, max, lines) {
+  if (typeof v !== 'string' || v.length < 1 || v.length > max || v !== v.trim()) return false;
+  // no control character (a line break or a tab in a note is one the owner typed), no half of a surrogate pair
+  if ((lines ? /[\u0000-\u0008\u000b-\u001f\u007f]/ : /[\u0000-\u001f\u007f]/).test(v)) return false;
+  return !/[\ud800-\udbff](?![\udc00-\udfff])|(^|[^\ud800-\udbff])[\udc00-\udfff]/.test(v);
+}
+
+function sameKeys(obj, allowed) {
+  return Object.keys(obj).every((key) => allowed.includes(key));
+}
+
+function isStamp(x) {
+  return Number.isFinite(x) && x >= 0 && x <= MAX_STAMP;
+}
+
+function isObject(x) {
+  return x !== null && typeof x === 'object' && !Array.isArray(x);
+}
+
+function own(obj, key) {
+  return isObject(obj) && Object.hasOwn(obj, key) ? obj[key] : undefined;
+}
+
+function union(a, b) {
+  return [...new Set([...Object.keys(a || {}), ...Object.keys(b || {})])].sort();
+}
+
+function clone(x) {
+  return x === undefined ? undefined : JSON.parse(JSON.stringify(x));
+}
+
+function canon(x) {
+  if (Array.isArray(x)) return '[' + x.map(canon).join(',') + ']';
+  if (isObject(x)) return '{' + Object.keys(x).sort().map((key) => JSON.stringify(key) + ':' + canon(x[key])).join(',') + '}';
+  return x === undefined ? 'null' : JSON.stringify(x);
+}
+return { GAME_KEEP_DAYS, GAME_CAPS, GAME_AHEAD_DAYS, GAME_NOTE_DAYS, NOTE_MAX, GAME_SETTINGS, readGame, isBlankGame, mergeGame, pruneGame, hearServer, hearsServer, gameLimit, seedsOf, seedGame, storedGame, exportGame, noteGame, restampGame, gameDiffers, applyGame, arrivedGame };
+})();
+
 // ---- js/model/share.js
 __mods["js/model/share.js"] = (function () {
 const { makeByHand } = __mods["js/model/byhand.js"];
@@ -16847,6 +17621,7 @@ const { refresh } = __mods["js/model/detect.js"];
 const { ensureIncome, exportIncomeShared, incomeOf, isBlankIncome, mergeIncomeShared, readIncomeShared, rebuildIncome } = __mods["js/model/income.js"];
 const { applyCorrections, arrivedCorrections, exportCorrections, isBlankCorrections, mergeCorrections, pruneCorrections, readSharedCorrections, sharedSections, storeCorrections, storedCorrections } = __mods["js/model/corrections.js"];
 const { applyPrefs, exportPrefs, isBlankPrefs, mergePrefs, noteSeenPrefs, prefsDiffer, prefsUnseen, readPrefs } = __mods["js/model/prefs.js"];
+const { applyGame, arrivedGame, exportGame, gameDiffers, hearServer, hearsServer, isBlankGame, mergeGame, readGame } = __mods["js/model/game.js"];
 const VERSION = 1;
 const APP = 'networth';
 const MAX_ENTRIES = 200;
@@ -16860,7 +17635,7 @@ const MAX_STAMP = 1e14;
 const MAX_DEPTH = 12;
 const TOMB_KEEP_MS = 400 * 86400000;
 const RESTARTS = 3;
-const KNOWN = new Set(['v', 'app', 'savedAt', 'byHand', 'income', 'corrections', 'flowRules', 'prefs']);
+const KNOWN = new Set(['v', 'app', 'savedAt', 'byHand', 'income', 'corrections', 'flowRules', 'prefs', 'game']);
 const UNSAFE = new Set(['__proto__', 'constructor', 'prototype']);
 const ID = /^[A-Za-z0-9_.:-]{1,80}$/;
 const PAYEE = /^p[0-9a-f]{13}$/;
@@ -16911,6 +17686,12 @@ function fileOf(raw) {
     const prefs = readPrefs(raw.prefs);
     if (!prefs) return null;
     if (!isBlankPrefs(prefs)) out.prefs = prefs;
+  }
+  if (raw.game !== undefined) {
+    // the daily game (3.9): checked like the rest; an empty section is left out
+    const game = readGame(raw.game);
+    if (!game) return null;
+    if (!isBlankGame(game)) out.game = game;
   }
   for (const key of Object.keys(raw)) {
     if (!KNOWN.has(key) && !UNSAFE.has(key)) out[key] = plain(raw[key], 0);
@@ -16984,6 +17765,9 @@ function exportShared(state, nowMs) {
   // the owner's choices, each that was ever chosen with its stamp (11)
   const prefs = exportPrefs(doc);
   if (!isBlankPrefs(prefs)) out.prefs = prefs;
+  // the daily game: this device's copy within its bounds (3.9)
+  const game = exportGame(doc);
+  if (!isBlankGame(game)) out.game = game;
   return out;
 }
 
@@ -17012,6 +17796,8 @@ function mergeShared(a, b) {
   if (!isBlankCorrections(corrections)) out.corrections = corrections;
   const prefs = mergePrefs(x.prefs, y.prefs);
   if (!isBlankPrefs(prefs)) out.prefs = prefs;
+  const game = mergeGame(x.game, y.game);
+  if (!isBlankGame(game)) out.game = game;
   for (const key of union(x, y)) {
     if (KNOWN.has(key)) continue;
     const p = own(x, key);
@@ -17105,12 +17891,14 @@ function applyShared(state, merged, nowMs) {
     applyPrefs(state, fileOf(merged).prefs);
     noteSeenPrefs(state, fileOf(merged).prefs);
   }
+  // the daily game: the copy takes the cells that win, and the record follows them as the owner's actions write it (3.9)
+  if (ops.some((one) => one.op === 'game')) applyGame(state, fileOf(merged).game);
   if (!Array.isArray(state.recurring)) state.recurring = [];
   if (!isObject(state.share)) state.share = { tombs: {} };
   if (!isObject(state.share.tombs)) state.share.tombs = {};
   const tombs = state.share.tombs;
   for (const { op, id, want } of ops) {
-    if (op === 'income' || op === 'corrections' || op === 'prefs') continue;
+    if (op === 'income' || op === 'corrections' || op === 'prefs' || op === 'game') continue;
     const at = state.recurring.findIndex((r) => isObject(r) && r.id === id);
     if (op === 'remove') {
       if (at >= 0) state.recurring.splice(at, 1);
@@ -17146,6 +17934,7 @@ function planOf(state, merged) {
   if (JSON.stringify(sortedCopy(incomeOf(state).shared)) !== JSON.stringify(sortedCopy(income))) ops.push({ op: 'income' });
   if (canon(storedCorrections(state)) !== canon(mergeCorrections(file.corrections, null))) ops.push({ op: 'corrections' });
   if (prefsDiffer(state, file.prefs) || prefsUnseen(state, file.prefs)) ops.push({ op: 'prefs' });
+  if (gameDiffers(state, file.game)) ops.push({ op: 'game' });
   for (const id of Object.keys(file.byHand)) {
     const want = file.byHand[id];
     const have = list.find((r) => isObject(r) && r.id === id);
@@ -17176,6 +17965,7 @@ async function roundShared(device, transport, clock) {
     const file = got.text == null ? blank() : readSharedFile(got.text);
     if (!file) throw unreadable();
     if (stale()) return { ok: false, skipped: true };
+    heard(device, got.serverMs);
     const now = clock();
     const local = exportShared(device.state(), now);
     let merged = withoutOldCorrections(mergeShared(local, file));
@@ -17191,6 +17981,9 @@ async function roundShared(device, transport, clock) {
       // that an Undo of them still takes them back)
       const fresh = arrivedCorrections(local.corrections, merged.corrections);
       if (isBlankCorrections(fresh)) delete arrived.corrections; else arrived.corrections = fresh;
+      // the daily game likewise: the cells that differ from this device's own
+      const played = arrivedGame(local.game, merged.game);
+      if (isBlankGame(played)) delete arrived.game; else arrived.game = played;
       const all = merged;
       device.update(
         (s) => { if (applyShared(s, all, now).changed) refresh(s, now); },
@@ -17207,12 +18000,18 @@ async function roundShared(device, transport, clock) {
     if (!readSharedFile(text)) throw unreadable();
     if (stale()) return { ok: false, skipped: true };
     try {
-      await transport.write(text, got.sha);
+      const put = await transport.write(text, got.sha);
+      heard(device, put && put.serverMs);
       return { ok: true, changed, wrote: true, file: true, count };
     } catch (err) {
       if (!err || err.code !== 'conflict' || turn >= RESTARTS) throw err;
     }
   }
+}
+
+function heard(device, serverMs) {
+  if (!hearsServer(device.state(), serverMs)) return;
+  device.update((s) => { hearServer(s, serverMs); }, (s) => { hearServer(s, serverMs); });
 }
 
 function fileText(file) {
@@ -17257,7 +18056,8 @@ function blank() {
 }
 
 function isBlank(file) {
-  return Object.keys(file).every((key) => KNOWN.has(key)) && Object.keys(file.byHand).length === 0 && !file.income && !file.corrections && !file.prefs;
+  return Object.keys(file).every((key) => KNOWN.has(key)) && Object.keys(file.byHand).length === 0 && !file.income && !file.corrections && !file.prefs
+    && !file.game;
 }
 
 function sortedCopy(x) {
@@ -17321,7 +18121,7 @@ __mods["js/github.js"] = (function () {
 const API = 'https://api.github.com';
 const REPOSITORY = 'networth-data';
 const FILE = 'networth-shared.json';
-const MESSAGE = 'Networth: shared list';
+const MESSAGE = 'Networth: shared file';
 const TIMEOUT_MS = 20000;
 const OWNER = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/;
 const KEY = /^[\x21-\x7e]{20,400}$/;
@@ -17331,7 +18131,7 @@ const HOST = /^([a-z0-9-]+)\.github\.io$/i;
 const MESSAGES = {
   key: 'GitHub refused the key: it may have expired. Paste a new one.',
   missing: 'GitHub finds no repository networth-data that this key can see. The key needs that 1 repository, with Contents: Read and write.',
-  conflict: 'Another device wrote the list at the same moment, 4 times in a row.',
+  conflict: 'Another device wrote the shared file at the same moment, 4 times in a row.',
   network: 'GitHub could not be reached, or gave no answer in 20 seconds.',
   server: 'GitHub answered with an error of its own (a 5xx).',
   rate: 'GitHub asked for a pause; nothing is asked of it for 10 minutes.',
@@ -17401,7 +18201,28 @@ function codeOf(res) {
   return 'server';
 }
 
-async function call(owner, key, init, doFetch, at = sharedUrl(owner)) {
+function servedAt(res) {
+  let date = null;
+  let reset = null;
+  try {
+    date = res.headers.get('date');
+    reset = res.headers.get('x-ratelimit-reset');
+  } catch { return null; }
+  const dated = typeof date === 'string' ? Date.parse(date) : NaN;
+  if (Number.isFinite(dated) && dated > 0) return dated;
+  return typeof reset === 'string' && /^\d{9,11}$/.test(reset) ? Number(reset) * 1000 - 3600000 : null;
+}
+
+function dateIn(text) {
+  const ms = typeof text === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(text) ? Date.parse(text) : NaN;
+  return Number.isFinite(ms) && ms > 0 ? ms : null;
+}
+
+function withServer(answer, heard) {
+  return heard.ms === null ? answer : { ...answer, serverMs: heard.ms };
+}
+
+async function call(owner, key, init, doFetch, at = sharedUrl(owner), heard = null) {
   const url = at;
   if (!isShareKey(key)) throw new ShareError('key');
   const abort = typeof AbortController === 'function' ? new AbortController() : null;
@@ -17423,6 +18244,10 @@ async function call(owner, key, init, doFetch, at = sharedUrl(owner)) {
     } catch {
       throw new ShareError('network'); // whatever fetch said is dropped: it may quote the request
     }
+    if (heard && res) {
+      const ms = servedAt(res);
+      if (ms !== null) heard.ms = ms;
+    }
     if (!res || !(res.status >= 200 && res.status < 300)) throw new ShareError(res ? codeOf(res) : 'network');
     try { return await res.json(); } catch { throw new ShareError('server'); }
   })();
@@ -17436,11 +18261,12 @@ async function call(owner, key, init, doFetch, at = sharedUrl(owner)) {
 
 async function readSharedText(owner, key, doFetch) {
   sharedUrl(owner); // an owner that is none is an error here, not "no file yet"
+  const heard = { ms: null };
   let body = null;
   try {
-    body = await call(owner, key, { method: 'GET' }, doFetch);
+    body = await call(owner, key, { method: 'GET' }, doFetch, sharedUrl(owner), heard);
   } catch (err) {
-    if (err instanceof ShareError && err.code === 'missing') return { text: null, sha: null };
+    if (err instanceof ShareError && err.code === 'missing') return withServer({ text: null, sha: null }, heard);
     throw err;
   }
   const sha = body && typeof body.sha === 'string' && SHA.test(body.sha) ? body.sha : null;
@@ -17451,11 +18277,11 @@ async function readSharedText(owner, key, doFetch) {
     });
     const text = blob && blob.encoding === 'base64' && blob.sha === sha ? fromBase64(blob.content) : null;
     if (text === null) throw new ShareError('large');
-    return { text, sha };
+    return withServer({ text, sha }, heard);
   }
   const text = body && body.encoding === 'base64' ? fromBase64(body.content) : null;
   if (text === null || !sha) throw new ShareError('file');
-  return { text, sha };
+  return withServer({ text, sha }, heard);
 }
 
 function blobUrl(owner, sha) {
@@ -17465,9 +18291,11 @@ function blobUrl(owner, sha) {
 async function writeSharedText(owner, key, text, sha, doFetch) {
   const payload = { message: MESSAGE, content: toBase64(text) };
   if (typeof sha === 'string' && SHA.test(sha)) payload.sha = sha;
-  const body = await call(owner, key, { method: 'PUT', body: JSON.stringify(payload) }, doFetch);
+  const heard = { ms: null };
+  const body = await call(owner, key, { method: 'PUT', body: JSON.stringify(payload) }, doFetch, sharedUrl(owner), heard);
   const next = body && body.content && typeof body.content.sha === 'string' ? body.content.sha : null;
-  return { sha: next };
+  if (heard.ms === null && body && body.commit && body.commit.committer) heard.ms = dateIn(body.commit.committer.date);
+  return withServer({ sha: next }, heard);
 }
 
 /* ------------------------------------------------------------- the card alert inbox */
@@ -25844,7 +26672,7 @@ const { makeDerived } = __mods["js/derive.js"];
 const { coverText, inlineMoney } = __mods["js/views/parts.js"];
 const { alertStatus } = __mods["js/model/alerts.js"];
 const { chooseWords } = __mods["js/model/prefs.js"];
-const { WORDS, phrase, say, wordsMode, wordsOf } = __mods["js/model/words.js"];
+const { WORDS, phrase, say, shareToast, wordsMode, wordsOf } = __mods["js/model/words.js"];
 const { sayHtml } = __mods["js/ui/say.js"];
 const { answerPayer, askAgain, cashAccountOf, isIdleCash, ensureCashAccount, incomeLabel, incomeOf, incomePayments, incomeQuestions, payerAnswer } = __mods["js/model/income.js"];
 const { againWords, beforeCountWords, countedWords, isCountedCash, listedPayers, payerWords, paymentState } = __mods["js/views/income-words.js"];
@@ -26108,11 +26936,11 @@ function shareFacts(ctx) {
   const sh = ctx.share;
   return html`<ul class="rows set-facts">
     <li class="row">
-      <span class="row-label">Last agreed <em class="row-note">this device and the shared file held the same list</em></span>
+      <span class="row-label">Last agreed <em class="row-note">${phrase('settings.share.agreed', ctx.words)}</em></span>
       <span class="row-value" data-cover-keep>${sh.agreedAt ? whenText(sh.agreedAt, ctx) : 'not yet'}</span>
     </li>
     <li class="row">
-      <span class="row-label">Payments you send <em class="row-note">${sh.file ? 'on the shared list' : 'GitHub shows this key no shared file yet; it is written with the first payment'}</em></span>
+      <span class="row-label">Payments you send <em class="row-note">${phrase(sh.file ? 'settings.share.payments' : 'settings.share.noFile', ctx.words)}</em></span>
       <span class="row-value" data-cover-keep>${sh.agreedAt ? sh.count : '—'}</span>
     </li>
     <li class="row">
@@ -26125,7 +26953,7 @@ function shareFacts(ctx) {
 function shareNowRow(ctx) {
   const sh = ctx.share;
   if (sh.busy) {
-    return html`<p class="sync set-busy" data-state="syncing" role="status"><i class="sync-mark"></i><span class="sync-text"><b>Comparing with the shared list</b>…</span></p>`;
+    return html`<p class="sync set-busy" data-state="syncing" role="status"><i class="sync-mark"></i><span class="sync-text"><b>${phrase('settings.share.comparing', ctx.words)}</b>…</span></p>`;
   }
   const note = sh.retryAt ? 'GitHub asked for a pause. Ready again at ' + fmtTime(sh.retryAt) + '.'
     : sh.code === 'key' ? 'Nothing is shared by itself until a new key is pasted or Share now is tapped.'
@@ -26138,8 +26966,8 @@ function shareNowRow(ctx) {
 
 function shareForget(ctx) {
   return html`<div class="set-dangers">
-    ${dangerous(ctx, 'share-forget', { ask: 'Forget the key on this device', action: 'settings.share-forget', go: 'Forget — the list stays',
-      sentence: 'The key is removed from this 1 device and nothing more is shared from it. The payments already here stay, the file on GitHub stays as it is, and the other devices carry on.' })}
+    ${dangerous(ctx, 'share-forget', { ask: 'Forget the key on this device', action: 'settings.share-forget', go: phrase('settings.share.forgetGo', ctx.words),
+      sentence: phrase('settings.share.forget', ctx.words) })}
   </div>`;
 }
 
@@ -26147,12 +26975,12 @@ function shareSection(ctx) {
   const sh = ctx.share;
   if (!sh || !sh.available) return '';
   const head = (state) => html`<div class="sec-head">
-    <h2 class="lab"><b>Share between devices</b><i class="sep"></i>the payments you send</h2>
+    <h2 class="lab"><b>Share between devices</b><i class="sep"></i>${phrase('settings.share.head', ctx.words)}</h2>
     <span class="lab">${state}</span>
   </div>`;
   const what = html`<section class="col col-5 set-sec" aria-label="What is shared">
     <div class="sec-head"><h3 class="lab"><b>What is shared</b><i class="sep"></i>1 private file</h3></div>
-    <p class="set-lede">The payments you send yourself and their ticks, in the file networth-shared.json of ${sh.owner}/networth-data on your own GitHub.</p>
+    <p class="set-lede">${say('settings.share.onLede', ctx.words, { owner: sh.owner })}</p>
     <p class="cap set-help">${sharedCorrections(ctx)}</p>
     <p class="cap set-help">${sharedWhat(ctx)}</p>
   </section>`;
@@ -26162,7 +26990,7 @@ function shareSection(ctx) {
       <section class="col col-7 set-sec" aria-label="Share between devices">
         ${head(phrase('settings.sample', ctx.words))}
         <p class="title set-state">${sayHtml('settings.sample.share', ctx.words)}</p>
-        <p class="set-lede">With your own record, 1 paste on each device keeps the payments you send, and their ticks, the same on all of them.</p>
+        <p class="set-lede">${phrase('settings.share.sampleLede', ctx.words)}</p>
       </section>
       ${what}
     </div>`;
@@ -26192,7 +27020,7 @@ function shareSection(ctx) {
         ${head('Refused')}
         <p class="title set-state">GitHub refused the key.</p>
         <p class="notice is-error"><i class="notice-mark"></i><span><b>Not shared</b>${sh.message}${sh.failedAt ? ' Tried ' + whenText(sh.failedAt, ctx) + '.' : ''}</span></p>
-        <p class="set-lede">The list on this device is intact and nothing was changed on GitHub. A new key takes the same 3 steps.</p>
+        <p class="set-lede">${phrase('settings.share.refusedLede', ctx.words)}</p>
         ${shareForm(ctx)}
         ${shareNowRow(ctx)}
         ${shareForget(ctx)}
@@ -26803,7 +27631,7 @@ async function erase() {
   pendingRestore = null;
   store.setUi({ settingsConfirm: null, settingsRestore: null, settingsRestoreError: null, settingsLinkError: null, settingsShareError: null });
   try {
-    await forgetShare(); // the key of the shared list goes first: nothing of the erasing is sent to the other devices
+    await forgetShare(); // the key of the shared file goes first: nothing of the erasing is sent to the other devices
     await unlinkBank({ erase: true }); // forgets the key and installs an empty record
     await store.flush(); // a save still on its way finishes first, so it cannot land after the wipe
     await wipeStorage({ all: true }); // the daily snapshots too: "everything" means everything
@@ -26834,7 +27662,7 @@ async function shareStart({ el, values }) {
   }
   const info = shareInfo();
   if (res && res.ok) {
-    toast('Sharing since ' + fmtTime(info.agreedAt || Date.now()) + ': ' + plural(info.count, 'payment', 'payments') + ' on the shared list.');
+    toast(shareToast('settings.share.since', (context() || {}).words, fmtTime(info.agreedAt || Date.now()), info.count));
     return;
   }
   // once the key is kept, the section itself says what the round met
@@ -26847,7 +27675,7 @@ async function shareRound() {
   try { info = await shareNow(); } catch { info = shareInfo(); }
   if (info.busy) return;
   if (info.code) toast(info.message);
-  else if (info.agreedAt) toast('Agreed with the shared list at ' + fmtTime(info.agreedAt) + ': ' + plural(info.count, 'payment', 'payments') + '.');
+  else if (info.agreedAt) toast(shareToast('settings.share.agreedAt', (context() || {}).words, fmtTime(info.agreedAt), info.count));
 }
 
 async function shareForgetKey() {
@@ -26855,7 +27683,7 @@ async function shareForgetKey() {
   store.setUi({ settingsConfirm: null, settingsShareError: null });
   try {
     await forgetShare();
-    toast('Key forgotten ' + whenSaid() + '. The list stays on this device and the file stays on GitHub.');
+    toast(say('settings.share.forgotten', (context() || {}).words, { when: whenSaid() }));
   } catch {
     toast('The key could not be removed. Try again.');
   }
@@ -28784,7 +29612,8 @@ const { context, toast } = __mods["js/runtime.js"];
 const { statusLine, inlineMoney, spentUnposted } = __mods["js/views/parts.js"];
 const { sayHtml } = __mods["js/ui/say.js"];
 const { phrase, say } = __mods["js/model/words.js"];
-const NOTE_MAX = 280;
+const { NOTE_MAX: GAME_NOTE_MAX } = __mods["js/model/game.js"];
+const NOTE_MAX = GAME_NOTE_MAX;
 const DAYS_AHEAD = 14;
 const WEEKDAYS = ['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays'];
 const MONEY = /[+−-]?\$\d[\d,]*(?:\.\d+)?/g;
@@ -30891,6 +31720,7 @@ const { autoInbox, inboxInfo } = __mods["js/inbox.js"];
 const { autoIncome, incomeInfo } = __mods["js/income.js"];
 const { restampByHand } = __mods["js/model/byhand.js"];
 const { restampCorrections, seedCorrections } = __mods["js/model/corrections.js"];
+const { noteGame, restampGame, seedGame } = __mods["js/model/game.js"];
 const { buildDemoState, demoFeed } = __mods["js/model/demo.js"];
 const { mergeFeed } = __mods["js/model/merge.js"];
 const { followIncome, refresh } = __mods["js/model/detect.js"];
@@ -30991,16 +31821,20 @@ async function boot() {
   // the corrections this record already holds travel from its first round, stamped 0, before the owner changes anything
   // (3.8); the copy is saved with the next change
   seedCorrections(record);
+  // so does the daily game (3.9): its settings that differ from the defaults, every day record, segment and transfer the
+  // owner recorded, stamped 0 (the weeks detected from the bank stay with this device)
+  seedGame(record);
   store.load(record);
   if (!search.get('theme')) applyTheme(store.state.settings.theme);
   await initSync();
   // an Undo makes what it put back the newest, so that the other devices take the Undo and do not bring the change back
-  store.onRestore((before, after) => { restampByHand(before, after, nowMs()); restampCorrections(before, after); });
+  store.onRestore((before, after) => { restampByHand(before, after, nowMs()); restampCorrections(before, after); restampGame(before, after); });
   // whatever a change (or an Undo) touched that the matching of reported payments reads (the pending switch, an account
   // left out or retyped, the rollover hour, a row reclassified, paired or claimed, an answer), the payments follow in the
   // same update (3.7); the rebuild changes nothing when its inputs did not change. When the bank rows reported payments
   // claim changed, a payer's stream is decided again in the same update (accrual off, or back on)
-  store.onUpdate((s) => { followIncome(s, nowMs()); });
+  // and whatever the owner changed of the daily game is stamped in its copy, so that it travels (3.9)
+  store.onUpdate((s) => { followIncome(s, nowMs()); noteGame(s, nowMs()); });
   await initShare(location);
 
   registerActions({ ...appActions, ...boardActions, ...scoresheetActions, ...materialActions, ...bookActions, ...analysisActions,

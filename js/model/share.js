@@ -2,8 +2,9 @@
  * What travels between the owner's devices: the payments they send themselves, their ticks, and the
  * fingerprints that let every device recognise a payment the same way; the answers about the
  * income another app of theirs reports (`income`, ARCHITECTURE 3.7); and the owner's corrections
- * (`corrections`, 3.8: merchant rules, a row's locked fields, a stream's locked settings); and the owner's
- * choices that reach every device (`prefs`, 11: the words of the interface).
+ * (`corrections`, 3.8: merchant rules, a row's locked fields, a stream's locked settings); the owner's
+ * choices that reach every device (`prefs`, 11: the words of the interface); and the daily game (`game`, 3.9: its
+ * settings, each day's type, exempt day, note and plan, the baseline's segments and the owner's weekly transfers).
  * See ARCHITECTURE.md section 3.5.
  *
  * Pure: no clock, no DOM, no network. A round (`roundShared`) is handed the device and the transport.
@@ -19,6 +20,7 @@ import {
   sharedSections, storeCorrections, storedCorrections,
 } from './corrections.js';
 import { applyPrefs, exportPrefs, isBlankPrefs, mergePrefs, noteSeenPrefs, prefsDiffer, prefsUnseen, readPrefs } from './prefs.js';
+import { applyGame, arrivedGame, exportGame, gameDiffers, hearServer, hearsServer, isBlankGame, mergeGame, readGame } from './game.js';
 
 const VERSION = 1;
 const APP = 'networth';
@@ -36,7 +38,7 @@ const MAX_DEPTH = 12;
 const TOMB_KEEP_MS = 400 * 86400000;
 /** How many times a round starts again when another device wrote the file meanwhile. */
 const RESTARTS = 3;
-const KNOWN = new Set(['v', 'app', 'savedAt', 'byHand', 'income', 'corrections', 'flowRules', 'prefs']);
+const KNOWN = new Set(['v', 'app', 'savedAt', 'byHand', 'income', 'corrections', 'flowRules', 'prefs', 'game']);
 const UNSAFE = new Set(['__proto__', 'constructor', 'prototype']);
 const ID = /^[A-Za-z0-9_.:-]{1,80}$/;
 const PAYEE = /^p[0-9a-f]{13}$/;
@@ -93,6 +95,12 @@ function fileOf(raw) {
     const prefs = readPrefs(raw.prefs);
     if (!prefs) return null;
     if (!isBlankPrefs(prefs)) out.prefs = prefs;
+  }
+  if (raw.game !== undefined) {
+    // the daily game (3.9): checked like the rest; an empty section is left out
+    const game = readGame(raw.game);
+    if (!game) return null;
+    if (!isBlankGame(game)) out.game = game;
   }
   for (const key of Object.keys(raw)) {
     if (!KNOWN.has(key) && !UNSAFE.has(key)) out[key] = plain(raw[key], 0);
@@ -174,6 +182,9 @@ export function exportShared(state, nowMs) {
   // the owner's choices, each that was ever chosen with its stamp (11)
   const prefs = exportPrefs(doc);
   if (!isBlankPrefs(prefs)) out.prefs = prefs;
+  // the daily game: this device's copy within its bounds (3.9)
+  const game = exportGame(doc);
+  if (!isBlankGame(game)) out.game = game;
   return out;
 }
 
@@ -214,6 +225,8 @@ export function mergeShared(a, b) {
   if (!isBlankCorrections(corrections)) out.corrections = corrections;
   const prefs = mergePrefs(x.prefs, y.prefs);
   if (!isBlankPrefs(prefs)) out.prefs = prefs;
+  const game = mergeGame(x.game, y.game);
+  if (!isBlankGame(game)) out.game = game;
   for (const key of union(x, y)) {
     if (KNOWN.has(key)) continue;
     const p = own(x, key);
@@ -325,12 +338,14 @@ export function applyShared(state, merged, nowMs) {
     applyPrefs(state, fileOf(merged).prefs);
     noteSeenPrefs(state, fileOf(merged).prefs);
   }
+  // the daily game: the copy takes the cells that win, and the record follows them as the owner's actions write it (3.9)
+  if (ops.some((one) => one.op === 'game')) applyGame(state, fileOf(merged).game);
   if (!Array.isArray(state.recurring)) state.recurring = [];
   if (!isObject(state.share)) state.share = { tombs: {} };
   if (!isObject(state.share.tombs)) state.share.tombs = {};
   const tombs = state.share.tombs;
   for (const { op, id, want } of ops) {
-    if (op === 'income' || op === 'corrections' || op === 'prefs') continue;
+    if (op === 'income' || op === 'corrections' || op === 'prefs' || op === 'game') continue;
     const at = state.recurring.findIndex((r) => isObject(r) && r.id === id);
     if (op === 'remove') {
       if (at >= 0) state.recurring.splice(at, 1);
@@ -366,6 +381,7 @@ function planOf(state, merged) {
   if (JSON.stringify(sortedCopy(incomeOf(state).shared)) !== JSON.stringify(sortedCopy(income))) ops.push({ op: 'income' });
   if (canon(storedCorrections(state)) !== canon(mergeCorrections(file.corrections, null))) ops.push({ op: 'corrections' });
   if (prefsDiffer(state, file.prefs) || prefsUnseen(state, file.prefs)) ops.push({ op: 'prefs' });
+  if (gameDiffers(state, file.game)) ops.push({ op: 'game' });
   for (const id of Object.keys(file.byHand)) {
     const want = file.byHand[id];
     const have = list.find((r) => isObject(r) && r.id === id);
@@ -394,9 +410,11 @@ function planOf(state, merged) {
  * written. When another device wrote meanwhile the round starts again, at most 3 times. A file that
  * cannot be read is never written over. Before every read and every write the round asks the device
  * whether it is stale (its key replaced or forgotten); a stale round stops at once and sends nothing.
+ * The server's time a read or a write answered with (`serverMs`, when the transport has one) is kept in the device's
+ * share state when it brings a later day, before this round's export: it moves the daily game's noting limit (3.9).
  * @param {{ state: () => object, update: (now: (s: object) => void, past: (s: object) => void) => void, stale?: () => boolean }} device
  *        update(now, past): `now` changes the document; `past` makes the same arrivals in an earlier copy of it
- * @param {{ read: () => Promise<{ text: string|null, sha: string|null }>, write: (text: string, sha: string|null) => Promise<object> }} transport
+ * @param {{ read: () => Promise<{ text: string|null, sha: string|null, serverMs?: number }>, write: (text: string, sha: string|null) => Promise<object> }} transport
  * @param {() => number} clock
  * @returns {Promise<{ ok: boolean, skipped?: boolean, changed?: boolean, wrote?: boolean, file?: boolean, count?: number }>}
  *          rejects with an error carrying `code` ('file' here; the transport's own otherwise)
@@ -410,6 +428,7 @@ export async function roundShared(device, transport, clock) {
     const file = got.text == null ? blank() : readSharedFile(got.text);
     if (!file) throw unreadable();
     if (stale()) return { ok: false, skipped: true };
+    heard(device, got.serverMs);
     const now = clock();
     const local = exportShared(device.state(), now);
     let merged = withoutOldCorrections(mergeShared(local, file));
@@ -425,6 +444,9 @@ export async function roundShared(device, transport, clock) {
       // that an Undo of them still takes them back)
       const fresh = arrivedCorrections(local.corrections, merged.corrections);
       if (isBlankCorrections(fresh)) delete arrived.corrections; else arrived.corrections = fresh;
+      // the daily game likewise: the cells that differ from this device's own
+      const played = arrivedGame(local.game, merged.game);
+      if (isBlankGame(played)) delete arrived.game; else arrived.game = played;
       const all = merged;
       device.update(
         (s) => { if (applyShared(s, all, now).changed) refresh(s, now); },
@@ -441,12 +463,23 @@ export async function roundShared(device, transport, clock) {
     if (!readSharedFile(text)) throw unreadable();
     if (stale()) return { ok: false, skipped: true };
     try {
-      await transport.write(text, got.sha);
+      const put = await transport.write(text, got.sha);
+      heard(device, put && put.serverMs);
       return { ok: true, changed, wrote: true, file: true, count };
     } catch (err) {
       if (!err || err.code !== 'conflict' || turn >= RESTARTS) throw err;
     }
   }
+}
+
+/**
+ * Keep the server's time a transport answered with, when it brings a later day (game.js hearServer), in the document
+ * and in every earlier copy Undo keeps: device state, never written to the file. The store's update hook then notes
+ * what the moved limit lets through.
+ */
+function heard(device, serverMs) {
+  if (!hearsServer(device.state(), serverMs)) return;
+  device.update((s) => { hearServer(s, serverMs); }, (s) => { hearServer(s, serverMs); });
 }
 
 /**
@@ -497,7 +530,8 @@ function blank() {
 }
 
 function isBlank(file) {
-  return Object.keys(file).every((key) => KNOWN.has(key)) && Object.keys(file.byHand).length === 0 && !file.income && !file.corrections && !file.prefs;
+  return Object.keys(file).every((key) => KNOWN.has(key)) && Object.keys(file.byHand).length === 0 && !file.income && !file.corrections && !file.prefs
+    && !file.game;
 }
 
 /** A copy with every object's keys in order, so that equal content prints the same. */

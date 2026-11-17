@@ -269,7 +269,10 @@ test('exportShared: nothing the bank reported is in the file', () => {
   assert.ok(words.length >= 12);
   for (const word of words) assert.equal(text.includes(word), false, 'the file holds "' + word + '"');
   assert.equal(text.includes('lindqvist'), false);
-  assert.deepEqual(Object.keys(exportShared(state, NOW)).sort(), ['app', 'byHand', 'savedAt', 'v']);
+  // the daily game (3.9) travels too: here the baseline the match began with, as figures of the app's own (no row, no account)
+  assert.deepEqual(Object.keys(exportShared(state, NOW)).sort(), ['app', 'byHand', 'game', 'savedAt', 'v']);
+  assert.deepEqual(Object.keys(exportShared(state, NOW).game), ['start']);
+  assert.deepEqual(Object.keys(exportShared(state, NOW).game.start.v.seg).sort(), ['backtest', 'basis', 'off', 'winOff', 'winWork', 'window', 'work']);
   assert.deepEqual(Object.keys(exportShared(state, NOW).byHand), [entry.id], 'an ordinary Book line never travels');
 });
 
@@ -333,7 +336,7 @@ function fakeGithub() {
     }
     if (init.method === 'PUT') {
       const body = JSON.parse(init.body);
-      assert.equal(body.message, 'Networth: shared list');
+      assert.equal(body.message, 'Networth: shared file');
       if (repo.content !== null && !body.sha) return answer(422, { message: 'Invalid request. "sha" wasn\'t supplied.' });
       if ((body.sha || null) !== repo.sha) return answer(409, { message: 'is at another sha' });
       const created = repo.content === null;
@@ -377,6 +380,42 @@ test('the transport: the first write on an empty repository, then a read of what
     if (call.body) assert.equal(call.body.includes(KEY), false);
   }
   assert.deepEqual(Object.keys(JSON.parse(repo.calls[1].body)).sort(), ['content', 'message']);
+});
+
+test('the transport: the server\'s time each answer carries (the Date header, else the rate-limit window\'s start, else a write\'s commit date) comes back as serverMs', async () => {
+  const repo = fakeGithub();
+  const DATE = 'Mon, 16 Nov 2026 19:30:00 GMT';
+  const RESET = String(Date.UTC(2026, 10, 16, 20, 10) / 1000);
+  let headers = {};
+  let commit = null;
+  const inner = repo.fetch;
+  repo.fetch = async (url, init) => {
+    const res = await inner(url, init);
+    const body = await res.json();
+    if (commit && init.method === 'PUT') body.commit = { committer: { date: commit } };
+    return { ...res, headers: { get: (name) => headers[name.toLowerCase()] ?? null }, json: async () => body };
+  };
+  // none: nothing is added (the answers of before)
+  assert.deepEqual(await readSharedText(OWNER, KEY, repo.fetch), { text: null, sha: null });
+  // the Date header, where the page may read it, on "no file yet" too
+  headers = { date: DATE, 'x-ratelimit-reset': RESET };
+  assert.deepEqual(await readSharedText(OWNER, KEY, repo.fetch), { text: null, sha: null, serverMs: Date.parse(DATE) });
+  // a page on another origin cannot read Date from GitHub: the rate-limit window's start, never after the server's now
+  headers = { 'x-ratelimit-reset': RESET };
+  const wrote = await writeSharedText(OWNER, KEY, '{}', null, repo.fetch);
+  assert.equal(wrote.serverMs, Number(RESET) * 1000 - 3600000);
+  const got = await readSharedText(OWNER, KEY, repo.fetch);
+  assert.deepEqual(got, { text: '{}', sha: wrote.sha, serverMs: Number(RESET) * 1000 - 3600000 });
+  // a write: the commit GitHub dated, when no header gives the time
+  headers = {};
+  commit = '2026-11-16T19:31:05Z';
+  const again = await writeSharedText(OWNER, KEY, '{"v":1}', wrote.sha, repo.fetch);
+  assert.equal(again.serverMs, Date.parse(commit));
+  // what cannot be a time is left out
+  headers = { date: 'yesterday', 'x-ratelimit-reset': 'soon' };
+  commit = 'later';
+  assert.equal('serverMs' in await writeSharedText(OWNER, KEY, '{"v":2}', again.sha, repo.fetch), false);
+  assert.equal('serverMs' in await readSharedText(OWNER, KEY, repo.fetch), false);
 });
 
 test('the transport: base64 through UTF-8, with the line breaks GitHub puts in', () => {

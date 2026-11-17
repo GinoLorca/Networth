@@ -1,5 +1,5 @@
 /**
- * The transport of the shared list: one file in the owner's private repository on GitHub.
+ * The transport of the shared file: one file in the owner's private repository on GitHub.
  * See ARCHITECTURE.md section 3.5.
  *
  * `fetch` is passed in, so tests use a fake and no request is ever made from here by itself.
@@ -11,7 +11,7 @@
 const API = 'https://api.github.com';
 const REPOSITORY = 'networth-data';
 const FILE = 'networth-shared.json';
-const MESSAGE = 'Networth: shared list';
+const MESSAGE = 'Networth: shared file';
 const TIMEOUT_MS = 20000;
 const OWNER = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/;
 const KEY = /^[\x21-\x7e]{20,400}$/;
@@ -21,7 +21,7 @@ const HOST = /^([a-z0-9-]+)\.github\.io$/i;
 const MESSAGES = {
   key: 'GitHub refused the key: it may have expired. Paste a new one.',
   missing: 'GitHub finds no repository networth-data that this key can see. The key needs that 1 repository, with Contents: Read and write.',
-  conflict: 'Another device wrote the list at the same moment, 4 times in a row.',
+  conflict: 'Another device wrote the shared file at the same moment, 4 times in a row.',
   network: 'GitHub could not be reached, or gave no answer in 20 seconds.',
   server: 'GitHub answered with an error of its own (a 5xx).',
   rate: 'GitHub asked for a pause; nothing is asked of it for 10 minutes.',
@@ -103,8 +103,40 @@ function codeOf(res) {
   return 'server';
 }
 
-/** One request; resolves with the parsed answer of a 2xx, rejects with a ShareError otherwise. */
-async function call(owner, key, init, doFetch, at = sharedUrl(owner)) {
+/**
+ * The server's time an answer carries, for the daily game's noting limit (ARCHITECTURE 3.9): its Date header where the
+ * page may read it, else the start of the rate-limit window (X-RateLimit-Reset less an hour; GitHub lets a page on
+ * another origin read that header and not Date): never after the server's now, at most an hour before it. null when the
+ * answer has neither. No device clock is read.
+ */
+function servedAt(res) {
+  let date = null;
+  let reset = null;
+  try {
+    date = res.headers.get('date');
+    reset = res.headers.get('x-ratelimit-reset');
+  } catch { return null; }
+  const dated = typeof date === 'string' ? Date.parse(date) : NaN;
+  if (Number.isFinite(dated) && dated > 0) return dated;
+  return typeof reset === 'string' && /^\d{9,11}$/.test(reset) ? Number(reset) * 1000 - 3600000 : null;
+}
+
+/** A time GitHub wrote in an answer's body (an ISO date), or null. */
+function dateIn(text) {
+  const ms = typeof text === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(text) ? Date.parse(text) : NaN;
+  return Number.isFinite(ms) && ms > 0 ? ms : null;
+}
+
+/** An answer with the server's time when one was heard (`serverMs`), else as it was. */
+function withServer(answer, heard) {
+  return heard.ms === null ? answer : { ...answer, serverMs: heard.ms };
+}
+
+/**
+ * One request; resolves with the parsed answer of a 2xx, rejects with a ShareError otherwise. `heard.ms` takes the
+ * server's time of any answer (servedAt).
+ */
+async function call(owner, key, init, doFetch, at = sharedUrl(owner), heard = null) {
   const url = at;
   if (!isShareKey(key)) throw new ShareError('key');
   const abort = typeof AbortController === 'function' ? new AbortController() : null;
@@ -126,6 +158,10 @@ async function call(owner, key, init, doFetch, at = sharedUrl(owner)) {
     } catch {
       throw new ShareError('network'); // whatever fetch said is dropped: it may quote the request
     }
+    if (heard && res) {
+      const ms = servedAt(res);
+      if (ms !== null) heard.ms = ms;
+    }
     if (!res || !(res.status >= 200 && res.status < 300)) throw new ShareError(res ? codeOf(res) : 'network');
     try { return await res.json(); } catch { throw new ShareError('server'); }
   })();
@@ -141,16 +177,18 @@ async function call(owner, key, init, doFetch, at = sharedUrl(owner)) {
  * Read the shared file. Above 1 MB the Contents API gives the file's sha and no content (`encoding: 'none'`): the
  * content is then read by that sha from the blob API (up to 100 MB). That answer is never "no file": when the blob
  * cannot be read either, the read fails, so the round stops and nothing is written over a file this device could not read.
- * @returns {Promise<{ text: string|null, sha: string|null }>} text null when there is no file yet
- *          (GitHub says 404 for that, and also when the key cannot see the repository)
+ * @returns {Promise<{ text: string|null, sha: string|null, serverMs?: number }>} text null when there is no file yet
+ *          (GitHub says 404 for that, and also when the key cannot see the repository); serverMs, the server's time
+ *          of the answer, when it carries one
  */
 export async function readSharedText(owner, key, doFetch) {
   sharedUrl(owner); // an owner that is none is an error here, not "no file yet"
+  const heard = { ms: null };
   let body = null;
   try {
-    body = await call(owner, key, { method: 'GET' }, doFetch);
+    body = await call(owner, key, { method: 'GET' }, doFetch, sharedUrl(owner), heard);
   } catch (err) {
-    if (err instanceof ShareError && err.code === 'missing') return { text: null, sha: null };
+    if (err instanceof ShareError && err.code === 'missing') return withServer({ text: null, sha: null }, heard);
     throw err;
   }
   const sha = body && typeof body.sha === 'string' && SHA.test(body.sha) ? body.sha : null;
@@ -161,11 +199,11 @@ export async function readSharedText(owner, key, doFetch) {
     });
     const text = blob && blob.encoding === 'base64' && blob.sha === sha ? fromBase64(blob.content) : null;
     if (text === null) throw new ShareError('large');
-    return { text, sha };
+    return withServer({ text, sha }, heard);
   }
   const text = body && body.encoding === 'base64' ? fromBase64(body.content) : null;
   if (text === null || !sha) throw new ShareError('file');
-  return { text, sha };
+  return withServer({ text, sha }, heard);
 }
 
 /** The blob API's address for a file's content by its sha (the Contents API gives no content above 1 MB). */
@@ -175,14 +213,17 @@ function blobUrl(owner, sha) {
 
 /**
  * Write the shared file. `sha` is the one just read, or null when there was no file.
- * @returns {Promise<{ sha: string|null }>}
+ * @returns {Promise<{ sha: string|null, serverMs?: number }>} serverMs: the server's time of the answer (its headers,
+ *          else the date GitHub gave the commit), when it carries one
  */
 export async function writeSharedText(owner, key, text, sha, doFetch) {
   const payload = { message: MESSAGE, content: toBase64(text) };
   if (typeof sha === 'string' && SHA.test(sha)) payload.sha = sha;
-  const body = await call(owner, key, { method: 'PUT', body: JSON.stringify(payload) }, doFetch);
+  const heard = { ms: null };
+  const body = await call(owner, key, { method: 'PUT', body: JSON.stringify(payload) }, doFetch, sharedUrl(owner), heard);
   const next = body && body.content && typeof body.content.sha === 'string' ? body.content.sha : null;
-  return { sha: next };
+  if (heard.ms === null && body && body.commit && body.commit.committer) heard.ms = dateIn(body.commit.committer.date);
+  return withServer({ sha: next }, heard);
 }
 
 /* ------------------------------------------------------------- the card alert inbox */
