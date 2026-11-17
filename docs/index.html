@@ -8,8 +8,8 @@
 <meta name="description" content="Networth: a private net-worth board. It reads your bank feed itself; your data stays on your device.">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
-<meta name="networth-build" content="3060f2e2c453">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-eXTdadhuVCPXn8NWIwJwrXkg6kUocRMZD4fExE7ryUA='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-rrcgv2y0KMkdT76+jAxvRcNQTlj6UpNB9oKKC0whQNA=' 'sha256-e/tbGNncdNoZz13l4nvoF3bB1VC0tPaMfOMw7T5fyIM=' 'sha256-vtvTQgOF8REo4/7OrXt7r27xnMQOfrRm0glwTaEf6mQ=' 'sha256-bjsMTiPXO/fV7QJlhFnicz5k0INxLBT0hibL6mxaByc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-KJiTeF/M4lGFKztBQaJXk0LHMtyiPjUf0BfwznxqC/I=' 'sha256-+ElYrGma4N+3tSxwcOSe/XcF2qrL5kwmS0kdm0bwZb0=' 'sha256-DteyLvNz/HtxRqT86M19HgoZfGS3Vjh7g7Qv8sqoXaE=' 'sha256-Yq5LqpSuZYrQBiwZV3GIUKl7VztQyUyyTLeHF8RzYfM=' 'sha256-QXrKt++6Wq3yvYcbzGuV1ppzsGlag9M5t4FO07674+s=' 'sha256-eEeOYy22sdI6xurJjOLf6BpvLIG767+l4tB9zPSzXoo=' 'sha256-BH7SwzknVEcXg6G2n2ASkZcok2VcMPa1l1UiQf3zCeU='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://beta-bridge.simplefin.org https://bridge.simplefin.org https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="networth-build" content="348f98c151ae">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-VMWuN+GCUbLBVhAVDbo7oele9JCf9treu69SYlUrMts='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-rrcgv2y0KMkdT76+jAxvRcNQTlj6UpNB9oKKC0whQNA=' 'sha256-e/tbGNncdNoZz13l4nvoF3bB1VC0tPaMfOMw7T5fyIM=' 'sha256-vtvTQgOF8REo4/7OrXt7r27xnMQOfrRm0glwTaEf6mQ=' 'sha256-bjsMTiPXO/fV7QJlhFnicz5k0INxLBT0hibL6mxaByc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-KJiTeF/M4lGFKztBQaJXk0LHMtyiPjUf0BfwznxqC/I=' 'sha256-+ElYrGma4N+3tSxwcOSe/XcF2qrL5kwmS0kdm0bwZb0=' 'sha256-DteyLvNz/HtxRqT86M19HgoZfGS3Vjh7g7Qv8sqoXaE=' 'sha256-Yq5LqpSuZYrQBiwZV3GIUKl7VztQyUyyTLeHF8RzYfM=' 'sha256-QXrKt++6Wq3yvYcbzGuV1ppzsGlag9M5t4FO07674+s=' 'sha256-eEeOYy22sdI6xurJjOLf6BpvLIG767+l4tB9zPSzXoo=' 'sha256-BH7SwzknVEcXg6G2n2ASkZcok2VcMPa1l1UiQf3zCeU='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://beta-bridge.simplefin.org https://bridge.simplefin.org https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#F3EDE1" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#15130F" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
@@ -19710,13 +19710,15 @@ function upperFirst(text) {
 
 /* ------------------------------------------------------------------------------------------- the message */
 
-function pushPayload(fig, revision, device) {
+function pushPayload(fig, revision, device, opts = {}) {
   const { title, body } = wrapText(fig, revision, device.words, device.lock);
   const notification = { title };
   if (body) notification.body = body;
   notification.navigate = dayLink(device.appUrl, fig.day);
   notification.lang = 'en-US';
-  notification.tag = 'wrap-' + fig.day;
+  // A notification that replaces another with the same tag arrives silently, with no alert. So the night's wrap never
+  // shares a tag with a test (a manual run): the test has its own, and the wrap after it alerts as on any night.
+  notification.tag = (opts.test ? 'nightly-test-' : 'nightly-') + fig.day;
   return { web_push: DECLARATIVE, notification };
 }
 

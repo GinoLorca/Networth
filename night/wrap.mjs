@@ -6,7 +6,9 @@
  *     sent.json's `last.scheduled` says, whatever ran after it) is the backup: it goes ahead only for the devices whose
  *     push service failed for a while last time (no answer, 429 or 5xx), and sends to them alone; with none, it exits.
  *     A device that got 201 is never sent the night's wrap twice by a scheduled run. A manual run (the owner's test)
- *     never stands for the night: the scheduled wrap after it goes to every device, and its tag replaces the test; its
+ *     never stands for the night: the scheduled wrap after it goes to every device as a notification of its own (a test
+ *     is tagged nightly-test-<day>, the wrap nightly-<day>: a notification that replaces one with its tag arrives
+ *     silently, so the wrap must never replace a test); its
  *     figures become the night's only once the scheduled wrap went out, and it keeps the clause the night told unless
  *     there is newer news.
  *  2. It reads push/*.json, wrap/*.json, inbox/, income/*.json, the answers of networth-shared.json and sent.json.
@@ -385,7 +387,7 @@ export async function runWrap(dataDir, { dry = false, scheduled = false, nowMs =
 
   if (dry) {
     result.status = 'dry';
-    for (const device of devices) result.messages.push({ device: device.device, message: pushPayload(night, revision, device) });
+    for (const device of devices) result.messages.push({ device: device.device, message: pushPayload(night, revision, device, { test: !scheduled }) });
     return result;
   }
 
@@ -408,7 +410,7 @@ export async function runWrap(dataDir, { dry = false, scheduled = false, nowMs =
     } else {
       const tokens = new Map();
       for (const device of devices) {
-        const { status, told } = await deliver(device, { night, revision, nowMs, keys, tokens, via, fetchImpl });
+        const { status, told } = await deliver(device, { night, revision, nowMs, keys, tokens, via, fetchImpl, test: !scheduled });
         result.devices[device.device] = status;
         if (delivered(status)) {
           result.sent += 1;
@@ -429,12 +431,12 @@ export async function runWrap(dataDir, { dry = false, scheduled = false, nowMs =
  * ('subscription'), never the run's. `told`: the body carried the revision clause to a lock screen that shows amounts.
  * @returns {Promise<{ status: number|string, told: boolean }>}
  */
-async function deliver(device, { night, revision, nowMs, keys, tokens, via, fetchImpl }) {
+async function deliver(device, { night, revision, nowMs, keys, tokens, via, fetchImpl, test = false }) {
   if (!allowedEndpoint(device.endpoint)) return { status: 'endpoint', told: false };
   let request;
   let told = false;
   try {
-    const message = pushPayload(night, revision, device);
+    const message = pushPayload(night, revision, device, { test });
     told = wrapText(night, revision, device.words, device.lock).revised;
     const { body } = encrypt(Buffer.from(JSON.stringify(message)), { p256dh: device.p256dh, auth: device.auth });
     const audience = new URL(device.endpoint).origin;

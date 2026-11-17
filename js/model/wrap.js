@@ -16,7 +16,7 @@
  *   nightFigures(files, late)              { figs, alerts, payments }: tonight's figures for today and the 7 days before
  *   revisionOf(today, figs, sent)          the night's one revision clause { day, net, final }, or null
  *   wrapText(fig, revision, words, lock)   { title, body, revised } of the notification
- *   pushPayload(fig, revision, device)     the Declarative Web Push message
+ *   pushPayload(fig, revision, device, { test })   the Declarative Web Push message (a test has its own tag)
  *
  * The rules. In: income on any account (pay, a Zelle received, interest, dividends, a marked payment, cash into Cash
  * in hand). Out: purchases, fees and interest on cash, card and debt accounts or on no known account, on the day they
@@ -724,13 +724,15 @@ function upperFirst(text) {
  * @param {{ day: string, net: number, final: boolean }|null} revision
  * @param {{ appUrl: string, words: string, lock: string }} device
  */
-export function pushPayload(fig, revision, device) {
+export function pushPayload(fig, revision, device, opts = {}) {
   const { title, body } = wrapText(fig, revision, device.words, device.lock);
   const notification = { title };
   if (body) notification.body = body;
   notification.navigate = dayLink(device.appUrl, fig.day);
   notification.lang = 'en-US';
-  notification.tag = 'wrap-' + fig.day;
+  // A notification that replaces another with the same tag arrives silently, with no alert. So the night's wrap never
+  // shares a tag with a test (a manual run): the test has its own, and the wrap after it alerts as on any night.
+  notification.tag = (opts.test ? 'nightly-test-' : 'nightly-') + fig.day;
   return { web_push: DECLARATIVE, notification };
 }
 

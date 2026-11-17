@@ -558,7 +558,7 @@ test('the message: Declarative Web Push that opens the day, small enough for any
       body: 'In ≈$180.00 · out ≈$137.90. Round 15 now ≈−$12.40, in pencil.',
       navigate: 'https://owner.example/app/' + buildHash({ view: 'board', sheet: { name: 'day', params: { day: TODAY } } }),
       lang: 'en-US',
-      tag: 'wrap-2026-11-16',
+      tag: 'nightly-2026-11-16',
     },
   });
   assert.ok(Buffer.byteLength(JSON.stringify(message)) < PAYLOAD_MAX);
@@ -567,6 +567,10 @@ test('the message: Declarative Web Push that opens the day, small enough for any
   assert.equal(quiet.notification.body, 'Tap to see money in and out.');
   const empty = pushPayload(night(0, 0), null, { appUrl: 'https://owner.example/', words: 'chess', lock: 'show' });
   assert.ok(!('body' in empty.notification), 'no empty body');
+  // a test (a manual run) never shares the wrap's tag: a notification that replaces one with its tag arrives silently
+  const test = pushPayload(night(0, 0), null, { appUrl: 'https://owner.example/', words: 'chess', lock: 'show' }, { test: true });
+  assert.equal(test.notification.tag, 'nightly-test-2026-11-16');
+  assert.equal(empty.notification.tag, 'nightly-2026-11-16');
 });
 
 /* ------------------------------------------------------------------------- the day sheet's Money in and out */

@@ -211,7 +211,7 @@ test('the night job: one message per device, encrypted, signed, and recorded', a
         body: 'In ≈$75.00 · out ≈$46.80. Round 15 now ≈−$428.77, in pencil.',
         navigate: APP + '#/board?sheet=day&s.day=2026-11-16',
         lang: 'en-US',
-        tag: 'wrap-2026-11-16',
+        tag: 'nightly-2026-11-16',
       },
     });
     const b = received.find((r) => r.path === '/QB-device-b');
@@ -220,7 +220,7 @@ test('the night job: one message per device, encrypted, signed, and recorded', a
       body: 'Tap to see money in and out.',
       navigate: APP + '#/board?sheet=day&s.day=2026-11-16',
       lang: 'en-US',
-      tag: 'wrap-2026-11-16',
+      tag: 'nightly-2026-11-16',
     });
 
     const sent = JSON.parse(readFileSync(join(dir, 'wrap/sent.json'), 'utf8'));
@@ -739,15 +739,17 @@ test('the night job: a manual run does not take the place of that night’s sche
     const test1 = decrypt(push.calls.find((c) => c.path === '/QA-device-a').body, devices.dA).notification;
     let sent = JSON.parse(readFileSync(join(dir, 'wrap/sent.json'), 'utf8'));
     assert.equal(sent.last.event, 'manual', 'the trigger is recorded');
-    // 21:33: the scheduled wrap goes to every device, as on any night, and replaces the test (the same tag)
+    // 21:33: the scheduled wrap goes to every device, as on any night, as a notification of its own: a notification
+    // that replaces one with the same tag arrives silently, so the wrap never shares the test's tag
     let from = push.calls.length;
     const night = await runIn(dir, NOW, push);
     assert.equal(night.status, 'sent');
     assert.equal(night.prior, null, 'not a backup run');
     assert.deepEqual(pathsFrom(from), ['/QA-device-a', '/QB-device-b', '/QC-gone', '/QD-busy', '/QF-large', '/QG-key']);
     const real = decrypt(push.calls.slice(from).find((c) => c.path === '/QA-device-a').body, devices.dA).notification;
-    assert.equal(real.tag, test1.tag);
-    assert.equal(real.body, test1.body, 'the clause the test told is in the wrap that replaces it');
+    assert.equal(test1.tag, 'nightly-test-' + TODAY, 'the test has its own tag');
+    assert.equal(real.tag, 'nightly-' + TODAY, 'the wrap, its own: it alerts');
+    assert.equal(real.body, test1.body, 'the clause the test told is in the wrap too');
     sent = JSON.parse(readFileSync(join(dir, 'wrap/sent.json'), 'utf8'));
     assert.equal(sent.last.event, 'schedule');
     assert.equal(sent.days[TODAY].at, new Date(NOW).toISOString(), 'today as the scheduled run told it');
@@ -906,7 +908,7 @@ test('the night job: scheduled, then a manual run, then the 22:13 run: the backu
     const manual = await runIn(dir, '2026-11-17T02:50:00.000Z', push, { scheduled: false });
     assert.equal(manual.status, 'sent');
     const test1 = bodyOf(from, '/QA-device-a', devices.dA);
-    assert.equal(test1.tag, wrap.tag);
+    assert.notEqual(test1.tag, wrap.tag, 'a test after the wrap is a notification of its own, never a silent replacement of it');
     assert.equal(test1.body, wrap.body, 'the manual run keeps the clause the night’s wrap told (nothing is newer)');
     const after = JSON.parse(readFileSync(join(dir, 'wrap/sent.json'), 'utf8'));
     assert.equal(after.last.event, 'manual');
