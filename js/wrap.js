@@ -244,7 +244,7 @@ const live = {
   sent: null,
   readAt: 0,
   reading: false,
-  /** the last failure's code (a ShareError code, or 'push' when the browser refused) */
+  /** the last failure's code (a ShareError code; or, when the browser refused the subscription, 'denied', 'notallowed' or 'push') */
   code: null,
   /** 'key' | 'on' | 'off' while one of those runs */
   busy: null,
@@ -549,20 +549,30 @@ export function turnOnWrap() {
   const reg = live.reg;
   if (live.busy) return Promise.resolve({ ok: false, code: 'busy' });
   if (!vapid || !reg || !reg.pushManager) return Promise.resolve({ ok: false, code: 'worker' });
-  const asked = typeof Notification !== 'undefined' && typeof Notification.requestPermission === 'function'
-    ? Promise.resolve(Notification.requestPermission()).catch(() => 'default') : Promise.resolve('default');
+  // Safari counts a tap once: the subscription, which asks for permission by itself, must be the tap's first and only
+  // request. Asking for notification permission first used the tap up, and the subscription was then refused.
   const subscribing = reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytesOf(vapid.publicKey) });
-  return finishOn(asked, subscribing, vapid);
+  return finishOn(subscribing, vapid);
 }
 
-async function finishOn(asked, subscribing, vapid) {
+/**
+ * Why the browser refused a subscription: 'denied' when notifications are off for the app in the device's settings,
+ * 'notallowed' when the owner did not allow them this time, 'push' for anything else.
+ */
+function refusalCode(error) {
+  const permission = typeof Notification !== 'undefined' && Notification ? Notification.permission : 'default';
+  if (permission === 'denied') return 'denied';
+  if (error && error.name === 'NotAllowedError') return 'notallowed';
+  return 'push';
+}
+
+async function finishOn(subscribing, vapid) {
   live.busy = 'on';
   poke();
   let subscribed = false;
   try {
-    await asked;
     let sub = null;
-    try { sub = await subscribing; } catch { throw Object.assign(new Error('push'), { code: 'push' }); }
+    try { sub = await subscribing; } catch (error) { throw Object.assign(new Error('push'), { code: refusalCode(error) }); }
     const json = sub.toJSON();
     slot(SUB_SLOT, JSON.stringify({ endpoint: json.endpoint, keys: { p256dh: json.keys.p256dh, auth: json.keys.auth }, serverKey: vapid.publicKey, at: nowMs() }));
     slot(OFF_SLOT, null);

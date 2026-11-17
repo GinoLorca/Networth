@@ -8,8 +8,8 @@
 <meta name="description" content="Networth: a private net-worth board. It reads your bank feed itself; your data stays on your device.">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
-<meta name="networth-build" content="b39716fe6b1a">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-pgHFDdiIKwPcX6BnBry6Zvi/l+hsHu/o8S3QzLMZL6o='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-rrcgv2y0KMkdT76+jAxvRcNQTlj6UpNB9oKKC0whQNA=' 'sha256-e/tbGNncdNoZz13l4nvoF3bB1VC0tPaMfOMw7T5fyIM=' 'sha256-vtvTQgOF8REo4/7OrXt7r27xnMQOfrRm0glwTaEf6mQ=' 'sha256-bjsMTiPXO/fV7QJlhFnicz5k0INxLBT0hibL6mxaByc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-KJiTeF/M4lGFKztBQaJXk0LHMtyiPjUf0BfwznxqC/I=' 'sha256-+ElYrGma4N+3tSxwcOSe/XcF2qrL5kwmS0kdm0bwZb0=' 'sha256-DteyLvNz/HtxRqT86M19HgoZfGS3Vjh7g7Qv8sqoXaE=' 'sha256-Yq5LqpSuZYrQBiwZV3GIUKl7VztQyUyyTLeHF8RzYfM=' 'sha256-QXrKt++6Wq3yvYcbzGuV1ppzsGlag9M5t4FO07674+s=' 'sha256-eEeOYy22sdI6xurJjOLf6BpvLIG767+l4tB9zPSzXoo=' 'sha256-BH7SwzknVEcXg6G2n2ASkZcok2VcMPa1l1UiQf3zCeU='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://beta-bridge.simplefin.org https://bridge.simplefin.org https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="networth-build" content="3060f2e2c453">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wHO/cyLZ5R92+U/dTJX5dgzOEPyieoOSjvyTESCVVfo=' 'sha256-eXTdadhuVCPXn8NWIwJwrXkg6kUocRMZD4fExE7ryUA='; style-src 'self' 'unsafe-inline'; style-src-elem 'sha256-rrcgv2y0KMkdT76+jAxvRcNQTlj6UpNB9oKKC0whQNA=' 'sha256-e/tbGNncdNoZz13l4nvoF3bB1VC0tPaMfOMw7T5fyIM=' 'sha256-vtvTQgOF8REo4/7OrXt7r27xnMQOfrRm0glwTaEf6mQ=' 'sha256-bjsMTiPXO/fV7QJlhFnicz5k0INxLBT0hibL6mxaByc=' 'sha256-aOEwxF47vZTZkBKx2uxLc1KnJpwFjkdIBxfpPUUHEbU=' 'sha256-YTRDt7PXjYzBkQkyfFA2AHGRdVUogW4SSHL9jbJ+Q08=' 'sha256-f0w+Ae5UrOsIhtziF93Hr/kETgdFCUbrA0fy1oWILDo=' 'sha256-KJiTeF/M4lGFKztBQaJXk0LHMtyiPjUf0BfwznxqC/I=' 'sha256-+ElYrGma4N+3tSxwcOSe/XcF2qrL5kwmS0kdm0bwZb0=' 'sha256-DteyLvNz/HtxRqT86M19HgoZfGS3Vjh7g7Qv8sqoXaE=' 'sha256-Yq5LqpSuZYrQBiwZV3GIUKl7VztQyUyyTLeHF8RzYfM=' 'sha256-QXrKt++6Wq3yvYcbzGuV1ppzsGlag9M5t4FO07674+s=' 'sha256-eEeOYy22sdI6xurJjOLf6BpvLIG767+l4tB9zPSzXoo=' 'sha256-BH7SwzknVEcXg6G2n2ASkZcok2VcMPa1l1UiQf3zCeU='; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://beta-bridge.simplefin.org https://bridge.simplefin.org https://api.github.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#F3EDE1" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#15130F" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
@@ -20201,20 +20201,26 @@ function turnOnWrap() {
   const reg = live.reg;
   if (live.busy) return Promise.resolve({ ok: false, code: 'busy' });
   if (!vapid || !reg || !reg.pushManager) return Promise.resolve({ ok: false, code: 'worker' });
-  const asked = typeof Notification !== 'undefined' && typeof Notification.requestPermission === 'function'
-    ? Promise.resolve(Notification.requestPermission()).catch(() => 'default') : Promise.resolve('default');
+  // Safari counts a tap once: the subscription, which asks for permission by itself, must be the tap's first and only
+  // request. Asking for notification permission first used the tap up, and the subscription was then refused.
   const subscribing = reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytesOf(vapid.publicKey) });
-  return finishOn(asked, subscribing, vapid);
+  return finishOn(subscribing, vapid);
 }
 
-async function finishOn(asked, subscribing, vapid) {
+function refusalCode(error) {
+  const permission = typeof Notification !== 'undefined' && Notification ? Notification.permission : 'default';
+  if (permission === 'denied') return 'denied';
+  if (error && error.name === 'NotAllowedError') return 'notallowed';
+  return 'push';
+}
+
+async function finishOn(subscribing, vapid) {
   live.busy = 'on';
   poke();
   let subscribed = false;
   try {
-    await asked;
     let sub = null;
-    try { sub = await subscribing; } catch { throw Object.assign(new Error('push'), { code: 'push' }); }
+    try { sub = await subscribing; } catch (error) { throw Object.assign(new Error('push'), { code: refusalCode(error) }); }
     const json = sub.toJSON();
     slot(SUB_SLOT, JSON.stringify({ endpoint: json.endpoint, keys: { p256dh: json.keys.p256dh, auth: json.keys.auth }, serverKey: vapid.publicKey, at: nowMs() }));
     slot(OFF_SLOT, null);
@@ -29289,8 +29295,10 @@ const actions = {
   'settings.wrap-on': () => {
     turnOnWrap().then((r) => {
       if (r.ok || r.code === 'busy') return;
-      toast(r.code === 'push' ? 'The wrap was not turned on: notifications were not allowed.'
-        : r.code === 'worker' ? 'The app is still starting. Try again in a moment.' : 'The wrap was not turned on. ' + shareMessage(r.code));
+      toast(r.code === 'denied' ? 'Notifications are off for Networth on this device. Turn them on in Settings → Notifications → Networth (on a Mac: System Settings → Notifications → Networth), then tap Turn on again.'
+        : r.code === 'notallowed' ? 'The wrap was not turned on: notifications were not allowed. Tap Turn on again and choose Allow.'
+          : r.code === 'push' ? 'The wrap was not turned on: this device could not subscribe. Try again in a moment.'
+            : r.code === 'worker' ? 'The app is still starting. Try again in a moment.' : 'The wrap was not turned on. ' + shareMessage(r.code));
     });
   },
   'settings.wrap-off': () => {

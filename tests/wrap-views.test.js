@@ -146,6 +146,9 @@ for (const words of ['chess', 'finance']) {
     assert.equal(head(f.dead), 'Turned off');
     assert.match(text(f.dead), /turned off by the push service/);
     assert.equal(head(f.on), 'On');
+    // Safari counts a tap once: the subscription, which asks for permission itself, is the tap's only request
+    assert.deepEqual(f.tapSync, ['subscribe'], 'subscribe is called straight from the tap');
+    assert.deepEqual(f.tapCalls, ['subscribe'], 'and nothing asks for permission besides it');
     assert.equal(head(f.off), 'Off');
     assert.ok(!/push service/.test(text(section(f.off))), text(section(f.off)));
     assert.match(f.off, /data-action="settings\.wrap-on"[^>]*>Turn on the nightly wrap</);

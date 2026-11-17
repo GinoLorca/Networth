@@ -1444,8 +1444,10 @@ export const actions = {
   'settings.wrap-on': () => {
     turnOnWrap().then((r) => {
       if (r.ok || r.code === 'busy') return;
-      toast(r.code === 'push' ? 'The wrap was not turned on: notifications were not allowed.'
-        : r.code === 'worker' ? 'The app is still starting. Try again in a moment.' : 'The wrap was not turned on. ' + shareMessage(r.code));
+      toast(r.code === 'denied' ? 'Notifications are off for Networth on this device. Turn them on in Settings → Notifications → Networth (on a Mac: System Settings → Notifications → Networth), then tap Turn on again.'
+        : r.code === 'notallowed' ? 'The wrap was not turned on: notifications were not allowed. Tap Turn on again and choose Allow.'
+          : r.code === 'push' ? 'The wrap was not turned on: this device could not subscribe. Try again in a moment.'
+            : r.code === 'worker' ? 'The app is still starting. Try again in a moment.' : 'The wrap was not turned on. ' + shareMessage(r.code));
     });
   },
   'settings.wrap-off': () => {

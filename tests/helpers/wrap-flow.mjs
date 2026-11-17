@@ -29,10 +29,12 @@ const subscription = (n) => {
   return sub;
 };
 let made = 0;
-const reg = { pushManager: { getSubscription: async () => current, subscribe: async () => { current = subscription(++made); return current; } } };
+// what the tap does, in order: Safari counts a tap once, so the subscription must be its first and only request
+const tapCalls = [];
+const reg = { pushManager: { getSubscription: async () => current, subscribe: (opts) => { tapCalls.push('subscribe'); return Promise.resolve().then(() => { current = subscription(++made); return current; }); } } };
 Object.defineProperty(globalThis, 'navigator', { value: { serviceWorker: { getRegistration: async () => reg, ready: Promise.resolve(reg) }, clipboard: null }, configurable: true });
 globalThis.PushManager = function PushManager() {};
-globalThis.Notification = { requestPermission: async () => 'granted' };
+globalThis.Notification = { permission: 'default', requestPermission: async () => { tapCalls.push('requestPermission'); return 'granted'; } };
 
 // the private repository, as GitHub's contents API answers for it
 const repo = new Map();
@@ -143,8 +145,11 @@ try {
     await wrap.readWrapFiles(0);
     await settle();
     out.dead = render();
+    tapCalls.length = 0;
     settings.actions['settings.wrap-on']({ data: {}, el: { dataset: {} } });
+    out.tapSync = [...tapCalls]; // what the tap itself called, before anything was awaited
     await settle();
+    out.tapCalls = [...tapCalls];
     out.on = render();
     settings.actions['settings.wrap-off']({ data: {}, el: { dataset: {} } });
     await settle();
