@@ -6,8 +6,10 @@
  * approximately sign when Networth worked it out. What looks forward is a SCENARIO, labelled so and
  * always italic: the reserve dates, the card payoff, the net-worth lines, the purchase tool.
  *
- * Sections: the abstract (three figures) · Reserve · Cards · Retention · Scenario · Income ladder ·
- * Where it went · Before a larger purchase · The opponent (opens the habit sheet).
+ * The second face of the Analysis cell (the first is money in and out, views/flows.js); the switch between the two
+ * faces sits at the top of both. Sections: the abstract (three figures) · Reserve · Cards · Retention · Scenario ·
+ * Income ladder · The opponent (opens the habit sheet) · Before a larger purchase. Where it went moved to the first
+ * face, which keeps the monthly targets this page's action saves (`analysis.target`).
  *
  * The scenario inputs are small fields set in place. Each saves to the document on change
  * (`analysis.set`, `analysis.pay`, `analysis.target`) and the page re-renders. The purchase tool
@@ -19,12 +21,13 @@ import { store } from '../store.js';
 import { context, toast } from '../runtime.js';
 import { fmt, fmtSigned, fmtPlain, fmtPct, toCents } from '../model/money.js';
 import { addDays, addMonthsYm, diffDays, endOfMonth, fmtDate, fmtMonth, fmtTime, gameDay, monthOf } from '../model/dates.js';
-import { CATEGORIES, KLASSES, STREAM_KINDS, accountLabel, categoryLabel, klassLabel } from '../model/schema.js';
+import { CATEGORIES, STREAM_KINDS, accountLabel } from '../model/schema.js';
 import { emptiedStreams, retention } from '../model/ledger.js';
 import { purchaseImpact } from '../model/forecast.js';
 import { payoff } from '../model/loans.js';
 import { firstTransactionDay } from '../model/cards.js';
 import { money, rungNumber } from './parts.js';
+import { faceSwitch } from './flows.js';
 import { sayHtml } from '../ui/say.js';
 import { phrase, say } from '../model/words.js';
 
@@ -33,14 +36,6 @@ const RETENTION_MONTHS_BACK = 3;
 const HORIZONS = [12, 24, 36, 60, 120];
 const QUICK_PAYMENTS = [10000, 20000, 30000, 50000];
 const QUICK_PURCHASES = [25000, 65000, 150000];
-const KLASS_ORDER = ['game', 'want', 'need', 'oneoff', 'book'];
-const KLASS_NOTES = { game: 'analysis.klass.game', want: 'judged by the month', need: '', oneoff: '', book: 'analysis.klass.book' };
-
-/** The note beside a class of spending in the words of the interface ('' for none). */
-function klassNote(klass, words) {
-  const note = KLASS_NOTES[klass] || '';
-  return note.startsWith('analysis.') ? say(note, words) : note;
-}
 const RUNG_TITLES = ['GM', 'IM', 'FM', 'CM'];
 /** Limits on what a field accepts; anything outside is put back as it was. */
 const MAX_MONEY = 100000000000;
@@ -633,86 +628,6 @@ function ladderSection(ctx) {
   </section>`;
 }
 
-/* ----------------------------------------------------------- where it went */
-
-function spendingTable(ctx) {
-  const today = ctx.today;
-  const s30 = ctx.d.spending(addDays(today, -29), today);
-  const s90 = ctx.d.spending(addDays(today, -89), today);
-  const targets = ctx.state.settings.targets || {};
-  const byCat = new Map();
-  const put = (row, key) => {
-    if (!byCat.has(row.category)) byCat.set(row.category, { category: row.category, klass: row.klass, a30: 0, a90: 0, n90: 0 });
-    const entry = byCat.get(row.category);
-    entry[key] = row.amount;
-    if (key === 'a90') entry.n90 = row.count;
-  };
-  s30.forEach((row) => put(row, 'a30'));
-  s90.forEach((row) => put(row, 'a90'));
-  for (const category in targets) {
-    if (!byCat.has(category) && CATEGORIES[category]) byCat.set(category, { category, klass: CATEGORIES[category].klass, a30: 0, a90: 0, n90: 0 });
-  }
-  const groups = KLASS_ORDER.map((klass) => {
-    const rows = [...byCat.values()].filter((row) => row.klass === klass).sort((a, b) => b.a90 - a.a90 || b.a30 - a.a30);
-    return { klass, rows, a30: rows.reduce((n, r) => n + r.a30, 0), a90: rows.reduce((n, r) => n + r.a90, 0) };
-  }).filter((group) => group.rows.length);
-  const stray = [...byCat.values()].filter((row) => !KLASS_ORDER.includes(row.klass));
-  if (stray.length) groups.push({ klass: 'other', rows: stray, a30: stray.reduce((n, r) => n + r.a30, 0), a90: stray.reduce((n, r) => n + r.a90, 0) });
-  return { groups, total30: groups.reduce((n, g) => n + g.a30, 0), total90: groups.reduce((n, g) => n + g.a90, 0), targets };
-}
-
-function spendingSection(ctx) {
-  const { groups, total30, total90, targets } = spendingTable(ctx);
-  const days = historyDays(ctx);
-  const head = html`<div class="sec-head">
-      <h2 class="lab" id="an-went-h"><b>Where it went</b><i class="sep"></i>by category</h2>
-      <span class="lab">to ${fmtDate(ctx.today, 'short')}</span>
-    </div>`;
-  if (!groups.length) {
-    return html`<section class="col col-7 an-went" aria-labelledby="an-went-h">${head}
-      <div class="empty empty-plain">
-        <p class="empty-title">No spending on record.</p>
-        <p class="cap">The bank has reported no purchases in the 90 days to ${fmtDate(ctx.today, 'short')}. ${sayHtml('analysis.went.later', ctx.words)}</p>
-      </div>
-    </section>`;
-  }
-  return html`<section class="col col-7 an-went" aria-labelledby="an-went-h">${head}
-    <table class="table table-s an-table">
-      <thead><tr>
-        <th scope="col">Category</th>
-        <th scope="col" class="num">30 days</th>
-        <th scope="col" class="num">90 days</th>
-        <th scope="col" class="num an-th-target">Target <span class="not-phone">a month</span></th>
-      </tr></thead>
-      ${groups.map((group) => html`<tbody data-key="${group.klass}">
-        <tr class="an-group">
-          <th scope="rowgroup"><span class="lab"><b>${KLASSES[group.klass] ? klassLabel(group.klass, ctx.words) : 'Other'}</b>${klassNote(group.klass, ctx.words) ? html`<i class="sep not-phone"></i><span class="not-phone">${klassNote(group.klass, ctx.words)}</span>` : ''}</span></th>
-          <td class="num">${fmt(group.a30)}</td>
-          <td class="num">${fmt(group.a90)}</td>
-          <td></td>
-        </tr>
-        ${group.rows.map((row) => {
-    const target = Number.isFinite(targets[row.category]) ? targets[row.category] : null;
-    return html`<tr data-key="${row.category}">
-          <th scope="row">${categoryLabel(row.category)}${target && pct(row.a30 / target, 0) ? html`<em class="row-note"><span data-cover-keep>${pct(row.a30 / target, 0)}</span> of the target</em>` : ''}</th>
-          <td class="num">${fmt(row.a30)}</td>
-          <td class="num">${fmt(row.a90)}</td>
-          <td class="num an-td-target">${field({ action: 'analysis.target', value: target ? fieldText(target) : '', label: 'Monthly target for ' + categoryLabel(row.category) + ', in dollars (optional)', prefix: '$', width: 3, placeholder: '—', extra: { 'data-cat': row.category } })}</td>
-        </tr>`;
-  })}
-      </tbody>`)}
-      <tfoot><tr>
-        <th scope="row">All spending</th>
-        <td class="num">${fmt(total30)}</td>
-        <td class="num">${fmt(total90)}</td>
-        <td></td>
-      </tr></tfoot>
-    </table>
-    <p class="cap an-note">Purchases net of refunds, as the bank reported them; transfers and card payments are not spending. A target is optional: write one in the last column, or leave the dash. It changes nothing else.${days > 0 && days < 90
-      ? html` The record covers ${daysWord(days)}, so ${days < 30 ? phrase('analysis.columns', ctx.words) : 'the 90-day column is not yet full'}.` : ''}</p>
-  </section>`;
-}
-
 /* ------------------------------------------------- before a larger purchase */
 
 function buyState(ctx) {
@@ -851,13 +766,15 @@ function opponentSection(ctx) {
 /* ------------------------------------------------------------------ render */
 
 export function render(ctx) {
+  // the second face of the Analysis cell: the switch to the first (money in and out) sits at the top of both
   return html`<div class="an">
+    ${faceSwitch('analysis', ctx.words)}
     ${abstract(ctx)}
     <div class="cols">${reserveSection(ctx)}${cardsSection(ctx)}</div>
     <div class="cols">${retentionSection(ctx)}${scenarioSection(ctx)}</div>
     <div class="cols">
-      <div class="col col-5">${ladderSection(ctx)}${opponentSection(ctx)}</div>
-      ${spendingSection(ctx)}
+      <div class="col col-6">${ladderSection(ctx)}</div>
+      <div class="col col-6">${opponentSection(ctx)}</div>
     </div>
     ${purchaseSection(ctx)}
   </div>`;

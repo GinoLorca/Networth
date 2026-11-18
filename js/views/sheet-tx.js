@@ -21,13 +21,14 @@
 import { html, cx, attrs } from '../ui/dom.js';
 import { fmt, fmtPlain, toCents } from '../model/money.js';
 import { fmtDate, fmtTime, isYmd, nowMs } from '../model/dates.js';
-import { CATEGORIES, KLASSES, PURPOSES, GLYPHS, ACCOUNT_TYPES, accountLabel, categoryLabel, klassLabel, klassOf, makeAccount } from '../model/schema.js';
+import { CATEGORIES, FLOW_CATEGORIES, KLASSES, PURPOSES, GLYPHS, ACCOUNT_TYPES, accountLabel, categoryLabel, klassLabel, klassOf, makeAccount } from '../model/schema.js';
 import { correctionReach, learnRule, confirmMove } from '../model/classify.js';
 import { noteMove } from '../model/corrections.js';
 import { refresh } from '../model/detect.js';
 import { removeManual } from '../model/merge.js';
 import { skipRow } from '../model/byhand.js';
 import { askAgain, incomeOf, incomeQuestions, itemAnswer, rowPayments } from '../model/income.js';
+import { UNFILED, confirmedKlass, isCatchAll, isFiled } from '../model/flows.js';
 import { againWords, paymentState, rowLineLead } from './income-words.js';
 import { moveGlyph } from '../ui/glyphs.js';
 import { flowClass, flowLookups, inlineMoney, keepWhole, txName } from './parts.js';
@@ -291,8 +292,10 @@ function classification(ctx, tx) {
   // a paired leg is a movement between the owner's own accounts: it has no purpose to set and nothing to learn
   const moved = !!tx.pairId || tx.kind === 'transfer' || tx.kind === 'payment';
   const canLearn = !!tx.mkey && !decline && !(moved && frozen);
-  // a bank row that carries a reported payment's label: a correction defaults to this move only (3.7)
-  const labelled = typeof tx.reportedAs === 'string' && !!tx.reportedAs;
+  // a bank row that carries a reported payment's label: a correction defaults to this move only (3.7); so does a move
+  // whose merchant key hides many sellers or purchases (Amazon, a big store, a marketplace, a payment app, a check:
+  // model/flows.js isCatchAll), since a save now always files its category
+  const labelled = (typeof tx.reportedAs === 'string' && !!tx.reportedAs) || (isSpendish(tx) && isCatchAll(tx));
   const stream = tx.streamId ? ctx.state.streams.find((s) => s.id === tx.streamId) : null;
 
   return html`<fieldset class="tx-class">
@@ -467,13 +470,26 @@ function save({ values, data }) {
   const tx = ctx ? findTx(ctx.state, data.id) : null;
   if (!tx || !values) { closeSheet(); return; }
 
-  // what the owner changed about how the move is read
+  // what the owner says about how the move is read. On a spend or a refund the owner has not filed (the moves the queue
+  // of moves to file holds), the category is passed even when it is unchanged (DESIGN Appendix D, "One tap"): saving a
+  // guess as it stands files it, so the filing is a correction that reaches every device and the move leaves the queue
+  // there too (views/flows.js), with the class the rules gave it (model/flows.js confirmedKlass: a fine stays One-off).
+  // An unchanged category is left out on a move already filed (a category lock, or a learned rule that gives it its
+  // category), so a save of the note alone never turns a "this move only" category into the merchant's rule; on
+  // Uncategorized, which files nothing (a save as it stands answers "needs a look", as before); and on a move that is
+  // neither a spend nor a refund (a deposit, a transfer, a card payment), which the queue does not hold: deposits keep
+  // their own filing for a later pass
   const fields = {};
-  if (typeof values.category === 'string' && values.category && values.category !== tx.category) fields.category = values.category;
+  const categoryGiven = typeof values.category === 'string' && !!values.category && (Object.hasOwn(CATEGORIES, values.category) || Object.hasOwn(FLOW_CATEGORIES, values.category));
+  const categoryChanged = categoryGiven && values.category !== tx.category;
+  const confirms = categoryGiven && !categoryChanged && isSpendish(tx) && values.category !== UNFILED && !isFiled(ctx.state, tx);
+  if (categoryChanged || confirms) fields.category = values.category;
   if (typeof values.klass === 'string' && KLASSES[values.klass]) {
-    const follows = !!fields.category && !!CATEGORIES[fields.category] && !tx.recurringId && !(tx.locks || []).includes('klass');
-    if (values.klass !== (follows ? klassOf(fields.category) : tx.klass)) fields.klass = values.klass;
+    const follows = categoryChanged && !!CATEGORIES[values.category] && !tx.recurringId && !(tx.locks || []).includes('klass');
+    if (values.klass !== (follows ? klassOf(values.category) : tx.klass)) fields.klass = values.klass;
   }
+  const keptKlass = confirms && !fields.klass ? confirmedKlass(tx, values.category) : null;
+  if (keptKlass) fields.klass = keptKlass;
   if (typeof values.purpose === 'string' && PURPOSES.includes(values.purpose) && values.purpose !== tx.purpose) fields.purpose = values.purpose;
   const onlyThis = values.scope !== 'all';
 
@@ -590,7 +606,10 @@ function save({ values, data }) {
       refunds: refunds === 1 ? phrase('tx.toast.refundCount.one', ctx.words) : say('tx.toast.refundCount.many', ctx.words, { count: refunds }),
       merchant: merchantOf(tx),
     })
-    : result.changed > 1 ? say('tx.toast.many.' + direction, ctx.words, { count: result.changed, merchant: merchantOf(tx) }) : phrase(corrected ? 'tx.toast.corrected' : 'tx.toast.updated', ctx.words) + '.';
+    : result.changed > 1 ? say('tx.toast.many.' + direction, ctx.words, { count: result.changed, merchant: merchantOf(tx) })
+      // the guess saved as it stands: filed, with nothing else changed (the class it keeps is part of the guess)
+      : confirms && Object.keys(fields).length === (keptKlass ? 2 : 1) && !touched.length ? say('tx.toast.filed', ctx.words, { merchant: merchantOf(tx), category: categoryLabel(fields.category) })
+      : phrase(corrected ? 'tx.toast.corrected' : 'tx.toast.updated', ctx.words) + '.';
   let split = '';
   if (touched.includes('capital')) {
     split = next.capital

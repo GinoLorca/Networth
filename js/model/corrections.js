@@ -515,8 +515,8 @@ function pick(item, fields, has) {
 
 /* ----------------------------------------------------------------- the keys */
 
-/** Account id -> the hash of its provider id, for the bank accounts that have one. */
-function accountKeys(state) {
+/** Account id -> the hash of its provider id, for the bank accounts that have one. Exported for the queue of moves to file (flows.js), which keys a move by the same fingerprint. */
+export function accountKeys(state) {
   const out = new Map();
   for (const account of listOf(state.accounts)) {
     if (!isObject(account) || typeof account.id !== 'string' || !isObject(account.ext) || typeof account.ext.id !== 'string' || !account.ext.id) continue;
@@ -529,7 +529,7 @@ function accountKeys(state) {
 const whereMemo = new WeakMap();
 
 /** Where a bank row is found on every device: its key, and the hash of its fingerprint built with the account's provider id. */
-function rowWhere(tx, accounts) {
+export function rowWhere(tx, accounts) {
   if (!isObject(tx) || tx.source !== 'bank' || !isYmd(tx.day) || typeof tx.accountId !== 'string') return null;
   const account = accounts.get(tx.accountId);
   if (!account) return null;
@@ -552,7 +552,7 @@ function streamKeyOf(stream, accounts) {
 }
 
 /** The fingerprint of a merchant key, as a payment's payee is kept (byhand.payeeKey); null for none. */
-function merchantKeyOf(mkey) {
+export function merchantKeyOf(mkey) {
   return typeof mkey === 'string' && mkey ? payeeKey(mkey) : null;
 }
 

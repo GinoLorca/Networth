@@ -606,6 +606,24 @@ function spendsByMerchant(txs) {
 }
 
 /**
+ * The live spends of a record by merchant key (what refund recognition reads), built once for many calls of ruleOfRow
+ * and correctionReach on a record that does not change between them (model/flows.js moveQueue builds one a queue).
+ * Never kept across edits: state.txs is edited in place, so an index is only good until the next change.
+ * @param {object} state
+ * @returns {Map<string, object[]>}
+ */
+export function spendIndex(state) {
+  return spendsByMerchant(Array.isArray(state && state.txs) ? state.txs : []);
+}
+
+/** The spend index a caller gave (a Map, or a function that builds one when first asked), else one built now. */
+function spendIndexOf(state, index) {
+  if (index instanceof Map) return index;
+  if (typeof index === 'function') return index();
+  return spendIndex(state);
+}
+
+/**
  * Live money out that a learned rule filed as other than a spend (a purchase filed as a transfer, say), grouped by
  * merchant key: what money in would mirror as a refund but for that rule (classifyCore's `filedOf`).
  */
@@ -879,9 +897,11 @@ function faceOf(tx) {
  * direction whose category changes the kind of money in, keepsMoneyIn).
  * @param {object} state
  * @param {object} tx
+ * @param {Map|Function} [index]  spendIndex(state), or a function that returns it, when the caller asks about many rows
+ *   of a record that does not change meanwhile; built here when not given
  * @returns {{ direction: 'out'|'in', count: number, refunds: number, kept: boolean }}
  */
-export function correctionReach(state, tx) {
+export function correctionReach(state, tx, index) {
   const direction = directionOf(tx && tx.flow);
   const out = { direction, count: 1, refunds: 0, kept: false };
   if (!tx || typeof tx !== 'object' || typeof tx.mkey !== 'string' || !tx.mkey) return out;
@@ -891,10 +911,11 @@ export function correctionReach(state, tx) {
   if (direction !== 'out') return out;
   out.kept = keepsMoneyIn(learnedSet(learnedRules(state), tx.mkey));
   if (out.kept) return out;
-  const index = spendsByMerchant(txs);
   // (a refund corrected on its own keeps its correction, as the help says)
-  out.refunds = mine.filter((t) => t.flow === 'in' && t.kind !== 'decline' && !isFlowFrozen(t) && !lockSet(t).has('category')
-    && builtinKindOf(state, t, index) === 'refund').length;
+  const moneyIn = mine.filter((t) => t.flow === 'in' && t.kind !== 'decline' && !isFlowFrozen(t) && !lockSet(t).has('category'));
+  if (!moneyIn.length) return out;
+  const spends = spendIndexOf(state, index);
+  out.refunds = moneyIn.filter((t) => builtinKindOf(state, t, spends) === 'refund').length;
   return out;
 }
 
@@ -915,13 +936,28 @@ function builtinKindOf(state, tx, index) {
  * the money-out rule). For the paths that file rows again (model/corrections.js).
  * @param {object} state
  * @param {object} tx
+ * @param {Map|Function} [index]  spendIndex(state), or a function that returns it, when the caller asks about many rows
+ *   of a record that does not change meanwhile (only money in reads it); built here when not given
  * @returns {object|null}  a view of the rule: its fields, and the `id` of the rule that gives the category
  */
-export function ruleOfRow(state, tx) {
+export function ruleOfRow(state, tx, index) {
   if (!tx || typeof tx !== 'object' || typeof tx.mkey !== 'string' || !tx.mkey) return null;
   const rules = learnedRules(state);
-  const kind = directionOf(tx.flow) === 'in' ? builtinKindOf(state, tx, spendsByMerchant(Array.isArray(state.txs) ? state.txs : [])) : tx.kind;
+  const kind = directionOf(tx.flow) === 'in' ? builtinKindOf(state, tx, spendIndexOf(state, index)) : tx.kind;
   return findLearned(rules, tx.mkey, tx.flow, kind);
+}
+
+/**
+ * Whether the built-in rule a row's `ruleId` names ('builtin:…') is marked for a look: what the queue of moves to
+ * file orders by, since a row's own `review` flag is cleared per device and does not travel (DESIGN section 6).
+ * @param {string|null} ruleId
+ * @returns {boolean}
+ */
+export function ruleMarkedReview(ruleId) {
+  if (typeof ruleId !== 'string' || !ruleId.startsWith('builtin:')) return false;
+  const id = ruleId.slice('builtin:'.length);
+  const rule = RULES.find((one) => one.id === id);
+  return !!rule && rule.review;
 }
 
 /** Whether a learned rule covers money moving `flow`: one taught on that direction, or one made before rules had one. */

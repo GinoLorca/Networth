@@ -46,6 +46,7 @@ import { render as scoresheetView, actions as scoresheetActions } from './views/
 import { render as materialView, actions as materialActions } from './views/material.js';
 import { render as bookView, actions as bookActions } from './views/book.js';
 import { render as analysisView, actions as analysisActions } from './views/analysis.js';
+import { render as flowsView, actions as flowsActions } from './views/flows.js';
 import { render as settingsView, actions as settingsActions } from './views/settings.js';
 import { render as connectView, actions as connectActions } from './views/connect.js';
 
@@ -67,11 +68,28 @@ const VIEWS = {
   material: { title: 'Material', render: materialView },
   book: { title: 'Book', render: bookView },
   analysis: { title: 'Analysis', render: analysisView },
+  // the Analysis cell's first face: money in and out (Imbalances / Cash flow); #/analysis opens the second face
+  flows: { title: 'Imbalances', render: flowsView },
   settings: { title: 'Settings', render: settingsView },
   connect: { title: 'Link your bank', render: connectView },
 };
 
 const NAV = ['board', 'scoresheet', 'material', 'book', 'analysis'];
+
+/**
+ * Where a cell of the navigation leads, and the screens it is current on: the Analysis cell opens its first face,
+ * money in and out (#/flows), and is current on both faces; old links to #/analysis still open today's Analysis.
+ */
+const CELL_HREF = { analysis: '#/flows' };
+const CELL_FACES = { analysis: ['analysis', 'flows'] };
+
+function cellHref(id) {
+  return CELL_HREF[id] || '#/' + id;
+}
+
+function cellCurrent(id, viewId) {
+  return (CELL_FACES[id] || [id]).includes(viewId);
+}
 
 const SHEETS = {
   move: { render: moveSheet, label: moveLabel },
@@ -156,7 +174,7 @@ async function boot() {
   // the nightly wrap (3.10): this device's wrap file follows the record; its subscription is checked at each open
   initWrap();
 
-  registerActions({ ...appActions, ...boardActions, ...scoresheetActions, ...materialActions, ...bookActions, ...analysisActions,
+  registerActions({ ...appActions, ...boardActions, ...scoresheetActions, ...materialActions, ...bookActions, ...analysisActions, ...flowsActions,
     ...settingsActions, ...connectActions, ...moveActions, ...planActions, ...sweepActions, ...txActions, ...dayActions,
     ...accountActions, ...recurringActions, ...streamActions, ...habitActions });
   bindActions(root);
@@ -599,7 +617,7 @@ function masthead(ctx, viewId) {
     </div>
     <div class="mast-nav">
       <nav class="mast-links" aria-label="Sections">
-        ${NAV.map((id) => html`<a href="#/${id}" ${id === viewId ? html`aria-current="page"` : ''}>${pageTitle(id, ctx.words)}</a>`)}
+        ${NAV.map((id) => html`<a href="${cellHref(id)}" ${cellCurrent(id, viewId) ? html`aria-current="page"` : ''}>${pageTitle(id, ctx.words)}</a>`)}
         <a href="#/settings" ${viewId === 'settings' ? html`aria-current="page"` : ''}>Settings</a>
       </nav>
       <div class="mast-tools">
@@ -618,7 +636,7 @@ function tabLabel(text) {
 }
 
 function tabbar(viewId, words) {
-  const link = (id) => html`<a href="#/${id}" ${id === viewId ? html`aria-current="page"` : ''}>${tabLabel(pageTitle(id, words))}</a>`;
+  const link = (id) => html`<a href="${cellHref(id)}" ${cellCurrent(id, viewId) ? html`aria-current="page"` : ''}>${tabLabel(pageTitle(id, words))}</a>`;
   return html`<nav class="tabbar" aria-label="Sections">
     ${link('board')}${link('scoresheet')}
     <button class="tabbar-move" type="button" data-action="app.move"><span class="plus">+</span> ${phrase('app.move', words)}</button>

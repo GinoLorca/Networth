@@ -365,6 +365,10 @@ html { scroll-padding-bottom: calc(var(--bottom-bar) + env(safe-area-inset-botto
   .seg-opt:hover { color: var(--ink); background-color: var(--paper-2); }
 }
 .seg-opt:has(input:checked), .seg-opt[aria-pressed="true"], .seg-opt[aria-checked="true"] { background-color: var(--ink); color: var(--paper); }
+/* in forced colours a background alone is dropped: the chosen option keeps the system's highlight */
+@media (forced-colors: active) {
+  .seg-opt:has(input:checked), .seg-opt[aria-pressed="true"], .seg-opt[aria-checked="true"] { forced-color-adjust: none; background-color: Highlight; color: HighlightText; }
+}
 .seg-opt:has(input:focus-visible) { outline: 2px solid var(--spot); outline-offset: 3px; z-index: 1; }
 .seg-opt:has(input:disabled) { color: var(--ink-3); cursor: default; }
 .seg-fig .seg-opt { font-family: var(--f-figure); font-weight: 400; font-size: var(--t-fig); letter-spacing: 0; text-transform: none; padding: 0 var(--s-2); }
@@ -1028,7 +1032,7 @@ a.row:hover .row-label, button.row:hover .row-label { text-decoration: underline
      <li class="rung is-you">
        <span class="bar rung-bar" style="--p:78.4%" aria-hidden="true"><i></i></span>
        <span class="rung-title">You</span><span class="fig est"><span class="approx">≈</span>$78,400</span><span class="cap">modelled 2026 gross</span>
-       <span class="cap rung-note">Salary $58,000 + lessons scenario $20,400. A scenario, not a bank figure.</span>
+       <span class="cap rung-note">Salary $58,000 + side income scenario $20,400. A scenario, not a bank figure.</span>
      </li>
    </ol>
    ------------------------------------------------------------------------- */

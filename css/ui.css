@@ -141,6 +141,15 @@ nw-split[mark="centre"] .sb-bar::after { bottom: -7px; }
   .sb-bar { height: 22px; }
   nw-split[slim] .sb-bar { height: 14px; }
 }
+/* in forced colours both fills would be dropped to the canvas: the black part is drawn in the text colour, the white
+   part in the canvas colour inside the bar's edge, and the half-way ticks in the text colour */
+@media (forced-colors: active) {
+  .sb-bar { forced-color-adjust: none; background: CanvasText; border-color: CanvasText; }
+  .sb-w { background: Canvas; }
+  .sb-hl { stroke: CanvasText; }
+  nw-split[mark="centre"] .sb-bar::before,
+  nw-split[mark="centre"] .sb-bar::after { background: CanvasText; }
+}
 
 /* ================================================================== glyphs */
 

@@ -232,6 +232,12 @@ export function makeLedger(state, nowMs) {
     nextPayOf: (streamId) => nextPayOf(core, streamId),
     retention: (day) => retentionOf(core, day),
     spendingByCategory: (fromDay, toDay) => spendingBetween(core, fromDay, toDay),
+    /** Spending by merchant and category, counted exactly as spendingByCategory counts (spendingByMerchant below). */
+    spendingByMerchant: (fromDay, toDay) => merchantsBetween(core, fromDay, toDay),
+    /** The spends and refunds spendingByCategory counts, in day order (the document's own rows: read-only). */
+    spendRows: (fromDay, toDay) => countedRows(core, fromDay, toDay, isSpendOrRefund),
+    /** The money in every figure counts (moneyInBetween below): bank deposits, cash and pencil, a matched payment once. */
+    moneyIn: (fromDay, toDay) => moneyInBetween(core, fromDay, toDay),
     /** How completely the bank has reported a day (4.6, `dataStatusOf`): 'awaiting' | 'provisional' | 'final'; null for no day. */
     dataStatus: (day) => { const n = core.cal.num(day); return n === null ? null : dataStatusOf(core, n, bucketOn(core, n)); },
   };
@@ -336,6 +342,30 @@ export function payStreams(state, nowMs) {
  */
 export function spendingByCategory(state, fromDay, toDay, nowMs) {
   return makeLedger(state, nowMs).spendingByCategory(fromDay, toDay);
+}
+
+/**
+ * Spending by merchant for fromDay..toDay inclusive, counted exactly as spendingByCategory counts (the same rows:
+ * spends and refunds only, hidden accounts skipped, pending rows unless they are turned off, moves tapped in for 7
+ * days, matched moves dropped), one row per merchant key and category, so a category's merchants add up to it.
+ * A merchant with no key is grouped under ''. `merchant` is the display name of its latest row.
+ * @returns {{ mkey: string, merchant: string, category: string, klass: string, amount: number, count: number, last: string, est: boolean }[]}
+ *   amount = spends net of refunds (rows whose net is zero are left out); count = spends; last = the latest day;
+ *   est = a counted row is pending or tapped in (the figure is an estimate); largest first
+ */
+export function spendingByMerchant(state, fromDay, toDay, nowMs) {
+  return makeLedger(state, nowMs).spendingByMerchant(fromDay, toDay);
+}
+
+/**
+ * The money in that every money-in figure counts for fromDay..toDay inclusive (DESIGN G.2, the ledger's own rows):
+ * bank deposits (kind income, money in, a shown account, pending only while pending counts), plus payments the owner's
+ * other apps reported that no counted bank row has met: in cash (Cash in hand) or in pencil. A matched payment counts
+ * once, as its bank deposit.
+ * @returns {{ total: number, bank: number, pencil: number, cash: number, rows: { tx: object, how: 'bank'|'pencil'|'cash' }[] }}
+ */
+export function moneyIn(state, fromDay, toDay, nowMs) {
+  return makeLedger(state, nowMs).moneyIn(fromDay, toDay);
 }
 
 /* -------------------------------------------------------------------- core */
@@ -1946,6 +1976,69 @@ function spendingBetween(core, fromDay, toDay) {
   return [...byCategory.values()]
     .filter((row) => row.amount > 0)
     .sort((a, b) => b.amount - a.amount || (a.category < b.category ? -1 : 1));
+}
+
+function isSpendOrRefund(tx) {
+  return tx.kind === 'spend' || tx.kind === 'refund';
+}
+
+/** The moves of the days fromDay..toDay that pass `keep`, as the day buckets hold them (the counting rules of 4.2). */
+function countedRows(core, fromDay, toDay, keep) {
+  const from = core.cal.num(fromDay);
+  const to = core.cal.num(toDay);
+  if (from === null || to === null) return [];
+  const index = core.index();
+  const out = [];
+  for (let i = lastAtOrBelow(index.order, from - 1) + 1; i < index.order.length && index.order[i] <= to; i++) {
+    for (const tx of index.buckets.get(index.order[i]).moves) if (keep(tx)) out.push(tx);
+  }
+  return out;
+}
+
+function merchantsBetween(core, fromDay, toDay) {
+  const byKey = new Map();
+  for (const tx of countedRows(core, fromDay, toDay, isSpendOrRefund)) {
+    const category = typeof tx.category === 'string' && tx.category ? tx.category : 'other';
+    const mkey = typeof tx.mkey === 'string' ? tx.mkey : '';
+    const key = category + '\n' + mkey;
+    let row = byKey.get(key);
+    if (!row) {
+      row = { mkey, merchant: '', category, klass: klassOf(category), amount: 0, count: 0, last: '', est: false };
+      byKey.set(key, row);
+    }
+    const amount = Math.round(tx.amount);
+    if (tx.flow === 'in') {
+      row.amount -= amount;
+    } else {
+      row.amount += amount;
+      if (tx.kind === 'spend') row.count += 1;
+    }
+    // a counted row the bank has not posted (pending, or tapped in): the merchant's figure is an estimate
+    if (tx.pending || tx.source === 'manual') row.est = true;
+    if (tx.day >= row.last) {
+      row.last = tx.day;
+      row.merchant = typeof tx.merchant === 'string' && tx.merchant ? tx.merchant : mkey;
+    }
+  }
+  return [...byKey.values()]
+    .filter((row) => row.amount !== 0)
+    .sort((a, b) => b.amount - a.amount || (a.mkey < b.mkey ? -1 : a.mkey > b.mkey ? 1 : 0) || (a.category < b.category ? -1 : 1));
+}
+
+function moneyInBetween(core, fromDay, toDay) {
+  const out = { total: 0, bank: 0, pencil: 0, cash: 0, rows: [] };
+  for (const tx of countedRows(core, fromDay, toDay, (t) => t.kind === 'income' && t.flow === 'in')) {
+    const amount = Math.round(tx.amount);
+    let how = 'bank';
+    if (tx.source === 'manual') {
+      const holder = tx.accountId == null ? null : core.accounts().get(tx.accountId) || null;
+      how = holder && holder.cashInHand ? 'cash' : 'pencil';
+    }
+    out[how] += amount;
+    out.total += amount;
+    out.rows.push({ tx, how });
+  }
+  return out;
 }
 
 function addSpending(byCategory, tx) {

@@ -245,7 +245,7 @@ test('demoFeed: the default feed alone holds the same Book, less the yearly rene
   assert.equal(report.matchStarted, true);
   assert.equal(state.meta.matchStart, '2026-11-10');
   const cadences = state.recurring.filter((entry) => entry.active).map((entry) => entry.cadence);
-  assert.equal(cadences.length, 12);
+  assert.equal(cadences.length, 13);
   assert.ok(cadences.every((cadence) => cadence === 'monthly'), 'one charge of a yearly renewal cannot be told from a purchase');
   assert.deepEqual(state.streams.filter((stream) => stream.accrue).map((stream) => stream.cadence), ['biweekly']);
 });
@@ -426,9 +426,9 @@ test('buildDemoState: a salary every two weeks, counted as it is earned', () => 
 
 test('buildDemoState: client deposits stay occasional', () => {
   onEveryDay(({ state }) => {
-    const lessons = state.streams.filter((stream) => stream.kind === 'lessons');
-    assert.equal(lessons.length, 2);
-    for (const stream of lessons) {
+    const clients = state.streams.filter((stream) => stream.kind === 'lessons');
+    assert.equal(clients.length, 2);
+    for (const stream of clients) {
       assert.equal(stream.accrue, false);
       assert.equal(stream.cadence, null, 'no schedule');
       assert.ok(state.txs.filter((tx) => tx.streamId === stream.id).length >= 2);
@@ -451,7 +451,7 @@ test('buildDemoState: the Book holds the bills, one of them variable and one ann
     };
     assert.deepEqual(book.map((entry) => entry.mkey).sort(), [
       'alderline equip finance loan pymt', 'amazon prime', 'apple services', 'con edison', 'foundry row workspace rent',
-      'interest charge', 'kestrel realty llc rent', 'lemonade insurance', 'netflix', 'scheduled transfer to northlight visa',
+      'hulu', 'interest charge', 'kestrel realty llc rent', 'lemonade insurance', 'netflix', 'scheduled transfer to northlight visa',
       'spectrum', 'spotify', 'verizon wireless',
     ]);
 
@@ -746,8 +746,8 @@ test('buildDemoState: card months that rose and months that fell, with interest 
 test('buildDemoState: one late fee, before the match, for a payment a day late', () => {
   onEveryDay(({ state, ledger }) => {
     const penalties = state.txs.filter((tx) => tx.glyph === '??');
-    assert.equal(penalties.length, 1);
-    const [fee] = penalties;
+    assert.equal(penalties.length, 2, 'the late fee, and the returned-item fee of the last 30 days');
+    const fee = penalties.find((tx) => tx.mkey === 'late fee');
     assert.equal(fee.mkey, 'late fee');
     assert.equal(fee.category, 'fees_interest');
     assert.equal(fee.accountId, accountOfType(state, 'credit_card').id);
@@ -760,6 +760,27 @@ test('buildDemoState: one late fee, before the match, for a payment a day late',
     assert.deepEqual(lateOnes.map((tx) => tx.day), [addDays(fee.day, -1)], 'every payment on the 14th but one, the day before the fee');
     const round = ledger.round(fee.day);
     assert.equal(glyphsOf(round, state).moves[round.moves.indexOf(fee)], '??');
+  });
+});
+
+test('buildDemoState: a returned-item fee, an avoidable penalty, in the last 30 days and before the match', () => {
+  onEveryDay(({ state, ledger }) => {
+    const fees = state.txs.filter((tx) => tx.glyph === '??' && tx.mkey !== 'late fee');
+    assert.equal(fees.length, 1);
+    const [fee] = fees;
+    assert.equal(fee.category, 'fees_interest');
+    assert.equal(fee.accountId, accountOfType(state, 'checking').id);
+    assert.equal(fee.amount, 3400);
+    assert.ok(fee.day < state.meta.matchStart, 'before the match: no round of it changes');
+    assert.ok(diffDays(fee.day, ledger.today) < 30, 'inside the last 30 days, so the leaks show a penalty');
+  });
+});
+
+test('buildDemoState: two video services, a family of two (the leaks show them doubled)', () => {
+  onEveryDay(({ state }) => {
+    const video = state.recurring.filter((entry) => entry.active && ['netflix', 'hulu'].includes(entry.mkey));
+    assert.equal(video.length, 2);
+    for (const entry of video) assert.equal(entry.category, 'subscriptions');
   });
 });
 
@@ -811,7 +832,7 @@ test('buildDemoState: no errand passes for a bill', () => {
   for (const seed of [1, 2, 3]) {
     for (let offset = 0; offset < 30; offset += 3) {
       const state = buildDemoState(at(2027, 2, 1 + offset, 12), { seed });
-      assert.equal(state.recurring.length, 13, 'seed ' + seed + ', day ' + offset + ': ' + state.recurring.map((entry) => entry.name).join(', '));
+      assert.equal(state.recurring.length, 14, 'seed ' + seed + ', day ' + offset + ': ' + state.recurring.map((entry) => entry.name).join(', '));
       assert.equal(state.streams.length, 4);
       assert.equal(state.sweeps.length, 1);
     }
@@ -821,7 +842,7 @@ test('buildDemoState: no errand passes for a bill', () => {
 test('buildDemoState: a time that is not one gives the sample for a fixed day', () => {
   const fixed = buildDemoState(NaN);
   assert.equal(checkDoc(fixed), null);
-  assert.equal(fixed.recurring.length, 13);
+  assert.equal(fixed.recurring.length, 14);
   assert.equal(fixed.habits.length, 1);
   for (const nowMs of [undefined, null, 'x', 0, -5, Infinity, 1e21]) assert.deepEqual(buildDemoState(nowMs), fixed, 'nowMs ' + String(nowMs));
   for (const opts of [null, 3, 'seed', { seed: NaN }, { seed: 'two' }]) assert.deepEqual(buildDemoState(TUESDAY, opts), documentAt(TUESDAY), 'opts ' + JSON.stringify(opts));

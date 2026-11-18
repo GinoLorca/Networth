@@ -81,6 +81,11 @@ const CARD_PAYMENT = 46000;
 const LATE_FEE = 2900;
 /** The one late payment lies before the match: its fee posted at least this many days ago. */
 const LATE_FEE_AGE_DAYS = 24;
+/**
+ * A returned-item fee on checking, an avoidable penalty (??) inside the last 30 days on every day the sample is opened
+ * and before the match began (21 days ago), so the leaks always show a penalty and no round of the match changes.
+ */
+const RETURNED_FEE = { daysAgo: 27, cents: 3400 };
 
 /** Roughly what the card owes and the savings hold today, and the lowest the checking balance came in the feed. */
 const CARD_OWED_NOW = 398000;
@@ -105,6 +110,7 @@ const TEXT = {
   paymentReceived: 'PAYMENT - THANK YOU',
   cardInterest: 'INTEREST CHARGE:PURCHASES',
   lateFee: 'LATE FEE',
+  returnedFee: 'RETURNED ITEM FEE',
 };
 
 /** Pay lands every second Friday, counted from this one; the raise came some months back. */
@@ -113,7 +119,7 @@ const PAY_PERIOD_DAYS = 14;
 const PAY = { before: 185676, now: 191246, raisedDaysAgo: 200 };
 
 /**
- * People who pay for lessons: each at an interval no pay cadence fits and in amounts that never
+ * Clients who pay now and then: each at an interval no pay cadence fits and in amounts that never
  * settle, so they stay occasional income and only the salary accrues.
  */
 const CLIENTS = [
@@ -135,6 +141,8 @@ const MONTHLY_BILLS = [
   { onDay: 16, account: 'card', cents: 1199, text: 'SPOTIFY USA 877-778-1161 NY' },
   { onDay: 22, account: 'checking', cents: 7000, text: 'VZWRLSS*APOCC VISB 800-922-0204 FL' },
   { onDay: 24, account: 'card', cents: 299, text: 'APPLE.COM/BILL 866-712-7753 CA' },
+  // a second video service beside the streaming one below: two services of one family (Hanging pieces · Doubled)
+  { onDay: 27, account: 'card', cents: 999, text: 'HULU 877-824-4858 CA' },
 ];
 const POWER_DAY = 20;
 const POWER_BASE = 9400;
@@ -174,6 +182,8 @@ const CASH_MACHINE = shop('ATM WITHDRAWAL 004417 31-12 BROADWAY ASTORIA NY', '60
 const CASH_AMOUNTS = [4000, 6000, 8000, 10000];
 const CINEMA = shop('AMC 9640 ONLINE 888-562-4262 KS', '7832', 1749, 3698);
 const CLOTHES = shop('UNIQLO USA 5TH AVE NEW YORK NY', '5651', 2990, 7990);
+/** An arcade every few days, a few dollars a visit: small and often (Hanging pieces). */
+const ARCADE = shop('SQ *PIXEL PARLOR ARCADE NEW YORK NY', '7994', 800, 1500);
 
 /**
  * Errands that come round every few days. The gaps (in days) are chosen so that no run of visits to
@@ -187,6 +197,7 @@ const ROUNDS = {
   clothes: { salt: 25, shortest: 34, longest: 55 },
   pharmacy: { salt: 26, shortest: 19, longest: 26 },
   rides: { salt: 27, shortest: 18, longest: 24 },
+  arcade: { salt: 28, shortest: 4, longest: 8 },
 };
 /** Rounds are counted from the start of a block of days, so the same days come out whatever today is. */
 const ROUND_BLOCK_DAYS = 4096;
@@ -487,6 +498,7 @@ function addBills(draft) {
     payCard(draft, dayOfMonth(ym, late ? CARD_DUE_DAY + 1 : CARD_DUE_DAY), CARD_PAYMENT, TEXT.scheduledPayment);
     if (late) post(draft, 'card', dayOfMonth(ym, CARD_DUE_DAY + 2), -LATE_FEE, TEXT.lateFee);
   }
+  post(draft, 'checking', addDays(draft.today, -RETURNED_FEE.daysAgo), -RETURNED_FEE.cents, TEXT.returnedFee);
   const renewed = addDays(draft.today, -YEARLY.daysAgo);
   for (const day of [addMonths(renewed, -12), renewed]) {
     const code = reference(randomOf(draft.seed, SALT.month, dayNumber(day)));
@@ -554,6 +566,7 @@ function addErrands(draft) {
   errand(ROUNDS.clothes, 780, 1140, CLOTHES, (rng) => priceAt(rng, CLOTHES));
   errand(ROUNDS.pharmacy, 1050, 1200, PHARMACY, (rng) => priceAt(rng, PHARMACY));
   errand(ROUNDS.rides, 1330, 1430, RIDE, (rng) => priceAt(rng, RIDE));
+  errand(ROUNDS.arcade, 1140, 1320, ARCADE, (rng) => priceAt(rng, ARCADE));
 }
 
 /* -------------------------------------------------------------- the daily game */
@@ -823,8 +836,9 @@ function daysOf(opts) {
  * The invented owner: a salaried worker paid every two weeks (about $1,900 net) with occasional client
  * deposits; a checking account, a savings account near empty, one credit card carrying roughly $4,000;
  * monthly rent for a workspace, a handful of subscriptions, a phone bill, an annual renewal;
- * weekday cafe and deli stops that sometimes stack (two or three in a day), groceries, transit, a few
- * marketplace orders, card payments from checking, monthly card interest, one late fee, a couple of
+ * weekday cafe and deli stops that sometimes stack (two or three in a day), groceries, transit, an arcade
+ * every few days, a few
+ * marketplace orders, card payments from checking, monthly card interest, one late fee, one returned-item fee, a couple of
  * pending rows on the last day. Descriptions look like real statement descriptors (store numbers,
  * city/state tails, processor prefixes) so the classifier is exercised.
  * The last ~3 weeks should show slightly better behaviour than the earlier baseline so the demo

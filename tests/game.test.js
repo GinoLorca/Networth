@@ -900,7 +900,7 @@ const readBank = (d, extra) => d.update((s) => { if (extra) extra(s); refresh(s,
 
 /** The sample without its 2026-11-10 card payment (and the week detected from it), two devices on it and the reading that brings it. */
 function paymentToCome() {
-  const TX = 'tx_8vmms3ga';
+  const TX = 'tx_p0jfmbz5';
   const base = buildDemoState(NOW);
   const row = base.txs.find((tx) => tx.id === TX);
   assert.ok(row, 'the sample holds the payment');
@@ -1020,9 +1020,11 @@ test('the update moves no figure: weekly card payments read day by day keep the 
   const clone = (x) => JSON.parse(JSON.stringify(x));
   const dayOf = (ms) => { const x = new Date(ms); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); };
   const base = buildDemoState(NOW);
-  const T = base.txs.find((x) => x.id === 'tx_8vmms3ga');
+  const T = base.txs.find((x) => x.id === 'tx_p0jfmbz5');
   const LG = base.txs.find((x) => x.id === T.pairId);
-  const SPEND = base.txs.filter((x) => x.source !== 'manual' && x.flow === 'out' && x.kind === 'spend' && !x.pending && !/interest/.test(x.mkey || '')).slice(-40);
+  // (the second video service, the returned-item fee and the arcade the sample gained for the money in and out page are
+  // left out, so the purchases drawn from are those fef14dc's sample held)
+  const SPEND = base.txs.filter((x) => x.source !== 'manual' && x.flow === 'out' && x.kind === 'spend' && !x.pending && !/interest|^hulu$|returned payment fee|arcade/.test(x.mkey || '')).slice(-40);
   for (const [label, [weeks, moved]] of Object.entries(FEF14DC)) {
     const [mode, seed] = [label.split(' ')[0], Number(label.split(' ')[1])];
     const r = xorshift(seed * 31 + (mode === 'fixed' ? 1 : mode === 'offer' ? 2 : 3));
@@ -1069,7 +1071,7 @@ test('the update moves no figure: a fixed weekly card payment read once a day, e
   const clone = (x) => JSON.parse(JSON.stringify(x));
   const full = buildDemoState(END);
   full.meta.matchStart = '2026-09-14';
-  const t = full.txs.find((tx) => tx.id === 'tx_8vmms3ga');
+  const t = full.txs.find((tx) => tx.id === 'tx_p0jfmbz5');
   const leg = full.txs.find((tx) => tx.id === t.pairId);
   const pairs = [];
   for (let i = 4; i >= 1; i--) {

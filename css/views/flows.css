@@ -1,0 +1,124 @@
+/*
+ * Imbalances / Cash flow — money in and out, the Analysis cell's first face (js/views/flows.js). Only what is
+ * particular to it: the face switch, the period, the queue that opens in place, the category rows with their share
+ * hairline, and the leak rows with two figures. Everything else is the design system's (css/base.css,
+ * css/components.css). Built on the tokens; every size of type is in rem.
+ */
+
+/* --------------------------------------------------------- the face switch */
+
+/* two faces under the Analysis cell, at the top of both: links, the current one inked like a chosen option */
+.fl-faces { margin-bottom: var(--s-4); grid-auto-columns: minmax(0, 1fr); }
+.fl-faces .seg-opt { padding: 0 10px; text-decoration: none; overflow: hidden; text-overflow: ellipsis; }
+.fl-faces .seg-opt[aria-current="page"] { background-color: var(--ink); color: var(--paper); }
+.fl-faces .seg-opt:focus-visible { outline: 2px solid var(--spot); outline-offset: 3px; z-index: 1; }
+@media (max-width: 359px) {
+  .fl-faces .seg-opt { padding: 0 6px; letter-spacing: .08em; }
+}
+@media (min-width: 720px) {
+  /* clear of the masthead's rule, as the first section head of every other page is */
+  .fl-faces { display: inline-grid; min-width: 22rem; margin-top: var(--s-4); }
+}
+
+/* ---------------------------------------------------------------- the head */
+
+.fl-period { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); margin-top: var(--s-3); }
+.fl-period .seg-fig .seg-opt { min-width: 3.25rem; }
+.fl-short { margin-top: var(--s-2); max-width: 62ch; }
+
+/* ------------------------------------------------------------- in and out */
+
+.fl-split { margin-top: var(--s-2); }
+.fl-io-rows { margin-top: var(--s-3); border-top: var(--rule-hair); }
+.fl-io-rows .row-note + .row-note { margin-top: 2px; }
+.fl-pct { font-family: var(--f-figure); }
+.fl-note { margin-top: var(--s-2); max-width: 62ch; }
+
+/* ---------------------------------------------------------------- the queue */
+
+.fl-q-head .fl-q-toggle { white-space: nowrap; }
+.fl-q-lead { margin-top: var(--s-2); max-width: 62ch; }
+.fl-q-list { margin-top: var(--s-2); border-top: var(--rule-hair); }
+.fl-q-item { padding: 10px 0 12px; border-bottom: var(--rule-hair); min-width: 0; }
+.fl-q-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--s-2); }
+.fl-q-name { flex: 1 1 10rem; min-width: 0; font-size: var(--t-body); line-height: 1.3; overflow-wrap: anywhere; }
+/* the count and its sum, kept together: when the line wraps they go under the name as one */
+.fl-q-fig { display: inline-flex; align-items: baseline; gap: var(--s-2); margin-left: auto; white-space: nowrap; }
+.fl-q-n { font-family: var(--f-figure); color: var(--ink-2); white-space: nowrap; }
+.fl-q-amt { font-size: var(--t-fig-s); white-space: nowrap; }
+.fl-q-why { margin-top: 2px; }
+.fl-q-chips { margin-top: var(--s-2); }
+.fl-q-chips .chip { white-space: normal; text-align: center; line-height: 1.15; padding-block: 6px; max-width: 100%; }
+.fl-q-more { margin-top: var(--s-2); }
+.fl-q-none { margin-top: var(--s-2); }
+/* three items, then "+ All n" */
+.fl-q:not(.is-all) .fl-q-item:nth-child(n + 4) { display: none; }
+/* under 720px the queue is one line that opens in place */
+@media (max-width: 719px) {
+  .fl-q:not(.is-open) .fl-q-body { display: none; }
+  .fl-q-toggle { position: relative; }
+  .fl-q-toggle::after { content: ""; position: absolute; inset: -12px -8px; }
+}
+@media (min-width: 720px) {
+  .fl-q-toggle { display: none; }
+}
+
+/* ----------------------------------------------------------- where it went */
+
+.fl-groups { margin-top: var(--s-2); }
+.fl-grp + .fl-grp { margin-top: var(--s-3); }
+.fl-grp-head, .fl-total, .fl-cat-sum {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(4.5rem, auto); align-items: baseline; column-gap: var(--s-3);
+}
+.fl-grp-head { padding: 6px 0 5px; border-bottom: var(--rule); }
+.fl-grp-head .lab { min-width: 0; }
+.fl-cat { border-bottom: var(--rule-hair); }
+.fl-cat-sum { position: relative; min-height: var(--tap); padding: 9px 0 10px; cursor: pointer; list-style: none; }
+.fl-cat-sum::-webkit-details-marker { display: none; }
+.fl-cat-sum:focus-visible { outline: 2px solid var(--spot); outline-offset: 2px; }
+.fl-cat-name { min-width: 0; font-size: var(--t-body); line-height: 1.3; overflow-wrap: anywhere; }
+.fl-cat-name::before { content: "+ "; color: var(--ink-3); font-family: var(--f-figure); }
+.fl-cat[open] > .fl-cat-sum .fl-cat-name::before { content: "− "; }
+.fl-cat-amt { font-size: var(--t-fig-s); white-space: nowrap; text-align: right; }
+.fl-chg { font-family: var(--f-figure); font-size: .875rem; color: var(--ink-2); text-align: right; white-space: nowrap; }
+.fl-chg .btn-link { font-size: var(--t-label-s); }
+/* the category's share of the period's spending: an ink stub drawn on the row's own hairline (one rule a row; a double
+   rule marks a total in this style) */
+.fl-share { position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; background: none; pointer-events: none; }
+.fl-share > i { position: absolute; left: 0; top: -1px; height: 3px; width: var(--p, 0%); background: var(--ink); }
+.fl-cat-body { padding: 0 0 var(--s-3) var(--s-3); }
+.fl-merchants > li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: baseline; column-gap: var(--s-2); padding: 3px 0; }
+.fl-m-name { min-width: 0; font-size: .875rem; overflow-wrap: anywhere; }
+.fl-merchants .fig { font-size: .9375rem; white-space: nowrap; }
+/* the target closes the opened category: the category's own hairline is its rule (one rule a row), so Analysis' line
+   under a setting is not drawn here */
+.fl-target { margin-top: var(--s-2); }
+.fl-cat-body .fl-target { border-bottom: 0; }
+.fl-total { margin-top: var(--s-2); padding: 8px 0 7px; border-top: var(--rule); border-bottom: var(--rule-hair); }
+.fl-top-m { margin-top: var(--s-3); }
+.fl-top-m .lab { margin-right: 6px; }
+@media (max-width: 359px) {
+  .fl-grp-head, .fl-total, .fl-cat-sum { grid-template-columns: minmax(0, 1fr) auto; }
+  .fl-chg { grid-column: 2; }
+}
+
+/* ------------------------------------------------------------------- leaks */
+
+/* the two heads stacked at the right, as each row stacks its two figures: the period's over ≈ a year */
+.fl-leak-cols { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 1px; text-align: right; }
+.fl-leak .row-label { min-width: 0; }
+.fl-leak-figs { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+.fl-leak-fig { font-size: var(--t-fig-s); white-space: nowrap; }
+.fl-leak-year { font-size: .9375rem; color: var(--ink-2); white-space: nowrap; }
+.fl-inline-link { font-size: inherit; }
+
+/* ------------------------------------------------------------------- bills */
+
+.fl-bills .rows { margin-top: var(--s-2); border-top: var(--rule-hair); }
+
+/* --------------------------------------------------------------- forced colours */
+
+@media (forced-colors: active) {
+  .fl-faces .seg-opt[aria-current="page"] { background-color: Highlight; color: HighlightText; forced-color-adjust: none; }
+  .fl-share > i { background: Highlight; forced-color-adjust: none; }
+}

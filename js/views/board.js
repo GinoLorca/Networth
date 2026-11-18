@@ -39,6 +39,7 @@ import { evalGlyph, timeTroubleGlyph, moveGlyph, resultMark } from '../ui/glyphs
 import { bankWhere, beforeCountWords, confirmWords, isCountedCash, itemWords, listedPayers, othersWords, payerWords } from './income-words.js';
 import { paydayMark, paydayWords } from './clock-words.js';
 import { evalName, glyphName, lowerFirst, phrase, say } from '../model/words.js';
+import { moveQueue } from '../model/flows.js';
 import { sayHtml } from '../ui/say.js';
 import { money, inlineMoney, keptLine, statusLine, roundTitle, colourOf, crosstable, movesList, notableMoves, worstGlyph, spentUnposted, recentList, toneStyle, flowLookups, payFlowClass, unbankedWords, rungNumber } from './parts.js';
 
@@ -1100,7 +1101,7 @@ function wideBoard(ctx, v) {
       </div>
     </div>
     ${askBand(ctx)}
-    <section class="band" aria-labelledby="b-recent">${recentBlock(ctx, v)}</section>
+    <section class="band" aria-labelledby="b-recent">${recentBlock(ctx, v)}${fileLine(ctx)}</section>
     <div class="band">${crosstableBlock(ctx, v)}</div>
     <div class="cols">
       <section class="col col-8" aria-labelledby="b-figs">${figuresBlock(ctx, v)}</section>
@@ -1123,7 +1124,7 @@ function narrowBoard(ctx, v) {
     ${v.pay ? html`<section class="band board-pay-band" aria-labelledby="b-pay">${payBlock(ctx, v)}</section>` : ''}
     <section class="band" aria-labelledby="b-today">${v.matchOn ? todayBlock(ctx, v) : prematchBlock(ctx, v)}</section>
     ${askBand(ctx)}
-    <section class="band" aria-labelledby="b-recent">${recentBlock(ctx, v)}</section>
+    <section class="band" aria-labelledby="b-recent">${recentBlock(ctx, v)}${fileLine(ctx)}</section>
     ${last ? html`<section class="band" aria-labelledby="b-last">${last}</section>` : ''}
     <section class="band" aria-labelledby="b-material">
       <div class="sec-head"><h2 class="lab" id="b-material"><b>Net worth</b><i class="sep"></i>what it is made of</h2></div>
@@ -1142,6 +1143,19 @@ function narrowBoard(ctx, v) {
     <section class="band" aria-labelledby="b-ladder">${ladderBlock(ctx)}</section>
     <section class="band pb-0" aria-label="Key to symbols">${keyBlock(ctx.words)}</section>
   </div>`;
+}
+
+/**
+ * One quiet line when moves wait to be filed (DESIGN decision 11): how many items the queue holds, and the way to it
+ * (the queue of money in and out, opened in place). No badge on the bar; nothing when every move is filed.
+ */
+function fileLine(ctx) {
+  let n = 0;
+  try { n = moveQueue(ctx.state, ctx.now, { ledger: ctx.d.ledger }).items.length; } catch { n = 0; }
+  if (!n) return '';
+  const items = n === 1 ? phrase('flows.queue.items.one', ctx.words) : say('flows.queue.items.many', ctx.words, { n });
+  return html`<p class="cap board-file">${sayHtml('board.file', ctx.words, { items: html`<span data-cover-keep>${items}</span>` })}
+    <a class="btn-link" href="#/flows" data-action="flows.queue" data-open="1" data-go="#/flows">${sayHtml('flows.queue.open', ctx.words)} ›</a></p>`;
 }
 
 export function render(ctx) {
