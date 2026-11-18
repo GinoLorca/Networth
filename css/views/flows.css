@@ -116,6 +116,42 @@
 
 .fl-bills .rows { margin-top: var(--s-2); border-top: var(--rule-hair); }
 
+/* ----------------------------------------------------------- subscriptions */
+
+/* Repertoire / Subscriptions: a group head, then one row a line: its name and amount, a caption, its choices */
+.fl-s-head { margin-top: var(--s-3); grid-template-columns: minmax(0, 1fr) auto; }
+.fl-s-head > :last-child:not(:first-child) { text-align: right; white-space: nowrap; }
+.fl-s-list { border-top: var(--rule-hair); }
+.fl-s-item { padding: 10px 0 12px; border-bottom: var(--rule-hair); min-width: 0; }
+.fl-s-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--s-2); }
+.fl-s-name { flex: 1 1 10rem; min-width: 0; font-size: var(--t-body); line-height: 1.3; overflow-wrap: anywhere; }
+.fl-s-line .row-value { margin-left: auto; font-size: var(--t-fig-s); white-space: nowrap; }
+.fl-s-why { margin-top: 2px; overflow-wrap: anywhere; }
+.fl-s-off { font-size: inherit; }
+.fl-s-verdict, .fl-s-acts { margin-top: var(--s-2); }
+.fl-s-acts { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); }
+.fl-s-cad { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); }
+.fl-s-cad .seg-opt { min-width: 3.5rem; }
+.fl-s-gone { margin-top: var(--s-2); }
+.fl-s-gone > summary { list-style: none; cursor: pointer; display: inline-block; padding: 8px 0; }
+.fl-s-gone > summary::-webkit-details-marker { display: none; }
+/* "+ Dismissed · n" turns to "− Dismissed · n" when open, as a category of where it went does */
+.fl-s-gone > summary::before { content: "+ "; color: var(--ink-3); font-family: var(--f-figure); }
+.fl-s-gone[open] > summary::before { content: "− "; }
+.fl-s-gone .rows { border-top: var(--rule-hair); }
+.fl-s-new { margin-top: var(--s-3); }
+/* a text button keeps its 44px to press under 720px */
+@media (max-width: 719px) {
+  .fl-s-off, .fl-s-new .btn-link, .fl-s-gone .btn-link, .fl-notice .btn-link { position: relative; }
+  .fl-s-off::after, .fl-s-new .btn-link::after, .fl-s-gone .row .btn-link::after, .fl-notice .btn-link::after { content: ""; position: absolute; inset: -13px -8px; }
+  .fl-s-gone > summary { min-height: var(--tap); padding: 12px 0; }
+}
+
+/* the notice of values another device replaced: said once, under the head */
+.fl-notice { margin-top: var(--s-3); padding: var(--s-2) 0 0; border-top: var(--rule-hair); max-width: 62ch; }
+.fl-notice .cap .lab { margin-right: 0.35em; font-style: normal; }
+.fl-notice .btn-link { margin-top: var(--s-1); }
+
 /* --------------------------------------------------------------- forced colours */
 
 @media (forced-colors: active) {

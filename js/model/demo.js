@@ -20,7 +20,7 @@
  *    never a week, a fortnight or a month, so the Book holds what was meant for it and no more.
  */
 
-import { defaultState, makeAccount } from './schema.js';
+import { defaultState, makeAccount, makeRecurring } from './schema.js';
 import {
   addDays, addMonths, addMonthsYm, diffDays, dow, eachDay, endOfMonth, gameDay, gameDayStartMs, maxYmd, monthOf, parts,
   weekStart,
@@ -28,6 +28,8 @@ import {
 import { roundCents } from './money.js';
 import { addDecline, mergeFeed } from './merge.js';
 import { computeHabit, refresh } from './detect.js';
+import { merchantOf } from './classify.js';
+import { seedFlows } from './flowsection.js';
 
 /** The match of the sample game began this many days before today. */
 export const DEMO_MATCH_DAYS = 21;
@@ -907,7 +909,25 @@ export function buildDemoState(nowMs, opts) {
   addOwnerNotes(state, today, asOf);
   refresh(state, asOf);
   settleIds(state, seed);
+  addOwnSubscription(state, today);
+  // the owner's decisions travel in the `flows` section: the sample holds its copy from the start (seeded at 0), so the
+  // repertoire shows its three groups and its choices can be tried (they are kept nowhere, like the rest of it)
+  seedFlows(state, asOf);
   return state;
+}
+
+/** A subscription the sample owner added by hand before its first charge: the repertoire's "Added by you". */
+const OWN_SUBSCRIPTION = { id: 'rec_demosubs', name: 'Larkspur Yoga', cents: 4500, addedDaysAgo: 10, nextInDays: 12 };
+
+function addOwnSubscription(state, today) {
+  const one = OWN_SUBSCRIPTION;
+  // paid from the checking account, as the Book's "Add an entry" offers
+  const checking = state.accounts.find((account) => account.type === 'checking');
+  state.recurring.push(makeRecurring({
+    id: one.id, name: one.name, mkey: merchantOf({ description: one.name }).mkey, amount: one.cents, cadence: 'monthly',
+    anchor: addDays(today, one.nextInDays), category: 'subscriptions', source: 'manual', since: addDays(today, -one.addedDaysAgo),
+    accountId: checking ? checking.id : null, locks: ['name', 'category', 'purpose'],
+  }));
 }
 
 /* --------------------------------------------------------------- the document */

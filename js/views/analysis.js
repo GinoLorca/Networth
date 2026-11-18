@@ -20,7 +20,7 @@ import { html, cx, attrs } from '../ui/dom.js';
 import { store } from '../store.js';
 import { context, toast } from '../runtime.js';
 import { fmt, fmtSigned, fmtPlain, fmtPct, toCents } from '../model/money.js';
-import { addDays, addMonthsYm, diffDays, endOfMonth, fmtDate, fmtMonth, fmtTime, gameDay, monthOf } from '../model/dates.js';
+import { addDays, addMonthsYm, diffDays, endOfMonth, fmtDate, fmtMonth, fmtTime, gameDay, monthOf, nowMs } from '../model/dates.js';
 import { CATEGORIES, STREAM_KINDS, accountLabel } from '../model/schema.js';
 import { emptiedStreams, retention } from '../model/ledger.js';
 import { purchaseImpact } from '../model/forecast.js';
@@ -28,6 +28,7 @@ import { payoff } from '../model/loans.js';
 import { firstTransactionDay } from '../model/cards.js';
 import { money, rungNumber } from './parts.js';
 import { faceSwitch } from './flows.js';
+import { noteTarget } from '../model/flowsection.js';
 import { sayHtml } from '../ui/say.js';
 import { phrase, say } from '../model/words.js';
 
@@ -847,15 +848,16 @@ export const actions = {
     const category = data.cat;
     if (!category || !CATEGORIES[category]) return;
     const text = String(el.value).trim();
+    // the target travels in the `flows` section (flowsection.js noteTarget), cleared as a removal
     if (!text) {
       const had = context().state.settings.targets[category] != null;
-      if (had) store.update((s) => { delete s.settings.targets[category]; });
+      if (had) store.update((s) => { noteTarget(s, category, null, nowMs()); });
       el.value = '';
       return;
     }
     const cents = readMoney(el, { min: 1 });
     if (cents == null) { restore(el, RANGE.target); return; }
-    store.update((s) => { s.settings.targets[category] = cents; });
+    store.update((s) => { noteTarget(s, category, cents, nowMs()); });
     el.value = fieldText(cents);
   },
 

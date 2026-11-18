@@ -12,12 +12,15 @@
  *   moveQueue(state, nowMs)             the moves to file: posted spends and refunds of 90 days the owner has not filed
  *   fileItem(state, item, category, at, nowMs)   one tap: the transaction sheet's own save sequence
  *   whereItWent(state, nowMs, days)     spending by class and category, merchants, top merchants
- *   leaks(state, nowMs, days)           fees and interest, the daily game, small and often, doubled, price rises
+ *   leaks(state, nowMs, days)           fees and interest, the daily game, small and often, doubled, price rises, and
+ *                                       still charging after a cut
  *   bookBills(state, today)             the Book's lines that are not subscriptions, by cost a month
+ *   repertoire(state, nowMs)            subscriptions: on the list, possible (scored, Appendix A), dismissed, added by you
+ *   recentMerchants(state, nowMs)       the merchants of 13 months, newest first, for "+ Add a subscription"
  *
- * Seams for the later passes: the shared floor `flows.since` (pass 2) will bound the queue and every comparison where
- * `firstDay` is read here; deposits join the queue in pass 3 (moveQueue returns money out only); subscriptions, the
- * plan and leak 6 (still charging after a cut) need the `flows` section and are not here.
+ * The owner's decisions (subscriptions, verdicts, lines added by hand, targets) travel in the `flows` section
+ * (flowsection.js, ARCHITECTURE 3.11); its shared floor `since` bounds the queue and every comparison. Deposits join
+ * the queue in pass 3 (moveQueue returns money out only); the plan comes in pass 4.
  *
  * Pure: no clock (every function that needs "now" takes nowMs), no DOM, no storage.
  */
@@ -29,7 +32,8 @@ import { confirmMove, correctionReach, learnRule, ruleMarkedReview, ruleOfRow, s
 import { accountKeys, noteMove, rowWhere } from './corrections.js';
 import { refresh } from './detect.js';
 import { annualCost, nextOccurrence } from './book.js';
-import { firstTransactionDay } from './cards.js';
+import { cellValue, decisionsFor, floorOf, lineFacts, lineHistory, storedFlows } from './flowsection.js';
+import { MERCHANT_RULES } from './rules-data.js';
 
 /** The periods offered, in days; each is compared with the window of the same length just before it. */
 export const PERIODS = Object.freeze([30, 90, 365]);
@@ -96,7 +100,7 @@ export function periodOf(value) {
  * which figures "a month" and "a year" are scaled.
  * @param {string} today
  * @param {number} days
- * @param {string|null} firstDay  this device's first day on record (the shared floor comes in pass 2)
+ * @param {string|null} firstDay  the shared floor (flowsection.floorOf): the latest first day on record of any device
  */
 export function windowsOf(today, days, firstDay) {
   const n = periodOf(days);
@@ -105,7 +109,11 @@ export function windowsOf(today, days, firstDay) {
   const prevFrom = addDays(from, -n);
   const first = isYmd(firstDay) ? firstDay : null;
   const covered = first === null || first > today ? 0 : first <= from ? n : diffDays(first, today) + 1;
-  return { days: n, from, to: today, prevFrom, prevTo, firstDay: first, covered, comparable: first !== null && first <= prevFrom };
+  // the sums start at the floor too, so a device whose own record is longer counts what every device counts, and a
+  // figure scaled from the days covered is scaled from the days summed (the window before keeps its own days: it is
+  // compared only when the floor is before it)
+  const start = first !== null && first > from ? first : from;
+  return { days: n, from: start, to: today, prevFrom, prevTo, firstDay: first, covered, comparable: first !== null && first <= prevFrom };
 }
 
 /** A figure of the period scaled to a month or a year (an estimate): 0 when no day of it is on record. */
@@ -235,7 +243,7 @@ function filedShareOf(state, ledger, fromDay, toDay) {
  */
 export function inAndOut(state, nowMs, days, opts) {
   const ledger = ledgerOf(state, nowMs, opts);
-  const w = windowsOf(ledger.today, days, firstTransactionDay(state));
+  const w = windowsOf(ledger.today, days, floorOf(state));
   const out = spentIn(ledger, w.from, w.to);
   const moneyIn = inflow(state, w.from, w.to, nowMs, { ledger });
   const pay = ledger.payStreams();
@@ -339,7 +347,9 @@ function filedRanking(rows, filed) {
 export function moveQueue(state, nowMs, opts) {
   const ledger = ledgerOf(state, nowMs, opts);
   const to = ledger.today;
-  const from = addDays(to, -(QUEUE_DAYS - 1));
+  // 90 days, never before the shared floor, so two devices that show the same accounts hold the same queue
+  const floor = floorOf(state);
+  const from = floor && floor > addDays(to, -(QUEUE_DAYS - 1)) ? floor : addDays(to, -(QUEUE_DAYS - 1));
   const hidden = new Map((Array.isArray(state.accounts) ? state.accounts : []).filter((a) => a && a.id).map((a) => [a.id, a]));
   const keys = learnedKeys(state);
   const fingerprints = accountKeys(state);
@@ -459,7 +469,7 @@ export function fileItem(state, item, category, at, nowMs) {
  */
 export function whereItWent(state, nowMs, days, opts) {
   const ledger = ledgerOf(state, nowMs, opts);
-  const w = windowsOf(ledger.today, days, firstTransactionDay(state));
+  const w = windowsOf(ledger.today, days, floorOf(state));
   const now = ledger.spendingByCategory(w.from, w.to);
   const before = w.comparable ? ledger.spendingByCategory(w.prevFrom, w.prevTo) : [];
   const merchants = ledger.spendingByMerchant(w.from, w.to);
@@ -551,14 +561,13 @@ function activeBook(state) {
 }
 
 /**
- * The leaks of a period (Appendix B, rules 1 to 5). Each holds the period's figure and ≈ a year; they overlap in
- * places, so they are never added up. Rule 6, still charging after a cut, needs the verdict's day, which travels with
- * the `flows` section of pass 2.
- * @returns {{ window: object, fees: object|null, game: object|null, small: object|null, doubled: object[], rises: object[] }}
+ * The leaks of a period (Appendix B, rules 1 to 6). Each holds the period's figure and ≈ a year; they overlap in
+ * places, so they are never added up. Rule 6, still charging after a cut, reads the cut's day from the `flows` section.
+ * @returns {{ window: object, fees: object|null, game: object|null, small: object|null, doubled: object[], rises: object[], still: object[] }}
  */
 export function leaks(state, nowMs, days, opts) {
   const ledger = ledgerOf(state, nowMs, opts);
-  const w = windowsOf(ledger.today, days, firstTransactionDay(state));
+  const w = windowsOf(ledger.today, days, floorOf(state));
   const rows = ledger.spendRows(w.from, w.to);
   const signed = (tx) => (tx.flow === 'in' ? -1 : 1) * Math.round(tx.amount);
   const unposted = isUnposted;
@@ -666,7 +675,36 @@ export function leaks(state, nowMs, days, opts) {
   }
   rises.sort((a, b) => (a.day < b.day ? 1 : a.day > b.day ? -1 : 0) || (a.id < b.id ? -1 : 1));
 
-  return { window: w, fees, game, small, doubled, rises };
+  return { window: w, fees, game, small, doubled, rises, still: stillCharging(state, charges) };
+}
+
+/** Days after a cut's day within which a charge is still the one the cut came too late for (rule 6). */
+export const CUT_GRACE_DAYS = 3;
+/** The earliest day a cut can carry (stamps before 2001 are no time of day, flowsection.js). */
+const CUT_FLOOR = '2001-01-01';
+
+/**
+ * Rule 6, still charging after a cut: a line whose verdict is a cut made on day D (the cell's `day`), with a charge the
+ * bank reported more than 3 days after D. A cut the update seeded carries the seeding day, so no earlier charge counts;
+ * until a later one comes, the line is marked to cut without the claim. The latest such charge is named.
+ * @returns {{ id: string, name: string, cut: string, day: string, cents: number, est: boolean, year: number }[]}
+ */
+export function stillCharging(state, charges) {
+  const byEntry = charges || chargesByEntry(state);
+  const recs = (Array.isArray(state.recurring) ? state.recurring : []).filter((rec) => rec && typeof rec.id === 'string' && rec.byHand !== true);
+  const { byLine } = decisionsFor(storedFlows(state), recs, lineHistory(state));
+  const out = [];
+  for (const rec of recs) {
+    const one = byLine.get(String(rec.id));
+    const cell = one && one.verdict;
+    // a cut dated before 2001 is no day the owner cut on (a record read with no copy and no time): it claims nothing
+    if (!cell || cellValue(cell) !== 'cut' || !isYmd(cell.day) || cell.day < CUT_FLOOR || rec.verdict !== 'cut') continue;
+    const after = (byEntry.get(rec.id) || []).filter((tx) => tx.day > addDays(cell.day, CUT_GRACE_DAYS));
+    if (!after.length) continue;
+    const latest = after[after.length - 1];
+    out.push({ id: rec.id, name: rec.name || rec.mkey || '', cut: cell.day, day: latest.day, cents: Math.round(latest.amount), est: !!latest.pending, year: annualCost(rec) });
+  }
+  return out.sort((a, b) => (a.day < b.day ? 1 : a.day > b.day ? -1 : 0) || (a.id < b.id ? -1 : 1));
 }
 
 /* ----------------------------------------------------------- the Book's bills */
@@ -683,13 +721,15 @@ const DEBT_GROUPS = new Set(['card', 'debt']);
  * and has not been charged yet (an estimate).
  * @returns {{ perMonth: number, count: number, lines: object[] }}
  */
-export function bookBills(state, today) {
+export function bookBills(state, today, opts) {
   const charges = chargesByEntry(state);
   const debts = new Set((Array.isArray(state.accounts) ? state.accounts : []).filter((a) => a && ACCOUNT_TYPES[a.type] && DEBT_GROUPS.has(ACCOUNT_TYPES[a.type].group)).map((a) => a.id));
+  // a line on the list of subscriptions (confirmed by the owner, whatever its category) is told there, not here
+  const listed = opts && opts.listed instanceof Set ? opts.listed : new Set();
   const lines = activeBook(state)
     // a payment to a card or a loan pays for what was already counted or owned: it is no bill; nor is interest, which
     // the leaks tell under Fees and interest
-    .filter((rec) => !NOT_BILLS.has(rec.category) && !(rec.toAccountId != null && debts.has(rec.toAccountId)))
+    .filter((rec) => !NOT_BILLS.has(rec.category) && !(rec.toAccountId != null && debts.has(rec.toAccountId)) && !listed.has(rec.id))
     .map((rec) => {
       const list = charges.get(rec.id) || [];
       const last = list.length ? list[list.length - 1].day : null;
@@ -702,4 +742,212 @@ export function bookBills(state, today) {
     })
     .sort((a, b) => b.perMonth - a.perMonth || (a.name < b.name ? -1 : 1));
   return { perMonth: lines.reduce((sum, line) => sum + line.perMonth, 0), count: lines.length, lines: lines.slice(0, BILL_LINES) };
+}
+
+/* -------------------------------------------------------------- subscriptions */
+
+/**
+ * The built-in subscription rules marked for a look (rules-data.js): Apple, Google, Microsoft, Spotify, music streaming.
+ * A line they file is a possible subscription, not a sure one: the rule asks the owner to confirm. Read from the rules
+ * themselves: classify keeps the review mark for the categories it queues only.
+ */
+const SUB_REVIEW_RULES = new Set(MERCHANT_RULES.filter((rule) => rule && rule.review === true && rule.category === 'subscriptions').map((rule) => 'builtin:' + rule.id));
+/**
+ * Of those, the descriptors of a seller of many products (Appendix A: only these also bill one-offs): the reason line
+ * says so of them alone; a rule of one service (Spotify, music streaming, Google's storage) says what was scored.
+ */
+const MANY_PRODUCTS = new Set(['builtin:apple-services', 'builtin:google-play', 'builtin:microsoft']);
+
+/** Merchant category codes of subscriptions and software sellers (Appendix A, rules-data.js MCC). */
+const SUB_MCC = new Set(['4899', '5968', '5734', '5817', '7372', '5815', '5816', '5818']);
+/** The categories of a line that may be a subscription the rules did not call one: software, entertainment, a gym. */
+const MAYBE_SUB = new Set(['software', 'entertainment', 'health']);
+/** Suggestions need this many points; they are shown best first, this many at a time. */
+export const SUGGEST_MIN = 3;
+export const SUGGEST_SHOWN = 6;
+/** Months looked back over for one charge of a software or entertainment seller, and for the recent merchants. */
+const LOOK_BACK_DAYS = 396;
+
+/** A bank charge of the owner's that a subscription could be: a posted or pending spend on a shown account, not a duplicate. */
+function isCharge(tx, shown) {
+  return !!tx && tx.source !== 'manual' && tx.kind === 'spend' && tx.flow === 'out' && !tx.matchId && isYmd(tx.day)
+    && typeof tx.mkey === 'string' && tx.mkey !== '' && tx.amount > 0 && shown.has(tx.accountId);
+}
+
+/** Whether a line filed as Subscriptions was filed so by the owner or a rule that is sure of it (not one marked for a look). */
+function surelySub(rec, latest) {
+  if (rec.category !== 'subscriptions') return false;
+  if (Array.isArray(rec.locks) && rec.locks.includes('category')) return true;
+  if (!latest) return rec.source === 'detected';
+  if (typeof latest.ruleId === 'string' && latest.ruleId.startsWith('learned:')) return true;
+  if (Array.isArray(latest.locks) && latest.locks.includes('category')) return true;
+  return !SUB_REVIEW_RULES.has(latest.ruleId);
+}
+
+function stepsEqual(amounts) {
+  return amounts.length > 1 && amounts.every((one) => Math.abs(one - amounts[0]) <= Math.max(200, 0.1 * amounts[0]));
+}
+
+/**
+ * Subscriptions (Repertoire / Subscriptions), in three groups and a collapsed fourth:
+ * - on the list: a Book line filed as Subscriptions by the owner or a rule sure of it, listed without a tap, and every
+ *   line the owner confirmed (Add); any can be taken off (Not one);
+ * - possible: merchant series scored as Appendix A says (3 points or more, best first), each point a phrase of its
+ *   reason: a subscription rule marked for a look (+3), a line found by detection that is not essential and is filed as
+ *   software, entertainment or a gym (+3), a subscription seller's merchant category code (+2), two charges 27 to 33
+ *   days apart at one price that detection left (+2, at a merchant of at most 3 moves in 90 days, outside the daily
+ *   game), one charge of a software or entertainment seller in 13 months (+1, its cadence asked on Add), a steady
+ *   amount (+1), 4 or more moves in 30 days (−3: a shop);
+ * - added by you: the lines added by hand as subscriptions (`added`), charged or not yet;
+ * - dismissed: what the owner took off or said Not one to (`sub: false`), each to restore.
+ * Decisions are read from the `flows` section by content, so they hold on every device.
+ * @returns {{ list: object[], possible: object[], dismissed: object[], added: object[], perMonth: number, perYear: number, listed: Set<string> }}
+ */
+export function repertoire(state, nowMs, opts) {
+  const ledger = ledgerOf(state, nowMs, opts);
+  const today = ledger.today;
+  const shown = new Set((Array.isArray(state.accounts) ? state.accounts : []).filter((a) => a && !a.hidden).map((a) => a.id));
+  const charges = chargesByEntry(state);
+  const copy = storedFlows(state);
+  const book = activeBook(state).filter((rec) => rec.byHand !== true);
+  const recentFrom = addDays(today, -LOOK_BACK_DAYS);
+  const rows = (Array.isArray(state.txs) ? state.txs : []).filter((tx) => isCharge(tx, shown) && tx.day >= recentFrom && tx.day <= today);
+  const byMerchant = new Map();
+  for (const tx of rows) {
+    const list = byMerchant.get(tx.mkey);
+    if (list) list.push(tx); else byMerchant.set(tx.mkey, [tx]);
+  }
+  for (const list of byMerchant.values()) list.sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : 0));
+  const visits = (mkey, days) => (byMerchant.get(mkey) || []).filter((tx) => tx.day > addDays(today, -days)).length;
+  // candidates: every active Book line, and the series of a merchant no line holds (a line taken out of the Book or
+  // ended included: the owner said it is no bill, or it stopped)
+  const candidates = [];
+  const held = new Set((Array.isArray(state.recurring) ? state.recurring : []).filter((rec) => rec && rec.byHand !== true && typeof rec.mkey === 'string').map((rec) => rec.mkey));
+  for (const rec of book) {
+    let list = charges.get(rec.id) || [];
+    // a line made for a subscription confirmed (Add) holds the bank's row it was made from: until detection links
+    // that row, its charges are the unheld rows of its merchant near its amount, so its price is the bank's (roman)
+    if (!list.length && typeof rec.madeFor === 'string') {
+      list = (byMerchant.get(rec.mkey) || []).filter((tx) => tx.recurringId == null && (rec.accountId == null || tx.accountId === rec.accountId)
+        && Math.abs(Math.round(tx.amount) - Math.round(rec.amount)) <= Math.max(200, 0.35 * Math.round(rec.amount)));
+      if (list.length) charges.set(rec.id, list);
+    }
+    const latest = list[list.length - 1] || null;
+    const reasons = [];
+    if (rec.category === 'subscriptions' && latest && SUB_REVIEW_RULES.has(latest.ruleId) && !surelySub(rec, latest)) reasons.push(['rule', 3]);
+    if (rec.source === 'detected' && !rec.essential && MAYBE_SUB.has(rec.category)) reasons.push(['kind', 3]);
+    if (list.some((tx) => SUB_MCC.has(String(tx.mcc)))) reasons.push(['mcc', 2]);
+    if (!rec.variable && list.length > 1 && stepsEqual(list.slice(-3).map((tx) => Math.round(tx.amount)))) reasons.push(['steady', 1]);
+    if (visits(rec.mkey, 30) >= 4) reasons.push(['often', -3]);
+    candidates.push({ kind: 'line', rec, latest, line: rec, auto: surelySub(rec, latest), reasons, cadKnown: true, seller: !!latest && MANY_PRODUCTS.has(latest.ruleId) });
+  }
+  for (const [mkey, list] of byMerchant) {
+    if (held.has(mkey)) continue;
+    const latest = list[list.length - 1];
+    const klass = latest.klass === 'game' || klassOf(latest.category) === 'game';
+    const reasons = [];
+    let cadence = null;
+    if (list.length >= 2 && visits(mkey, 90) <= 3 && !klass) {
+      const before = list[list.length - 2];
+      const gap = diffDays(before.day, latest.day);
+      const a = Math.round(before.amount);
+      const b = Math.round(latest.amount);
+      if (gap >= 27 && gap <= 33 && Math.abs(a - b) <= Math.max(200, 0.1 * a)) { reasons.push(['pair', 2]); cadence = 'monthly'; }
+    }
+    if (list.length === 1 && (latest.category === 'software' || latest.category === 'entertainment')) reasons.push(['once', 1]);
+    // a charge filed by a subscription rule marked for a look (Apple, Google, Microsoft, Spotify, music streaming): +3,
+    // as for a Book line, so a single yearly plan billed that way is suggested, its cadence asked on Add
+    if (SUB_REVIEW_RULES.has(latest.ruleId)) reasons.push(['rule', 3]);
+    if (!reasons.length) continue;
+    if (list.some((tx) => SUB_MCC.has(String(tx.mcc)))) reasons.push(['mcc', 2]);
+    if (cadence && stepsEqual(list.slice(-2).map((tx) => Math.round(tx.amount)))) reasons.push(['steady', 1]);
+    if (visits(mkey, 30) >= 4) reasons.push(['often', -3]);
+    const line = { id: 'merchant:' + mkey, mkey, cadence: cadence || 'annual', amount: Math.round(latest.amount), anchor: latest.day, name: latest.merchant || mkey };
+    candidates.push({ kind: 'merchant', rec: null, latest, line, auto: false, reasons, cadKnown: !!cadence, count: list.length, seller: MANY_PRODUCTS.has(latest.ruleId) });
+  }
+  // the decisions are matched over every line the record follows them on (applyFlows and rule 6 read the same: ended
+  // lines included) and the merchant series, then only the candidates are drawn: a decision on a line that ended stays
+  // with it, and never shows on another series of the payee
+  const every = (Array.isArray(state.recurring) ? state.recurring : []).filter((rec) => rec && typeof rec.id === 'string' && rec.byHand !== true);
+  const { byLine, superseded } = decisionsFor(copy, [...every, ...candidates.filter((one) => one.kind === 'merchant').map((one) => one.line)], lineHistory(state));
+  const list = [];
+  const possible = [];
+  const dismissed = [];
+  const added = [];
+  for (const one of candidates) {
+    // a line another took over (a card change: the old card's line the owner renamed, or made for an Add, stays in the
+    // Book) is no subscription of its own: its decisions are the line that took over its charges
+    if (one.rec && superseded.has(String(one.rec.id))) continue;
+    const decision = byLine.get(String(one.line.id));
+    const sub = decision ? cellValue(decision.sub) : undefined;
+    const rec = one.rec;
+    const item = {
+      id: rec ? rec.id : one.line.id, key: decision ? decision.key : (lineFacts(one.line) || {}).key || '', mkey: one.line.mkey,
+      name: rec ? rec.name || rec.mkey : one.line.name, amount: Math.round(one.line.amount), cadence: rec ? rec.cadence : one.cadKnown ? one.line.cadence : null,
+      next: null, perMonth: rec ? Math.round(annualCost(rec) / 12) : 0, est: true, variable: !!(rec && rec.variable), verdict: rec ? rec.verdict || null : null,
+      score: one.reasons.reduce((n, [, points]) => n + points, 0), reasons: one.reasons.map(([why]) => why), last: one.latest ? one.latest.day : null,
+      line: one.line, kind: one.kind, auto: one.auto, charged: rec ? (charges.get(rec.id) || []).length > 0 : true, seller: one.seller,
+    };
+    if (rec) {
+      let next = nextOccurrence(rec, addDays(today, -1));
+      const last = item.last;
+      if (next && last && last >= next) next = nextOccurrence(rec, next);
+      item.next = next;
+      // a price is roman only as the bank last charged it
+      item.est = !!rec.variable || !item.charged;
+    }
+    if (rec && rec.source === 'manual') {
+      if (rec.category === 'subscriptions' && sub !== false) added.push(item);
+      continue;
+    }
+    if (sub === false) { dismissed.push(item); continue; }
+    if (sub === true || one.auto) { list.push(item); continue; }
+    if (item.score >= SUGGEST_MIN) possible.push(item);
+  }
+  const byCost = (a, b) => b.perMonth - a.perMonth || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
+  list.sort(byCost);
+  added.sort(byCost);
+  possible.sort((a, b) => b.score - a.score || (a.last < b.last ? 1 : a.last > b.last ? -1 : 0) || (a.key < b.key ? -1 : 1));
+  dismissed.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+  const perMonth = [...list, ...added].reduce((sum, item) => sum + item.perMonth, 0);
+  return {
+    list, possible, dismissed, added, perMonth, perYear: perMonth * 12,
+    listed: new Set([...list, ...added].map((item) => item.id)),
+  };
+}
+
+/** Categories "+ Add a subscription" never offers a merchant of. */
+const NOT_OFFERED = new Set(['cash_withdrawal', 'fees_interest', 'debt_service']);
+
+/** The categories of a merchant likely to be a subscription, offered first by "+ Add a subscription". */
+const LIKELY_SUB = new Set(['subscriptions', 'software', 'entertainment', 'health', 'phone_internet']);
+
+/**
+ * The merchants of the last 13 months, each with its latest charge: what "+ Add a subscription" offers first, so a line
+ * added by hand carries the bank's own merchant key and its charges take the line over. Those likely to be one come
+ * first (filed as subscriptions, software, entertainment, health and fitness, phone and internet, or by a seller's
+ * subscription code), then the newest charge.
+ * @returns {{ mkey: string, name: string, amount: number, day: string, count: number }[]}
+ */
+export function recentMerchants(state, nowMs, limit = 12) {
+  const today = ledgerOf(state, nowMs).today;
+  const shown = new Set((Array.isArray(state.accounts) ? state.accounts : []).filter((a) => a && !a.hidden).map((a) => a.id));
+  const from = addDays(today, -LOOK_BACK_DAYS);
+  const held = new Set(activeBook(state).map((rec) => rec.mkey));
+  const byKey = new Map();
+  for (const tx of Array.isArray(state.txs) ? state.txs : []) {
+    if (!isCharge(tx, shown) || tx.day < from || tx.day > today || held.has(tx.mkey) || isCatchAll(tx)) continue;
+    if (tx.klass === 'game' || klassOf(tx.category) === 'game') continue;
+    // no one subscribes to cash taken out, a fee or interest, or a payment toward a debt
+    if (NOT_OFFERED.has(tx.category)) continue;
+    const one = byKey.get(tx.mkey) || { mkey: tx.mkey, name: tx.merchant || tx.mkey, amount: 0, day: '', count: 0, likely: false };
+    one.count += 1;
+    if (LIKELY_SUB.has(tx.category) || SUB_MCC.has(String(tx.mcc))) one.likely = true;
+    if (tx.day >= one.day) { one.day = tx.day; one.amount = Math.round(tx.amount); one.name = tx.merchant || tx.mkey; }
+    byKey.set(tx.mkey, one);
+  }
+  return [...byKey.values()]
+    .sort((a, b) => (Number(b.likely) - Number(a.likely)) || (a.day < b.day ? 1 : a.day > b.day ? -1 : a.mkey < b.mkey ? -1 : 1))
+    .slice(0, limit)
+    .map(({ likely, ...one }) => one);
 }

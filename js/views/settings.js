@@ -48,6 +48,7 @@ import { makeDerived } from '../derive.js';
 import { coverText, inlineMoney } from './parts.js';
 import { alertStatus } from '../model/alerts.js';
 import { chooseWords } from '../model/prefs.js';
+import { seedFlows } from '../model/flowsection.js';
 import { WORDS, phrase, say, shareToast, wordsMode, wordsOf } from '../model/words.js';
 import { sayHtml } from '../ui/say.js';
 import { answerPayer, askAgain, cashAccountOf, isIdleCash, ensureCashAccount, incomeLabel, incomeOf, incomePayments, incomeQuestions, payerAnswer } from '../model/income.js';
@@ -1315,6 +1316,9 @@ async function restore() {
   store.setUi({ settingsRestore: null, settingsRestoreError: null, settingsConfirm: null });
   await store.flush(); // what is on this device now is fully saved before anything replaces it
   const previous = store.state;
+  // the decisions on money in and out (3.11): a backup from before this version has no copy of them; it is made now,
+  // as at boot, so a cut it holds carries today and never claims a charge made before it
+  seedFlows(doc, nowMs());
   // Reversible: the copy is shown first and only saved over the previous record once a screen has drawn from it.
   store.load(doc, { save: false });
   applyTheme(doc.settings.theme, true);

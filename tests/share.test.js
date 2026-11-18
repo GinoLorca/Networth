@@ -269,8 +269,10 @@ test('exportShared: nothing the bank reported is in the file', () => {
   assert.ok(words.length >= 12);
   for (const word of words) assert.equal(text.includes(word), false, 'the file holds "' + word + '"');
   assert.equal(text.includes('lindqvist'), false);
-  // the daily game (3.9) travels too: here the baseline the match began with, as figures of the app's own (no row, no account)
-  assert.deepEqual(Object.keys(exportShared(state, NOW)).sort(), ['app', 'byHand', 'game', 'savedAt', 'v']);
+  // the daily game (3.9) travels too: here the baseline the match began with, as figures of the app's own (no row, no account);
+  // and the first day of this device's record, the floor of the decisions on money in and out (3.11)
+  assert.deepEqual(Object.keys(exportShared(state, NOW)).sort(), ['app', 'byHand', 'flows', 'game', 'savedAt', 'v']);
+  assert.deepEqual(exportShared(state, NOW).flows, { since: '2026-09-04' });
   assert.deepEqual(Object.keys(exportShared(state, NOW).game), ['start']);
   assert.deepEqual(Object.keys(exportShared(state, NOW).game.start.v.seg).sort(), ['backtest', 'basis', 'off', 'winOff', 'winWork', 'window', 'work']);
   assert.deepEqual(Object.keys(exportShared(state, NOW).byHand), [entry.id], 'an ordinary Book line never travels');

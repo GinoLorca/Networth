@@ -14,6 +14,7 @@ import { runsByHand } from './book.js';
 import { claimByHand, payeeKey, unpaidByPayee } from './byhand.js';
 import { incomeClaimedRows, rebuildIncome } from './income.js';
 import { applyCorrections } from './corrections.js';
+import { applyFlows } from './flowsection.js';
 
 /*
  * How the specification is read where it leaves a choice (each is implemented where it is named):
@@ -189,7 +190,7 @@ export function detectRecurring(state, nowMs) {
  * Read with some give: "within 15%" holds for three deposits in four (a bonus is not a pay cut), a
  * regular credit under $100 accrues only when it is worded as pay (interest is regular too), a payer
  * worded as pay is a 'salary' even before it is regular, and another payer whose deposits are tagged
- * coaching or studio is a 'lessons' or 'creative' stream rather than 'other'.
+ * coaching or studio is a stream of the coaching kind or the 'creative' kind rather than 'other'.
  * @param {object} state  (mutated)
  * @param {number} nowMs
  * @returns {{ added: string[], updated: string[] }}
@@ -326,9 +327,13 @@ export function refresh(state, nowMs) {
   const reclassified = isObject(state) ? reclassify(state) : 0;
   // the payments another app reported, matched to the bank rows just classified (ARCHITECTURE 3.7)
   rebuildIncome(state, nowMs);
+  // the owner's decisions on lines (3.11): a subscription confirmed elsewhere gets its line before detection links charges
+  applyFlows(state, nowMs);
   const recurring = detectRecurring(state, nowMs);
   const streams = detectStreams(state, nowMs);
   applyCorrections(state, nowMs);
+  // and they reach the lines this run found
+  applyFlows(state, nowMs);
   return {
     reclassified,
     recurring,
@@ -667,13 +672,15 @@ function holdCharges(entry, groups, claims, report) {
 /**
  * A detected entry lapses when it has not been charged for 1.5 periods, and returns when a charge
  * later than the one it lapsed on arrives. The owner's own entries and locked ones are left alone:
- * an entry whose cadence, amount, name or anchor the owner set is never ended here.
+ * an entry whose cadence, amount, name or anchor the owner set is never ended here, nor a line made
+ * for a subscription the owner confirmed (`madeFor`, flowsection.js): its cadence stays free, for a
+ * series found later to correct, and the confirmation holds it.
  */
 function settleEntry(ctx, entry, anchorBefore, report) {
   if (entry.source !== 'detected' || hasLock(entry, 'active')) return;
   const lapsed = isLapsed(entry, ctx.today, BILL_LAPSE_PERIODS);
   if (entry.active && lapsed) {
-    if (OWNER_HELD.some((field) => hasLock(entry, field))) return;
+    if (OWNER_HELD.some((field) => hasLock(entry, field)) || typeof entry.madeFor === 'string') return;
     entry.active = false;
     report.lapsed.push(entry.id);
   } else if (!entry.active && !lapsed && isYmd(anchorBefore) && isYmd(entry.anchor) && entry.anchor > anchorBefore) {

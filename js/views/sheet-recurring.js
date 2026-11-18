@@ -16,7 +16,14 @@
  *          recurring.save (the form; a field that cannot be read is named under itself and focused),
  *          recurring.touch (typing clears a shown error),
  *          recurring.dismiss ("this is not a recurring bill": active false, locked, with undo),
- *          recurring.restore (an ended or dismissed line recurs again, with undo).
+ *          recurring.restore (an ended or dismissed line recurs again, with undo),
+ *          recurring.pick (a recent merchant chosen for a subscription added by hand: params.sub).
+ *
+ * What travels (the `flows` section, flowsection.js, ARCHITECTURE 3.11): a verdict and "not a recurring bill" (and its
+ * restore) are decisions on the line, keyed by its content; a line added by hand is an `added` entry, linked from the
+ * line (`added`), whose source stays 'manual'. Opened with params.sub ("+ Add a subscription"), a new line is filed as
+ * Subscriptions and the recent merchants of 13 months come first, so the line carries the bank's own merchant key.
+ * The UI refuses a 41st line added by hand.
  */
 
 import { html, cx, attrs } from '../ui/dom.js';
@@ -30,12 +37,17 @@ import { annualCost, dailyCost, nextOccurrence } from '../model/book.js';
 import { merchantOf } from '../model/classify.js';
 import { refresh } from '../model/detect.js';
 import { addByHand, byHandMonth, editByHand, removeByHand } from '../model/byhand.js';
+import { ADDED_LIVE_MAX, addedCount, decideLine, entryOf, noteAdded } from '../model/flowsection.js';
+import { recentMerchants } from '../model/flows.js';
+import { nowMs } from '../model/dates.js';
 import { sayHtml } from '../ui/say.js';
 import { phrase, say } from '../model/words.js';
 
 const VERDICTS = [['', 'None'], ['keep', 'Keep'], ['review', 'Review'], ['cut', 'Cut']];
 const KLASS_ORDER = ['book', 'need', 'want', 'oneoff', 'game'];
 const NAME_MAX = 80;
+/** Recent merchants "+ Add a subscription" shows before "+ All n". */
+const RECENT_FIRST = 6;
 const NOTE_MAX = 500;
 /** The limits of a payment the owner sends, as byhand.js checks them. */
 const PAY_NAME_MAX = 60;
@@ -272,7 +284,12 @@ export function render(ctx, params) {
     </div>`;
   }
   const isNew = !rec;
-  const v = rec || makeRecurring({ source: 'manual', anchor: ctx.today });
+  const subMode = isNew && !!(params && params.sub);
+  const pick = subMode && ctx.ui.recurringPick ? ctx.ui.recurringPick : null;
+  const v = rec || makeRecurring({ source: 'manual', anchor: pick && pick.day ? pick.day : ctx.today, name: pick ? pick.name : '', amount: pick ? pick.amount : 0 });
+  // the merchants likely to be a subscription first; six, then "+ All n" (as the queue does)
+  const recent = subMode && !pick ? recentMerchants(ctx.state, ctx.now, 1000) : [];
+  const recentShown = ctx.ui.recurringAll ? recent : recent.slice(0, RECENT_FIRST);
   const form = ctx.ui.recurringForm && ctx.ui.recurringForm.key === (id || 'new') ? ctx.ui.recurringForm : null;
   const errors = form ? form.errors : {};
   const purposes = ctx.state.settings.purposes || {};
@@ -282,12 +299,21 @@ export function render(ctx, params) {
   const fed = isNew ? [] : Object.keys(FED_FIELDS).filter((field) => hasLock(v, field));
   const charges = isNew ? { count: 0, last: null } : chargesOf(ctx.state, v.id);
 
-  return html`<form class="sheet-body" data-submit="recurring.save" data-input="recurring.touch" data-id="${id}" novalidate ${attrs({ 'data-cover': !!ctx.state.settings.cover })}>
+  return html`<form class="sheet-body" data-submit="recurring.save" data-input="recurring.touch" data-id="${id}" ${subMode ? html`data-sub="1"` : ''} novalidate ${attrs({ 'data-cover': !!ctx.state.settings.cover })}>
     <p class="sheet-head lab"><b>${sayHtml('recurring.entry', ctx.words)}</b><i class="sep"></i>${isNew ? 'added by hand' : v.source === 'manual' ? 'entered by you' : 'found in the bank feed'}</p>
-    <h2 class="sheet-title">${isNew ? phrase('recurring.newTitle', ctx.words) : v.name || 'Unnamed line'}</h2>
-    ${isNew
-      ? html`<p class="cap">For a bill the feed has not shown yet. Give it a name as the bank will print it, an amount and one date; the bank’s own charges take the line over when they arrive.</p>`
-      : facts(ctx, v)}
+    <h2 class="sheet-title">${subMode ? phrase('recurring.sub.title', ctx.words) : isNew ? phrase('recurring.newTitle', ctx.words) : v.name || 'Unnamed line'}</h2>
+    ${subMode
+      ? html`${recent.length ? html`<p class="field-label lab">${sayHtml('recurring.sub.recent', ctx.words)}</p>
+          <ul class="rows rows-plain bks-recent">${recentShown.map((m) => html`<li data-key="${m.mkey}"><button class="row" type="button" data-action="recurring.pick" data-mkey="${m.mkey}">
+            <span class="row-label">${m.name}<em class="row-note">${say('recurring.sub.last', ctx.words, { date: fmtDate(m.day, 'short') })}</em></span>
+            <span class="row-value fig">${fmt(m.amount)}</span>
+          </button></li>`)}</ul>
+          ${recent.length > RECENT_FIRST ? html`<p class="fl-q-more"><button class="btn-link" type="button" data-action="recurring.recent-all" aria-expanded="${ctx.ui.recurringAll ? 'true' : 'false'}">${ctx.ui.recurringAll ? say('flows.queue.fewerSix', ctx.words) : say('flows.queue.allN', ctx.words, { n: recent.length })}</button></p>` : ''}
+          <p class="cap">${sayHtml('recurring.sub.typed', ctx.words)}</p>` : html`<p class="cap">${pick ? sayHtml('recurring.sub.picked', ctx.words) : sayHtml('recurring.sub.typed', ctx.words)}</p>`}
+        ${pick ? html`<input type="hidden" name="pick" value="${pick.mkey}">` : ''}`
+      : isNew
+        ? html`<p class="cap">For a bill the feed has not shown yet. Give it a name as the bank will print it, an amount and one date; the bank’s own charges take the line over when they arrive.</p>`
+        : facts(ctx, v)}
 
     <label class="${cx('field', errors.name && 'is-invalid')}">
       <span class="field-label lab">Name</span>
@@ -298,7 +324,7 @@ export function render(ctx, params) {
     <div class="bks-amount">
       <label class="${cx('field', errors.amount && 'is-invalid')}">
         <span class="field-label lab">Amount, in dollars</span>
-        <input class="input input-fig" type="text" inputmode="decimal" name="amount" data-fig value="${isNew ? '' : dollars(v.amount)}" autocomplete="off" ${attrs({ 'aria-invalid': errors.amount ? 'true' : null, placeholder: isNew ? '0.00' : null })}>
+        <input class="input input-fig" type="text" inputmode="decimal" name="amount" data-fig value="${isNew && !pick ? '' : dollars(v.amount)}" autocomplete="off" ${attrs({ 'aria-invalid': errors.amount ? 'true' : null, placeholder: isNew ? '0.00' : null })}>
         ${errors.amount ? html`<span class="field-error">${errors.amount}</span>` : ''}
       </label>
       <label class="check"><input type="checkbox" name="variable" ${attrs({ checked: !!v.variable })}><span class="check-box" aria-hidden="true"></span><span>The amount varies</span></label>
@@ -528,17 +554,31 @@ export const actions = {
     if (store.ui.recurringForm) store.setUi({ recurringForm: null });
 
     if (!rec) {
+      // the lines added by hand travel, at most 40 of them (ADDED_LIVE_MAX): the 41st is refused, under its name
+      if (addedCount(ctx.state) >= ADDED_LIVE_MAX) {
+        store.setUi({ recurringForm: { key: 'new', errors: { name: say('recurring.added.full', ctx.words, { n: ADDED_LIVE_MAX }) } } });
+        return;
+      }
       const undoLabel = phrase('recurring.undo.added', (context() || {}).words);
+      const picked = typeof (values || {}).pick === 'string' && values.pick ? values.pick : null;
+      const at = nowMs();
       store.update((s) => {
         const locks = ['name', 'category', 'purpose'];
         if (fields.toAccountId) locks.push('toAccountId');
-        // since: nothing is scheduled or accrued for a hand-added line before the day it was added
-        s.recurring.push(makeRecurring({ ...fields, source: 'manual', since: ctx.today, mkey: merchantOf({ description: fields.name }).mkey, locks }));
+        // since: nothing is scheduled or accrued for a hand-added line before the day it was added; a merchant picked from
+        // the recent ones gives the line the bank's own key, so its charges take the line over
+        const line = makeRecurring({ ...fields, source: 'manual', since: ctx.today, mkey: picked || merchantOf({ description: fields.name }).mkey, locks });
+        s.recurring.push(line);
+        // it travels as an `added` entry (flowsection.js), linked from the line
+        noteAdded(s, line, at, { picked: !!picked });
         refresh(s, ctx.now);
       }, { undo: undoLabel });
+      if (store.ui.recurringPick) store.setUi({ recurringPick: null });
       closeSheet();
-      // a date after today is the next charge itself; otherwise the next one on the cadence from today on
-      const next = fields.anchor > ctx.today ? fields.anchor : nextOccurrence({ ...fields, since: ctx.today }, addDays(ctx.today, -1));
+      // a date after today is the next charge itself; otherwise the next one on the cadence from today on, or, for a
+      // merchant picked from its charges, from the day after that charge (it has been charged on it), as the row says
+      const next = fields.anchor > ctx.today ? fields.anchor
+        : nextOccurrence({ ...fields, since: ctx.today }, picked && fields.anchor === ctx.today ? ctx.today : addDays(ctx.today, -1));
       const words = (context() || {}).words;
       offerUndo(say('recurring.toast.added', words, { name: fields.name }) + (next ? ', next expected ' + fmtDate(next, 'medium') + '.' : '.'), undoLabel, say('recurring.toast.addedUndone', words, { name: fields.name }));
       return;
@@ -547,6 +587,7 @@ export const actions = {
     const changed = Object.keys(fields).filter((key) => (rec[key] ?? null) !== (fields[key] ?? null));
     if (!changed.length) { closeSheet(); return; }
     const undoLabel = phrase('recurring.undo.changed', (context() || {}).words);
+    const at = nowMs();
     store.update((s) => {
       const entry = findEntry(s, id);
       if (!entry) return;
@@ -554,10 +595,15 @@ export const actions = {
         entry[key] = fields[key];
         addLock(entry, key);
       }
-      // A line entered by hand and not yet met in the feed is matched by its name: keep the key in step.
-      if (changed.includes('name') && entry.source === 'manual' && !chargesOf(s, id).count) {
+      // A line entered by hand and not yet met in the feed is matched by its name: keep the key in step, unless its
+      // entry carries the bank's payee key (picked, or learned from a charge), whose charges keep the line whatever its name
+      if (changed.includes('name') && entry.source === 'manual' && !chargesOf(s, id).count && !(entryOf(s, entry) || {}).p) {
         entry.mkey = merchantOf({ description: entry.name }).mkey;
       }
+      // what travels: a line added by hand as its entry (what the save changed), and a verdict as a decision on the line
+      // (flowsection.js); a line by hand's decisions are its own key's, which no edit moves
+      if (entry.source === 'manual' && !entry.byHand) noteAdded(s, entry, at, { changed });
+      if (changed.includes('verdict')) decideLine(s, entry, 'verdict', fields.verdict, at);
       refresh(s, ctx.now);
     }, { undo: undoLabel });
     closeSheet();
@@ -574,6 +620,19 @@ export const actions = {
     if (store.ui.recurringForm) store.setUi({ recurringForm: null });
   },
 
+  /** "+ All n" recent merchants, or the first six. */
+  'recurring.recent-all': () => {
+    store.setUi({ recurringAll: !store.ui.recurringAll });
+  },
+
+  /** A recent merchant chosen for a subscription added by hand: the form takes its name, last amount and day, and its key. */
+  'recurring.pick': ({ data }) => {
+    const ctx = context();
+    const one = ctx && data && data.mkey ? recentMerchants(ctx.state, ctx.now, 1000).find((m) => m.mkey === data.mkey) : null;
+    if (!one) return;
+    store.setUi({ recurringPick: { mkey: one.mkey, name: one.name, amount: one.amount, day: one.day }, recurringForm: null });
+  },
+
   /** "This is not a recurring bill": off, and locked so detection does not bring it back. */
   'recurring.dismiss': ({ data }) => {
     const ctx = context();
@@ -582,11 +641,14 @@ export const actions = {
     const undoLabel = phrase('recurring.undo.out', (context() || {}).words);
     const name = rec.name || 'The line';
     const { count } = chargesOf(ctx.state, rec.id);
+    const at = nowMs();
     store.update((s) => {
       const entry = findEntry(s, data.id);
       if (!entry) return;
       entry.active = false;
       addLock(entry, 'active');
+      // it travels: "not a recurring bill" is a decision on the line (flowsection.js), a dismissal winning a tie
+      decideLine(s, entry, 'active', false, at);
       refresh(s, ctx.now);
     }, { undo: undoLabel });
     closeSheet();
@@ -600,11 +662,13 @@ export const actions = {
     if (!rec) { closeSheet(); return; }
     const undoLabel = phrase('recurring.undo.back', (context() || {}).words);
     const name = rec.name || 'The line';
+    const at = nowMs();
     store.update((s) => {
       const entry = findEntry(s, data.id);
       if (!entry) return;
       entry.active = true;
       addLock(entry, 'active');
+      decideLine(s, entry, 'active', true, at);
       refresh(s, ctx.now);
     }, { undo: undoLabel });
     closeSheet();

@@ -99,7 +99,13 @@
 .bk-day .fig { font-size: 1rem; }
 .bk-verdict { grid-area: verdict; justify-self: end; margin-top: 9px; gap: 6px; flex-wrap: nowrap; }
 .bk-verdict .chip { min-height: 32px; padding: 0 11px; }
-.bk-verdict .chip::after { inset: -6px 0; }
+/* the hit area reaches 44px and more whatever the chip's own line box (it measured 42 with the 6px reach) */
+.bk-verdict .chip::after { inset: -8px 0; }
+/* the narrowest phones: the cost a day on a row of its own, so it never runs into Keep */
+@media (max-width: 359.98px) {
+  .bk-entry { grid-template-areas: "open open amt" "meta meta meta" "day day day" "verdict verdict verdict"; }
+  .bk-verdict { margin-top: 6px; }
+}
 
 /* tablet: the name and its particulars on the left, the amount over its cost a day, the verdict at the end */
 @media (min-width: 720px) and (max-width: 1099.98px) {
@@ -171,3 +177,8 @@
 
 /* text that carries meaning is at least .6875rem (R7) */
 .bk-upcoming thead th { font-size: .6875rem; }
+
+/* "+ Add a subscription": the recent merchants, one tap each, before the form */
+.bks-recent { margin-bottom: var(--s-3); border-top: var(--rule-hair); }
+.bks-recent .row { width: 100%; text-align: left; }
+.bks-recent .row-value { white-space: nowrap; }

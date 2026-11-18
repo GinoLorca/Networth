@@ -19,15 +19,18 @@
 
 import { html, cx } from '../ui/dom.js';
 import { store } from '../store.js';
+import { context, toast } from '../runtime.js';
 import { openSheet } from '../router.js';
 import { fmt } from '../model/money.js';
 import { addDays, diffDays, fmtDate, isYmd, monthOf, relDay } from '../model/dates.js';
 import { ACCOUNT_TYPES, CADENCES, STREAM_KINDS, accountLabel, categoryLabel } from '../model/schema.js';
 import { annualCost, dailyCost, nextOccurrence } from '../model/book.js';
 import { emptiedStreams } from '../model/ledger.js';
+import { decideLine } from '../model/flowsection.js';
+import { nowMs } from '../model/dates.js';
 import { moveGlyph, timeTroubleGlyph } from '../ui/glyphs.js';
 import { sayHtml } from '../ui/say.js';
-import { say } from '../model/words.js';
+import { phrase, say } from '../model/words.js';
 import { money } from './parts.js';
 
 const UPCOMING_DAYS = 30;
@@ -647,16 +650,36 @@ function clearFormErrors() {
 }
 
 export const actions = {
-  /** Keep, review or cut: saved on tap and locked; a second tap on the same choice clears it. */
+  /**
+   * Keep, review or cut: saved on tap and locked; a second tap on the same choice clears it. The verdict travels in the
+   * `flows` section (flowsection.js decideLine, a cut with its day), so every device shows it; Undo takes it back there too.
+   */
   'book.verdict': ({ data }) => {
     const { id, verdict } = data;
     if (!VERDICTS.some(([key]) => key === verdict)) return;
+    const at = nowMs();
+    const words = (context() || {}).words;
+    const label = phrase('flows.undo.verdict', words);
+    let done = null;
     store.update((s) => {
       const rec = s.recurring.find((entry) => entry.id === id);
       if (!rec) return;
-      rec.verdict = rec.verdict === verdict ? null : verdict;
+      const next = rec.verdict === verdict ? null : verdict;
+      done = { name: rec.name || rec.mkey || '', next };
+      if (decideLine(s, rec, 'verdict', next, at)) return;
+      // a line the section cannot key (no merchant): kept on this device, as before
+      rec.verdict = next;
       if (!Array.isArray(rec.locks)) rec.locks = [];
       if (!rec.locks.includes('verdict')) rec.locks.push('verdict');
+    }, { undo: label });
+    if (!done) { if (store.undoLabel === label) store.undo(); return; }
+    // the verdict travels to every device: said as the repertoire says it, with its Undo
+    toast(say('flows.toast.verdict.' + (done.next || 'none'), words, { name: done.name }), {
+      action: phrase('flows.undo', words),
+      onAction: () => {
+        const undone = store.undo();
+        if (undone) toast(say('flows.undone', (context() || {}).words, { what: String(undone).replace(/[.]+$/, '') }));
+      },
     });
   },
   /** Open the sheet of an entry or a stream. */

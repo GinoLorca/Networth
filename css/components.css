@@ -334,6 +334,10 @@ html { scroll-padding-bottom: calc(var(--bottom-bar) + env(safe-area-inset-botto
   .chip:hover { border-color: var(--ink); color: var(--ink); }
 }
 .chip:has(input:checked), .chip[aria-pressed="true"] { border-color: var(--ink); background-color: var(--ink); color: var(--paper); }
+/* in forced colours a chosen chip keeps a fill of its own (a verdict, Keep · Review · Cut) */
+@media (forced-colors: active) {
+  .chip:has(input:checked), .chip[aria-pressed="true"] { forced-color-adjust: none; border-color: Highlight; background-color: Highlight; color: HighlightText; }
+}
 .chip:has(input:focus-visible) { outline: 2px solid var(--spot); outline-offset: 3px; }
 .chip:has(input:disabled), .chip[disabled] { color: var(--ink-3); border-color: var(--hair); border-style: dashed; cursor: default; }
 

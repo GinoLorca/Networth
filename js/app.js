@@ -29,6 +29,7 @@ import { autoWrap, initWrap, readWrapFiles, wrapInfo } from './wrap.js';
 import { restampByHand } from './model/byhand.js';
 import { restampCorrections, seedCorrections } from './model/corrections.js';
 import { noteGame, restampGame, seedGame } from './model/game.js';
+import { restampFlows, seedFlows } from './model/flowsection.js';
 import { buildDemoState, demoFeed } from './model/demo.js';
 import { mergeFeed } from './model/merge.js';
 import { followIncome, refresh } from './model/detect.js';
@@ -159,11 +160,14 @@ async function boot() {
   // so does the daily game (3.9): its settings that differ from the defaults, every day record, segment and transfer the
   // owner recorded, stamped 0 (the weeks detected from the bank stay with this device)
   seedGame(record);
+  // and the decisions on money in and out (3.11): verdicts (a cut with today as its day), lines taken out of the Book,
+  // targets, lines added by hand and the first day on record, stamped 0
+  seedFlows(record, nowMs());
   store.load(record);
   if (!search.get('theme')) applyTheme(store.state.settings.theme);
   await initSync();
   // an Undo makes what it put back the newest, so that the other devices take the Undo and do not bring the change back
-  store.onRestore((before, after) => { restampByHand(before, after, nowMs()); restampCorrections(before, after); restampGame(before, after); });
+  store.onRestore((before, after) => { restampByHand(before, after, nowMs()); restampCorrections(before, after); restampGame(before, after); restampFlows(before, after, nowMs()); });
   // whatever a change (or an Undo) touched that the matching of reported payments reads (the pending switch, an account
   // left out or retyped, the rollover hour, a row reclassified, paired or claimed, an answer), the payments follow in the
   // same update (3.7); the rebuild changes nothing when its inputs did not change. When the bank rows reported payments

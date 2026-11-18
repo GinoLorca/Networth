@@ -683,7 +683,7 @@ test('no public file this pass made or changed holds the words the owner’s own
   const banned = new RegExp([L, 'plan' + 'ner', S].join('|'), 'i');
   const root = new URL('..', import.meta.url);
   // the files this pass made hold none of them at all
-  const fresh = ['js/model/flows.js', 'js/views/flows.js', 'css/views/flows.css', 'tests/flows.test.js', 'tests/helpers/flows-save.mjs'];
+  const fresh = ['js/model/flows.js', 'js/views/flows.js', 'css/views/flows.css', 'tests/flows.test.js', 'tests/helpers/flows-save.mjs', 'js/model/flowsection.js', 'tests/flowsection.test.js'];
   for (const file of fresh) {
     const text = await readFile(new URL(file, root), 'utf8');
     assert.doesNotMatch(text, banned, file);

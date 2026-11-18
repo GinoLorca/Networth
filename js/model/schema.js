@@ -287,6 +287,22 @@ export const STREAM_KINDS = {
  * @property {string|null} toAccountId    a debt this pays down (loan payment): principal is not an expense
  * @property {string|null} since          entries added by hand: the day the owner added it (nothing is scheduled or accrued before it)
  * @property {string} note
+ * @property {string} [added]             a line added by hand (source 'manual'): its entry in the shared file's `flows.added`
+ *                                        (model/flowsection.js), 'a' and 13 hex digits, the same on every device
+ * @property {number} [addedAt]           with `added`: the stamp of the entry this device last applied (this device only, never
+ *                                        written to the shared file); only a newer entry (the owner's edit) holds its amount,
+ *                                        cadence or day as the owner's, and once the bank charges the line only such an entry
+ *                                        moves them
+ * @property {number} [addedAmt]          with `added`: the amount of the entry this device last saw (this device only); a newer
+ *                                        entry that changes it is an edit, applied and locked, the line charged or not
+ * @property {string} [addedCad]          with `added`: the cadence of that entry, likewise
+ * @property {string} [addedDay]          with `added`: the day of that entry, likewise for the anchor
+ * @property {object} [addedPast]         with `added`: per field (amount, cadence, anchor), the entry's value before each edit this
+ *                                        device applied and whether the line held it then (this device only), so an Undo of an
+ *                                        edit puts the line back as it was
+ * @property {string} [madeFor]           a line this device made for a subscription the owner confirmed on another device,
+ *                                        before detection found it: the decision's key in `flows.lines`; it goes with the
+ *                                        decision, and it does not lapse (its cadence stays free for detection to correct)
  */
 
 /**
@@ -468,7 +484,12 @@ export function defaultState(now) {
     },
     /** kept money actually moved to the card or savings: { weekOf, amount, day, txId, via: 'auto'|'tap' } */
     sweeps: [],
-    /** what travels between the owner's devices: tombs[entryId] = ms a payment the owner sends was removed */
+    /**
+     * what travels between the owner's devices: tombs[entryId] = ms a payment the owner sends was removed; and, made by
+     * the modules that keep them, the device's copies of the shared sections (corrections, game, flows: the decisions on
+     * money in and out, model/flowsection.js, with flowsSeeds, the first-run seeds, and flowsNotice / flowsNoticed, the
+     * seeds another device replaced, to say once)
+     */
     share: { tombs: {} },
     goals: {
       /** cash reserve target, cents */

@@ -440,7 +440,11 @@ test('buildDemoState: client deposits stay occasional', () => {
 
 test('buildDemoState: the Book holds the bills, one of them variable and one annual', () => {
   onEveryDay(({ state, today }) => {
-    const book = state.recurring;
+    // the lines the bank's charges made; the sample owner also added one subscription by hand, before its first charge
+    const book = state.recurring.filter((entry) => entry.source !== 'manual');
+    const own = state.recurring.filter((entry) => entry.source === 'manual');
+    assert.deepEqual(own.map((entry) => [entry.name, entry.category, entry.amount, entry.anchor > today]), [['Larkspur Yoga', 'subscriptions', 4500, true]]);
+    assert.ok(/^a[0-9a-f]{13}$/.test(own[0].added), 'linked to its entry in the flows section');
     assert.ok(book.length >= 8, 'at least eight entries');
     assert.ok(book.every((entry) => entry.active && entry.source === 'detected' && entry.locks.length === 0));
     assert.ok(book.every((entry) => entry.confidence > 0.5 && entry.amount > 0));
@@ -832,7 +836,10 @@ test('buildDemoState: no errand passes for a bill', () => {
   for (const seed of [1, 2, 3]) {
     for (let offset = 0; offset < 30; offset += 3) {
       const state = buildDemoState(at(2027, 2, 1 + offset, 12), { seed });
-      assert.equal(state.recurring.length, 14, 'seed ' + seed + ', day ' + offset + ': ' + state.recurring.map((entry) => entry.name).join(', '));
+      // 14 lines the bank's charges made, and the one subscription the sample owner added by hand
+      const found = state.recurring.filter((entry) => entry.source !== 'manual');
+      assert.equal(found.length, 14, 'seed ' + seed + ', day ' + offset + ': ' + found.map((entry) => entry.name).join(', '));
+      assert.equal(state.recurring.length, 15);
       assert.equal(state.streams.length, 4);
       assert.equal(state.sweeps.length, 1);
     }
@@ -842,7 +849,7 @@ test('buildDemoState: no errand passes for a bill', () => {
 test('buildDemoState: a time that is not one gives the sample for a fixed day', () => {
   const fixed = buildDemoState(NaN);
   assert.equal(checkDoc(fixed), null);
-  assert.equal(fixed.recurring.length, 14);
+  assert.equal(fixed.recurring.length, 15, '14 found in the feed, 1 added by hand');
   assert.equal(fixed.habits.length, 1);
   for (const nowMs of [undefined, null, 'x', 0, -5, Infinity, 1e21]) assert.deepEqual(buildDemoState(nowMs), fixed, 'nowMs ' + String(nowMs));
   for (const opts of [null, 3, 'seed', { seed: NaN }, { seed: 'two' }]) assert.deepEqual(buildDemoState(TUESDAY, opts), documentAt(TUESDAY), 'opts ' + JSON.stringify(opts));

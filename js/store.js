@@ -10,8 +10,9 @@
  */
 
 import { saveDoc, mirrorDoc, mirrorProblem, snapshotDaily, storageMode, loadDoc } from './db.js';
-import { ymd, fmtTime } from './model/dates.js';
+import { ymd, fmtTime, nowMs } from './model/dates.js';
 import { checkDoc, migrate } from './model/schema.js';
+import { seedFlows } from './model/flowsection.js';
 import { toast } from './runtime.js';
 
 const SAVE_DELAY_MS = 350;
@@ -104,7 +105,10 @@ async function reloadFromStorage(msg) {
     return;
   }
   const savedAt = stored.meta.savedAt;
-  store.load(migrate(stored), { save: false });
+  const record = migrate(stored);
+  // a record saved by a page of an older version holds no copy of the decisions on money in and out: made now, as at boot
+  seedFlows(record, nowMs());
+  store.load(record, { save: false });
   status.savedAt = savedAt;
   // Ruling T9: no replay of the lost change; the owner is told.
   if (pending && changedAt != null) {

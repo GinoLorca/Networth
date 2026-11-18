@@ -9,14 +9,20 @@
  *                   720px three items and "+ All n". One tap files (the transaction sheet's own save sequence).
  *   where it went   by class, then category, each with its share and change; a category opens its merchants and its
  *                   monthly target (settings.targets, as Analysis kept it); top merchants; the cash caption
- *   leaks           fees and interest, the daily game, small and often, doubled, price rises; never added up
+ *   leaks           fees and interest, the daily game, small and often, doubled, price rises, still charging after a
+ *                   cut; never added up
  *   the Book's bills  the lines that are not subscriptions, by cost a month, and "Open the Book"
+ *   subscriptions   Repertoire / Subscriptions (model/flows.js repertoire): on the list, possible (Add, Not one, the
+ *                   cadence when it is not known), added by you, "+ Dismissed · n" collapsed, "+ Add a subscription";
+ *                   Keep · Review · Cut on every line. Every decision travels in the `flows` section (flowsection.js).
  *
  * Honesty: a bank sum is roman; any figure holding a move not yet posted, a reported payment, or a figure scaled to a
  * month or a year is italic with ≈. Cover mode covers every amount (.fig, .row-value, data-fig); counts and shares
  * carry data-cover-keep. The route is #/flows; the period is its view parameter `p` (#/flows?p=90).
  *
- * Actions: flows.period · flows.queue (open the queue in place) · flows.queue-all · flows.file (one tap)
+ * Actions: flows.period · flows.queue (open the queue in place) · flows.queue-all · flows.file (one tap) ·
+ *          flows.sub (Add, Not one, Take off, Restore) · flows.verdict (Keep, Review, Cut) · flows.cad (a suggestion's
+ *          cadence) · flows.sub-new (+ Add a subscription) · flows.notice (the notice read)
  */
 
 import { html, cx } from '../ui/dom.js';
@@ -24,10 +30,12 @@ import { store } from '../store.js';
 import { context, toast } from '../runtime.js';
 import { navigate, setParams } from '../router.js';
 import { fmt, fmtSigned, fmtPct, fmtPlain } from '../model/money.js';
-import { fmtDate, nowMs } from '../model/dates.js';
+import { diffDays, fmtDate, nowMs } from '../model/dates.js';
 import { CADENCES, CATEGORIES, categoryLabel, klassLabel } from '../model/schema.js';
 import { correctionReach } from '../model/classify.js';
-import { PERIODS, STRAY, UNFILED, bookBills, fileItem, inAndOut, leaks, moveQueue, periodOf, whereItWent } from '../model/flows.js';
+import { PERIODS, STRAY, UNFILED, bookBills, fileItem, inAndOut, leaks, moveQueue, periodOf, repertoire, whereItWent } from '../model/flows.js';
+import { closeNotice, decideLine, decisionsFor, lineHistory, storedFlows } from '../model/flowsection.js';
+import { openSheet } from '../router.js';
 import { moveGlyph } from '../ui/glyphs.js';
 import { money } from './parts.js';
 import { sayHtml } from '../ui/say.js';
@@ -90,8 +98,9 @@ function head(ctx, days, w) {
       </div>
       <span class="cap">${sayHtml('flows.period.days', ctx.words)}</span>
     </div>
+    ${noticeOf(ctx)}
     ${w.comparable ? '' : html`<p class="cap fl-short">${w.firstDay
-      ? html`${say('flows.short', ctx.words, { date: fmtDate(w.firstDay, 'medium'), days })}${w.covered < days ? ' ' + say('flows.short.part', ctx.words, { days, covered: w.covered }) : ''}`
+      ? html`${say(ctx.share && ctx.share.on ? 'flows.short' : 'flows.short.own', ctx.words, { date: fmtDate(w.firstDay, 'medium'), days })}${w.covered < days ? ' ' + say('flows.short.part', ctx.words, { days, covered: w.covered }) : ''}`
       : say('flows.short.none', ctx.words)}</p>`}
   </section>`;
 }
@@ -306,6 +315,11 @@ function leaksSection(ctx, l, days) {
     const step = html`<span class="${cx('fig fl-leak-fig', r.est && 'est')}">${r.est ? html`<span class="approx">≈</span>` : ''}+${fmt(r.step)}</span>`;
     rows.push(leakRow('rise:' + r.id, html`${sayHtml('flows.leak.rise', ctx.words)} · ${r.name}`, detail, step, yearFig(r.year)));
   }
+  for (const c of l.still || []) {
+    // still charging after a cut: the latest charge the bank reported more than 3 days after the cut's day
+    const detail = sayHtml('flows.leak.still.detail', ctx.words, { amount: amt(c.cents, { est: c.est }), date: fmtDate(c.day, 'short'), cut: fmtDate(c.cut, 'short') });
+    rows.push(leakRow('still:' + c.id, html`${sayHtml('flows.leak.still', ctx.words)} · ${c.name}`, detail, leakFig(c.cents, c.est), yearFig(c.year)));
+  }
   return html`<section class="band fl-leaks" aria-labelledby="fl-leaks-h">
     <div class="sec-head">
       <h2 class="lab" id="fl-leaks-h"><b>${sayHtml('flows.leaks', ctx.words)}</b><i class="sep"></i>${sayHtml('flows.leaks.note', ctx.words)}</h2>
@@ -327,7 +341,7 @@ function leaksSection(ctx, l, days) {
 function billNote(ctx, line) {
   const cadence = CADENCES[line.cadence] ? CADENCES[line.cadence].label.toLowerCase() : '';
   const known = line.variable ? say('flows.bills.varies', ctx.words) : line.est ? say('flows.bills.expected', ctx.words) : say('flows.bills.last', ctx.words);
-  const next = line.next ? say('flows.bills.next', ctx.words, { date: fmtDate(line.next, 'short') }) : '';
+  const next = line.next ? say('flows.bills.next', ctx.words, { date: nextDate(ctx, line.next) }) : '';
   return [cadence, known, next].filter(Boolean).join(' · ');
 }
 
@@ -357,15 +371,154 @@ export function render(ctx) {
   const q = moveQueue(ctx.state, ctx.now, opts);
   const went = whereItWent(ctx.state, ctx.now, days, opts);
   const l = leaks(ctx.state, ctx.now, days, opts);
-  const bills = bookBills(ctx.state, ctx.today);
+  const subs = repertoire(ctx.state, ctx.now, opts);
+  const bills = bookBills(ctx.state, ctx.today, { listed: subs.listed });
   return html`<div class="fl">
     ${faceSwitch('flows', ctx.words)}
     ${head(ctx, days, io.window)}
     <div class="cols fl-cols">
       <div class="col col-7">${inOutSection(ctx, io, days)}${queueSection(ctx, q)}${wentSection(ctx, went, days)}</div>
-      <div class="col col-5">${leaksSection(ctx, l, days)}${billsSection(ctx, bills)}</div>
+      <div class="col col-5">${leaksSection(ctx, l, days)}${billsSection(ctx, bills)}${subsSection(ctx, subs)}</div>
     </div>
   </div>`;
+}
+
+/* ---------------------------------------------------------- the notice */
+
+/**
+ * Said once after the first round of this version: where two devices had seeded different values, the one the merge
+ * kept (the same on every device), and this device's value it replaced. Amounts are covered by cover mode.
+ */
+function noticeOf(ctx) {
+  const notice = ctx.state.share && Array.isArray(ctx.state.share.flowsNotice) ? ctx.state.share.flowsNotice : [];
+  if (!notice.length) return '';
+  // each decision is named by the line of this device it reaches (the file holds no name the bank printed)
+  const lines = ctx.state.recurring.filter((rec) => rec && rec.byHand !== true);
+  const nameOf = new Map();
+  for (const [id, one] of decisionsFor(storedFlows(ctx.state), lines, lineHistory(ctx.state)).byLine) {
+    const rec = lines.find((line) => String(line.id) === id);
+    for (const key of one.keys) if (rec && !nameOf.has(key)) nameOf.set(key, rec.name || rec.mkey);
+  }
+  const lineName = (key) => nameOf.get(key) || say('flows.notice.line', ctx.words);
+  const verdictWord = (v) => (v ? say('flows.verdict.' + v, ctx.words) : say('flows.verdict.none', ctx.words));
+  const items = notice.map((one) => {
+    if (one.kind === 'target') {
+      return sayHtml('flows.notice.target', ctx.words, { category: categoryLabel(one.key), now: amt(one.now, { decimals: 0 }), was: amt(one.was, { decimals: 0 }) });
+    }
+    if (one.kind === 'active') return say('flows.notice.active', ctx.words, { name: lineName(one.key), now: one.now === false ? say('flows.notice.out', ctx.words) : say('flows.notice.in', ctx.words) });
+    if (one.kind === 'added') {
+      // a line added by hand on two devices: its name now, and the amount kept in place of this device's (or the name)
+      const now = one.now || {};
+      const was = one.was || {};
+      return now.amount !== was.amount
+        ? sayHtml('flows.notice.added', ctx.words, { name: String(now.name || ''), now: amt(now.amount), was: amt(was.amount) })
+        : say('flows.notice.addedName', ctx.words, { name: String(now.name || ''), was: String(was.name || '') });
+    }
+    return say('flows.notice.verdict', ctx.words, { name: lineName(one.key), now: verdictWord(one.now), was: verdictWord(one.was) });
+  });
+  return html`<div class="fl-notice" role="status">
+    <p class="cap"><b class="lab">${sayHtml('flows.notice.lab', ctx.words)}</b> ${sayHtml('flows.notice', ctx.words)} ${items.map((item, i) => html`${i ? '; ' : ''}${item}`)}.</p>
+    <button class="btn-link" type="button" data-action="flows.notice">${sayHtml('flows.notice.close', ctx.words)}</button>
+  </div>`;
+}
+
+/* ------------------------------------------------------- the subscriptions */
+
+const VERDICTS = ['keep', 'review', 'cut'];
+
+function verdictChips(ctx, item) {
+  return html`<div class="chips fl-s-verdict" role="group" aria-label="${say('flows.verdict.aria', ctx.words, { name: item.name })}">
+    ${VERDICTS.map((v) => html`<button class="chip" type="button" data-action="flows.verdict" data-id="${item.id}" data-verdict="${v}" aria-pressed="${item.verdict === v ? 'true' : 'false'}">${say('flows.verdict.' + v + '.chip', ctx.words)}</button>`)}
+  </div>`;
+}
+
+/**
+ * A line's cadence, how its price is known and its next day, as the bills say them: an amount is roman only labelled as
+ * the bank last charged it; a price that varies reads "varies", a line not charged yet "no charge yet", both italic with ≈.
+ */
+function subNote(ctx, item) {
+  const cadence = item.cadence && CADENCES[item.cadence] ? CADENCES[item.cadence].label.toLowerCase() : '';
+  if (!item.charged) return [cadence, say('flows.subs.noCharge', ctx.words)].filter(Boolean).join(' · ');
+  const known = item.variable ? say('flows.bills.varies', ctx.words) : item.est ? say('flows.bills.expected', ctx.words) : say('flows.bills.last', ctx.words);
+  const next = item.next ? say('flows.bills.next', ctx.words, { date: nextDate(ctx, item.next) }) : '';
+  return [cadence, known, next].filter(Boolean).join(' · ');
+}
+
+/** A next day, with its year when it is in another year or more than 300 days out (a yearly line's), as the Book says it. */
+function nextDate(ctx, day) {
+  const far = day.slice(0, 4) !== ctx.today.slice(0, 4) || diffDays(ctx.today, day) > 300;
+  return fmtDate(day, far ? 'medium' : 'short');
+}
+
+function subAmount(item) {
+  return html`<span class="${cx('row-value fig', item.est && 'est')}">${item.est ? html`<span class="approx">≈</span>` : ''}${fmt(item.amount)}</span>`;
+}
+
+function listRow(ctx, item, tag) {
+  return html`<li class="fl-s-item" data-key="${item.id}">
+    <p class="fl-s-line"><span class="fl-s-name">${item.name}${tag ? html` <span class="bk-tag">${sayHtml('flows.subs.added', ctx.words)}</span>` : ''}</span>${subAmount(item)}</p>
+    <p class="cap fl-s-why">${subNote(ctx, item)}${item.kind === 'line' && !tag ? html` · <button class="btn-link fl-s-off" type="button" data-action="flows.sub" data-id="${item.id}" data-to="off">${sayHtml('flows.subs.off', ctx.words)}</button>` : ''}</p>
+    ${verdictChips(ctx, item)}
+  </li>`;
+}
+
+/** Each point a suggestion scored, as a phrase of its reason line. */
+function reasonsOf(ctx, item) {
+  return item.reasons.map((why) => {
+    if (why === 'kind') return say('flows.subs.why.kind', ctx.words, { category: categoryLabel(item.line.category || 'other') });
+    if (why === 'once') return say('flows.subs.why.once', ctx.words, { date: fmtDate(item.last, 'short') });
+    // only a seller of many products (Apple, Google Play, Microsoft) is said to sell one-offs; a rule for one service
+    // says what was scored, never more about the seller than Networth knows
+    if (why === 'rule' && !item.seller) return say('flows.subs.why.ruleOne', ctx.words);
+    return say('flows.subs.why.' + why, ctx.words);
+  }).join('; ');
+}
+
+function possibleRow(ctx, item) {
+  const cads = (ctx.ui.flCad || {});
+  const chosen = cads[item.id] || 'annual';
+  const switcher = item.cadence ? '' : html`<span class="fl-s-cad"><span class="cap">${sayHtml('flows.subs.every', ctx.words)}</span>
+    <span class="seg" role="radiogroup" aria-label="${say('flows.subs.cad.aria', ctx.words, { name: item.name })}" data-change="flows.cad" data-id="${item.id}">
+      ${[['monthly', 'month'], ['annual', 'year'], ['other', 'other']].map(([value, word]) => html`<label class="seg-opt"><input type="radio" name="${'fl-cad-' + item.id}" value="${value}" ${chosen === value ? html`checked` : ''}><span>${say('flows.subs.cad.' + word, ctx.words)}</span></label>`)}
+    </span></span>`;
+  return html`<li class="fl-s-item" data-key="${item.id}">
+    <p class="fl-s-line"><span class="fl-s-name">${say('flows.subs.maybe', ctx.words, { name: item.name })}</span>${subAmount({ ...item, est: false })}</p>
+    <p class="cap fl-s-why">${reasonsOf(ctx, item)}</p>
+    <div class="fl-s-acts">${switcher}
+      <span class="chips"><button class="chip" type="button" data-action="flows.sub" data-id="${item.id}" data-to="add">${sayHtml('flows.subs.add', ctx.words)}</button><button class="chip" type="button" data-action="flows.sub" data-id="${item.id}" data-to="not">${sayHtml('flows.subs.not', ctx.words)}</button></span>
+    </div>
+  </li>`;
+}
+
+function subsSection(ctx, subs) {
+  const ui = ctx.ui.flSubs || {};
+  const shown = ui.more ? subs.possible : subs.possible.slice(0, 6);
+  const head = html`<div class="sec-head">
+      <h2 class="lab" id="fl-subs-h"><b>${sayHtml('flows.subs', ctx.words)}</b><i class="sep"></i>${sayHtml('flows.subs.note', ctx.words)}</h2>
+      ${subs.perMonth > 0 ? html`<span class="lab">${sayHtml('flows.bills.month', ctx.words, { amount: amt(subs.perMonth, { est: true, decimals: 0 }) })} · ${sayHtml('flows.subs.year', ctx.words, { amount: amt(subs.perYear, { est: true, decimals: 0 }) })}</span>` : ''}
+    </div>`;
+  // the head's two figures count one scope (the list and the lines added by you); the groups give counts only
+  const group = (key, count) => html`<p class="fl-grp-head fl-s-head"><span class="lab"><b>${sayHtml(key, ctx.words)}</b> · ${keep(String(count))}</span></p>`;
+  return html`<section class="band fl-subs" aria-labelledby="fl-subs-h">${head}
+    ${subs.list.length
+      ? html`${group('flows.subs.list', subs.list.length)}
+        <ul class="fl-s-list">${subs.list.map((item) => listRow(ctx, item, false))}</ul>`
+      : html`<p class="cap">${sayHtml('flows.subs.none', ctx.words)}</p>`}
+    ${subs.possible.length ? html`${group('flows.subs.possible', subs.possible.length)}
+      <ul class="fl-s-list">${shown.map((item) => possibleRow(ctx, item))}</ul>
+      ${subs.possible.length > 6 ? html`<p class="fl-q-more"><button class="btn-link" type="button" data-action="flows.subs-more" aria-expanded="${ui.more ? 'true' : 'false'}">${ui.more ? say('flows.queue.fewerSix', ctx.words) : say('flows.queue.allN', ctx.words, { n: subs.possible.length })}</button></p>` : ''}` : ''}
+    ${subs.dismissed.length ? html`<details class="fl-s-gone">
+      <summary class="btn-link">${sayHtml('flows.subs.dismissed', ctx.words)} · ${keep(String(subs.dismissed.length))}</summary>
+      <ul class="rows rows-plain">${subs.dismissed.map((item) => html`<li class="row" data-key="${item.id}">
+        <span class="row-label">${item.name}</span>
+        <button class="btn-link" type="button" data-action="flows.sub" data-id="${item.id}" data-to="restore">${sayHtml('flows.subs.restore', ctx.words)}</button>
+      </li>`)}</ul>
+    </details>` : ''}
+    ${subs.added.length ? html`${group('flows.subs.added', subs.added.length)}
+      <ul class="fl-s-list">${subs.added.map((item) => listRow(ctx, item, true))}</ul>` : ''}
+    <p class="fl-s-new"><button class="btn-link" type="button" data-action="flows.sub-new">+ ${sayHtml('flows.subs.new', ctx.words)}</button></p>
+    <p class="cap fl-note">${sayHtml('flows.leaks.use', ctx.words)} ${sayHtml('flows.subs.yearly', ctx.words)}</p>
+  </section>`;
 }
 
 /* ----------------------------------------------------------------- actions */
@@ -375,7 +528,82 @@ function undoLast() {
   if (label) toast(say('flows.undone', (context() || {}).words, { what: String(label).replace(/[.]+$/, '') }));
 }
 
+/** The item of the repertoire an action names, as the page drew it. */
+function subItem(ctx, id) {
+  const subs = repertoire(ctx.state, ctx.now, { ledger: ctx.d.ledger });
+  return [...subs.list, ...subs.possible, ...subs.dismissed, ...subs.added].find((item) => item.id === id) || null;
+}
+
+/** The line in the record a decision is written on: the Book line itself, or the merchant's series (no line yet). */
+function lineIn(state, item) {
+  return item.kind === 'line' ? state.recurring.find((rec) => rec.id === item.id) || null : item.line;
+}
+
 export const actions = {
+  /** Add, Not one, Take off or Restore a subscription: written to the `flows` section in one undoable update. */
+  'flows.sub': ({ data }) => {
+    const ctx = context();
+    if (!ctx || !data || !data.id) return;
+    const item = subItem(ctx, data.id);
+    if (!item) return;
+    const to = data.to;
+    const cad = !item.cadence && to === 'add' ? ((ctx.ui.flCad || {})[item.id] || 'annual') : null;
+    if (cad === 'other') {
+      // another cadence than a month or a year: the full form, the merchant chosen (a line added by hand)
+      store.setUi({ recurringPick: { mkey: item.mkey, name: item.name, amount: item.amount, day: item.last }, recurringForm: null });
+      openSheet('recurring', { sub: '1' });
+      return;
+    }
+    const value = to === 'add' ? true : to === 'restore' ? null : false;
+    // each action says its own name in the toast and in the Undo
+    const act = to === 'add' ? 'add' : to === 'restore' ? 'restore' : to === 'off' ? 'off' : 'not';
+    const words = phrase('flows.undo.sub.' + act, ctx.words);
+    const at = nowMs();
+    let done = false;
+    store.update((s) => {
+      const line = lineIn(s, item);
+      if (line) done = !!decideLine(s, line, 'sub', value, at, cad ? { cad } : {});
+    }, { undo: words });
+    if (!done) { if (store.undoLabel === words) store.undo(); return; }
+    toast(say('flows.toast.sub.' + act, ctx.words, { name: item.name }), { action: phrase('flows.undo', ctx.words), onAction: undoLast });
+  },
+  /** Keep, Review or Cut on a subscription; a second tap on the same one clears it. A cut carries its day. */
+  'flows.verdict': ({ data }) => {
+    const ctx = context();
+    if (!ctx || !data || !data.id || !VERDICTS.includes(data.verdict)) return;
+    const item = subItem(ctx, data.id);
+    if (!item || item.kind !== 'line') return;
+    const next = item.verdict === data.verdict ? null : data.verdict;
+    const words = phrase('flows.undo.verdict', ctx.words);
+    const at = nowMs();
+    let done = false;
+    store.update((s) => {
+      const line = lineIn(s, item);
+      if (line) done = !!decideLine(s, line, 'verdict', next, at);
+    }, { undo: words });
+    if (!done) { if (store.undoLabel === words) store.undo(); return; }
+    toast(say('flows.toast.verdict.' + (next || 'none'), ctx.words, { name: item.name }), { action: phrase('flows.undo', ctx.words), onAction: undoLast });
+  },
+  /** The cadence of a suggestion seen once: a month, a year, or another (kept in the interface state until Add). */
+  'flows.cad': ({ ev, data }) => {
+    const value = ev && ev.target ? ev.target.value : null;
+    if (!data || !data.id || !['monthly', 'annual', 'other'].includes(value)) return;
+    store.setUi({ flCad: { ...(store.ui.flCad || {}), [data.id]: value } });
+  },
+  /** Every suggestion, or the best six. */
+  'flows.subs-more': () => {
+    const ui = store.ui.flSubs || {};
+    store.setUi({ flSubs: { ...ui, more: !ui.more } });
+  },
+  /** "+ Add a subscription": the entry sheet, the recent merchants first. */
+  'flows.sub-new': () => {
+    store.setUi({ recurringPick: null, recurringForm: null, recurringAll: false });
+    openSheet('recurring', { sub: '1' });
+  },
+  /** The notice of the values another device replaced, read: it is not said again. */
+  'flows.notice': () => {
+    store.update((s) => { closeNotice(s); });
+  },
   /** The period: 30, 90 or 365 days, kept in the address (#/flows?p=90). */
   'flows.period': ({ ev }) => {
     const value = ev && ev.target ? ev.target.value : null;
