@@ -14,7 +14,7 @@ import { runsByHand } from './book.js';
 import { claimByHand, payeeKey, unpaidByPayee } from './byhand.js';
 import { incomeClaimedRows, rebuildIncome } from './income.js';
 import { applyCorrections } from './corrections.js';
-import { applyFlows } from './flowsection.js';
+import { applyFlows, isNotPay, notPayKeys } from './flowsection.js';
 
 /*
  * How the specification is read where it leaves a choice (each is implemented where it is named):
@@ -203,12 +203,15 @@ export function detectStreams(state, nowMs) {
   const known = streams.filter(hasKey);
   const taken = new Set();
   const claims = new Map();
+  const notPay = notPayKeys(state);
 
   for (const rows of groupRows(ctx.rows.filter((tx) => isDeposit(ctx, tx)))) {
     const stream = payerOf(known, taken, rows[0]);
     if (stream) taken.add(stream);
     if (stream ? isDismissed(stream) : rows.length < STREAM_MIN_DEPOSITS) continue;
-    const pay = payProfile(rows, ctx.reported);
+    // a stream the owner said is not salary never accrues (G.7.2, PAYDAYS (b): by payee key and account); a setting
+    // made by hand still wins
+    const pay = payProfile(rows, ctx.reported, isNotPay(notPay, rows[0]));
     if (stream) {
       if (refreshStream(ctx, stream, pay)) report.updated.push(stream.id);
       claim(claims, rows, stream.id);
@@ -863,7 +866,7 @@ function kindFor(purpose) {
  * What a payer's deposits amount to as a stream. Regular cadence and stable amounts are what make it
  * accrue; pay wording (or a deposit of $100 or more) is what tells regular pay from regular interest.
  */
-function payProfile(rows, reported) {
+function payProfile(rows, reported, notPay) {
   const recent = rows.slice(-FIT_OCCURRENCES);
   const amounts = recent.map((row) => row.amount);
   const usual = median(amounts);
@@ -876,7 +879,7 @@ function payProfile(rows, reported) {
   // a deposit that confirms a payment another app reported is counted when it is marked, so its stream
   // is counted on arrival and never day by day (unless the owner locked `accrue` on)
   const confirmed = !!reported && rows.some((row) => reported.has(row.id));
-  const accrue = regular && (payroll || amount >= MIN_ACCRUING_PAY) && !confirmed;
+  const accrue = regular && (payroll || amount >= MIN_ACCRUING_PAY) && !confirmed && !notPay;
   return {
     name: nameOf(latest),
     kind: accrue || payroll ? 'salary' : kindFor(latest.purpose),

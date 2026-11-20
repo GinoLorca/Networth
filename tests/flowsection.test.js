@@ -773,7 +773,9 @@ function worstSection() {
   for (let i = 0; i < FLOWS_CAPS.added; i++) s.added['a' + HEX(i)] = c({ name: '"'.repeat(80), amount: MAXC, cadence: 'semimonthly', day: '2026-11-16', category: longest, sub: false, p: 'p' + HEX(i) });
   for (let i = 0; i < FLOWS_CAPS.addedGone; i++) s.added['a' + HEX(1e6 + i)] = g();
   for (const category of Object.keys(CATEGORIES).slice(0, FLOWS_CAPS.targets)) s.targets[category] = c(MAXC);
-  const inlet = (removed) => ({ name: c('"'.repeat(40)), kind: c('backend'), goal: c({ per: 'month', cents: MAXC }), focus: c(false), gone: c(false), removed: c(removed) });
+  // a removal is 5 characters longer than a value of false (round 3): the tag cleared on every other source, Restore from
+  // the archive, an Undo of Remove (a removed source keeps its value)
+  const inlet = (removed) => ({ name: c('"'.repeat(40)), kind: c('backend'), goal: c({ per: 'month', cents: MAXC }), focus: g(), gone: g(), removed: removed ? c(true) : g() });
   for (let i = 0; i < FLOWS_CAPS.inlets; i++) s.inlets['n' + HEX(i)] = inlet(false);
   for (let i = 0; i < FLOWS_CAPS.inletsGone; i++) s.inlets['n' + HEX(1e6 + i)] = inlet(true);
   for (let i = 0; i < FLOWS_CAPS.intoKeys; i++) s.into[(i % 2 ? 'p' : 'r') + HEX(i)] = c('n' + HEX(i));
@@ -1098,7 +1100,7 @@ test('fixes 1: the size budget holds with the 30 lines of removals at the longes
   const more = fileText({ ...base, flows: whole }).length - fileText(base).length - size;
   assert.ok(more <= 30 * 262, '30 lines of removals add ' + more);
   if (process.env.SIZE) console.log('30 lines of removals add', more, '; worst case', 1990100 - 107250 + size + more);
-  // G.10's worst case before them had a margin of 31,322 characters
+  // G.10's worst case before them had a margin of 30,922 characters (31,322 before round 3 wrote the removals)
   const tombs = (n) => { const b = {}; for (let i = 0; i < n; i++) b['t' + String(i).padStart(79, '0')] = { deleted: true, editedAt: AT }; return b; };
   const freed = fileText({ ...base, byHand: tombs(1000) }).length - fileText({ ...base, byHand: tombs(TOMBS_WRITTEN) }).length;
   const worst = 1990100 - freed + size + more;

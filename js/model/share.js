@@ -22,7 +22,7 @@ import {
 } from './corrections.js';
 import { applyPrefs, exportPrefs, isBlankPrefs, mergePrefs, noteSeenPrefs, prefsDiffer, prefsUnseen, readPrefs } from './prefs.js';
 import { applyGame, arrivedGame, exportGame, gameDiffers, hearServer, hearsServer, isBlankGame, mergeGame, readGame } from './game.js';
-import { arrivedFlows, boundFlows, exportFlows, flowsDiffer, heldRemovals, isBlankFlows, mergeFlows, readFlows, readFlowsWhole, takeCells, takeFlows } from './flowsection.js';
+import { arrivedFlows, boundFlows, exportFlows, flowsDiffer, heldRemovals, isBlankFlows, isNotPay, mergeFlows, notPayKeys, readFlows, readFlowsWhole, takeCells, takeFlows } from './flowsection.js';
 
 const VERSION = 1;
 const APP = 'networth';
@@ -434,6 +434,16 @@ function planOf(state, merged) {
 /* ------------------------------------------------------------------ a round */
 
 /**
+ * The ids of a copy's streams with a cadence that its filings say are no pay (flowsection.isNotPay), in one string to
+ * compare: a stream with no cadence never accrues nor sets a payday, so a filing of its payer changes no pay (round 11).
+ */
+function notPayStreams(s) {
+  const set = notPayKeys(s);
+  return listOf(s && s.streams).filter((stream) => isObject(stream) && typeof stream.cadence === 'string' && !!stream.cadence && isNotPay(set, stream))
+    .map((stream) => stream.id).sort().join(',');
+}
+
+/**
  * One round of sharing: read the file (none yet is an empty one), merge it with this device, bring
  * the device to the merged list (detection runs in the same update), and write the file back when
  * the merged content is not what was read. A removal older than 400 days is left out of what is
@@ -483,9 +493,20 @@ export async function roundShared(device, transport, clock) {
       const decided = arrivedFlows(local.flows, merged.flows);
       if (isBlankFlows(decided)) delete arrived.flows; else arrived.flows = decided;
       const all = merged;
+      // the earlier copies run detection when corrections arrived, and when what arrived changes which streams are pay in
+      // that copy (the pay fix, flowsection.notPayKeys: a payer's, an app's or a catch-all key's filings, a source's kind
+      // or removal, the income pairs), so an Undo never puts back an accrual that another device's filing ended. Any other
+      // arrival (a name, a goal, a tag, Leave it, a filing that changes no pay) runs none: the set costs about a
+      // millisecond to read, a run of detection about fifty (round 7, review 3)
       device.update(
         (s) => { if (applyShared(s, all, now).changed) refresh(s, now); },
-        (s) => { if (applyShared(s, mergeShared(exportShared(s, now, WHOLE), arrived), now).corrected) refresh(s, now); },
+        (s) => {
+          // round 11: what the copy reads as no pay (its streams that isNotPay marks), not the set's keys: a payer filed to
+          // a source that is not Steady pay adds its key whether or not it was pay, and such a filing changes no stream
+          const payBefore = arrived.flows || arrived.income ? notPayStreams(s) : null;
+          const corrected = applyShared(s, mergeShared(exportShared(s, now, WHOLE), arrived), now).corrected;
+          if (corrected || (payBefore !== null && payBefore !== notPayStreams(s))) refresh(s, now);
+        },
       );
       changed = true;
       merged = mergeShared(exportShared(device.state(), now, WHOLE), merged); // a payee that run of detection learned

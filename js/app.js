@@ -60,6 +60,8 @@ import { render as accountSheet, actions as accountActions, label as accountLabe
 import { render as recurringSheet, actions as recurringActions, label as recurringLabel } from './views/sheet-recurring.js';
 import { render as streamSheet, actions as streamActions, label as streamLabel } from './views/sheet-stream.js';
 import { render as habitSheet, actions as habitActions, label as habitLabel } from './views/sheet-habit.js';
+import { render as inletSheet, actions as inletActions, label as inletLabel } from './views/sheet-inlet.js';
+import { actions as inflowsActions } from './views/inflows.js';
 import { render as wordsSheet, label as wordsLabel } from './views/sheet-words.js';
 import { phrase, say as sayWords, wordsMode, wordsOf } from './model/words.js';
 
@@ -102,6 +104,7 @@ const SHEETS = {
   recurring: { render: recurringSheet, label: recurringLabel },
   stream: { render: streamSheet, label: streamLabel },
   habit: { render: habitSheet, label: habitLabel },
+  inlet: { render: inletSheet, label: inletLabel },
   words: { render: wordsSheet, label: wordsLabel },
 };
 
@@ -180,7 +183,7 @@ async function boot() {
 
   registerActions({ ...appActions, ...boardActions, ...scoresheetActions, ...materialActions, ...bookActions, ...analysisActions, ...flowsActions,
     ...settingsActions, ...connectActions, ...moveActions, ...planActions, ...sweepActions, ...txActions, ...dayActions,
-    ...accountActions, ...recurringActions, ...streamActions, ...habitActions });
+    ...accountActions, ...recurringActions, ...streamActions, ...habitActions, ...inletActions, ...inflowsActions });
   bindActions(root);
   setServices({ toast, rerender: schedule });
 
@@ -295,7 +298,7 @@ function thinDemoState(now) {
 function enterDemo(kind = 'full') {
   if (store.status.readonly) return;
   savedDocBeforeDemo = store.state;
-  const sample = kind === 'thin' ? thinDemoState(nowMs()) : buildDemoState(nowMs());
+  const sample = kind === 'thin' ? thinDemoState(nowMs()) : buildDemoState(nowMs(), { moneyIn: true });
   // the sample game speaks the words the owner chose (a change made inside it is kept nowhere, like the rest of it)
   sample.settings.words = wordsOf(savedDocBeforeDemo);
   sample.settings.wordsAt = 0;

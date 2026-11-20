@@ -40,6 +40,8 @@ import { moveGlyph } from '../ui/glyphs.js';
 import { money } from './parts.js';
 import { sayHtml } from '../ui/say.js';
 import { phrase, say } from '../model/words.js';
+import { depositQueue, figOne, isWalletRefund, lookOf, moneyInBySource, suggestions } from '../model/inlets.js';
+import { devSection, inList, inSection } from './inflows.js';
 
 /** Items of the queue shown before "+ All n" (from 720px; under it, once opened). */
 const QUEUE_FIRST = 3;
@@ -177,27 +179,36 @@ function queueItem(ctx, item) {
     <div class="chips fl-q-chips" role="group" aria-label="${item.merchant || say('flows.queue.uncat', ctx.words)}">
       ${item.chips.map((category, i) => html`<button class="${cx('chip', i === 0 && category === item.guess && 'fl-q-guess')}" type="button" data-action="flows.file" data-key="${item.key}" data-cat="${category}"
         aria-label="${say('flows.queue.chip.aria', ctx.words, { merchant: item.merchant, category: categoryLabel(category) })}">${i === 0 && category === item.guess ? '✓ ' : ''}${categoryLabel(category)}</button>`)}
+      ${item.moneyIn ? html`<button class="chip" type="button" data-action="flows.money-in" data-id="${item.txId}" aria-label="${say('flows.queue.moneyIn.aria', ctx.words, { merchant: item.merchant })}">${sayHtml('flows.queue.moneyIn', ctx.words)}</button>` : ''}
       <button class="chip" type="button" data-action="app.sheet" data-sheet="tx" data-id="${item.txId}" aria-label="${say('flows.queue.more.aria', ctx.words, { merchant: item.merchant })}">${sayHtml('flows.queue.more', ctx.words)}</button>
     </div>
   </li>`;
 }
 
-function queueSection(ctx, q) {
+function queueSection(ctx, q, dq) {
   const ui = ctx.ui.flQueue || {};
   const open = !!ui.open;
   const all = !!ui.all;
-  const n = q.items.length;
+  const nOut = q.items.length;
+  const nIn = dq.items.length;
+  const n = nIn + nOut;
   const moves = q.moves === 1 ? phrase('flows.queue.moves.one', ctx.words) : say('flows.queue.moves.many', ctx.words, { n: q.moves });
-  const items = n === 1 ? phrase('flows.queue.items.one', ctx.words) : say('flows.queue.items.many', ctx.words, { n });
+  const items = nOut === 1 ? phrase('flows.queue.items.one', ctx.words) : say('flows.queue.items.many', ctx.words, { n: nOut });
+  // money in first, under its own label, because deposits are few and each one is large; three a side from 720px
+  const more = nIn > QUEUE_FIRST || nOut > QUEUE_FIRST;
   return html`<section class="${cx('band fl-q', open && 'is-open', all && 'is-all', !n && 'is-empty')}" id="fl-q" aria-labelledby="fl-q-h">
     <div class="sec-head fl-q-head">
-      <h2 class="lab" id="fl-q-h"><b>${sayHtml('flows.queue', ctx.words)}</b><i class="sep"></i>${keep(say('flows.queue.count', ctx.words, { n }))}</h2>
+      <h2 class="lab" id="fl-q-h"><b>${sayHtml('flows.queue', ctx.words)}</b><i class="sep"></i>${keep(say('flows.queue.count', ctx.words, { in: nIn, out: nOut }))}</h2>
       ${n ? html`<button class="btn-link fl-q-toggle" type="button" data-action="flows.queue" aria-expanded="${open ? 'true' : 'false'}" aria-controls="fl-q-body">${open ? sayHtml('flows.queue.close', ctx.words) : html`${sayHtml('flows.queue.open', ctx.words)} ›`}</button>` : ''}
     </div>
     ${n ? html`<div class="fl-q-body" id="fl-q-body">
-      <p class="cap fl-q-lead">${sayHtml('flows.queue.lead', ctx.words, { moves: keep(moves), items: keep(items) })}</p>
-      <ol class="fl-q-list">${q.items.map((item) => queueItem(ctx, item))}</ol>
-      ${n > QUEUE_FIRST ? html`<p class="fl-q-more"><button class="btn-link" type="button" data-action="flows.queue-all" aria-expanded="${all ? 'true' : 'false'}" aria-controls="fl-q-body">${all ? say('flows.queue.fewer', ctx.words) : say('flows.queue.allN', ctx.words, { n })}</button></p>` : ''}
+      ${inList(ctx, dq)}
+      ${nOut ? html`<div class="fl-q-side" data-side="out">
+        ${nIn ? html`<p class="fl-grp-head fl-q-side-head"><span class="lab"><b>${sayHtml('flows.queue.out', ctx.words)}</b> · ${keep(String(nOut))}</span></p>` : ''}
+        <p class="cap fl-q-lead">${sayHtml('flows.queue.lead', ctx.words, { moves: keep(moves), items: keep(items) })}</p>
+        <ol class="fl-q-list">${q.items.map((item) => queueItem(ctx, item))}</ol>
+      </div>` : ''}
+      ${more ? html`<p class="fl-q-more"><button class="btn-link" type="button" data-action="flows.queue-all" aria-expanded="${all ? 'true' : 'false'}" aria-controls="fl-q-body">${all ? say('flows.queue.fewer', ctx.words) : say('flows.queue.allN', ctx.words, { n })}</button></p>` : ''}
     </div>` : html`<p class="cap fl-q-none">${sayHtml('flows.queue.none', ctx.words)}</p>`}
   </section>`;
 }
@@ -367,18 +378,31 @@ function billsSection(ctx, bills) {
 export function render(ctx) {
   const days = periodOfCtx(ctx);
   const opts = { ledger: ctx.d.ledger };
+  // In and out reads no filing (PAYDAYS (c)); money in by source reads the filings once for the queue, the section, the
+  // suggestions and Fig. 1, and All earned's change from the In and out shown here
+  const look = lookOf(ctx.state);
   const io = inAndOut(ctx.state, ctx.now, days, opts);
   const q = moveQueue(ctx.state, ctx.now, opts);
   const went = whereItWent(ctx.state, ctx.now, days, opts);
   const l = leaks(ctx.state, ctx.now, days, opts);
   const subs = repertoire(ctx.state, ctx.now, opts);
   const bills = bookBills(ctx.state, ctx.today, { listed: subs.listed });
+  const inOpts = { ...opts, look };
+  const dq = depositQueue(ctx.state, ctx.now, inOpts);
+  const sec = moneyInBySource(ctx.state, ctx.now, days, { ...inOpts, io });
+  const offers = suggestions(ctx.state, ctx.now, inOpts);
+  const fig = figOne(ctx.state, ctx.now, inOpts);
+  // a wallet refund in the spending queue also offers "It was money in" (G.7.3)
+  for (const item of q.items) {
+    const tx = item.catchAll && item.direction === 'in' ? ctx.state.txs.find((one) => one.id === item.txId) : null;
+    item.moneyIn = !!tx && isWalletRefund(tx, ctx.state);
+  }
   return html`<div class="fl">
     ${faceSwitch('flows', ctx.words)}
     ${head(ctx, days, io.window)}
     <div class="cols fl-cols">
-      <div class="col col-7">${inOutSection(ctx, io, days)}${queueSection(ctx, q)}${wentSection(ctx, went, days)}</div>
-      <div class="col col-5">${leaksSection(ctx, l, days)}${billsSection(ctx, bills)}${subsSection(ctx, subs)}</div>
+      <div class="col col-7">${inOutSection(ctx, io, days)}${queueSection(ctx, q, dq)}${wentSection(ctx, went, days)}</div>
+      <div class="col col-5">${leaksSection(ctx, l, days)}${billsSection(ctx, bills)}${subsSection(ctx, subs)}${inSection(ctx, sec, offers, fig, dq.items.length)}${devSection(ctx, sec)}</div>
     </div>
   </div>`;
 }

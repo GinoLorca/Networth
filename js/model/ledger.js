@@ -19,6 +19,7 @@ import {
 import { roundCents } from './money.js';
 import { BILL_LAPSE_PERIODS, byHandStandingOf, byHandUnpaid, earlyDays, lastOccurrence, nextOccurrence, occurrences, runsByHand, upcoming, usualSchedule } from './book.js';
 import { dailyInterest, loanValueOn } from './loans.js';
+import { isNotPay, notPayKeys } from './flowsection.js';
 
 const EPOCH = '1970-01-01';
 const HOUR_MS = 3600000;
@@ -229,6 +230,8 @@ export function makeLedger(state, nowMs) {
     edge: () => edgeOf(core),
     clock: () => clockOf(core),
     payStreams: () => payStreamsOf(core),
+    /** The id of the pay stream that sets the payday (paydayOf's main: the accruing one that brings in most per day), or null. */
+    payMain: () => paydayOf(core).mainId || null,
     nextPayOf: (streamId) => nextPayOf(core, streamId),
     retention: (day) => retentionOf(core, day),
     spendingByCategory: (fromDay, toDay) => spendingBetween(core, fromDay, toDay),
@@ -1729,8 +1732,15 @@ function nextPayOf(core, streamId) {
  */
 function payStreamsOf(core) {
   const payDays = core.index().payDays;
+  // a stream the owner said is not salary (G.7.2, the pay fix; PAYDAYS (b), flowsection.notPayKeys: its app or payer
+  // filed to a source that is not Steady pay or to Windfalls, or a catch-all key's own deposits filed away) is no pay,
+  // unless the owner locked the stream's accrual on by hand: a lock that holds accrual off is no pay. Read once a ledger
+  // (the record does not change under it), as its indexes are
+  if (!core.notPay) core.notPay = notPayKeys(core.doc);
+  const notPay = core.notPay;
   return listOf(core.doc.streams).filter((stream) => isScheduled(core, stream)
     && !payLapsed(core, stream, payDays.get(stream.id))
+    && !(isNotPay(notPay, stream) && !(Array.isArray(stream.locks) && stream.locks.includes('accrue') && !!stream.accrue))
     && (!!stream.accrue || dailyOf(stream) * 30.4375 >= PAY_STREAM_MIN_MONTHLY));
 }
 

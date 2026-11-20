@@ -41,13 +41,15 @@
  * cell they replace; an Undo restamps (`restampFlows`). `applyFlows` brings the record to the copy after detection.
  * The first load seeds the copy at stamp 0 from the record (`seedFlows`).
  *
- * Pure: no clock (every stamp is handed in), no DOM, no storage. Imports: schema, dates, byhand, classify.
+ * Pure: no clock (every stamp is handed in), no DOM, no storage. Imports: schema, dates, byhand, classify, corrections (G.3's
+ * reader of the filings, which the pay fix reads: `notPayKeys`).
  */
 
 import { CADENCES, CATEGORIES, makeRecurring } from './schema.js';
 import { addDays, diffDays, gameDay, isYmd, parts } from './dates.js';
 import { payeeKey } from './byhand.js';
 import { merchantOf } from './classify.js';
+import { accountKeys, merchantKeyOf, rowWhere } from './corrections.js';
 
 const MAX_STAMP = 1e14;
 const DAY_MS = 86400000;
@@ -793,9 +795,12 @@ export function storedFlows(state, nowMs) {
 export function ownFirstDay(state) {
   let first = null;
   for (const tx of listOf(isObject(state) ? state.txs : null)) {
-    if (!isObject(tx) || !Number.isFinite(tx.amount) || tx.amount < 0 || !isYmd(tx.day)) continue;
+    // round 9 (K18): a row on or after the first day found so far is passed over before any other test (the day pattern
+    // was read on every row, 2 ms on a 3-year record, and a render reads the floor about ten times); the same day results
+    if (!isObject(tx) || typeof tx.day !== 'string' || (first !== null && tx.day >= first)) continue;
+    if (!Number.isFinite(tx.amount) || tx.amount < 0 || !isYmd(tx.day)) continue;
     if (tx.kind === 'decline' || tx.matchId || tx.source === 'manual') continue;
-    if (first === null || tx.day < first) first = tx.day;
+    first = tx.day;
   }
   return first;
 }
@@ -1720,6 +1725,487 @@ export function addedCount(state) {
   return Object.keys(copy.added || {}).filter((id) => !copy.added[id].deleted).length;
 }
 
+/* ------------------------------------------------------------------ sources and filings (pass 3) */
+
+/**
+ * The owner named, renamed, set the kind, goal or tag of, archived or removed a source: each field given is written as a
+ * cell, stamped above the cell it replaces; `null` writes a removal ("no decision"). Every value is checked as the reader
+ * checks it (the f414276 reader is strict about these maps: no new field and no new value pattern), so nothing written
+ * here refuses a file on another device. False, and nothing written, when a value would not pass.
+ * @param {object} state  (mutated)
+ * @param {string} id     'n' and 13 hex digits
+ * @param {{ name?, kind?, goal?, focus?, gone?, removed? }} fields
+ * @param {number} nowMs
+ * @returns {boolean}
+ */
+export function noteInlet(state, id, fields, nowMs) {
+  if (!isObject(state) || !isString(id) || !INLET_KEY.test(id) || !isObject(fields)) return false;
+  const names = Object.keys(fields);
+  if (!names.length || names.some((field) => !INLET_FIELDS.includes(field))) return false;
+  const cells = {};
+  for (const field of names) {
+    const value = fields[field];
+    if (value === null || value === undefined) { cells[field] = null; continue; }
+    const v = INLET_VALUE[field](value);
+    if (v === null) return false;
+    cells[field] = v;
+  }
+  seedFlows(state, nowMs);
+  const copy = storedFlows(state);
+  const inlets = { ...(copy.inlets || {}) };
+  const entry = { ...(own(inlets, id) || {}) };
+  for (const field of names) {
+    const at = stampAbove(nowMs, entry[field]);
+    entry[field] = cells[field] === null ? { deleted: true, at } : { v: cells[field], at };
+  }
+  inlets[id] = entry;
+  storeCopy(state, { ...copy, inlets });
+  return true;
+}
+
+/**
+ * The owner filed a payer (`p`), a reporting app (`r`), one deposit (`i`, `f`) or one reported payment (`q`): to a source
+ * ('n' and 13 hex digits), to Windfalls ('-'), Leave it ('?'), or no decision (null: a removal). A filing of one deposit
+ * carries its day (and an `i` key the row's fingerprint `fp`), as the reader requires; a removal keeps them too.
+ * @param {object} state  (mutated)
+ * @param {string} key
+ * @param {string|null} value
+ * @param {number} nowMs
+ * @param {{ day?: string, fp?: string }} [facts]
+ * @returns {boolean}
+ */
+export function noteInto(state, key, value, nowMs, facts = {}) {
+  if (!isObject(state) || !isString(key) || !INTO_KEY.test(key)) return false;
+  if (value !== null && value !== undefined && intoValue(value) === null) return false;
+  const kind = key[0];
+  const needs = kind === 'i' ? ['day', 'fp'] : kind === 'f' || kind === 'q' ? ['day'] : [];
+  seedFlows(state, nowMs);
+  const copy = storedFlows(state);
+  const into = { ...(copy.into || {}) };
+  const had = own(into, key) || null;
+  const extra = {};
+  for (const fact of needs) {
+    const v = isObject(facts) && facts[fact] !== undefined ? facts[fact] : had ? had[fact] : undefined;
+    if (fact === 'day' ? !isYmd(v) : !(isString(v) && FP.test(v))) return false;
+    extra[fact] = v;
+  }
+  const at = stampAbove(nowMs, had);
+  into[key] = value === null || value === undefined ? { deleted: true, at, ...extra } : { v: value, at, ...extra };
+  storeCopy(state, { ...copy, into });
+  return true;
+}
+
+/**
+ * Not now on a suggested source (false), or Restore (null: a removal). Keys: 's' (a pay stream), 'r' (a reporting app)
+ * or 'p' (a payer), each with 13 hex digits. `atLeast`: a stamp the cell takes when it is above the one it needs (round 5:
+ * Not now writes every key of a suggestion at one stamp, offerStamp).
+ * @returns {boolean}
+ */
+export function noteOffer(state, key, value, nowMs, atLeast = 0) {
+  if (!isObject(state) || !isString(key) || !OFFER_KEY.test(key)) return false;
+  if (value !== false && value !== null && value !== undefined) return false;
+  seedFlows(state, nowMs);
+  const copy = storedFlows(state);
+  const offers = { ...(copy.offers || {}) };
+  const at = Math.min(MAX_STAMP, Math.max(stampAbove(nowMs, own(offers, key)), Number.isFinite(atLeast) ? Math.round(atLeast) : 0));
+  offers[key] = value === false ? { v: false, at } : { deleted: true, at };
+  storeCopy(state, { ...copy, offers });
+  return true;
+}
+
+/**
+ * The one stamp a Not now of several offer keys writes (round 5): the highest any of them needs, so a Restore on a device
+ * whose record makes fewer of them finds the others by it.
+ */
+export function offerStamp(state, keys, nowMs) {
+  const offers = storedFlows(state).offers || {};
+  let at = 0;
+  for (const key of Array.isArray(keys) ? keys : []) if (isString(key) && OFFER_KEY.test(key)) at = Math.max(at, stampAbove(nowMs, own(offers, key)));
+  return at;
+}
+
+/** How many sources are live (neither removed nor undone): the UI refuses a 21st (INLETS_LIVE_MAX). */
+export function inletCount(state) {
+  const copy = storedFlows(state);
+  return Object.keys(copy.inlets || {}).filter((id) => !inletGone(copy.inlets[id])).length;
+}
+
+/* ------------------------------------------------------------------ G.3's reader (pass 3; inlets.js re-exports it) */
+
+/** A filing's values besides a source's id: Windfalls, and Leave it. */
+export const WINDFALL = '-';
+export const LEAVE = '?';
+/** A deposit sent by Zelle: its key names the sender (DESIGN 6). */
+const ZELLE_IN = 'builtin:zelle-received';
+/** The built-in rules whose deposits are Windfalls by themselves (G.1). */
+export const WINDFALL_RULES = Object.freeze({
+  'builtin:interest-earned': 'interest',
+  'builtin:tax-refund': 'tax',
+  'builtin:card-reward': 'reward',
+  'builtin:benefits': 'benefits',
+});
+/**
+ * Catch-all keys on money in: one deposit at a time (cheques, wallet cash-outs, processor payouts, and payment-app rows,
+ * whose key names the app and not the person: DESIGN 6).
+ */
+export const CATCH_ALL_IN = new Set(['builtin:deposit', 'builtin:wallet-cash-out', 'builtin:processor-payout', 'builtin:wallet-payment']);
+
+/** A reporting app's key: 'r' and the hash of its id (the file's name in income/). */
+export function appKey(source) {
+  return 'r' + hash13(source);
+}
+
+/** A reported payment's key: 'q' and the hash of its key `{source}/{item}`. */
+export function paymentKey(key) {
+  return 'q' + hash13(key);
+}
+
+/** The reporting app of a reported payment's key `{source}/{item}`. */
+function sourceOfKey(key) {
+  const text = String(key || '');
+  const slash = text.indexOf('/');
+  return slash > 0 ? text.slice(0, slash) : text;
+}
+
+/**
+ * The sources of the copy: every one with its fields (a removal reads as no value), whether it is removed, archived,
+ * and the latest stamp of its cells. A source with no live cell (an Undo of its making) is not listed.
+ * @returns {Map<string, { id, name, kind, goal, focus, gone, removed, at }>}
+ */
+export function inletsOf(state, copy) {
+  const section = copy || storedFlows(state);
+  const out = new Map();
+  for (const id of Object.keys(section.inlets || {}).sort()) {
+    const entry = section.inlets[id];
+    const removed = cellValue(entry.removed) === true;
+    if (!removed && isInletGone(entry)) continue;
+    const kind = cellValue(entry.kind);
+    const goal = cellValue(entry.goal);
+    let at = 0;
+    for (const cell of Object.values(entry)) if (cell && cell.at > at) at = cell.at;
+    out.set(id, {
+      id,
+      name: typeof cellValue(entry.name) === 'string' ? cellValue(entry.name) : '',
+      kind: INLET_KINDS.includes(kind) ? kind : 'job',
+      goal: goal && typeof goal === 'object' ? { per: goal.per, cents: goal.cents } : null,
+      focus: cellValue(entry.focus) === true,
+      gone: cellValue(entry.gone) === true,
+      removed,
+      at,
+    });
+  }
+  return out;
+}
+
+/**
+ * What filingOf reads, made once: the copy's filings, the sources, the bank's fingerprints of accounts, the filings of
+ * one deposit by row fingerprint, and the reported payments paired with each bank row.
+ */
+export function lookOf(state) {
+  const copy = storedFlows(state);
+  const into = copy.into || {};
+  const byFp = new Map();
+  for (const key of Object.keys(into)) {
+    const fp = into[key].fp;
+    if (key[0] === 'i' && typeof fp === 'string') {
+      if (!byFp.has(fp)) byFp.set(fp, []);
+      byFp.get(fp).push(key);
+    }
+  }
+  // the reported payments each bank row confirms (income.pairs: payment key -> row id, history ones included), so a
+  // deposit is filed by its reported keys and counts the sessions it pays
+  const paired = new Map();
+  const pairs = state && state.income && typeof state.income === 'object' && state.income.pairs && typeof state.income.pairs === 'object' ? state.income.pairs : {};
+  for (const key of Object.keys(pairs).sort()) {
+    const rowId = pairs[key];
+    if (typeof rowId !== 'string' || !key.includes('/')) continue;
+    if (!paired.has(rowId)) paired.set(rowId, []);
+    paired.get(rowId).push(key);
+  }
+  // Leave it on a payer or an app (round 9, LIMITS-TRIAGE F1): one `?` on its key leaves that key's deposits dated on or
+  // before the game day of the cell's stamp; a later one is asked about
+  const leaveTo = new Map();
+  for (const key of Object.keys(into)) {
+    const cell = into[key];
+    if ((key[0] === 'p' || key[0] === 'r') && !cell.deleted && cell.v === LEAVE) leaveTo.set(key, todayOf(state, cell.at));
+  }
+  const aside = asidePairs(state, paired, copy);
+  return { state, copy, into, inlets: inletsOf(state, copy), accounts: accountKeys(state), byFp, paired, aside, leaveTo };
+}
+
+/**
+ * The pairings G.3 sets aside (round 9, LIMITS-TRIAGE F2): a bank deposit sent by Zelle that 3.7's matching paired with a
+ * reporting app's payments, whose sender has no other deposit since the shared floor paired with that app's payments.
+ * Such a deposit is no proof of the app: 3.7 pairs one payment of exactly the row's cents from any payer, or 2 to 6 of
+ * one payer, so a one-off client paid one session's price meets another payer's session. It is filed and queued by its
+ * sender, and its sessions count nowhere; the pairing stays (the payment counts once, as this deposit), and the queue
+ * names it. A new client's first deposit is asked about once: from its second deposit paired with the app, both file with
+ * the app. Read from the rows since the floor and the pairs, so every device sets aside the same deposits. `paired` is
+ * left with the pairings that file (mutated).
+ * @returns {Map<string, string[]>}  row id -> the payment keys `{source}/{item}` set aside
+ */
+function asidePairs(state, paired, copy) {
+  const out = new Map();
+  if (!paired.size || !isObject(state) || !Array.isArray(state.txs)) return out;
+  // the shared floor (floorOf) is the later of the copy's `since` and this device's own first day; a deposit is a bank row
+  // of that record, never before its own first day, so `since` alone tells a deposit before the floor (floorOf's scan of
+  // every row, 2 ms on a 3-year record, is not run again here: lookOf is made several times a render)
+  const since = isObject(copy) && isYmd(copy.since) ? copy.since : null;
+  const keyOf = new Map(); // a sender's key by merchant key, hashed once a call
+  const rows = [];
+  for (const tx of state.txs) {
+    if (!isObject(tx) || tx.ruleId !== ZELLE_IN || tx.source === 'manual' || !isString(tx.id) || !paired.has(tx.id) || !isString(tx.mkey) || !tx.mkey) continue;
+    if (!keyOf.has(tx.mkey)) keyOf.set(tx.mkey, merchantKeyOf(tx.mkey));
+    rows.push({ tx, who: keyOf.get(tx.mkey), on: isYmd(tx.day) && !(since && tx.day < since) });
+  }
+  // each Zelle sender's deposits since the floor paired with each app
+  const count = new Map();
+  for (const { tx, who, on } of rows) {
+    if (!on) continue;
+    for (const app of new Set(paired.get(tx.id).map(sourceOfKey))) count.set(who + '|' + app, (count.get(who + '|' + app) || 0) + 1);
+  }
+  for (const { tx, who, on } of rows) {
+    const keys = paired.get(tx.id);
+    const set = keys.filter((key) => (count.get(who + '|' + sourceOfKey(key)) || 0) - (on ? 1 : 0) < 1);
+    if (!set.length) continue;
+    out.set(tx.id, set);
+    // the pairings that stay file it (paired with two apps' payments, it can be set aside from one of them only)
+    if (set.length === keys.length) paired.delete(tx.id);
+    else paired.set(tx.id, keys.filter((key) => !set.includes(key)));
+  }
+  return out;
+}
+
+/** A filing that decides: to a source that is not removed, or to Windfalls. */
+export function isReal(look, cell) {
+  if (!cell || cell.deleted) return false;
+  if (cell.v === WINDFALL) return true;
+  const inlet = look.inlets.get(cell.v);
+  return !!inlet && !inlet.removed;
+}
+
+/** The latest real filing among keys: the later stamp, then the smaller key. */
+export function latestReal(look, keys) {
+  let best = null;
+  for (const key of keys) {
+    const cell = look.into[key];
+    if (!isReal(look, cell)) continue;
+    if (!best || cell.at > best.cell.at || (cell.at === best.cell.at && key < best.key)) best = { key, cell };
+  }
+  return best;
+}
+
+/**
+ * The keys of one money-in row: its own (an `i`/`f` row key and the filings that reach it by fingerprint, or a reported
+ * payment's `q`), the `q` keys of the payments paired with a bank row, the reporting apps (`r`) and the payer (`p`).
+ */
+export function keysOf(look, tx) {
+  const own = [];
+  const apps = [];
+  let payer = null;
+  let where = null;
+  if (tx.source === 'manual' && tx.via === 'income' && tx.income && typeof tx.income.key === 'string') {
+    own.push(paymentKey(tx.income.key));
+    apps.push(appKey(sourceOfKey(tx.income.key)));
+  } else {
+    where = rowWhere(tx, look.accounts);
+    if (where) {
+      own.push(where.key);
+      if (where.fp) for (const key of look.byFp.get(where.fp) || []) if (!own.includes(key)) own.push(key);
+    }
+    for (const key of look.paired.get(tx.id) || []) {
+      const q = paymentKey(key);
+      if (!own.includes(q)) own.push(q);
+      const r = appKey(sourceOfKey(key));
+      if (!apps.includes(r)) apps.push(r);
+    }
+    payer = merchantKeyOf(tx.mkey);
+  }
+  return { own, apps: apps.sort(), payer, where };
+}
+
+/**
+ * Which filing wins for one deposit or reported payment (G.3), first match:
+ * 1. a real filing (a source or Windfalls) on the deposit itself, its `i`/`f` key (found by key, then fingerprint) or the
+ *    `q` key of a payment paired with it; among these the later stamp, then the key;
+ * 2. its reporting app (`r`); 3. its payer (`p`); 4. a built-in Windfalls rule; 5. Leave it (`?` on any of its keys):
+ *    out of the queue, still Not yet filed; 6. Not yet filed. A filing to a removed source decides nothing.
+ * @returns {{ to: string|null, how: 'deposit'|'app'|'payer'|'rule'|null, key: string|null, left: boolean, keys: object }}
+ */
+export function filingOf(look, tx) {
+  const keys = keysOf(look, tx);
+  const mine = latestReal(look, keys.own);
+  if (mine) return { to: mine.cell.v, how: 'deposit', key: mine.key, left: false, keys };
+  const above = filingAbove(look, tx, keys);
+  if (above.to) return { ...above, left: false, keys };
+  return { to: null, how: null, key: null, left: isLeft(look, tx, keys), keys };
+}
+
+/**
+ * G.3's step 5, Leave it: a `?` on one of the row's own keys leaves it; a `?` on its reporting app or its payer (one mark
+ * for a whole item, round 9) leaves it when its day is on or before the game day of that mark's stamp (lookOf's
+ * `leaveTo`), so a later deposit is asked about. A look made before round 9 (no `leaveTo`) reads the day off the cell.
+ */
+function isLeft(look, tx, keys) {
+  if (keys.own.some((key) => { const cell = look.into[key]; return !!cell && !cell.deleted && cell.v === LEAVE; })) return true;
+  for (const key of [...keys.apps, ...(keys.payer ? [keys.payer] : [])]) {
+    const cell = look.into[key];
+    if (!cell || cell.deleted || cell.v !== LEAVE) continue;
+    const upTo = look.leaveTo ? look.leaveTo.get(key) : todayOf(look.state, cell.at);
+    if (isYmd(tx.day) && isYmd(upTo) && tx.day <= upTo) return true;
+  }
+  return false;
+}
+
+/** G.3's steps 2 to 4 for one row, its own keys aside: its reporting app, its payer, a built-in Windfalls rule. */
+export function filingAbove(look, tx, keys) {
+  const app = latestReal(look, keys.apps);
+  if (app) return { to: app.cell.v, how: 'app', key: app.key };
+  if (keys.payer) {
+    const payer = latestReal(look, [keys.payer]);
+    if (payer) return { to: payer.cell.v, how: 'payer', key: payer.key };
+  }
+  if (tx.source !== 'manual' && Object.hasOwn(WINDFALL_RULES, tx.ruleId)) return { to: WINDFALL, how: 'rule', key: null };
+  return { to: null, how: null, key: null };
+}
+
+/** Whether a deposit files one at a time: a cheque, a wallet cash-out, a processor payout, or a row with no payer. */
+export function isCatchAllIn(tx) {
+  return !tx || typeof tx.mkey !== 'string' || !tx.mkey || CATCH_ALL_IN.has(tx.ruleId);
+}
+
+/* ------------------------------------------------------------------ which payers are pay (the pay fix) */
+
+/** A posted bank deposit of a payer, as detection groups them (detect.isDeposit), on or after the shared floor. */
+function isPayerDeposit(tx, floor) {
+  return isObject(tx) && tx.source !== 'manual' && tx.flow === 'in' && tx.kind === 'income' && !tx.pending && !tx.pairId
+    && isString(tx.mkey) && tx.mkey !== '' && isYmd(tx.day) && !(floor && tx.day < floor);
+}
+
+/**
+ * The pay streams the owner said are not pay (PAYDAYS (b), G.7.2, the pay fix): a payer key ('p' and 13 hex digits),
+ * every stream of that payer; or a payer key, '|' and an account id, the one stream of a catch-all key on that account.
+ * The owner says a stream is not salary by filing it to Windfalls or to a live source that is not Steady pay. The first
+ * of these that holds a filing decides, for each payer:
+ * 1. its reporting app (`r`), when at least half of the payer's bank deposits since the shared floor are paired with that
+ *    app's payments (income.pairs; any one paired deposit is not enough: a payroll's odd deposit paired by chance);
+ * 2. its payer (`p`, All from this payer);
+ * 3. on a catch-all key only (a cheque, cash-out, payout or payment-app row, which the queue files one deposit at a time):
+ *    its own deposits. Of the stream's bank deposits since the floor (the same key and account) filed on their own (G.3
+ *    step 1), at least two and more than half are filed away. One filing leaves it pay, and so does a payer's deposit
+ *    filed on its own on a named key.
+ * Leave it, a built-in rule's Windfalls and a filing to a removed source are no say. Detection never makes such a stream
+ * accrue, and the ledger never reads it as pay (no payday, not take-home), unless the owner set `accrue` by hand on the
+ * stream (its lock wins). Read from the copy as it is stored (every cell was checked when it was written), the income
+ * pairs and the rows on or after the shared floor, which every device holds, so devices of different depth agree.
+ * @param {object} state
+ * @returns {Set<string>}
+ */
+export function notPayKeys(state) {
+  const out = new Set();
+  const copy = isObject(state) && isObject(state.share) && isObject(state.share.flows) ? state.share.flows : null;
+  if (!copy || !isObject(copy.into)) return out;
+  const inlets = isObject(copy.inlets) ? copy.inlets : {};
+  // the owner's say in one filing: 'not' (Windfalls, or a live source that is not Steady pay), 'pay' (a live Steady pay
+  // source), or null (no filing, a removal, Leave it, a removed source). A source with no kind (its kind cell a removal,
+  // as an Undo of its making after another device's edit leaves it) reads as By the job, as the page reads it (round 2)
+  const sayOf = (cell) => {
+    if (!isObject(cell) || cell.deleted || !isString(cell.v) || cell.v === LEAVE) return null;
+    if (cell.v === WINDFALL) return 'not';
+    const inlet = own(inlets, cell.v);
+    if (!isObject(inlet) || inletGone(inlet)) return null;
+    const kind = isObject(inlet.kind) && !inlet.kind.deleted ? inlet.kind.v : null;
+    return kind === 'steady' ? 'pay' : 'not';
+  };
+  const into = copy.into;
+  const floor = floorOf(state);
+  const txs = Array.isArray(state.txs) ? state.txs : [];
+  // 1. the reporting apps that hold a say, and the bank rows paired with each (income.pairs: payment key -> row id)
+  const pairs = isObject(state.income) && isObject(state.income.pairs) ? state.income.pairs : {};
+  const appSays = new Map();
+  const rowApps = new Map();
+  const appOf = new Map(); // an app's key by its id, hashed once a call
+  for (const key of Object.keys(pairs)) {
+    const rowId = pairs[key];
+    const slash = key.indexOf('/');
+    if (!isString(rowId) || slash <= 0) continue;
+    const source = key.slice(0, slash);
+    if (!appOf.has(source)) appOf.set(source, appKey(source));
+    const app = appOf.get(source);
+    if (!appSays.has(app)) appSays.set(app, sayOf(own(into, app)));
+    if (!appSays.get(app)) continue;
+    if (!rowApps.has(rowId)) rowApps.set(rowId, new Set());
+    rowApps.get(rowId).add(app);
+  }
+  // each payer's bank deposits since the floor, those paired with each app that has a say, and its catch-all streams
+  const payers = new Map();
+  const keyOf = new Map(); // a payee key a merchant key, hashed once a call (a payer's deposits share theirs)
+  for (const tx of txs) {
+    if (!isPayerDeposit(tx, floor)) continue;
+    if (!keyOf.has(tx.mkey)) keyOf.set(tx.mkey, payeeKey(tx.mkey));
+    const payer = keyOf.get(tx.mkey);
+    let one = payers.get(payer);
+    if (!one) payers.set(payer, (one = { deposits: 0, apps: new Map(), catchAll: new Map() }));
+    one.deposits += 1;
+    for (const app of rowApps.get(tx.id) || []) one.apps.set(app, (one.apps.get(app) || 0) + 1);
+    if (isCatchAllIn(tx)) {
+      const stream = payer + '|' + tx.accountId;
+      if (!one.catchAll.has(stream)) one.catchAll.set(stream, []);
+      one.catchAll.get(stream).push(tx);
+    }
+  }
+  // 3 reads each deposit's own filing (G.3 step 1); it can end a stream only when at least two filings of one deposit or
+  // payment say it is not pay (each deposit filed away holds one of its own), so with fewer it reads no deposit at all
+  let ownAway = 0;
+  for (const key of Object.keys(into)) if ((key[0] === 'i' || key[0] === 'f' || key[0] === 'q') && sayOf(into[key]) === 'not') ownAway += 1;
+  const someOwn = ownAway >= 2;
+  let look = null;
+  for (const [payer, one] of payers) {
+    // 1. the app with the most paired deposits (the later stamp of its filing, then its key, as G.3 orders them)
+    let app = null;
+    for (const [key, n] of one.apps) {
+      const cell = own(into, key);
+      if (!app || n > app.n || (n === app.n && (cell.at > app.at || (cell.at === app.at && key < app.key)))) app = { key, n, at: cell.at };
+    }
+    let say = app && 2 * app.n >= one.deposits ? appSays.get(app.key) : null;
+    // 2. its payer
+    if (!say) say = sayOf(own(into, payer));
+    if (say) {
+      if (say === 'not') out.add(payer);
+      continue;
+    }
+    // 3. a catch-all key's own deposits, stream by stream (key and account): at least two, and most, filed away
+    if (!someOwn || !one.catchAll.size) continue;
+    if (!look) look = lookOf(state);
+    for (const [stream, rows] of one.catchAll) {
+      let filed = 0;
+      let away = 0;
+      for (const tx of rows) {
+        const mine = latestReal(look, keysOf(look, tx).own);
+        if (!mine) continue;
+        filed += 1;
+        if (sayOf(mine.cell) === 'not') away += 1;
+      }
+      if (away >= 2 && 2 * away > filed) out.add(stream);
+    }
+  }
+  // a payer filed away with no deposit on record since the floor is still no pay (its stream may be older than the floor)
+  for (const key of Object.keys(into)) if (key[0] === 'p' && !payers.has(key) && sayOf(into[key]) === 'not') out.add(key);
+  return out;
+}
+
+/** Whether a stream is one the owner said is not pay (notPayKeys): its payer's key, or its catch-all key and account. */
+export function isNotPay(notPay, stream) {
+  if (!notPay || !notPay.size || !isObject(stream) || !isString(stream.mkey) || !stream.mkey) return false;
+  const payer = payeeKey(stream.mkey);
+  return notPay.has(payer) || notPay.has(payer + '|' + stream.accountId);
+}
+
+/** Whether a stored source is gone: removed, or with no live cell (an Undo of its making). For the money-in figures. */
+export function isInletGone(inlet) {
+  return !isObject(inlet) || inletGone(inlet);
+}
+
 /* ------------------------------------------------------------------ Undo */
 
 /**
@@ -1744,10 +2230,12 @@ export function restampFlows(before, after, nowMs) {
   const now = storedFlows(after, time);
   const out = joinFlows(was, now);
   let wrote = false;
+  // the stamp an Undo gives what it puts back: 1 above both values
+  const stampOf = (prior, put) => Math.min(MAX_STAMP, Math.max(prior ? prior.at : 0, put ? put.at : 0) + 1);
   const restamp = (prior, put, extra) => {
     if (valueOf(prior) === valueOf(put)) return null;
     wrote = true;
-    const at = Math.min(MAX_STAMP, Math.max(prior ? prior.at : 0, put ? put.at : 0) + 1);
+    const at = stampOf(prior, put);
     const cell = put && !put.deleted ? { v: put.v, at, undo: true } : { deleted: true, at, undo: true };
     for (const fact of extra) {
       const value = (put && put[fact]) || (prior && prior[fact]);
@@ -1777,7 +2265,19 @@ export function restampFlows(before, after, nowMs) {
   for (const name of ['targets', 'offers', 'into']) {
     for (const key of union(was[name], now[name])) {
       const extra = name === 'into' ? (key[0] === 'i' ? ['day', 'fp'] : key[0] === 'f' || key[0] === 'q' ? ['day'] : []) : [];
-      const cell = restamp(own(was[name], key) || null, own(now[name], key) || null, extra);
+      const prior = own(was[name], key) || null;
+      const put = own(now[name], key) || null;
+      // Leave it on a payer or an app reads its stamp's game day (lookOf's `leaveTo`), and an Undo stamps what it puts back
+      // 1 above both values: a `?` put back so on such a key would reach the day of the change undone and leave the
+      // deposits asked about since. So an Undo never moves that day (round 12): when the new stamp would fall on another
+      // game day than the `?`'s own, it writes a removal instead, and every deposit of the payer or app is asked about
+      // again, on every device. That is an Undo of Leave it made again (round 11), of a filing, Not yet filed or a new
+      // source on the key, or of any earlier tap once such a removal holds the key. Within the `?`'s own day it is put
+      // back as it was, and the same `?` of that day already there is no change
+      const leave = name === 'into' && (key[0] === 'p' || key[0] === 'r') && !!put && !put.deleted && put.v === LEAVE;
+      const moved = leave && !(prior && !prior.deleted && prior.v === LEAVE && todayOf(after, prior.at) === todayOf(after, put.at))
+        && todayOf(after, stampOf(prior, put)) !== todayOf(after, put.at);
+      const cell = moved ? restamp(prior, null, extra) : restamp(prior, put, extra);
       if (cell) out[name] = { ...(out[name] || {}), [key]: cell };
     }
   }

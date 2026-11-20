@@ -6,7 +6,7 @@
  *
  *   <nw-chart data-island kind="worth" data="${JSON.stringify(data)}"></nw-chart>
  *
- *   kind   one of: worth · edge · months · lines · payoff · spark
+ *   kind   one of: worth · edge · months · lines · payoff · spark · inlets
  *   data   a JSON string (html`` escapes it; always quote the attribute)
  *   cover  optional bare attribute: replace every figure with a redaction bar. The same happens
  *          under any ancestor carrying data-cover (the app sets it on the page). While covered,
@@ -71,6 +71,12 @@
  *           The first month with owed <= 0 is labelled as the payoff month.
  *
  *  spark    number[]   or { values: number[] }.  A tiny inline trend: no axes, last point in the spot colour.
+ *
+ *  inlets   { months: 'YYYY-MM'[12], first?: 'YYYY-MM', today: 'YYYY-MM-DD', paid?: '… {n} … {m} …', unfiled?: name,
+ *             rows: [{ name, unfiled?, total, est?, paid, onRecord, goal?, cells: [{ ym, bank, pencil, blank? }] }] }
+ *           Fig. 1, money in by source over 12 months (model/inlets.js figOne): one row per source on one scale, a dot
+ *           for a month with no money, hatched pencil money, months before the record blank behind a hairline, a dashed
+ *           tick for a goal a month. As tall as its rows, like months; under 480px two lines a source.
  *
  * EXPORTS
  *   niceScale(min, max, count)   tick values on round numbers covering [min, max]
@@ -952,6 +958,168 @@ function drawSpark(d, W, H) {
   };
 }
 
+/* ------------------------------------------------------------------ inlets */
+
+/**
+ * Fig. 1, money in by source over 12 months (DESIGN G.4): one row per source on ONE scale for every row, so a small
+ * source looks small. A month with money is a bar from the baseline, at least a sliver; a month with none is a dot on
+ * the baseline, and nothing joins the months. Bank money is solid ink, pencil money hatched; the current month is in
+ * the spot colour and labelled to the day. A month before the record (the shared floor) is blank, with no dot and no
+ * baseline, behind a hairline marked with the record's first month. A goal a month is a dashed tick across the row.
+ * At the row's end: the 12-month total (≈ when any of it is pencil) and "paid in n of m months on record". Under 480px
+ * each source takes two lines: its name and total, then the 12 columns across the full width.
+ */
+function readInlets(raw) {
+  const src = obj(raw);
+  const months = arr(src.months).filter(isYm).slice(-12);
+  const rows = [];
+  for (const r of arr(src.rows)) {
+    if (!r || typeof r !== 'object') continue;
+    const byYm = new Map(arr(r.cells).filter((c) => c && isYm(c.ym)).map((c) => [c.ym, c]));
+    const cells = months.map((ym) => {
+      const c = byYm.get(ym) || {};
+      return { ym, bank: Math.max(0, num(c.bank) || 0), pencil: Math.max(0, num(c.pencil) || 0), blank: c.blank === true };
+    });
+    rows.push({
+      name: typeof r.name === 'string' ? r.name : '', unfiled: r.unfiled === true, total: num(r.total) || 0, est: r.est === true,
+      paid: num(r.paid) || 0, onRecord: num(r.onRecord) || 0, goal: num(r.goal) > 0 ? r.goal : null, cells,
+    });
+  }
+  return {
+    months, first: isYm(src.first) ? src.first : null, today: isYmd(src.today) ? src.today : ymd(nowMs()), rows, summary: src.summary,
+    paid: typeof src.paid === 'string' && src.paid ? src.paid : 'paid in {n} of {m} months on record',
+    unfiledName: typeof src.unfiled === 'string' && src.unfiled ? src.unfiled : 'Not yet filed',
+  };
+}
+
+function sumInlets(d) {
+  if (!d.rows.length || !d.months.length) return 'Money in by source: ' + NOTE + '.';
+  return 'Money in by source, ' + fmtMonth(d.months[0], 'short') + ' to ' + fmtMonth(d.months[d.months.length - 1], 'short') + ': ' +
+    d.rows.map((r) => (r.unfiled ? d.unfiledName : r.name) + ' ' + (r.est ? '≈' : '') + fmt(r.total, { decimals: 0 }) + ', paid in ' + r.paid + ' of ' + r.onRecord + ' months').join('; ') + '.';
+}
+
+/** The root font's scale against 16px (labels are sized in rem); 1 outside a page. */
+function rootScale() {
+  try {
+    if (typeof document === 'undefined' || !document.documentElement || typeof getComputedStyle !== 'function') return 1;
+    const px = parseFloat(getComputedStyle(document.documentElement).fontSize);
+    return Number.isFinite(px) && px > 16 ? px / 16 : 1;
+  } catch {
+    return 1;
+  }
+}
+
+/**
+ * A source's name in caps, fitted to `room` px: cut with '…' when longer (wCaps at the root's scale), the full name kept
+ * in a <title>, as the table beside the chart shows it whole.
+ */
+function nameText(cls, x, y, label, room, k) {
+  const text = String(label).toUpperCase();
+  if (wCaps(text) * k <= room) return txt(cls, x, y, text);
+  const chars = [...text];
+  while (chars.length > 1 && wCaps(chars.join('').trimEnd() + '…') * k > room) chars.pop();
+  const cut = chars.join('').trimEnd() + '…';
+  return '<text class="' + cls + '" x="' + f1(x) + '" y="' + f1(y) + '"><title>' + esc(String(label)) + '</title>' + esc(cut) + '</text>';
+}
+
+function drawInlets(d, W, H, id) {
+  const rows = d.rows;
+  if (!rows.length || d.months.length !== 12) return null;
+  const narrow = W < 480;
+  const cols = 12;
+  const nameW = narrow ? 0 : Math.round(Math.min(170, Math.max(96, W * 0.24)));
+  // the end column holds the total and "paid in n of m months on record" (italic, .75rem), clear of the columns
+  const paidOf = (r) => d.paid.replace('{n}', String(r.paid)).replace('{m}', String(r.onRecord));
+  const endText = Math.max(...rows.map((r) => Math.max(estW(paidOf(r), 12, 0.47), wFig(fmt(r.total, { decimals: 0 }), 15) + 14)));
+  const endW = narrow ? 0 : Math.round(Math.min(W * 0.42, Math.max(110, endText + 6)));
+  const x0 = nameW + (narrow ? 0 : 8);
+  const x1 = W - endW - (narrow ? 0 : 10);
+  const slot = (x1 - x0) / cols;
+  const barW = Math.max(3, Math.min(18, slot * 0.62));
+  const barH = 30;
+  const head = 22;
+  const rowH = narrow ? 18 + barH + 22 : barH + 24;
+  const H2 = head + rows.length * rowH + 4;
+  // one scale for every row: the largest month of any source, or a goal above it
+  let top = 1;
+  for (const r of rows) {
+    for (const c of r.cells) top = Math.max(top, c.bank + c.pencil);
+    if (r.goal) top = Math.max(top, r.goal);
+  }
+  const now = monthOf(d.today);
+  const firstAt = d.first ? d.months.indexOf(d.first) : -1;
+  const cx = (k) => x0 + slot * k + slot / 2;
+  const scale = rootScale();
+  let out = hatchDefs(id);
+  // the month axis: a label every third month, the current one in the spot colour, to the day
+  const nowAt = d.months.indexOf(now);
+  const nowText = nowAt < 0 ? '' : MONTHS_SHORT[Number(now.slice(5, 7)) - 1] + ' ' + Number(d.today.slice(8, 10));
+  // the month so far keeps inside the chart's right edge, at the root's scale
+  const nowX = nowAt < 0 ? 0 : Math.min(cx(nowAt), W - (wCaps(nowText) * scale) / 2 - 2);
+  const nowLeft = nowAt < 0 ? Infinity : nowX - (wCaps(nowText) * scale) / 2;
+  for (let k = 0; k < cols; k++) {
+    const ym = d.months[k];
+    const m = Number(ym.slice(5, 7)) - 1;
+    if (k === nowAt) out += txt('nwc-t nwc-spot', nowX, 11, nowText, 'middle');
+    // a quarter label that would come within half an em of the month so far (the labels are 11px at a 16px root; wCaps
+    // reads them about a pixel narrow) is left out (round 5: a 20px root, the chart just wide enough for one line a source)
+    else if ((cols - 1 - k) % 3 === 0 && k < cols - 2 && cx(k) + (wCaps(MONTHS_SHORT[m]) * scale) / 2 + 6.5 * scale <= nowLeft) out += txt('nwc-t', cx(k), 11, MONTHS_SHORT[m], 'middle');
+  }
+  // the record's first month: a hairline before it, across every row, marked with its month
+  if (firstAt > 0) {
+    const hx = hp(x0 + slot * firstAt);
+    out += '<path class="nwc-ax nwc-in-floor" d="M' + hx + ' ' + (head - 4) + 'V' + f1(H2 - 4) + '"/>';
+  }
+  rows.forEach((r, i) => {
+    const y0 = head + i * rowH;
+    const base = narrow ? y0 + 18 + barH : y0 + barH + 6;
+    const label = r.unfiled ? d.unfiledName : r.name;
+    // the name, and the total with how many months paid
+    const total = fmt(r.total, { decimals: 0 });
+    const paid = paidOf(r);
+    if (narrow) {
+      // the name shares its line with the total: it keeps clear of it
+      const room = W - (wFig(total, 15) + (r.est ? 14 : 0)) * scale - 12;
+      out += nameText('nwc-t' + (r.unfiled ? ' nwc-in-unfiled' : ''), 0, y0 + 12, label, room, scale);
+      out += fig('nwc-f nwc-f-s', W, y0 + 13, total, 'end', r.est);
+      out += txt('nwc-i', W, base + 15, paid, 'end');
+    } else {
+      // the name keeps to its column, clear of the months and a goal's tick
+      out += nameText('nwc-t' + (r.unfiled ? ' nwc-in-unfiled' : ''), 0, base - 8, label, nameW, scale);
+      out += fig('nwc-f nwc-f-s', W, base - 13, total, 'end', r.est);
+      out += txt('nwc-i', W, base + 2, paid, 'end');
+    }
+    // the baseline under the months on record only; a month before the record has none
+    const fromK = r.cells.findIndex((c) => !c.blank);
+    if (fromK >= 0) out += '<path class="nwc-grid" d="M' + f1(x0 + slot * fromK) + ' ' + hp(base) + 'H' + f1(x1) + '"/>';
+    r.cells.forEach((c, k) => {
+      if (c.blank) return;
+      const value = c.bank + c.pencil;
+      const xm = cx(k) - barW / 2;
+      const current = c.ym === now;
+      if (value <= 0) {
+        out += '<circle class="' + (current ? 'nwc-dot' : 'nwc-pt nwc-in-dot') + '" cx="' + f1(cx(k)) + '" cy="' + hp(base) + '" r="1.6"/>';
+        return;
+      }
+      // at least a sliver, so a small payment is never invisible
+      const h = Math.max(2, Math.round((value / top) * barH));
+      const hb = c.pencil > 0 ? Math.round(h * (c.bank / value)) : h;
+      const hpn = h - hb;
+      if (hb > 0) out += '<rect class="' + (current ? 'nwc-in-now' : 'nwc-in-bar') + '" x="' + f1(xm) + '" y="' + f1(base - hb) + '" width="' + f1(barW) + '" height="' + f1(hb) + '"/>';
+      if (hpn > 0) {
+        out += '<rect class="nwc-in-pencil" style="fill:url(#' + id + (current ? 'a' : 'b') + ')" x="' + f1(xm) + '" y="' + f1(base - h) + '" width="' + f1(barW) + '" height="' + f1(hpn) + '"/>';
+      }
+    });
+    // a goal a month: a dashed tick across the row
+    if (r.goal) {
+      const gy = hp(base - (r.goal / top) * barH);
+      out += '<path class="nwc-scn nwc-thin nwc-in-goal" d="M' + f1(x0 + slot * Math.max(0, fromK)) + ' ' + gy + 'H' + f1(x1) + '"/>';
+    }
+    if (i < rows.length - 1) out += '<path class="nwc-grid nwc-in-rule" d="M0 ' + hp(y0 + rowH - 1) + 'H' + W + '"/>';
+  });
+  return { body: out, height: H2 };
+}
+
 /* --------------------------------------------------------------- the kinds */
 
 const KINDS = {
@@ -961,6 +1129,7 @@ const KINDS = {
   lines: { read: readLines, sum: sumLines, draw: drawLines },
   payoff: { read: readPayoff, sum: sumPayoff, draw: drawPayoff },
   spark: { read: readSpark, sum: sumSpark, draw: drawSpark },
+  inlets: { read: readInlets, sum: sumInlets, draw: drawInlets },
 };
 
 /**
@@ -989,11 +1158,11 @@ export function chartSummary(kind, data) {
 }
 
 const COVER_NAMES = { worth: 'Net worth by day', edge: 'Kept versus habit by round', months: 'Card months',
-  lines: 'Scenario lines', payoff: 'Card payoff', spark: 'Trend' };
+  lines: 'Scenario lines', payoff: 'Card payoff', spark: 'Trend', inlets: 'Money in by source' };
 
 /** The text alternative while figures are covered: what the chart is, and no amounts. */
 function coverLabel(kind) {
-  const name = kind === 'edge' ? phrase('charts.cover.edge', wordsNow()) : COVER_NAMES[kind];
+  const name = kind === 'edge' ? phrase('charts.cover.edge', wordsNow()) : kind === 'inlets' ? phrase('inlets.fig.cover', wordsNow()) : COVER_NAMES[kind];
   return (name || 'Chart') + '. Figures are covered.';
 }
 
@@ -1028,7 +1197,7 @@ function render(kind, data, W, H, id, covered) {
     }
   }
   let height = made && made.height ? made.height : null;
-  if (!made && kind === 'months') height = 96;
+  if (!made && (kind === 'months' || kind === 'inlets')) height = 96;
   const h = height || H;
   const body = made ? made.body : emptyFrame(W, h, kind);
   return {
@@ -1123,7 +1292,7 @@ export class NwChart extends ElementBase {
 
   _resized() {
     const w = Math.round(this.clientWidth), h = Math.round(this.clientHeight);
-    const selfSized = this.getAttribute('kind') === 'months';
+    const selfSized = this.getAttribute('kind') === 'months' || this.getAttribute('kind') === 'inlets';
     if (w !== this._w || (!selfSized && h !== this._h)) this._draw();
   }
 

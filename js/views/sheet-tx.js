@@ -30,6 +30,7 @@ import { skipRow } from '../model/byhand.js';
 import { askAgain, incomeOf, incomeQuestions, itemAnswer, rowPayments } from '../model/income.js';
 import { UNFILED, confirmedKlass, isCatchAll, isFiled } from '../model/flows.js';
 import { againWords, paymentState, rowLineLead } from './income-words.js';
+import { txSourceBlock } from './inflows.js';
 import { moveGlyph } from '../ui/glyphs.js';
 import { flowClass, flowLookups, inlineMoney, keepWhole, txName } from './parts.js';
 import { sayHtml } from '../ui/say.js';
@@ -152,6 +153,7 @@ export function render(ctx, params) {
   return html`<form class="sheet-body tx-form" data-key="${'tx-' + tx.id}" data-submit="tx.save" data-id="${tx.id}" novalidate ${coverAttr(ctx)}>
     ${head}
     ${facts(ctx, tx)}
+    ${txSourceBlock(ctx, tx)}
     ${manual && tx.inBalance === true ? html`<p class="cap">The bank gives this card’s balance but none of its transactions. Its balance has taken this purchase in, so it no longer lowers the figures; this line is its only record.</p>` : ''}
     ${ann ? html`<p class="tx-ann"><span class="tx-ann-sym">${moveGlyph(ann.glyph, { words: ctx.words })}</span><span class="cap">${figured(ann.why)}.${ann.manual ? ' Your own mark.' : ''}</span></p>` : ''}
     ${classification(ctx, tx)}

@@ -29,7 +29,10 @@ import { roundCents } from './money.js';
 import { addDecline, mergeFeed } from './merge.js';
 import { computeHabit, refresh } from './detect.js';
 import { merchantOf } from './classify.js';
-import { seedFlows } from './flowsection.js';
+import { noteInto, seedFlows } from './flowsection.js';
+import { INCOME_FORMAT, answerPayer, applyIncomeReading } from './income.js';
+import { merchantKeyOf } from './corrections.js';
+import { appKey, dismissOffer, editInlet, makeInlet } from './inlets.js';
 
 /** The match of the sample game began this many days before today. */
 export const DEMO_MATCH_DAYS = 21;
@@ -129,6 +132,22 @@ const CLIENTS = [
   { text: 'Zelle payment from PRIYA RAMAN 23990417733', every: 37, phase: 11, amounts: [16000, 8000, 22000, 11000, 28000, 13000] },
 ];
 const ONE_OFF_CLIENT = { daysAgo: 47, cents: 8500 };
+
+/**
+ * Money in that the sample files to sources (pass 3), all invented: a stock-photo library that pays its contributors once
+ * a quarter (Back-end money, drawn as four bars and eight dots), and the sittings another app of the owner reports, one
+ * client paying by transfer and one in cash. The sample's rows are not the bank's own (source 'demo'), so no reported
+ * payment meets a bank row here: the transfers stay in pencil, as payments not at the bank yet. Two more apps report a
+ * payment or two, so that the page has one suggested source to show and one dismissed.
+ */
+const LIBRARY = { text: 'FERNHOLLOW IMAGES CONTRIBUTOR PAYMENT', day: 12, months: [0, 3, 6, 9], amounts: [41800, 56300, 38900, 63400, 47200] };
+/** Sittings: [days ago, cents], at irregular gaps (no cadence is read into them). */
+const SITTINGS_BANK = [[117, 15000], [101, 15000], [92, 18000], [71, 15000], [63, 15000], [44, 18000], [37, 15000], [19, 15000], [8, 18000], [2, 15000]];
+const SITTINGS_CASH = [[52, 12000], [38, 12000], [23, 14000], [9, 12000]];
+/** The first reading of the other app's files, this many days back (its payments before that are history). */
+const REPORTED_FIRST_READ_DAYS = 125;
+const PRINTS = [[33, 6500], [12, 9000]];
+const RENTALS = [[47, 8000]];
 
 /** Savings drawn down to cover the months that ran short: [days ago, cents]. */
 const SAVINGS_DRAWS = [[310, 50000], [205, 40000], [95, 30000]];
@@ -454,7 +473,7 @@ function payCard(draft, day, cents, text) {
 
 /* --------------------------------------------------------------------- income */
 
-function addIncome(draft) {
+function addIncome(draft, moneyIn) {
   const anchor = dayNumber(PAYDAY_ANCHOR);
   const raised = addDays(draft.today, -PAY.raisedDaysAgo);
   for (const day of draft.days) {
@@ -467,6 +486,14 @@ function addIncome(draft) {
     }
   }
   post(draft, 'checking', addDays(draft.today, -ONE_OFF_CLIENT.daysAgo), ONE_OFF_CLIENT.cents, TEXT.oneOffClient);
+  // the stock-photo library, once a quarter (the app's sample; see buildDemoState's moneyIn)
+  for (const ym of moneyIn ? draft.months : []) {
+    const m = Number(ym.slice(5, 7)) - 1;
+    if (!LIBRARY.months.includes(m)) continue;
+    const turn = Math.floor(monthIndex(ym) / 3);
+    post(draft, 'checking', dayOfMonth(ym, LIBRARY.day), LIBRARY.amounts[mod(turn, LIBRARY.amounts.length)], LIBRARY.text);
+  }
+
   for (const [daysAgo, cents] of SAVINGS_DRAWS) {
     const day = addDays(draft.today, -daysAgo);
     post(draft, 'savings', day, -cents, TEXT.toChecking);
@@ -774,9 +801,9 @@ function feedRows(rows, code) {
   });
 }
 
-function buildFeed(today, days, seed) {
+function buildFeed(today, days, seed, moneyIn) {
   const draft = openDraft(today, days, seed);
-  addIncome(draft);
+  addIncome(draft, !!moneyIn);
   addBills(draft);
   addCardShopping(draft);
   addErrands(draft);
@@ -889,8 +916,12 @@ export function demoManualAccounts(nowMs) {
  * The feed behind it covers DEMO_HISTORY_DAYS days, and the owner has entered the card's rate, limit
  * and due day. Like the feed, the document depends on the game day of `nowMs` and the seed alone —
  * its ids and timestamps included.
+ * `moneyIn` (the app's sample game sets it) adds the invented money in of pass 3: the stock-photo library's quarterly
+ * payouts, the payments other apps of the owner report (one client by transfer, one in cash; two more apps), and the
+ * sources they are filed to, with one goal, one tag, a prospect, one suggestion to show and one dismissed. Without it the
+ * document is the one the earlier tests were written against.
  * @param {number} nowMs
- * @param {{ seed?: number }} [opts]
+ * @param {{ seed?: number, moneyIn?: boolean }} [opts]
  * @returns {object} state
  */
 export function buildDemoState(nowMs, opts) {
@@ -902,18 +933,81 @@ export function buildDemoState(nowMs, opts) {
   state.settings.rolloverHour = ROLLOVER_HOUR;
   state.meta.origin = 'demo';
   state.accounts.push(...demoManualAccounts(asOf));
-  mergeFeed(state, buildFeed(today, DEMO_HISTORY_DAYS, seed), asOf);
+  const moneyIn = !!(opts && opts.moneyIn);
+  mergeFeed(state, buildFeed(today, DEMO_HISTORY_DAYS, seed, moneyIn), asOf);
   state.sync.lastTry = state.sync.lastOk;
   enterCardTerms(state);
   beginMatch(state, addDays(today, -DEMO_MATCH_DAYS));
   addOwnerNotes(state, today, asOf);
+  if (moneyIn) addReported(state, today, asOf);
   refresh(state, asOf);
   settleIds(state, seed);
   addOwnSubscription(state, today);
   // the owner's decisions travel in the `flows` section: the sample holds its copy from the start (seeded at 0), so the
   // repertoire shows its three groups and its choices can be tried (they are kept nowhere, like the rest of it)
   seedFlows(state, asOf);
+  if (moneyIn) addSources(state, asOf);
   return state;
+}
+
+/* ------------------------------------------------------------------ money in */
+
+/** What another app of the sample owner reports (ARCHITECTURE 3.7), read once some months back and again today. */
+function addReported(state, today, asOf) {
+  const at = (daysAgo) => new Date(gameDayStartMs(addDays(today, -daysAgo), ROLLOVER_HOUR) + 9 * HOUR_MS).toISOString();
+  const item = (prefix, payer) => ([daysAgo, cents], i) => ({ id: prefix + (i + 1), payer, cents, day: addDays(today, -daysAgo), at: at(daysAgo) });
+  const sittings = [...SITTINGS_BANK.map(item('nc', 'p-noor')), ...SITTINGS_CASH.map(item('wo', 'p-wes'))];
+  const files = (cut) => ({
+    sittings: { what: 'Sitting', payers: [{ id: 'p-noor', name: 'Noor Calder' }, { id: 'p-wes', name: 'Wes Okafor' }], items: sittings },
+    prints: { what: 'Print orders', payers: [{ id: 'p-ivy', name: 'Ivy Marsh' }], items: PRINTS.map(item('im', 'p-ivy')) },
+    rentals: { what: 'Gear rental', payers: [{ id: 'p-otto', name: 'Otto Brandt' }], items: RENTALS.map(item('ob', 'p-otto')) },
+  }[cut]);
+  const read = (nowMs) => {
+    const listed = [];
+    const out = {};
+    for (const source of ['prints', 'rentals', 'sittings']) {
+      const file = files(source);
+      const items = file.items.filter((one) => Date.parse(one.at) <= nowMs);
+      const sha = source + '-' + items.length;
+      listed.push({ source, sha });
+      out[source] = { sha, text: JSON.stringify({ format: INCOME_FORMAT, what: file.what, writtenAt: new Date(nowMs).toISOString(), payers: file.payers, items }) };
+    }
+    applyIncomeReading(state, { listed, files: out }, nowMs);
+  };
+  read(gameDayStartMs(addDays(today, -REPORTED_FIRST_READ_DAYS), ROLLOVER_HOUR) + 10 * HOUR_MS);
+  read(asOf);
+  for (const [source, payer] of [['sittings', 'p-wes'], ['prints', 'p-ivy'], ['rentals', 'p-otto']]) answerPayer(state, source, payer, 'cash', asOf);
+  answerPayer(state, 'sittings', 'p-noor', 'bank', asOf);
+}
+
+/**
+ * The sample owner's sources, filed as the queue's taps would file them (pass 3): the payroll as a Day job, two Zelle
+ * clients as Photo shoots (with a goal a month), the sittings' app, the stock-photo library as a Back-end source tagged
+ * to grow, and a prospect with no money yet. One suggestion is left to show, another dismissed; one client's single
+ * payment and the odd deposit wait in the queue.
+ */
+const DEMO_SOURCES = [
+  { id: 'n0d0a000000001', name: 'Day job', kind: 'steady', payers: [TEXT.payroll] },
+  { id: 'n0d0a000000002', name: 'Photo shoots', kind: 'job', payers: [CLIENTS[0].text, CLIENTS[1].text], goal: { per: 'month', cents: 100000 } },
+  { id: 'n0d0a000000003', name: 'Sittings', kind: 'job', apps: ['sittings'] },
+  { id: 'n0d0a000000004', name: 'Stock photos', kind: 'backend', payers: [LIBRARY.text], focus: true },
+  { id: 'n0d0a000000005', name: 'App builds', kind: 'job' },
+];
+
+function addSources(state, asOf) {
+  for (const one of DEMO_SOURCES) {
+    const id = one.id;
+    makeInlet(state, { name: one.name, kind: one.kind }, asOf, id);
+    if (one.goal || one.focus) editInlet(state, id, { ...(one.goal ? { goal: one.goal } : {}), ...(one.focus ? { focus: true } : {}) }, asOf);
+    for (const text of one.payers || []) {
+      // the payer's key as the bank's rows carry it (the corrections' fingerprint of the merchant key)
+      const row = state.txs.find((tx) => tx.raw === text && typeof tx.mkey === 'string' && tx.mkey);
+      noteInto(state, merchantKeyOf(row ? row.mkey : merchantOf({ description: text }).mkey), id, asOf);
+    }
+    for (const app of one.apps || []) noteInto(state, appKey(app), id, asOf);
+  }
+  dismissOffer(state, appKey('rentals'), asOf);
+  refresh(state, asOf);
 }
 
 /** A subscription the sample owner added by hand before its first charge: the repertoire's "Added by you". */
@@ -985,7 +1079,8 @@ function settleIds(state, seed) {
     item.id = id;
   };
   for (const account of state.accounts) if (account.source === 'bank') rename(account, 'acc');
-  for (const tx of state.txs) rename(tx, 'tx');
+  // the moves of reported payments keep their ids, which say which payment each is (income.incomeMoveId)
+  for (const tx of state.txs) if (tx.via !== 'income') rename(tx, 'tx');
   for (const entry of state.recurring) rename(entry, 'rec');
   for (const stream of state.streams) rename(stream, 'str');
 
@@ -1002,4 +1097,8 @@ function settleIds(state, seed) {
   }
   for (const stream of state.streams) stream.accountId = idNow(stream.accountId);
   for (const sweep of state.sweeps) sweep.txId = idNow(sweep.txId);
+  // the bank row each reported payment met, by its new id
+  if (state.income && state.income.pairs && typeof state.income.pairs === 'object') {
+    for (const key of Object.keys(state.income.pairs)) state.income.pairs[key] = idNow(state.income.pairs[key]);
+  }
 }

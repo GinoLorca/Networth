@@ -32,6 +32,7 @@ nw-chart {
 nw-chart[kind="lines"] { aspect-ratio: var(--chart-ratio, 1.6); }
 nw-chart[kind="payoff"] { aspect-ratio: var(--chart-ratio, 1.7); }
 nw-chart[kind="months"] { aspect-ratio: auto; max-height: none; min-height: 96px; }
+nw-chart[kind="inlets"] { aspect-ratio: auto; max-height: none; min-height: 96px; }
 nw-chart[kind="spark"] {
   display: inline-block;
   width: var(--spark-w, 56px);
@@ -51,6 +52,7 @@ nw-chart > svg {
   overflow: visible;
 }
 nw-chart[kind="months"] > svg { position: static; height: auto; }
+nw-chart[kind="inlets"] > svg { position: static; height: auto; }
 
 /* ---- rules and lines ---- */
 .nwc path, .nwc rect, .nwc circle { fill: none; }
@@ -89,6 +91,13 @@ nw-chart[kind="months"] > svg { position: static; height: auto; }
 .nwc .nwc-bar-w { fill: var(--bar-white); stroke: var(--bar-edge); stroke-width: 1; }
 .nwc .nwc-bar-b { fill: var(--bar-black); stroke: var(--bar-edge); stroke-width: 1; }
 .nwc .nwc-bar-0 { stroke: var(--hair); stroke-width: 1; }
+
+/* Fig. 1, money in by source: bank money in ink, pencil money hatched, the month so far in the spot colour */
+.nwc .nwc-in-bar { fill: var(--ink); }
+.nwc .nwc-in-now { fill: var(--spot); }
+.nwc .nwc-in-pencil { stroke: var(--ink-3); stroke-width: 1; }
+.nwc .nwc-in-dot { fill: var(--ink-3); }
+.nwc .nwc-in-floor { stroke: var(--ink-3); }
 
 /* ---- type ---- */
 .nwc text {
@@ -145,4 +154,7 @@ nw-chart[cover] .nwc-cover,
 
 @media (forced-colors: active) {
   .nwc text { stroke: none; }
+  .nwc .nwc-in-bar, .nwc .nwc-in-dot { fill: CanvasText; }
+  .nwc .nwc-in-now, .nwc .nwc-dot { fill: Highlight; }
+  .nwc .nwc-in-pencil { stroke: CanvasText; }
 }

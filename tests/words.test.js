@@ -75,7 +75,7 @@ test('two modes: Chess words by default, Finance words only when asked for by na
 /* -------------------------------------------------------------------- the glossary */
 
 test('every term has both names and a one-line meaning, in a known group', () => {
-  assert.equal(TERMS.length, 98);
+  assert.equal(TERMS.length, 108);
   const keys = new Set();
   const groups = new Set(TERM_GROUPS.map((group) => group.key));
   for (const one of TERMS) {

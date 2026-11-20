@@ -40,6 +40,7 @@ import { bankWhere, beforeCountWords, confirmWords, isCountedCash, itemWords, li
 import { paydayMark, paydayWords } from './clock-words.js';
 import { evalName, glyphName, lowerFirst, phrase, say } from '../model/words.js';
 import { moveQueue } from '../model/flows.js';
+import { depositQueue } from '../model/inlets.js';
 import { sayHtml } from '../ui/say.js';
 import { money, inlineMoney, keptLine, statusLine, roundTitle, colourOf, crosstable, movesList, notableMoves, worstGlyph, spentUnposted, recentList, toneStyle, flowLookups, payFlowClass, unbankedWords, rungNumber } from './parts.js';
 
@@ -1151,10 +1152,13 @@ function narrowBoard(ctx, v) {
  */
 function fileLine(ctx) {
   let n = 0;
+  let nIn = 0;
   try { n = moveQueue(ctx.state, ctx.now, { ledger: ctx.d.ledger }).items.length; } catch { n = 0; }
-  if (!n) return '';
-  const items = n === 1 ? phrase('flows.queue.items.one', ctx.words) : say('flows.queue.items.many', ctx.words, { n });
-  return html`<p class="cap board-file">${sayHtml('board.file', ctx.words, { items: html`<span data-cover-keep>${items}</span>` })}
+  try { nIn = depositQueue(ctx.state, ctx.now, { ledger: ctx.d.ledger }).items.length; } catch { nIn = 0; }
+  if (!n && !nIn) return '';
+  // moves in and out, as the queue's own line reads them ("2 in · 14 out")
+  const count = say('flows.queue.count', ctx.words, { in: nIn, out: n });
+  return html`<p class="cap board-file">${sayHtml('board.file', ctx.words, { count: html`<span data-cover-keep>${count}</span>` })}
     <a class="btn-link" href="#/flows" data-action="flows.queue" data-open="1" data-go="#/flows">${sayHtml('flows.queue.open', ctx.words)} ›</a></p>`;
 }
 
